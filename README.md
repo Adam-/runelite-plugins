@@ -1,4 +1,4 @@
-# Supplies Tracker
+<html>
 Tracks supplies (food, potions, teleports, ect.), Ammo (cannonballs included), runes, and weapons charges.
 
 To turn on weapon charges box (tracker will no longer add each individual item used for a charge), look in configs.
@@ -9,20 +9,20 @@ Blowpipe ammo used is not actual use. It is an estimate based on number of attac
 #### Weapons currently implemented ####
 
 Scythe
-Sanguinesti Staff
-Trident of the swamps
-Trident of the seas
-Blade of Saeldor
+<br>Sanguinesti Staff
+<br>Trident of the swamps
+<br>Trident of the seas
+<br>Blade of Saeldor
 
 
 
 
 //TODO
 
-Crystal tools
-Rune pouch
+Crystal tools <br>
+Rune pouch</br>
 
-
+</html>
 *preview has weapon charges enabled and disabled to show both styles*
 
 ![Preview](https://i.gyazo.com/dc858c9708d3da4eb2f5fdcc73d424b5.png)
