@@ -7,15 +7,21 @@ Before using blowpipe, set which darts are being used in configs.
 Blowpipe ammo used is not actual use. It is an estimate based on number of attacks.
 
 #### Weapons currently implemented ####
+
 Scythe
 Sanguinesti Staff
 Trident of the swamps
 Trident of the seas
+Blade of Saeldor
+
+
+
 
 //TODO
+
 Crystal tools
 Rune pouch
-Blade of Saeldor
+
 
 *preview has weapon charges enabled and disabled to show both styles*
 
