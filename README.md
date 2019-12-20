@@ -11,8 +11,8 @@ Scythe
 Sanguinesti Staff
 Trident of the swamps
 Trident of the seas
-Blade of Saeldor
 
 //TODO
 Crystal tools
 Rune pouch
+Blade of Saeldor
