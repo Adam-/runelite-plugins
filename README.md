@@ -1,4 +1,9 @@
+
 <html>
+  <h1>Supplies Tracker</h1><br>
+  
+  
+  
 Tracks supplies (food, potions, teleports, ect.), Ammo (cannonballs included), runes, and weapons charges.
 
 To turn on weapon charges box (tracker will no longer add each individual item used for a charge), look in configs.
