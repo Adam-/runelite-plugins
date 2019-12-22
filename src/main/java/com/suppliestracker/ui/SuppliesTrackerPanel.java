@@ -24,7 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.suppliestracker;
+package com.suppliestracker.ui;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
@@ -34,11 +34,15 @@ import java.util.List;
 import javax.inject.Singleton;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.border.EmptyBorder;
+import com.suppliestracker.ItemType;
+import com.suppliestracker.SuppliesTrackerItem;
+import com.suppliestracker.SuppliesTrackerPlugin;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -47,30 +51,36 @@ import net.runelite.client.ui.components.PluginErrorPanel;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.QuantityFormatter;
 
+
 @Singleton
-class SuppliesTrackerPanel extends PluginPanel
+public class SuppliesTrackerPanel extends PluginPanel
 {
 	private static final String HTML_LABEL_TEMPLATE =
 		"<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
 
 	// Handle supplies logs
-	private final JPanel logsContainer = new JPanel();
+	public final JPanel logsContainer = new JPanel();
 
 	//Boxes for holding supplies
 	private final List<SuppliesBox> boxList = new ArrayList<>();
 
 	private final PluginErrorPanel errorPanel = new PluginErrorPanel();
 
+
 	// Handle overall session data
-	private final JPanel overallPanel = new JPanel();
+	public final JPanel overallPanel = new JPanel();
 	private final JLabel overallSuppliesUsedLabel = new JLabel();
 	private final JLabel overallCostLabel = new JLabel();
 	private final JLabel overallIcon = new JLabel();
+	public UpdatePanel updatePanel;
+	public JButton info;
 	private int overallSuppliesUsed;
 	private int overallCost;
+	private boolean updateSeen = false;
 
-	SuppliesTrackerPanel(final ItemManager itemManager, SuppliesTrackerPlugin plugin)
+	public SuppliesTrackerPanel(final ItemManager itemManager, SuppliesTrackerPlugin plugin)
 	{
+		updatePanel = new UpdatePanel(this);
 		setBorder(new EmptyBorder(6, 6, 6, 6));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 		setLayout(new BorderLayout());
@@ -133,8 +143,25 @@ class SuppliesTrackerPanel extends PluginPanel
 		layoutPanel.add(logsContainer);
 
 		errorPanel.setContent("Supply trackers", "You have not used any supplies yet.\nCheck Configs for options.     \nMake sure to set blowpipe dart in configs");
-		add(errorPanel);
+		add(updatePanel);
+		updatePanel.setVisible(true);
 		overallPanel.setVisible(false);
+		logsContainer.setVisible(false);
+		info = new JButton("Info");
+		info.addActionListener(e ->
+			{
+				overallPanel.setVisible(false);
+				logsContainer.setVisible(false);
+
+				remove(updatePanel);
+				updatePanel = new UpdatePanel(this);
+				add(updatePanel);
+
+				updatePanel.setVisible(true);
+				info.setVisible(false);
+			});
+		layoutPanel.add(info);
+		info.setVisible(false);
 	}
 
 	/**
@@ -155,7 +182,7 @@ class SuppliesTrackerPanel extends PluginPanel
 	 *
 	 * @param img the img for the header icon
 	 */
-	void loadHeaderIcon(BufferedImage img)
+	public void loadHeaderIcon(BufferedImage img)
 	{
 		overallIcon.setIcon(new ImageIcon(img));
 	}
@@ -165,7 +192,7 @@ class SuppliesTrackerPanel extends PluginPanel
 	 *
 	 * @param item the item to add
 	 */
-	void addItem(SuppliesTrackerItem item)
+	public void addItem(SuppliesTrackerItem item)
 	{
 		ItemType category = ItemType.categorize(item);
 		for (SuppliesBox box : boxList)
@@ -184,7 +211,7 @@ class SuppliesTrackerPanel extends PluginPanel
 	 * Updates overall stats to calculate overall used and overall cost from
 	 * the info in each box
 	 */
-	void updateOverall()
+	public void updateOverall()
 	{
 		overallSuppliesUsed = 0;
 		for (SuppliesBox box : boxList)
@@ -211,7 +238,10 @@ class SuppliesTrackerPanel extends PluginPanel
 		else
 		{
 			remove(errorPanel);
-			overallPanel.setVisible(true);
+			if (!updatePanel.isVisible())
+			{
+				overallPanel.setVisible(true);
+			}
 		}
 	}
 }

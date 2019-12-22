@@ -47,7 +47,7 @@ public enum BlowpipeDartType
 	ADAMANT(ADAMANT_DART), RUNE(RUNE_DART),
 	DRAGON(DRAGON_DART);
 
-	@Getter(AccessLevel.PACKAGE)
+	@Getter(AccessLevel.MODULE)
 	private int dartID;
 
 }
