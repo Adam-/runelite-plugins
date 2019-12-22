@@ -25,7 +25,6 @@ Scythe
 //TODO
 
 Crystal tools <br>
-Rune pouch</br>
 
 </html>
 *preview has weapon charges enabled and disabled to show both styles*
