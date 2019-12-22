@@ -64,7 +64,7 @@ import net.runelite.http.api.chat.ChatClient;
 
 @PluginDescriptor(
 		name = RegionLockerPlugin.PLUGIN_NAME,
-		description = "Settings for the ChunkLite client.",
+		description = "Settings for the Region Locker plugin.",
 		tags = {"region", "locker", "chunk", "map", "square"}
 )
 public class RegionLockerPlugin extends Plugin
