@@ -40,6 +40,8 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.swing.SwingUtilities;
+
+import static com.suppliestracker.ActionType.CAST;
 import com.suppliestracker.ui.SuppliesTrackerPanel;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.AnimationID;
@@ -136,6 +138,11 @@ public class SuppliesTrackerPlugin extends Plugin
 	private static final int ONEHAND_SLASH_SWORD = 390;
 	private static final int ONEHAND_STAB_SWORD = 386;
 	private static final int GAUNTLET_PADDLEFISH = 23874;
+	public static final int LOW_LEVEL_STANDARD_SPELLS = 711;
+	public static final int WAVE_SPELL_ANIMATION = 727;
+	public static final int SURGE_SPELL_ANIMATION = 7855;
+	public static final int HIGH_ALCH_ANIMATION = 713;
+	public static final int LUNAR_HUMIDIFY = 6294;
 	private final Deque<MenuAction> actionStack = new ArrayDeque<>();
 
 	//Item arrays
@@ -191,7 +198,7 @@ public class SuppliesTrackerPlugin extends Plugin
 
 	public boolean magicXpChanged = false;
 	public boolean skipTick = false;
-
+	private boolean noXpCast = false;
 	int magicXp = 0;
 
 
@@ -280,16 +287,15 @@ public class SuppliesTrackerPlugin extends Plugin
 	}
 
 	@Subscribe
-	void onStatChanged(StatChanged event) {
+	void onStatChanged(StatChanged event)
+	{
 		if (event.getSkill().name().toLowerCase().equals("magic"))
 		{
 			if (magicXp != event.getXp())
 			{
 				skipTick = true;
 				magicXpChanged = true;
-				checkUsedRunePouch();
 				magicXp = event.getXp();
-
 			}
 		}
 	}
@@ -297,15 +303,13 @@ public class SuppliesTrackerPlugin extends Plugin
 	@Subscribe
 	private void onGameTick(GameTick tick)
 	{
-		skipProjectileCheckThisTick = false;
-
 		Player player = client.getLocalPlayer();
 		if (player.getAnimation() == BLOWPIPE_ATTACK)
 		{
 			ticks++;
 		}
 		if (ticks == ticksInAnimation &&
-			(player.getAnimation() == BLOWPIPE_ATTACK))
+				(player.getAnimation() == BLOWPIPE_ATTACK))
 		{
 			double ava_percent = getAccumulatorPercent();
 			// randomize the usage of supplies since we CANNOT actually get real supplies used
@@ -320,19 +324,26 @@ public class SuppliesTrackerPlugin extends Plugin
 			ticks = 0;
 		}
 
-		amountused1 = 0;
-		amountused2 = 0;
-		amountused3 = 0;
-
 		if (skipTick)
 		{
 			skipTick = false;
+			return;
 		}
-		else
+		else if (magicXpChanged)
 		{
+			checkUsedRunePouch();
 			magicXpChanged = false;
+			noXpCast = false;
+		}
+		else if (noXpCast)
+		{
+			checkUsedRunePouch();
+			noXpCast = false;
 		}
 
+		amountused1 = 0;
+		amountused2 = 0;
+		amountused3 = 0;
 	}
 
 	/**
@@ -373,62 +384,18 @@ public class SuppliesTrackerPlugin extends Plugin
 	@Subscribe
 	private void onVarbitChanged(VarbitChanged event)
 	{
-		if (OLD_AMOUNT_VARBITS[0] != client.getVar(AMOUNT_VARBITS[0]))
-		{
-			if (OLD_AMOUNT_VARBITS[0] > client.getVar(AMOUNT_VARBITS[0]))
-			{
-				amountused1 += OLD_AMOUNT_VARBITS[0] - client.getVar(AMOUNT_VARBITS[0]);
-			}
-			OLD_AMOUNT_VARBITS[0] =  client.getVar(AMOUNT_VARBITS[0]);
-		}
-
-		if (OLD_AMOUNT_VARBITS[1] != client.getVar(AMOUNT_VARBITS[1]))
-		{
-			if (OLD_AMOUNT_VARBITS[1] > client.getVar(AMOUNT_VARBITS[1]))
-			{
-				amountused2 += OLD_AMOUNT_VARBITS[1] - client.getVar(AMOUNT_VARBITS[1]);
-			}
-			OLD_AMOUNT_VARBITS[1] =  client.getVar(AMOUNT_VARBITS[1]);
-		}
-
-		if (OLD_AMOUNT_VARBITS[2] != client.getVar(AMOUNT_VARBITS[2]))
-		{
-			if (OLD_AMOUNT_VARBITS[2] > client.getVar(AMOUNT_VARBITS[2]))
-			{
-				amountused3 += OLD_AMOUNT_VARBITS[2] - client.getVar(AMOUNT_VARBITS[2]);
-			}
-			OLD_AMOUNT_VARBITS[2] = client.getVar(AMOUNT_VARBITS[2]);
-		}
-
-
-		if (OLD_RUNE_VARBITS[0] != client.getVar(RUNE_VARBITS[0]))
-		{
-			rune1 = client.getVar(RUNE_VARBITS[0]);
-			OLD_RUNE_VARBITS[0] = client.getVar(RUNE_VARBITS[0]);
-		}
-		if (OLD_RUNE_VARBITS[1] != client.getVar(RUNE_VARBITS[1]))
-		{
-			rune2 = client.getVar(RUNE_VARBITS[1]);
-			OLD_RUNE_VARBITS[1] = client.getVar(RUNE_VARBITS[1]);
-		}
-		if (OLD_RUNE_VARBITS[2] != client.getVar(RUNE_VARBITS[2]))
-		{
-			rune3 = client.getVar(RUNE_VARBITS[2]);
-			OLD_RUNE_VARBITS[2] = client.getVar(RUNE_VARBITS[2]);
-
-		}
-
+		updateRunePouch();
 
 		if (attackStyleVarbit == -1 ||
-			attackStyleVarbit != client.getVar(VarPlayer.ATTACK_STYLE))
+				attackStyleVarbit != client.getVar(VarPlayer.ATTACK_STYLE))
 		{
 			attackStyleVarbit = client.getVar(VarPlayer.ATTACK_STYLE);
 			if (attackStyleVarbit == 0 ||
-				attackStyleVarbit == 3)
+					attackStyleVarbit == 3)
 			{
 				ticksInAnimation = BLOWPIPE_TICKS_NORMAL_PVM;
 				if (client.getLocalPlayer() != null &&
-					client.getLocalPlayer().getInteracting() instanceof Player)
+						client.getLocalPlayer().getInteracting() instanceof Player)
 				{
 					ticksInAnimation = BLOWPIPE_TICKS_NORMAL_PVP;
 				}
@@ -437,7 +404,7 @@ public class SuppliesTrackerPlugin extends Plugin
 			{
 				ticksInAnimation = BLOWPIPE_TICKS_RAPID_PVM;
 				if (client.getLocalPlayer() != null &&
-					client.getLocalPlayer().getInteracting() instanceof Player)
+						client.getLocalPlayer().getInteracting() instanceof Player)
 				{
 					ticksInAnimation = BLOWPIPE_TICKS_RAPID_PVP;
 				}
@@ -501,98 +468,100 @@ public class SuppliesTrackerPlugin extends Plugin
 	{
 		if (animationChanged.getActor() == client.getLocalPlayer())
 		{
-			if (animationChanged.getActor().getAnimation() == HIGH_LEVEL_MAGIC_ATTACK)
+			int playerAniId = animationChanged.getActor().getAnimation();
+
+			switch (playerAniId)
 			{
-				//Trident of the seas
-				for (int tridentOfTheSeas : TRIDENT_OF_THE_SEAS_IDS)
-				{
-					if (mainHand == tridentOfTheSeas)
+				case HIGH_LEVEL_MAGIC_ATTACK:
+					//Trident of the seas
+					for (int tridentOfTheSeas : TRIDENT_OF_THE_SEAS_IDS)
+					{
+						if (mainHand == tridentOfTheSeas)
+						{
+							if (config.chargesBox())
+							{
+								buildChargesEntries(TRIDENT_OF_THE_SEAS);
+							}
+							else
+							{
+								buildEntries(CHAOS_RUNE);
+								buildEntries(DEATH_RUNE);
+								buildEntries(FIRE_RUNE, 5);
+								buildEntries(COINS_995, 10);
+							}
+							break;
+						}
+					}
+					//Trident of the swamp
+					for (int tridentOfTheSwamp : TRIDENT_OF_THE_SWAMP_IDS)
+					{
+						if (mainHand == tridentOfTheSwamp)
+						{
+							if (config.chargesBox())
+							{
+								buildChargesEntries(TRIDENT_OF_THE_SWAMP);
+							}
+							else
+							{
+								buildEntries(CHAOS_RUNE);
+								buildEntries(DEATH_RUNE);
+								buildEntries(FIRE_RUNE, 5);
+								buildEntries(ZULRAHS_SCALES);
+							}
+							break;
+						}
+					}
+					//Sang Staff
+					if (mainHand == SANGUINESTI_STAFF)
 					{
 						if (config.chargesBox())
 						{
-							buildChargesEntries(TRIDENT_OF_THE_SEAS);
+							buildChargesEntries(SANGUINESTI_STAFF);
 						}
 						else
 						{
-							buildEntries(CHAOS_RUNE);
-							buildEntries(DEATH_RUNE);
-							buildEntries(FIRE_RUNE, 5);
-							buildEntries(COINS_995, 10);
+							buildEntries(BLOOD_RUNE, 3);
 						}
-						break;
 					}
-				}
-				//Trident of the swamp
-				for (int tridentOfTheSwamp : TRIDENT_OF_THE_SWAMP_IDS)
-				{
-					if (mainHand == tridentOfTheSwamp)
+					break;
+				case LOW_LEVEL_MAGIC_ATTACK:
+				case BARRAGE_ANIMATION:
+				case BLITZ_ANIMATION:
+				case LOW_LEVEL_STANDARD_SPELLS:
+				case WAVE_SPELL_ANIMATION:
+				case SURGE_SPELL_ANIMATION:
+				case HIGH_ALCH_ANIMATION:
+				case LUNAR_HUMIDIFY:
+					old = client.getItemContainer(InventoryID.INVENTORY);
+
+					if (old != null && old.getItems() != null &&
+							actionStack.stream().noneMatch(a ->
+									a.getType() == CAST))
 					{
-						if (config.chargesBox())
-						{
-							buildChargesEntries(TRIDENT_OF_THE_SWAMP);
-						}
-						else
-						{
-							buildEntries(CHAOS_RUNE);
-							buildEntries(DEATH_RUNE);
-							buildEntries(FIRE_RUNE, 5);
-							buildEntries(ZULRAHS_SCALES);
-						}
-						break;
+						MenuAction newAction = new MenuAction(CAST, old.getItems());
+						actionStack.push(newAction);
 					}
-				}
-				//Sang Staff
-				if (mainHand == SANGUINESTI_STAFF)
-				{
+					if (!magicXpChanged)
+					{
+						skipTick = true;
+						noXpCast = true;
+					}
+					break;
+				case SCYTHE_OF_VITUR_ANIMATION:
 					if (config.chargesBox())
 					{
-						buildChargesEntries(SANGUINESTI_STAFF);
+						buildChargesEntries(SCYTHE_OF_VITUR);
 					}
 					else
 					{
 						buildEntries(BLOOD_RUNE, 3);
+						buildEntries(COINS_995, itemManager.getItemPrice(VIAL_OF_BLOOD_22446) / 100);
 					}
-				}
-			}
-			else if (animationChanged.getActor().getAnimation() == LOW_LEVEL_MAGIC_ATTACK)
-			{
-				old = client.getItemContainer(InventoryID.INVENTORY);
-
-				if (old != null && old.getItems() != null && actionStack.stream().noneMatch(a ->
-					a.getType() == ActionType.CAST))
-				{
-					MenuAction newAction = new MenuAction(ActionType.CAST, old.getItems());
-					actionStack.push(newAction);
-				}
-			}
-			else if (animationChanged.getActor().getAnimation() == BARRAGE_ANIMATION ||
-				animationChanged.getActor().getAnimation() == BLITZ_ANIMATION)
-			{
-				old = client.getItemContainer(InventoryID.INVENTORY);
-
-				if (old != null && old.getItems() != null && actionStack.stream().noneMatch(a ->
-					a.getType() == ActionType.CAST))
-				{
-					MenuAction newAction = new MenuAction(ActionType.CAST, old.getItems());
-					actionStack.push(newAction);
-				}
-			}
-			else if (animationChanged.getActor().getAnimation() == SCYTHE_OF_VITUR_ANIMATION)
-			{
-				if (config.chargesBox())
-				{
-					buildChargesEntries(SCYTHE_OF_VITUR);
-				}
-				else
-				{
-					buildEntries(BLOOD_RUNE, 3);
-					buildEntries(COINS_995, itemManager.getItemPrice(VIAL_OF_BLOOD_22446) / 100);
-				}
-			}
-			else if (animationChanged.getActor().getAnimation() == ONEHAND_SLASH_SWORD ||
-					animationChanged.getActor().getAnimation() == ONEHAND_STAB_SWORD)
-			{
+					break;
+				case ONEHAND_SLASH_SWORD:
+				case ONEHAND_STAB_SWORD:
 					buildChargesEntries(BLADE_OF_SAELDOR);
+					break;
 			}
 		}
 	}
@@ -602,18 +571,22 @@ public class SuppliesTrackerPlugin extends Plugin
 	{
 		ItemContainer itemContainer = itemContainerChanged.getItemContainer();
 
-		for (int i = 0; i < client.getItemContainer(InventoryID.INVENTORY).getItems().length; i++)
+		if (itemContainer != null && itemContainer == client.getItemContainer(InventoryID.INVENTORY))
 		{
-			int tItemId = client.getItemContainer(InventoryID.INVENTORY).getItems()[i].getId();
+			for (int i = 0; i < client.getItemContainer(InventoryID.INVENTORY).getItems().length; i++)
+			{
 
-			if ( tItemId == RUNE_POUCH || tItemId == RUNE_POUCH_23650 || tItemId == RUNE_POUCH_L)
-			{
-				runepouchInInv = true;
-				break;
-			}
-			else
-			{
-				runepouchInInv = false;
+				int tItemId = client.getItemContainer(InventoryID.INVENTORY).getItems()[i].getId();
+
+				if (tItemId == RUNE_POUCH || tItemId == RUNE_POUCH_23650 || tItemId == RUNE_POUCH_L)
+				{
+					runepouchInInv = true;
+					break;
+				}
+				else
+				{
+					runepouchInInv = false;
+				}
 			}
 		}
 
@@ -821,9 +794,9 @@ public class SuppliesTrackerPlugin extends Plugin
 			old = client.getItemContainer(InventoryID.INVENTORY);
 
 			if (old != null && old.getItems() != null && actionStack.stream().noneMatch(a ->
-					a.getType() == ActionType.CAST))
+					a.getType() == CAST))
 			{
-				MenuAction newAction = new MenuAction(ActionType.CAST, old.getItems());
+				MenuAction newAction = new MenuAction(CAST, old.getItems());
 				actionStack.push(newAction);
 			}
 		}
@@ -886,7 +859,7 @@ public class SuppliesTrackerPlugin extends Plugin
 	}
 
 	@Subscribe
-	void onChatMessage(ChatMessage event)
+	private void onChatMessage(ChatMessage event)
 	{
 		String message = event.getMessage();
 		if (event.getType() == ChatMessageType.GAMEMESSAGE || event.getType() == ChatMessageType.SPAM)
@@ -956,7 +929,7 @@ public class SuppliesTrackerPlugin extends Plugin
 	 * @param event   checks if cannon is placed by player and location of cannon
 	 */
 	@Subscribe
-	public void onGameObjectSpawned(GameObjectSpawned event)
+	private void onGameObjectSpawned(GameObjectSpawned event)
 	{
 		GameObject gameObject = event.getGameObject();
 
@@ -973,7 +946,7 @@ public class SuppliesTrackerPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onProjectileMoved(ProjectileMoved event)
+	private void onProjectileMoved(ProjectileMoved event)
 	{
 		Projectile projectile = event.getProjectile();
 
@@ -1287,7 +1260,7 @@ public class SuppliesTrackerPlugin extends Plugin
 
 	private void checkUsedRunePouch()
 	{
-		if (magicXpChanged)
+		if (magicXpChanged || noXpCast)
 		{
 			if (amountused1 != 0)
 			{
@@ -1301,6 +1274,55 @@ public class SuppliesTrackerPlugin extends Plugin
 			{
 				buildEntries(Runes.getRune(rune3).getItemId(), amountused3);
 			}
+		}
+	}
+
+	/**
+	 * Checks local variable data against client data then returns differences then updates local to client
+	 */
+	private void updateRunePouch()
+	{
+		//check amounts
+		if (OLD_AMOUNT_VARBITS[0] != client.getVar(AMOUNT_VARBITS[0]))
+		{
+			if (OLD_AMOUNT_VARBITS[0] > client.getVar(AMOUNT_VARBITS[0]))
+			{
+				amountused1 += OLD_AMOUNT_VARBITS[0] - client.getVar(AMOUNT_VARBITS[0]);
+			}
+			OLD_AMOUNT_VARBITS[0] = client.getVar(AMOUNT_VARBITS[0]);
+		}
+		if (OLD_AMOUNT_VARBITS[1] != client.getVar(AMOUNT_VARBITS[1]))
+		{
+			if (OLD_AMOUNT_VARBITS[1] > client.getVar(AMOUNT_VARBITS[1]))
+			{
+				amountused2 += OLD_AMOUNT_VARBITS[1] - client.getVar(AMOUNT_VARBITS[1]);
+			}
+			OLD_AMOUNT_VARBITS[1] = client.getVar(AMOUNT_VARBITS[1]);
+		}
+		if (OLD_AMOUNT_VARBITS[2] != client.getVar(AMOUNT_VARBITS[2]))
+		{
+			if (OLD_AMOUNT_VARBITS[2] > client.getVar(AMOUNT_VARBITS[2]))
+			{
+				amountused3 += OLD_AMOUNT_VARBITS[2] - client.getVar(AMOUNT_VARBITS[2]);
+			}
+			OLD_AMOUNT_VARBITS[2] = client.getVar(AMOUNT_VARBITS[2]);
+		}
+
+		//check runes
+		if (OLD_RUNE_VARBITS[0] != client.getVar(RUNE_VARBITS[0]))
+		{
+			rune1 = client.getVar(RUNE_VARBITS[0]);
+			OLD_RUNE_VARBITS[0] = client.getVar(RUNE_VARBITS[0]);
+		}
+		if (OLD_RUNE_VARBITS[1] != client.getVar(RUNE_VARBITS[1]))
+		{
+			rune2 = client.getVar(RUNE_VARBITS[1]);
+			OLD_RUNE_VARBITS[1] = client.getVar(RUNE_VARBITS[1]);
+		}
+		if (OLD_RUNE_VARBITS[2] != client.getVar(RUNE_VARBITS[2]))
+		{
+			rune3 = client.getVar(RUNE_VARBITS[2]);
+			OLD_RUNE_VARBITS[2] = client.getVar(RUNE_VARBITS[2]);
 		}
 	}
 }
