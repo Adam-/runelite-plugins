@@ -44,7 +44,9 @@ public enum ItemType
 	TELEPORT("Teleports"),
 	COINS("Coins"),
 	JEWELLERY("Jewellery"),
-	CHARGES("Charges");
+	CHARGES("Charges"),
+	FARMING("Farming");
+
 
 	@Getter(AccessLevel.PUBLIC)
 	private String label;
@@ -84,9 +86,14 @@ public enum ItemType
 			return ItemType.COINS;
 		}
 		if (item.getName().toLowerCase().contains("ring of") || item.getName().toLowerCase().contains("amulet") ||
-			item.getName().toLowerCase().contains("bracelet") || item.getName().toLowerCase().contains("necklace"))
+				item.getName().toLowerCase().contains("bracelet") || item.getName().toLowerCase().contains("necklace"))
 		{
 			return ItemType.JEWELLERY;
+		}
+		if (item.getName().toLowerCase().contains(" sapling") || item.getName().toLowerCase().contains(" seed") ||
+				item.getName().toLowerCase().contains("compost") || item.getName().toLowerCase().contains("plant cure"))
+		{
+			return ItemType.FARMING;
 		}
 		if (item.getId() == SCYTHE_OF_VITUR || item.getId() == SANGUINESTI_STAFF ||
 			item.getId() == TRIDENT_OF_THE_SEAS || item.getId() == TRIDENT_OF_THE_SWAMP ||

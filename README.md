@@ -6,6 +6,8 @@
   
 Tracks supplies (food, potions, teleports, ect.), Ammo (cannonballs included), runes, and weapons charges.
 
+Farming supplies now tracked in update 1.7
+
 To turn on weapon charges box (tracker will no longer add each individual item used for a charge), look in configs.
 
 Before using blowpipe, set which darts are being used in configs.
