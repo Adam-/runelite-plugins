@@ -40,9 +40,11 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.swing.SwingUtilities;
-
 import static com.suppliestracker.ActionType.CAST;
+import com.suppliestracker.Skills.Farming;
 import com.suppliestracker.ui.SuppliesTrackerPanel;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.AnimationID;
 import net.runelite.api.ChatMessageType;
@@ -162,9 +164,13 @@ public class SuppliesTrackerPlugin extends Plugin
 	private int mainHand = 0;
 	private SuppliesTrackerPanel panel;
 	private NavigationButton navButton;
+	private Farming farming;
 	private int attackStyleVarbit = -1;
 	private int ticks = 0;
 	private int ticksInAnimation;
+
+	@Getter(AccessLevel.PUBLIC)
+	private String hardwoodTree = "";
 
 
 	//Rune pouch stuff
@@ -257,6 +263,7 @@ public class SuppliesTrackerPlugin extends Plugin
 	protected void startUp()
 	{
 		panel = new SuppliesTrackerPanel(itemManager, this);
+		farming = new Farming(this);
 		final BufferedImage header = ImageUtil.getResourceStreamFromClass(getClass(), "panel_icon.png");
 		panel.loadHeaderIcon(header);
 		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "panel_icon.png");
@@ -560,7 +567,7 @@ public class SuppliesTrackerPlugin extends Plugin
 					break;
 				case ONEHAND_SLASH_SWORD:
 				case ONEHAND_STAB_SWORD:
-					buildChargesEntries(BLADE_OF_SAELDOR);
+					if (mainHand == BLADE_OF_SAELDOR) buildChargesEntries(BLADE_OF_SAELDOR);
 					break;
 			}
 		}
@@ -801,6 +808,18 @@ public class SuppliesTrackerPlugin extends Plugin
 			}
 		}
 
+		if (event.getMenuOption().toLowerCase().equals("use"))
+		{
+			if (event.getMenuTarget().toLowerCase().contains("mahogany sapling"))
+			{
+				hardwoodTree = "mahogany";
+			}
+			else if (event.getMenuTarget().toLowerCase().contains("teak sapling"))
+			{
+				hardwoodTree = "teak";
+			}
+		}
+
 		//Adds tracking to Master Scroll Book
 		if (event.getMenuOption().toLowerCase().equals("activate"))
 		{
@@ -859,9 +878,11 @@ public class SuppliesTrackerPlugin extends Plugin
 	}
 
 	@Subscribe
-	private void onChatMessage(ChatMessage event)
-	{
+	private void onChatMessage(ChatMessage event) {
 		String message = event.getMessage();
+
+		farming.OnChat(message.toLowerCase());
+		
 		if (event.getType() == ChatMessageType.GAMEMESSAGE || event.getType() == ChatMessageType.SPAM)
 		{
 			if (message.toLowerCase().contains("your amulet has") ||
@@ -998,7 +1019,7 @@ public class SuppliesTrackerPlugin extends Plugin
 	 *
 	 * @param itemId the id of the item
 	 */
-	private void buildEntries(int itemId)
+	public void buildEntries(int itemId)
 	{
 		buildEntries(itemId, 1);
 	}
@@ -1262,15 +1283,15 @@ public class SuppliesTrackerPlugin extends Plugin
 	{
 		if (magicXpChanged || noXpCast)
 		{
-			if (amountused1 != 0)
+			if (amountused1 != 0 && amountused1 < 20)
 			{
 				buildEntries(Runes.getRune(rune1).getItemId(), amountused1);
 			}
-			if (amountused2 != 0)
+			if (amountused2 != 0 && amountused2 < 20)
 			{
 				buildEntries(Runes.getRune(rune2).getItemId(), amountused2);
 			}
-			if (amountused3 != 0)
+			if (amountused3 != 0 && amountused3 < 20)
 			{
 				buildEntries(Runes.getRune(rune3).getItemId(), amountused3);
 			}
