@@ -173,6 +173,7 @@ public abstract class SuppliesBox extends JPanel
 		trackedItems.removeIf(r -> r.getId() == item.getId());
 		if (item.getName() == null || item.getId() == 0 || item.getName().toLowerCase().equals("null"))
 		{
+			plugin.clearItem(item.getId());
 			return;
 		}
 		trackedItems.add(item);
@@ -188,6 +189,39 @@ public abstract class SuppliesBox extends JPanel
 	{
 		trackedItems.removeIf(r -> r.getId() == item.getId());
 		plugin.clearItem(item.getId());
+		setVisible(trackedItems.size() > 0);
+	}
+	/**
+	 * Removes one item from trackedItems
+	 *
+	 * @param itemId item to be checked
+	 */
+	public void removeOne(int itemId)
+	{
+		SuppliesTrackerItem item = new SuppliesTrackerItem(0, "null", 1, 0);
+		for (SuppliesTrackerItem tItem: trackedItems)
+		{
+			if (tItem.getId() == itemId)
+			{
+				item = trackedItems.get(trackedItems.lastIndexOf(tItem));
+				break;
+			}
+		}
+		if (item.getId() == 0)
+		{
+			return;
+		}
+		trackedItems.removeIf(r -> r.getId() == itemId);
+		if (item.getQuantity() == 1)
+		{
+			plugin.clearItem(item.getId());
+		}
+		else
+		{
+			plugin.removeOneItem(item.getId());
+			trackedItems.add(item);
+		}
+		rebuild();
 		setVisible(trackedItems.size() > 0);
 	}
 
@@ -335,10 +369,11 @@ public abstract class SuppliesBox extends JPanel
 
 			if (name.toLowerCase().contains("glory"))
 			{
+				long price = ((itemManager.getItemPrice(AMULET_OF_GLORY6) - itemManager.getItemPrice(AMULET_OF_GLORY)) / 6);
 				tooltip.append("Amulet of Glory(6) x ")
 					.append(qty)
 					.append("/6 (")
-					.append(QuantityFormatter.quantityToStackSize((itemManager.getItemPrice(AMULET_OF_GLORY6) * qty) / 6))
+					.append(QuantityFormatter.quantityToStackSize(price))
 					.append("gp)");
 			}
 			else if (name.toLowerCase().contains("dueling"))
@@ -351,18 +386,20 @@ public abstract class SuppliesBox extends JPanel
 			}
 			else if (name.toLowerCase().contains("wealth"))
 			{
+				long price = ((itemManager.getItemPrice(RING_OF_WEALTH_5) - itemManager.getItemPrice(RING_OF_WEALTH)) / 5);
 				tooltip.append("Ring of Wealth(5) x ")
 					.append(qty)
 					.append("/5 (")
-					.append(QuantityFormatter.quantityToStackSize((itemManager.getItemPrice(RING_OF_WEALTH_5) * qty) / 5))
+					.append(QuantityFormatter.quantityToStackSize(price))
 					.append("gp)");
 			}
 			else if (name.toLowerCase().contains("combat"))
 			{
+				long price = ((itemManager.getItemPrice(COMBAT_BRACELET6) - itemManager.getItemPrice(COMBAT_BRACELET)) / 6);
 				tooltip.append("Combat Bracelet(6) x ")
 					.append(qty)
 					.append("/6 (")
-					.append(QuantityFormatter.quantityToStackSize((itemManager.getItemPrice(COMBAT_BRACELET6) * qty) / 6))
+					.append(QuantityFormatter.quantityToStackSize(price))
 					.append("gp)");
 			}
 			else if (name.toLowerCase().contains("games"))
@@ -375,10 +412,11 @@ public abstract class SuppliesBox extends JPanel
 			}
 			else if (name.toLowerCase().contains("skills"))
 			{
+				long price = ((itemManager.getItemPrice(SKILLS_NECKLACE6) - itemManager.getItemPrice(SKILLS_NECKLACE)) / 6);
 				tooltip.append("Skills Necklace(6) x ")
 					.append(qty)
 					.append("/6 (")
-					.append(QuantityFormatter.quantityToStackSize((itemManager.getItemPrice(SKILLS_NECKLACE6) * qty) / 6))
+					.append(QuantityFormatter.quantityToStackSize(price))
 					.append("gp)");
 			}
 			else if (name.toLowerCase().contains("passage"))

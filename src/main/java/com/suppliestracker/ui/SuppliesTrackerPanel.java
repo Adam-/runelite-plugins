@@ -43,6 +43,8 @@ import javax.swing.border.EmptyBorder;
 import com.suppliestracker.ItemType;
 import com.suppliestracker.SuppliesTrackerItem;
 import com.suppliestracker.SuppliesTrackerPlugin;
+import lombok.AccessLevel;
+import lombok.Getter;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -62,6 +64,7 @@ public class SuppliesTrackerPanel extends PluginPanel
 	public final JPanel logsContainer = new JPanel();
 
 	//Boxes for holding supplies
+	@Getter(AccessLevel.PUBLIC)
 	private final List<SuppliesBox> boxList = new ArrayList<>();
 
 	private final PluginErrorPanel errorPanel = new PluginErrorPanel();
@@ -76,7 +79,6 @@ public class SuppliesTrackerPanel extends PluginPanel
 	public JButton info;
 	private int overallSuppliesUsed;
 	private int overallCost;
-	private boolean updateSeen = false;
 
 	public SuppliesTrackerPanel(final ItemManager itemManager, SuppliesTrackerPlugin plugin)
 	{

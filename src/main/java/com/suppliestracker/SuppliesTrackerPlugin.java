@@ -40,13 +40,13 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.swing.SwingUtilities;
-import static com.suppliestracker.ActionType.CAST;
+import static com.suppliestracker.ActionType.*;
 import com.suppliestracker.Skills.Farming;
+import com.suppliestracker.Skills.Prayer;
 import com.suppliestracker.ui.SuppliesTrackerPanel;
-import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.AnimationID;
+import static net.runelite.api.AnimationID.*;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.EquipmentInventorySlot;
@@ -145,6 +145,7 @@ public class SuppliesTrackerPlugin extends Plugin
 	public static final int SURGE_SPELL_ANIMATION = 7855;
 	public static final int HIGH_ALCH_ANIMATION = 713;
 	public static final int LUNAR_HUMIDIFY = 6294;
+	public static final int PRAY_AT_ALTAR = 645;
 	private final Deque<MenuAction> actionStack = new ArrayDeque<>();
 
 	//Item arrays
@@ -164,7 +165,6 @@ public class SuppliesTrackerPlugin extends Plugin
 	private int mainHand = 0;
 	private SuppliesTrackerPanel panel;
 	private NavigationButton navButton;
-	private Farming farming;
 	private int attackStyleVarbit = -1;
 	private int ticks = 0;
 	private int ticksInAnimation;
@@ -203,7 +203,12 @@ public class SuppliesTrackerPlugin extends Plugin
 	public boolean skipTick = false;
 	private boolean noXpCast = false;
 	int magicXp = 0;
+	private boolean prayerAltarAnimationCheck = false;
 
+	//skills
+
+	private Farming farming;
+	private Prayer prayer;
 
 	//Cannon
 	private WorldPoint cannonPosition;
@@ -222,6 +227,10 @@ public class SuppliesTrackerPlugin extends Plugin
 
 	@Inject
 	private Client client;
+	private int prayerXp = 0;
+	private int boneId = 0;
+	private boolean skipBone = false;
+	private int longTickWait = 0;
 
 	/**
 	 * Checks if item name is potion
@@ -260,7 +269,8 @@ public class SuppliesTrackerPlugin extends Plugin
 	protected void startUp()
 	{
 		panel = new SuppliesTrackerPanel(itemManager, this);
-		farming = new Farming(this);
+		farming = new Farming(this, itemManager);
+		prayer = new Prayer(this, itemManager);
 		final BufferedImage header = ImageUtil.getResourceStreamFromClass(getClass(), "panel_icon.png");
 		panel.loadHeaderIcon(header);
 		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "panel_icon.png");
@@ -302,6 +312,20 @@ public class SuppliesTrackerPlugin extends Plugin
 				magicXp = event.getXp();
 			}
 		}
+		if (event.getSkill().name().toLowerCase().equals("prayer"))
+		{
+			if (prayerXp != event.getXp())
+			{
+				if (prayerAltarAnimationCheck)
+				{
+					if (!skipBone)
+					{
+						prayer.build();
+					}
+				}
+				prayerXp = event.getXp();
+			}
+		}
 	}
 
 	@Subscribe
@@ -328,6 +352,19 @@ public class SuppliesTrackerPlugin extends Plugin
 			ticks = 0;
 		}
 
+
+
+		skipBone = false;
+
+		if (longTickWait > 0)
+		{
+			longTickWait = longTickWait - 1;
+		}
+		else if (prayerAltarAnimationCheck)
+		{
+			prayerAltarAnimationCheck = false;
+		}
+
 		if (skipTick)
 		{
 			skipTick = false;
@@ -348,6 +385,7 @@ public class SuppliesTrackerPlugin extends Plugin
 		amountused1 = 0;
 		amountused2 = 0;
 		amountused3 = 0;
+
 	}
 
 	/**
@@ -566,6 +604,10 @@ public class SuppliesTrackerPlugin extends Plugin
 				case ONEHAND_STAB_SWORD:
 					if (mainHand == BLADE_OF_SAELDOR) buildChargesEntries(BLADE_OF_SAELDOR);
 					break;
+				case USING_GILDED_ALTAR:
+				case PRAY_AT_ALTAR:
+					prayerAltarAnimationCheck = true;
+					longTickWait = 5;
 			}
 		}
 	}
@@ -579,7 +621,6 @@ public class SuppliesTrackerPlugin extends Plugin
 		{
 			for (int i = 0; i < client.getItemContainer(InventoryID.INVENTORY).getItems().length; i++)
 			{
-
 				int tItemId = client.getItemContainer(InventoryID.INVENTORY).getItems()[i].getId();
 
 				if (tItemId == RUNE_POUCH || tItemId == RUNE_POUCH_23650 || tItemId == RUNE_POUCH_L)
@@ -805,9 +846,20 @@ public class SuppliesTrackerPlugin extends Plugin
 			}
 		}
 
+		//System.out.println(event.toString());
+
 		if (event.getMenuTarget().toLowerCase().equals("use"))
 		{
 			farming.setPlantId(event.getId());
+		}
+
+		if (event.getMenuAction().name().equals("ITEM_USE") || event.getMenuOption().toLowerCase().contains("bury"))
+		{
+			if (itemManager.getItemComposition(event.getId()).getName().toLowerCase().contains("bones"))
+			{
+				prayer.setBonesId(event.getId());
+				boneId = event.getId();
+			}
 		}
 
 		//Adds tracking to Master Scroll Book
@@ -871,11 +923,26 @@ public class SuppliesTrackerPlugin extends Plugin
 	private void onChatMessage(ChatMessage event) {
 		String message = event.getMessage();
 
-		farming.OnChat(message.toLowerCase(), itemManager);
-
 		if (event.getType() == ChatMessageType.GAMEMESSAGE || event.getType() == ChatMessageType.SPAM)
 		{
-			if (message.toLowerCase().contains("your amulet has") ||
+			if (message.toLowerCase().contains("you plant ") || message.toLowerCase().contains("you treat "))
+			{
+				if (message.toLowerCase().contains("you treat"))
+				{
+					farming.setEndlessBucket(message);
+				}
+				farming.OnChat(message.toLowerCase());
+			}
+
+			else if (message.toLowerCase().contains("you bury the bones"))
+			{
+				prayer.OnChat(message);
+			}
+			else if (message.toLowerCase().contains("dark lord"))
+			{
+				skipBone = true;
+			}
+			else if (message.toLowerCase().contains("your amulet has") ||
 				message.toLowerCase().contains("your amulet's last charge"))
 			{
 				buildChargesEntries(AMULET_OF_GLORY6);
@@ -1181,6 +1248,26 @@ public class SuppliesTrackerPlugin extends Plugin
 	public void clearItem(int itemId)
 	{
 		suppliesEntry.remove(itemId);
+	}
+
+	/**
+	 * Removes one item from an individual item stack
+	 *
+	 * @param itemId the id of the item stack
+	 */
+	public void removeOneItem(int itemId)
+	{
+		if (suppliesEntry.containsKey(itemId))
+		{
+			if (suppliesEntry.get(itemId).getQuantity() == 1)
+			{
+				clearItem(itemId);
+			}
+			else
+			{
+				suppliesEntry.get(itemId).setQuantity(suppliesEntry.get(itemId).getQuantity() - 1);
+			}
+		}
 	}
 
 	/**
