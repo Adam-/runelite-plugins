@@ -1,13 +1,13 @@
-package com.example;
+package info.sigterm.plugins.esspouch;
 
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
-public class ExamplePluginTest
+public class Runner
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(ExamplePlugin.class);
+		ExternalPluginManager.loadBuiltin(EssPouchPlugin.class);
 		RuneLite.main(args);
 	}
 }

@@ -10,7 +10,7 @@ repositories {
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.5.44-SNAPSHOT'
+def runeLiteVersion = '1.6.0.1'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -23,10 +23,12 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion, {
 		exclude group: 'ch.qos.logback', module: 'logback-classic'
 	}
+	testImplementation 'org.mockito:mockito-all:1.10.19'
+	testImplementation 'com.google.inject.extensions:guice-testlib:4.1.0'
 }
 
-group = 'com.example'
-version = '1.0-SNAPSHOT'
+group = 'info.sigterm.plugins.esspouch'
+version = '1.0'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {
