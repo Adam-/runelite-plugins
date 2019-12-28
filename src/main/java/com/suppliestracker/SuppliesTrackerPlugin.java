@@ -856,7 +856,14 @@ public class SuppliesTrackerPlugin extends Plugin
 
 		if (event.getMenuTarget().toLowerCase().equals("use"))
 		{
-			farming.setPlantId(event.getId());
+			if (itemManager.getItemComposition(event.getId()).getName().toLowerCase().contains("compost"))
+			{
+				farming.setBucketId(event.getId());
+			}
+			else
+			{
+				farming.setPlantId(event.getId());
+			}
 		}
 
 		if (event.getMenuAction().name().equals("ITEM_USE") || event.getMenuOption().toLowerCase().contains("bury"))
@@ -936,13 +943,15 @@ public class SuppliesTrackerPlugin extends Plugin
 
 		if (event.getType() == ChatMessageType.GAMEMESSAGE || event.getType() == ChatMessageType.SPAM)
 		{
-			if (message.toLowerCase().contains("you plant ") || message.toLowerCase().contains("you treat "))
+			if (message.toLowerCase().contains("you plant "))
 			{
-				if (message.toLowerCase().contains("you treat"))
-				{
-					farming.setEndlessBucket(message);
-				}
-				farming.OnChat(message.toLowerCase());
+				farming.OnChatPlant(message.toLowerCase());
+			}
+
+			else if (message.toLowerCase().contains("you treat "))
+			{
+				farming.setEndlessBucket(message);
+				farming.OnChatTreat(message.toLowerCase());
 			}
 
 			else if (message.toLowerCase().contains("you bury the bones"))
