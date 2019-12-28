@@ -2,7 +2,6 @@ package com.suppliestracker.Skills;
 
 import com.suppliestracker.SuppliesTrackerPlugin;
 import static net.runelite.api.ItemID.*;
-import net.runelite.api.events.ChatMessage;
 import net.runelite.client.game.ItemManager;
 
 import javax.inject.Singleton;
