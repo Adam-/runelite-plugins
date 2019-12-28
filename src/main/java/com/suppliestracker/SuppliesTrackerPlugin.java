@@ -140,12 +140,13 @@ public class SuppliesTrackerPlugin extends Plugin
 	private static final int ONEHAND_SLASH_SWORD = 390;
 	private static final int ONEHAND_STAB_SWORD = 386;
 	private static final int GAUNTLET_PADDLEFISH = 23874;
-	public static final int LOW_LEVEL_STANDARD_SPELLS = 711;
-	public static final int WAVE_SPELL_ANIMATION = 727;
-	public static final int SURGE_SPELL_ANIMATION = 7855;
-	public static final int HIGH_ALCH_ANIMATION = 713;
-	public static final int LUNAR_HUMIDIFY = 6294;
-	public static final int PRAY_AT_ALTAR = 645;
+	private static final int LOW_LEVEL_STANDARD_SPELLS = 711;
+	private static final int WAVE_SPELL_ANIMATION = 727;
+	private static final int SURGE_SPELL_ANIMATION = 7855;
+	private static final int HIGH_ALCH_ANIMATION = 713;
+	private static final int LUNAR_HUMIDIFY = 6294;
+	private static final int PRAY_AT_ALTAR = 645;
+	private static final int ENSOULED_HEADS_ANIMATION = 7198;
 	private final Deque<MenuAction> actionStack = new ArrayDeque<>();
 
 	//Item arrays
@@ -171,7 +172,7 @@ public class SuppliesTrackerPlugin extends Plugin
 
 
 	//Rune pouch stuff
-	public boolean runepouchInInv = false;
+	private boolean runepouchInInv = false;
 	private static final Varbits[] AMOUNT_VARBITS =
 			{
 					Varbits.RUNE_POUCH_AMOUNT1, Varbits.RUNE_POUCH_AMOUNT2, Varbits.RUNE_POUCH_AMOUNT3
@@ -191,18 +192,18 @@ public class SuppliesTrackerPlugin extends Plugin
 			};
 
 
-	public static int rune1 = 0;
-	public static int rune2 = 0;
-	public static int rune3 = 0;
+	private static int rune1 = 0;
+	private static int rune2 = 0;
+	private static int rune3 = 0;
 
-	public int amountused1 = 0;
-	public int amountused2 = 0;
-	public int amountused3 = 0;
+	private int amountused1 = 0;
+	private int amountused2 = 0;
+	private int amountused3 = 0;
 
-	public boolean magicXpChanged = false;
-	public boolean skipTick = false;
+	private boolean magicXpChanged = false;
+	private boolean skipTick = false;
 	private boolean noXpCast = false;
-	int magicXp = 0;
+	private int magicXp = 0;
 	private boolean prayerAltarAnimationCheck = false;
 
 	//skills
@@ -231,6 +232,7 @@ public class SuppliesTrackerPlugin extends Plugin
 	private int boneId = 0;
 	private boolean skipBone = false;
 	private int longTickWait = 0;
+	private int ensouledHeadId = 0;
 
 	/**
 	 * Checks if item name is potion
@@ -324,6 +326,7 @@ public class SuppliesTrackerPlugin extends Plugin
 					}
 				}
 				prayerXp = event.getXp();
+				ensouledHeadId = 0;
 			}
 		}
 	}
@@ -608,6 +611,11 @@ public class SuppliesTrackerPlugin extends Plugin
 				case PRAY_AT_ALTAR:
 					prayerAltarAnimationCheck = true;
 					longTickWait = 5;
+				case ENSOULED_HEADS_ANIMATION:
+					if (ensouledHeadId != 0)
+					{
+						buildEntries(ensouledHeadId);
+					}
 			}
 		}
 	}
@@ -846,8 +854,6 @@ public class SuppliesTrackerPlugin extends Plugin
 			}
 		}
 
-		//System.out.println(event.toString());
-
 		if (event.getMenuTarget().toLowerCase().equals("use"))
 		{
 			farming.setPlantId(event.getId());
@@ -860,6 +866,11 @@ public class SuppliesTrackerPlugin extends Plugin
 				prayer.setBonesId(event.getId());
 				boneId = event.getId();
 			}
+		}
+
+		if (event.getMenuOption().equals("Reanimate") && event.getMenuAction().name().equals("ITEM_USE_ON_WIDGET"))
+		{
+			ensouledHeadId = event.getId();
 		}
 
 		//Adds tracking to Master Scroll Book

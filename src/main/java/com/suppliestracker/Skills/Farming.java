@@ -46,7 +46,8 @@ public class Farming
 			}
 			else if (name.contains(" compost") || name.contains("plant cure") || name.contains(" sapling"))
 			{
-				if (plantId == BOTTOMLESS_COMPOST_BUCKET)
+				System.out.println(plantId);
+				if (plantId == BOTTOMLESS_COMPOST_BUCKET || plantId == BOTTOMLESS_COMPOST_BUCKET_22997)
 				{
 					plugin.buildEntries(compostId);
 				}
@@ -64,7 +65,6 @@ public class Farming
 
 	public void setEndlessBucket(String message)
 	{
-
 		if (message.toLowerCase().contains("ultracompost"))
 		{
 			compostId = ULTRACOMPOST;

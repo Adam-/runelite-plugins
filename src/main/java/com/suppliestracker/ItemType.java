@@ -66,7 +66,8 @@ public enum ItemType
 		{
 			return ItemType.POTION;
 		}
-		else if (item.getName().toLowerCase().contains("bones") && !item.getName().toLowerCase().contains(" to "))
+		else if ((item.getName().toLowerCase().contains("bones") && !item.getName().toLowerCase().contains(" to ")) ||
+					item.getName().toLowerCase().contains("ensouled"))
 		{
 			return ItemType.PRAYER;
 		}

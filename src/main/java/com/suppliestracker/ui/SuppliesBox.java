@@ -59,7 +59,7 @@ public abstract class SuppliesBox extends JPanel
 	private final JLabel priceLabel = new JLabel();
 	private final JLabel subTitleLabel = new JLabel();
 	private final SuppliesTrackerPanel panel;
-	public ItemManager itemManager;
+	ItemManager itemManager;
 	static final String POTION_PATTERN = "[(]\\d[)]";
 
 	@Getter(AccessLevel.PUBLIC)
