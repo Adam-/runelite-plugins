@@ -335,6 +335,7 @@ public class SuppliesTrackerPlugin extends Plugin
 	private void onGameTick(GameTick tick)
 	{
 		Player player = client.getLocalPlayer();
+		skipProjectileCheckThisTick = false;
 		if (player.getAnimation() == BLOWPIPE_ATTACK)
 		{
 			ticks++;
