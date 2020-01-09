@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Adam <Adam@sigterm.info>
+ * Copyright (c) 2020 Hydrox6 <ikada@protonmail.ch>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,62 +24,42 @@
  */
 package info.sigterm.plugins.detachedcamera;
 
+import lombok.Getter;
+import lombok.Setter;
+import net.runelite.client.ui.overlay.Overlay;
+import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.ui.overlay.components.ImageComponent;
+import net.runelite.client.util.ImageUtil;
 import javax.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
-import net.runelite.client.config.Keybind;
-import net.runelite.client.input.KeyManager;
-import net.runelite.client.plugins.Plugin;
-import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.ui.overlay.OverlayManager;
-import net.runelite.client.util.HotkeyListener;
-import java.awt.event.KeyEvent;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 
-@Slf4j
-@PluginDescriptor(
-	name = "Detached Camera",
-	description = "Allows free roaming the camera",
-	enabledByDefault = false
-)
-public class DetachedCameraPlugin extends Plugin
+class DetachedCameraHelpOverlay extends Overlay
 {
-	@Inject
-	private Client client;
+	private final ImageComponent imageComponent;
+
+	@Getter
+	@Setter
+	private boolean visible = false;
 
 	@Inject
-	private OverlayManager overlayManager;
-
-	@Inject
-	private KeyManager keyManager;
-
-	@Inject
-	private DetachedCameraHelpOverlay overlay;
-
-	private final HotkeyListener hotkeyListener = new HotkeyListener(() -> new Keybind(KeyEvent.VK_F1, 0))
+	DetachedCameraHelpOverlay(DetachedCameraPlugin plugin)
 	{
-		@Override
-		public void hotkeyPressed()
-		{
-			overlay.setVisible(!overlay.isVisible());
-		}
-	};
+		setPosition(OverlayPosition.TOP_CENTER);
 
-	@Override
-	protected void startUp()
-	{
-		client.setOculusOrbState(1);
-		client.setOculusOrbNormalSpeed(36);
-		overlayManager.add(overlay);
-		keyManager.registerKeyListener(hotkeyListener);
+		imageComponent = new ImageComponent(ImageUtil.getResourceStreamFromClass(plugin.getClass(), "help.png"));
 	}
 
 	@Override
-	protected void shutDown()
+	public Dimension render(Graphics2D graphics)
 	{
-		client.setOculusOrbState(0);
-		client.setOculusOrbNormalSpeed(12);
-		overlay.setVisible(false);
-		overlayManager.remove(overlay);
-		keyManager.unregisterKeyListener(hotkeyListener);
+		if (visible)
+		{
+			return imageComponent.render(graphics);
+		}
+		else
+		{
+			return null;
+		}
 	}
 }
