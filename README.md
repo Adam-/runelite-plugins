@@ -16,6 +16,6 @@ A runelite plugin for showing bank value over time
 the bank which isn't ideal.
 
 ### Images (1.0-SNAPSHOT)
-- ![Feature 1](https://raw.githubusercontent.com/AdrianLeeElder/runelite-bank-history-plugin/master/images/image1.JPG)
-- ![Feature 2](https://raw.githubusercontent.com/AdrianLeeElder/runelite-bank-history-plugin/master/images/image2.JPG)
-- ![Feature 3](https://raw.githubusercontent.com/AdrianLeeElder/runelite-bank-history-plugin/master/images/image3.JPG)
+![Feature 1](https://raw.githubusercontent.com/AdrianLeeElder/runelite-bank-history-plugin/master/images/image1.JPG)
+![Feature 2](https://raw.githubusercontent.com/AdrianLeeElder/runelite-bank-history-plugin/master/images/image2.JPG)
+![Feature 3](https://raw.githubusercontent.com/AdrianLeeElder/runelite-bank-history-plugin/master/images/image3.JPG)
