@@ -10,7 +10,7 @@ A runelite plugin for showing bank value over time
 - Panel in right-hand view can be expanded in a new window.
 
 ### TODO:
-- Allow tracking of individual tabs.
+- ~~Allow tracking of individual tabs.~~
 - Select data for a specific tab
 - Allow customizing when data is stored. It currently happens each time you open
 the bank which isn't ideal.
@@ -20,3 +20,4 @@ the bank which isn't ideal.
 ![Feature 1](https://raw.githubusercontent.com/AdrianLeeElder/runelite-bank-history-plugin/master/images/image1.JPG)
 ![Feature 2](https://raw.githubusercontent.com/AdrianLeeElder/runelite-bank-history-plugin/master/images/image2.JPG)
 ![Feature 3](https://raw.githubusercontent.com/AdrianLeeElder/runelite-bank-history-plugin/master/images/image3.JPG)
+![Feature 4](https://raw.githubusercontent.com/AdrianLeeElder/runelite-bank-history-plugin/master/images/image4.JPG)
