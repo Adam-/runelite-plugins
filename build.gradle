@@ -10,7 +10,7 @@ repositories {
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.5.44-SNAPSHOT'
+def runeLiteVersion = '1.6.2-SNAPSHOT'
 
 dependencies {
     compile 'jfree:jfreechart:1.0.13'
