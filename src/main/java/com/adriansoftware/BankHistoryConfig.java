@@ -26,4 +26,13 @@ public interface BankHistoryConfig extends Config
 	{
 		return 0;
 	}
+
+	@ConfigItem(
+		keyName = "defaultDatasetEntry",
+		name = "Default dataset entry",
+		description = "The amount of time in hours that should elapse before adding a new data entry"
+	)
+	default int getDefaultDatasetEntry() {
+		return 1;
+	}
 }

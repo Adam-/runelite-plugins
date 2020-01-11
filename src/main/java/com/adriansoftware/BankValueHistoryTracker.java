@@ -5,8 +5,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.RuneLite;
 import net.runelite.http.api.RuneLiteAPI;
@@ -119,5 +122,21 @@ public class BankValueHistoryTracker
 		}
 
 		return result;
+	}
+
+	/**
+	 * Gets the last time something was added to the file cache.
+	 * @param username
+	 * @return
+	 */
+	public LocalDateTime getLastDataEntry(String username)
+	{
+		BankValueHistoryContainer container = getBankValueHistory(username);
+		Set<LocalDateTime> times = container.getPricesMap().keySet();
+		if (times == null || times.isEmpty()) {
+			return null;
+		}
+
+		return Collections.max(times);
 	}
 }

@@ -27,6 +27,7 @@ package com.adriansoftware;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import javax.inject.Inject;
@@ -119,12 +120,17 @@ public class BankHistoryPlugin extends Plugin
 		{
 		if ("setBankTitle".equals(event.getEventName()))
 		{
-			tracker.add(client.getUsername(),
-				BankValue
-					.builder()
-					.tab(client.getVar(Varbits.CURRENT_BANK_TAB))
-					.bankValue(bankCalculation.calculate(getBankTabItems()))
-					.build());
+			LocalDateTime lastEntry = tracker.getLastDataEntry(client.getUsername());
+			LocalDateTime nextUpdateTime = LocalDateTime.now().plusHours(config.getDefaultDatasetEntry());
+
+			if (lastEntry == null || LocalDateTime.now().isAfter(nextUpdateTime)) {
+				tracker.add(client.getUsername(),
+					BankValue
+						.builder()
+						.tab(client.getVar(Varbits.CURRENT_BANK_TAB))
+						.bankValue(bankCalculation.calculate(getBankTabItems()))
+						.build());
+			}
 		}
 	}
 
