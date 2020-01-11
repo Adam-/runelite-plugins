@@ -284,7 +284,7 @@ public class BankHistoryPanel extends PluginPanel
 		String formattedString = "No Change";
 		if (finishValue < 0)
 		{
-			formattedString = formattedValue + " (- " + percentChange + "%)";
+			formattedString = formattedValue + " (" + percentChange + "%)";
 			result.setForeground(ColorScheme.PROGRESS_ERROR_COLOR);
 		}
 		else if (finishValue > 0)
