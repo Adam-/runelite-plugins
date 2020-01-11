@@ -91,7 +91,7 @@ public class BankHistoryPlugin extends Plugin
 	}
 
 	@Override
-	protected void startUp() throws Exception
+	protected void startUp()
 	{
 		final BankHistoryPanel panel = injector.getInstance(BankHistoryPanel.class);
 		panel.init();
