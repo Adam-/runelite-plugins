@@ -14,6 +14,7 @@ A runelite plugin for showing bank value over time
 - Select data for a specific tab
 - Allow customizing when data is stored. It currently happens each time you open
 the bank which isn't ideal.
+- Allow values to be displayed in the y-axis as their formatted values (e.g 32.23m).
 
 ### Images (1.0-SNAPSHOT)
 ![Feature 1](https://raw.githubusercontent.com/AdrianLeeElder/runelite-bank-history-plugin/master/images/image1.JPG)
