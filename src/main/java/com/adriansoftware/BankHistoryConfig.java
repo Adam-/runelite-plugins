@@ -16,4 +16,14 @@ public interface BankHistoryConfig extends Config
 	{
 		return "";
 	}
+
+	@ConfigItem(
+		keyName = "defaultBankTab",
+		name = "Default bank tab",
+		description = "The bank tab to select by default"
+	)
+	default int getDefaultBankTab()
+	{
+		return 0;
+	}
 }

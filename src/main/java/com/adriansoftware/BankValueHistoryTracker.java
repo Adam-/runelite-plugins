@@ -35,7 +35,7 @@ public class BankValueHistoryTracker
 	 *
 	 * @param bankValue current bank value
 	 */
-	public void add(String username, long bankValue)
+	public void add(String username, BankValue bankValue)
 	{
 		BankValueHistoryContainer valueHistory = getBankValueHistory(username);
 		if (valueHistory != null)

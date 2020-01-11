@@ -116,16 +116,21 @@ public class DatePickerPanel extends JPanel
 			0);
 	}
 
-	private Vector<String> getArrayOfIntegers(int start, int end)
+	protected static Vector<String> getArrayOfIntegers(int start, int end, boolean pad)
 	{
 		return Stream.iterate(start, n -> n + 1)
 			.limit(end)
-			.map(v -> getFormattedTimeString(String.valueOf(v)))
+			.map(v -> getFormattedTimeString(String.valueOf(v), pad))
 			.collect(Collectors.toCollection(Vector::new));
 	}
 
-	private String getFormattedTimeString(String s)
+	protected static Vector<String> getArrayOfIntegers(int start, int end)
 	{
-		return StringUtils.leftPad(s, 2, '0');
+		return getArrayOfIntegers(start, end, true);
+	}
+
+	protected static String getFormattedTimeString(String s, boolean pad)
+	{
+		return pad ?  StringUtils.leftPad(s, 2, '0') : s;
 	}
 }

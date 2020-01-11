@@ -116,10 +116,15 @@ public class BankHistoryPlugin extends Plugin
 
 	@Subscribe
 	public void onScriptCallbackEvent(ScriptCallbackEvent event)
-	{
+		{
 		if ("setBankTitle".equals(event.getEventName()))
 		{
-			tracker.add(client.getUsername(), bankCalculation.calculate(getBankTabItems()));
+			tracker.add(client.getUsername(),
+				BankValue
+					.builder()
+					.tab(client.getVar(Varbits.CURRENT_BANK_TAB))
+					.bankValue(bankCalculation.calculate(getBankTabItems()))
+					.build());
 		}
 	}
 

@@ -67,6 +67,7 @@ public class BankHistoryPanel extends PluginPanel
 	private Map<LocalDateTime, Long> currentDataRange;
 	private JLabel changeLabel;
 	private TimeSeriesCollection dataset;
+	private int currentBankTab = -1;
 
 	@Provides
 	BankHistoryConfig getConfig(ConfigManager configManager)
@@ -207,6 +208,19 @@ public class BankHistoryPanel extends PluginPanel
 
 			openInNewWindowContainer.add(newWindowButton, BorderLayout.CENTER);
 
+			//bank tab selection
+			JPanel tabPanel = new JPanel();
+			JComboBox<String> tabSelectionCombo  = new JComboBox<>(DatePickerPanel.getArrayOfIntegers(0, 8, false));
+			tabSelectionCombo.addItemListener((event) ->
+			{
+				currentBankTab = Integer.parseInt((String) event.getItem());
+				updateDataset((String) accountSelectionCombo.getSelectedItem());
+			});
+			JLabel tabLabel = new JLabel("Bank Tab: ");
+			tabPanel.setLayout(new BoxLayout(tabPanel, BoxLayout.LINE_AXIS));
+			tabPanel.add(tabLabel);
+			tabPanel.add(tabSelectionCombo);
+
 			//render
 			add(uiWrapperPanel);
 
@@ -216,6 +230,8 @@ public class BankHistoryPanel extends PluginPanel
 			uiWrapperPanel.add(advancedContainer);
 			uiWrapperPanel.add(simpleContainer);
 			uiWrapperPanel.add(datePickerContainer);
+			uiWrapperPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+			uiWrapperPanel.add(tabPanel);
 			uiWrapperPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 			add(Box.createRigidArea(new Dimension(0, 5)));
 
@@ -235,6 +251,8 @@ public class BankHistoryPanel extends PluginPanel
 				add(Box.createRigidArea(new Dimension(0, 10)));
 				add(openInNewWindowContainer);
 			}
+
+			tabSelectionCombo.setSelectedIndex(config.getDefaultBankTab());
 		}
 	}
 
@@ -346,9 +364,9 @@ public class BankHistoryPanel extends PluginPanel
 
 		TimeSeries timeSeries = new TimeSeries("bankValueVsTime");
 		Map<LocalDateTime, Long> currentDataRange = new HashMap<>();
-		for (Map.Entry<LocalDateTime, Long> entry : container.getPricesMap().entrySet())
+		for (Map.Entry<LocalDateTime, BankValue> entry : container.getPricesMap().entrySet())
 		{
-			long price = entry.getValue();
+			long price = entry.getValue().getBankValue();
 
 			LocalDateTime entryDateTime = entry.getKey();
 			LocalDateTime start;
@@ -365,8 +383,9 @@ public class BankHistoryPanel extends PluginPanel
 				end = toDatePickerPanel.getLocalDateTime();
 			}
 
-			if (timeSelection == SimpleTimeSelection.ALL ||
-				end != null && start != null && onOrAfter(entryDateTime, start) && onOrBefore(entryDateTime, end))
+			if ((currentBankTab != -1 && currentBankTab == entry.getValue().getTab()) &&
+				(timeSelection == SimpleTimeSelection.ALL ||
+				end != null && start != null && onOrAfter(entryDateTime, start) && onOrBefore(entryDateTime, end)))
 			{
 				currentDataRange.put(entryDateTime.atZone(ZoneId.systemDefault()).toLocalDateTime(), price);
 				timeSeries.add(new Millisecond(Date.from(entryDateTime.atZone(ZoneId.systemDefault()).toInstant())), price);

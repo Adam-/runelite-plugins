@@ -13,15 +13,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class BankValueHistoryContainer
 {
-	private final Map<LocalDateTime, Long> pricesMap;
+	private final Map<LocalDateTime, BankValue> pricesMap;
 
 	public BankValueHistoryContainer()
 	{
 		this(new HashMap<>());
 	}
 
-	public void addPrice(long price)
+	public void addPrice(BankValue bankValue)
 	{
-		pricesMap.put(LocalDateTime.now(), price);
+		pricesMap.put(LocalDateTime.now(), bankValue);
 	}
 }

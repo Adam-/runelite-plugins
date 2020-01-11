@@ -21,13 +21,18 @@ public class BankValueHistoryDeserializer implements JsonDeserializer<BankValueH
 		JsonObject jsonObject = jsonElement.getAsJsonObject();
 
 		JsonObject map = jsonObject.getAsJsonObject("pricesMap");
-		Map<LocalDateTime, Long> bankValue = new HashMap<>();
+		Map<LocalDateTime, BankValue> bankValue = new HashMap<>();
 		for (Map.Entry<String, JsonElement> elems : map.entrySet())
 		{
 			JsonElement element = elems.getValue();
 			JsonObject containerPrices = element.getAsJsonObject();
 
-			bankValue.put(LocalDateTime.parse(elems.getKey()), containerPrices.get("gePrice").getAsLong());
+			bankValue.put(LocalDateTime.parse(elems.getKey()),
+				BankValue
+					.builder()
+					.tab(containerPrices.get("tab").getAsInt())
+					.bankValue(containerPrices.get("bankValue").getAsLong())
+					.build());
 		}
 
 		return new BankValueHistoryContainer(bankValue);
