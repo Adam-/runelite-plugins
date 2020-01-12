@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, TheLonelyDev <https://github.com/AdrianLeeElder>
+ * Copyright (c) 2020, Adrian Lee Elder <https://github.com/AdrianLeeElder>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
