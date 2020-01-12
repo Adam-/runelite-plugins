@@ -1,6 +1,8 @@
 
 # runelite-bank-history-plugin
-A runelite plugin for showing bank value over time
+A runelite plugin for showing bank value over time. It's currently in the alpha stage, so please feel free to request features/report bugs in Github's issue tracker.
+
+Please consider [buying me a coffee](https://www.buymeacoffee.com/c4dSqRC) if you enjoy the plugin c:, thank you.
 
 ### Features (1.0-SNAPSHOT)
 - Track multiple accounts (drop down for changing account).
