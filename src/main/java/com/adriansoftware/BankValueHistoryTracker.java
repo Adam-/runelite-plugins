@@ -36,8 +36,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -195,10 +197,18 @@ public class BankValueHistoryTracker
 	 * @param username
 	 * @return
 	 */
-	public LocalDateTime getLastDataEntry(String username)
+	public LocalDateTime getLastDataEntry(String username, int tab)
 	{
 		BankValueHistoryContainer container = getBankValueHistory(username);
-		Set<LocalDateTime> times = container.getPricesMap().keySet();
+		Set<LocalDateTime> times =
+			container
+			.getPricesMap()
+				.entrySet()
+				.parallelStream()
+				.filter(bv -> bv.getValue().getTab() == tab)
+				.map(Map.Entry::getKey)
+				.collect(Collectors.toSet());
+
 		if (times == null || times.isEmpty())
 		{
 			return null;
@@ -216,7 +226,8 @@ public class BankValueHistoryTracker
 	{
 		clientThread.invokeLater(() ->
 		{
-			LocalDateTime lastEntry = getLastDataEntry(client.getUsername());
+			int currentBankTab = client.getVar(Varbits.CURRENT_BANK_TAB);
+			LocalDateTime lastEntry = getLastDataEntry(client.getUsername(), currentBankTab);
 			LocalDateTime nextUpdateTime = LocalDateTime.now().plusHours(config.getDefaultDatasetEntry());
 
 			if (force || lastEntry == null || LocalDateTime.now().isAfter(nextUpdateTime))
