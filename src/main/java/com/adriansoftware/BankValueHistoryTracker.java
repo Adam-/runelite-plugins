@@ -230,6 +230,13 @@ public class BankValueHistoryTracker
 			LocalDateTime lastEntry = getLastDataEntry(client.getUsername(), currentBankTab);
 			LocalDateTime nextUpdateTime = LocalDateTime.now().plusHours(config.getDefaultDatasetEntry());
 
+			if (config.getOnlyManualEntries() && !force)
+			{
+				callback.accept("Automatic entries are currently disabled");
+
+				return;
+			}
+
 			if (force || lastEntry == null || LocalDateTime.now().isAfter(nextUpdateTime))
 			{
 				BankValueHistoryTracker.this.add(client.getUsername(),

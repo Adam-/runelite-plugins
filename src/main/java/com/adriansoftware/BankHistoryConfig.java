@@ -60,4 +60,14 @@ public interface BankHistoryConfig extends Config
 	{
 		return 1;
 	}
+
+	@ConfigItem(
+		keyName = "onlyManualEntries",
+		name = "Only manual entries",
+		description = "Only add entries manually, rather than each time the bank is opened."
+	)
+	default boolean getOnlyManualEntries()
+	{
+		return false;
+	}
 }
