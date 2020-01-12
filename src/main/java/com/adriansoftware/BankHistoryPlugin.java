@@ -24,19 +24,18 @@
  */
 package com.adriansoftware;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
 import javax.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.InventoryID;
-import net.runelite.api.Item;
-import net.runelite.api.ItemContainer;
-import net.runelite.api.Varbits;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ScriptCallbackEvent;
+import net.runelite.api.events.WidgetHiddenChanged;
+import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetID;
+import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -51,31 +50,14 @@ import net.runelite.client.util.ImageUtil;
 	description = "Track the value of your bank over time",
 	tags = {"bank", "value", "history", "tracking"}
 )
+@Slf4j
 public class BankHistoryPlugin extends Plugin
 {
-	private static final List<Varbits> TAB_VARBITS = ImmutableList.of(
-		Varbits.BANK_TAB_ONE_COUNT,
-		Varbits.BANK_TAB_TWO_COUNT,
-		Varbits.BANK_TAB_THREE_COUNT,
-		Varbits.BANK_TAB_FOUR_COUNT,
-		Varbits.BANK_TAB_FIVE_COUNT,
-		Varbits.BANK_TAB_SIX_COUNT,
-		Varbits.BANK_TAB_SEVEN_COUNT,
-		Varbits.BANK_TAB_EIGHT_COUNT,
-		Varbits.BANK_TAB_NINE_COUNT
-	);
-
 	@Inject
 	private Client client;
 
 	@Inject
 	private ClientThread clientThread;
-
-	@Inject
-	private BankHistoryConfig config;
-
-	@Inject
-	private ContainerCalculation bankCalculation;
 
 	@Inject
 	private BankValueHistoryTracker tracker;
@@ -84,6 +66,7 @@ public class BankHistoryPlugin extends Plugin
 	private ClientToolbar clientToolbar;
 
 	private NavigationButton navButton;
+	private BankHistoryPanel bankHistoryPanel;
 
 	@Provides
 	BankHistoryConfig getConfig(ConfigManager configManager)
@@ -94,8 +77,8 @@ public class BankHistoryPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		final BankHistoryPanel panel = injector.getInstance(BankHistoryPanel.class);
-		panel.init();
+		bankHistoryPanel = injector.getInstance(BankHistoryPanel.class);
+		bankHistoryPanel.init();
 
 		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "bank_logo.png");
 
@@ -103,7 +86,7 @@ public class BankHistoryPlugin extends Plugin
 			.tooltip("Bank Value History")
 			.icon(icon)
 			.priority(10)
-			.panel(panel)
+			.panel(bankHistoryPanel)
 			.build();
 
 		clientToolbar.addNavigation(navButton);
@@ -120,44 +103,46 @@ public class BankHistoryPlugin extends Plugin
 		{
 		if ("setBankTitle".equals(event.getEventName()))
 		{
-			LocalDateTime lastEntry = tracker.getLastDataEntry(client.getUsername());
-			LocalDateTime nextUpdateTime = LocalDateTime.now().plusHours(config.getDefaultDatasetEntry());
+			tracker.addEntry();
+		}
+	}
 
-			if (lastEntry == null || LocalDateTime.now().isAfter(nextUpdateTime)) {
-				tracker.add(client.getUsername(),
-					BankValue
-						.builder()
-						.tab(client.getVar(Varbits.CURRENT_BANK_TAB))
-						.bankValue(bankCalculation.calculate(getBankTabItems()))
-						.build());
+	@Subscribe
+	public void onWidgetLoaded(final WidgetLoaded event)
+	{
+		if (event.getGroupId() == WidgetID.BANK_GROUP_ID)
+		{
+			bankHistoryPanel.setDatasetButton(true);
+		}
+	}
+
+	@Subscribe
+	public void onWidgetHiddenChanged(WidgetHiddenChanged event)
+	{
+		Widget widget = event.getWidget();
+		int group = WidgetInfo.TO_GROUP(widget.getId());
+
+		//when bank interface is closed
+		//probably a better way to do this >.>
+		if (!widget.isHidden())
+		{
+			switch (group)
+			{
+				case WidgetID.RESIZABLE_VIEWPORT_OLD_SCHOOL_BOX_GROUP_ID:
+					bankHistoryPanel.setDatasetButton(false);
+					break;
 			}
 		}
 	}
 
-	private Item[] getBankTabItems()
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
 	{
-		final ItemContainer container = client.getItemContainer(InventoryID.BANK);
-		if (container == null)
+		switch (event.getGameState().getState())
 		{
-			return null;
+			case 40:
+				bankHistoryPanel.setDatasetButton(false);
+				break;
 		}
-
-		final Item[] items = container.getItems();
-		int currentTab = client.getVar(Varbits.CURRENT_BANK_TAB);
-
-		if (currentTab > 0)
-		{
-			int startIndex = 0;
-
-			for (int i = currentTab - 1; i > 0; i--)
-			{
-				startIndex += client.getVar(TAB_VARBITS.get(i - 1));
-			}
-
-			int itemCount = client.getVar(TAB_VARBITS.get(currentTab - 1));
-			return Arrays.copyOfRange(items, startIndex, startIndex + itemCount);
-		}
-
-		return items;
 	}
 }

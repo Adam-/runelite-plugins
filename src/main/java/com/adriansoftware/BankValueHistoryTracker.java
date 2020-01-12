@@ -1,17 +1,29 @@
 package com.adriansoftware;
 
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
+import com.google.inject.Provides;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
+import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
+import net.runelite.api.InventoryID;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
+import net.runelite.api.Varbits;
 import net.runelite.client.RuneLite;
+import net.runelite.client.callback.ClientThread;
+import net.runelite.client.config.ConfigManager;
 import net.runelite.http.api.RuneLiteAPI;
 
 /**
@@ -20,11 +32,39 @@ import net.runelite.http.api.RuneLiteAPI;
 @Slf4j
 public class BankValueHistoryTracker
 {
+	private static final List<Varbits> TAB_VARBITS = ImmutableList.of(
+		Varbits.BANK_TAB_ONE_COUNT,
+		Varbits.BANK_TAB_TWO_COUNT,
+		Varbits.BANK_TAB_THREE_COUNT,
+		Varbits.BANK_TAB_FOUR_COUNT,
+		Varbits.BANK_TAB_FIVE_COUNT,
+		Varbits.BANK_TAB_SIX_COUNT,
+		Varbits.BANK_TAB_SEVEN_COUNT,
+		Varbits.BANK_TAB_EIGHT_COUNT,
+		Varbits.BANK_TAB_NINE_COUNT
+	);
+
 	private static final File HISTORY_CACHE;
 	private static final Gson GSON =
 		RuneLiteAPI.GSON.newBuilder().registerTypeAdapter(BankValueHistoryContainer.class,
 			new BankValueHistoryDeserializer()).create();
 	private static final String EXTENTION = ".json";
+
+	@Inject
+	private Client client;
+	@Inject
+	private ClientThread clientThread;
+	@Inject
+	private BankHistoryConfig config;
+
+	@Inject
+	private ContainerCalculation bankCalculation;
+
+	@Provides
+	BankHistoryConfig getConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(BankHistoryConfig.class);
+	}
 
 	static
 	{
@@ -60,8 +100,8 @@ public class BankValueHistoryTracker
 	/**
 	 * Gets the current bank value history from disk.
 	 *
-	 * @return the retrieved bank value
 	 * @param username username associated with the bank value.
+	 * @return the retrieved bank value
 	 */
 	public BankValueHistoryContainer getBankValueHistory(String username)
 	{
@@ -93,6 +133,7 @@ public class BankValueHistoryTracker
 
 	/**
 	 * Get the data file for a specific user
+	 *
 	 * @param username user to get the data for
 	 * @return data file for user
 	 */
@@ -102,9 +143,9 @@ public class BankValueHistoryTracker
 	}
 
 
-
 	/**
 	 * Get all accounts that have tracking data from the local file cache.
+	 *
 	 * @return available accounts with data
 	 */
 	public List<String> getAvailableUsers()
@@ -126,6 +167,7 @@ public class BankValueHistoryTracker
 
 	/**
 	 * Gets the last time something was added to the file cache.
+	 *
 	 * @param username
 	 * @return
 	 */
@@ -133,10 +175,80 @@ public class BankValueHistoryTracker
 	{
 		BankValueHistoryContainer container = getBankValueHistory(username);
 		Set<LocalDateTime> times = container.getPricesMap().keySet();
-		if (times == null || times.isEmpty()) {
+		if (times == null || times.isEmpty())
+		{
 			return null;
 		}
 
 		return Collections.max(times);
 	}
+
+	/**
+	 * Add a new dataset entry.
+	 *
+	 * @param force force a new entry, regardless of user configuration or last entry time.
+	 */
+	public void addEntry(boolean force, Consumer<String> callback)
+	{
+		clientThread.invokeLater(() ->
+		{
+			LocalDateTime lastEntry = getLastDataEntry(client.getUsername());
+			LocalDateTime nextUpdateTime = LocalDateTime.now().plusHours(config.getDefaultDatasetEntry());
+
+			if (force || lastEntry == null || LocalDateTime.now().isAfter(nextUpdateTime))
+			{
+				BankValueHistoryTracker.this.add(client.getUsername(),
+					BankValue
+						.builder()
+						.tab(client.getVar(Varbits.CURRENT_BANK_TAB))
+						.bankValue(bankCalculation.calculate(getBankTabItems()))
+						.build());
+
+				if (callback != null)
+				{
+					callback.accept("New entry added!");
+				}
+			}
+			else
+			{
+				if (callback != null)
+				{
+					callback.accept("No entry added.");
+				}
+			}
+		});
+	}
+
+	public void addEntry()
+	{
+		addEntry(false, null);
+	}
+
+	private Item[] getBankTabItems()
+	{
+		final ItemContainer container = client.getItemContainer(InventoryID.BANK);
+		if (container == null)
+		{
+			return null;
+		}
+
+		final Item[] items = container.getItems();
+		int currentTab = client.getVar(Varbits.CURRENT_BANK_TAB);
+
+		if (currentTab > 0)
+		{
+			int startIndex = 0;
+
+			for (int i = currentTab - 1; i > 0; i--)
+			{
+				startIndex += client.getVar(TAB_VARBITS.get(i - 1));
+			}
+
+			int itemCount = client.getVar(TAB_VARBITS.get(currentTab - 1));
+			return Arrays.copyOfRange(items, startIndex, startIndex + itemCount);
+		}
+
+		return items;
+	}
+
 }

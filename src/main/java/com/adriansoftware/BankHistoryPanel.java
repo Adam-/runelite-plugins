@@ -2,6 +2,7 @@ package com.adriansoftware;
 
 import com.google.inject.Provides;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -33,7 +34,9 @@ import javax.swing.border.EmptyBorder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import net.runelite.api.events.ScriptCallbackEvent;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.QuantityFormatter;
@@ -68,6 +71,7 @@ public class BankHistoryPanel extends PluginPanel
 	private JLabel changeLabel;
 	private TimeSeriesCollection dataset;
 	private int currentBankTab = -1;
+	private JButton addDatasetButton;
 
 	@Provides
 	BankHistoryConfig getConfig(ConfigManager configManager)
@@ -221,6 +225,43 @@ public class BankHistoryPanel extends PluginPanel
 			tabPanel.add(tabLabel);
 			tabPanel.add(tabSelectionCombo);
 
+			//Refresh button
+			JPanel addDatasetPanel = new JPanel();
+			addDatasetPanel.setLayout(new BorderLayout());
+
+			addDatasetButton = new JButton("Add Entry");
+			setDatasetButton(false);
+			addDatasetButton.setBackground(ColorScheme.GRAND_EXCHANGE_PRICE);
+			addDatasetButton.setForeground(Color.WHITE);
+			addDatasetButton.setFocusPainted(false);
+			addDatasetButton.addActionListener((event) ->
+			{
+				setDatasetButton(false);
+				tracker.addEntry(true, (s) ->
+				{
+					SwingUtilities.invokeLater(() ->
+					{
+						updateDataset((String) accountSelectionCombo.getSelectedItem());
+						setDatasetButton(true);
+					});
+				});
+			});
+
+			addDatasetPanel.add(addDatasetButton, BorderLayout.CENTER);
+
+			//Refresh button
+			JPanel refreshPanel = new JPanel();
+			refreshPanel.setLayout(new BorderLayout());
+
+			JButton refreshButton = new JButton("Refresh");
+			refreshButton.setFocusPainted(false);
+			refreshButton.addActionListener((event) ->
+			{
+				updateDataset((String) accountSelectionCombo.getSelectedItem());
+			});
+
+			refreshPanel.add(refreshButton, BorderLayout.CENTER);
+
 			//render
 			add(uiWrapperPanel);
 
@@ -245,6 +286,12 @@ public class BankHistoryPanel extends PluginPanel
 			changeLabel.setHorizontalAlignment(JLabel.CENTER);
 			changePanel.add(changeLabel, BorderLayout.CENTER);
 			uiWrapperPanel.add(changePanel);
+
+			add(Box.createRigidArea(new Dimension(0, 10)));
+			add(addDatasetPanel);
+
+			add(Box.createRigidArea(new Dimension(0, 10)));
+			add(refreshPanel);
 
 			if (!isNewWindow)
 			{
@@ -398,6 +445,14 @@ public class BankHistoryPanel extends PluginPanel
 		return collection;
 	}
 
+	@Subscribe
+	public void onScriptCallbackEvent(ScriptCallbackEvent event)
+	{
+		if ("setBankTitle".equals(event.getEventName()))
+		{
+			addDatasetButton.setEnabled(true);
+		}
+	}
 
 	private boolean onOrBefore(LocalDateTime first, LocalDateTime second)
 	{
@@ -407,6 +462,14 @@ public class BankHistoryPanel extends PluginPanel
 	private boolean onOrAfter(LocalDateTime first, LocalDateTime second)
 	{
 		return first.compareTo(second) == 0 || first.isAfter(second);
+	}
+
+	protected void setDatasetButton(boolean enabled)
+	{
+		if (addDatasetButton.isEnabled() != enabled)
+		{
+			addDatasetButton.setEnabled(enabled);
+		}
 	}
 
 	@RequiredArgsConstructor
