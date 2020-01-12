@@ -11,10 +11,11 @@ A runelite plugin for showing bank value over time
 
 ### TODO:
 - ~~Allow tracking of individual tabs.~~
-- Select data for a specific tab
-- Allow customizing when data is stored. It currently happens each time you open
-the bank which isn't ideal.
+- ~~Select data for a specific tab~~
+- ~~Allow customizing when data is stored. It currently happens each time you open
+    the bank which isn't ideal.~~
 - Allow values to be displayed in the y-axis as their formatted values (e.g 32.23m).
+- Add user feedback when adding a new data entry/pressing refresh button
 
 ### Images (1.0-SNAPSHOT)
 ![Feature 1](https://raw.githubusercontent.com/AdrianLeeElder/runelite-bank-history-plugin/master/images/image1.JPG)
