@@ -244,6 +244,11 @@ public class BankHistoryPanel extends PluginPanel
 				currentBankTab = Integer.parseInt((String) event.getItem());
 				updateDataset((String) accountSelectionCombo.getSelectedItem());
 			});
+
+			int defaultBankTab = config.getDefaultBankTab();
+			tabSelectionCombo.setSelectedIndex(defaultBankTab);
+			currentBankTab = defaultBankTab;
+
 			JLabel tabLabel = new JLabel("Bank Tab: ");
 			tabPanel.setLayout(new BoxLayout(tabPanel, BoxLayout.LINE_AXIS));
 			tabPanel.add(tabLabel);
@@ -322,8 +327,6 @@ public class BankHistoryPanel extends PluginPanel
 				add(Box.createRigidArea(new Dimension(0, 10)));
 				add(openInNewWindowContainer);
 			}
-
-			tabSelectionCombo.setSelectedIndex(config.getDefaultBankTab());
 		}
 	}
 
