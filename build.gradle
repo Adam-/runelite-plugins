@@ -1,9 +1,3 @@
-buildscript {
-    dependencies {
-        classpath files('gradle/gradle-witness/gradle-witness.jar')
-    }
-}
-
 plugins {
 	id 'java'
 }
@@ -32,16 +26,6 @@ dependencies {
 		exclude group: 'ch.qos.logback', module: 'logback-classic'
 	}
 }
-
-dependencyVerification {
-    verify = [
-            'jfree:jfreechart:62fc1c7a98fd59b760e4324e95a63ec6aadf10dfc817af808a86b1891776d2ad',
-            'net.sourceforge.jdatepicker:jdatepicker:e2b8f768f0ee996083d01d192bf6f239122d7e2e8c2c44f0d15dcd13a53474d5',
-            'jfree:jcommon:3d6113245ffdb8b6bf066d53674d888218c916cf1db1cb40e55105a75b2d567e',
-    ]
-}
-
-apply plugin: 'witness'
 
 group = 'com.adriansoftware'
 version = '1.0-SNAPSHOT'
