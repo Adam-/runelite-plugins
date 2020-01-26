@@ -26,6 +26,7 @@ package com.adriansoftware;
 
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
+import java.util.List;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -43,6 +44,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.ImageUtil;
 
 @PluginDescriptor(
@@ -67,6 +69,7 @@ public class BankHistoryPlugin extends Plugin
 
 	private NavigationButton navButton;
 	private BankHistoryPanel bankHistoryPanel;
+	private DefaultBankValuePanel defaultBankValuePanel;
 
 	@Provides
 	BankHistoryConfig getConfig(ConfigManager configManager)
@@ -77,19 +80,51 @@ public class BankHistoryPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		bankHistoryPanel = injector.getInstance(BankHistoryPanel.class);
-		bankHistoryPanel.init();
-
 		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "bank_logo.png");
 
 		navButton = NavigationButton.builder()
 			.tooltip("Bank Value History")
 			.icon(icon)
 			.priority(10)
-			.panel(bankHistoryPanel)
+			.panel(getDesiredPanel())
 			.build();
 
 		clientToolbar.addNavigation(navButton);
+	}
+
+	private PluginPanel getDesiredPanel()
+	{
+		PluginPanel defaultPanel = getDefaultPanel();
+		if (getDefaultPanel() == null)
+		{
+			if (bankHistoryPanel == null)
+			{
+				bankHistoryPanel = injector.getInstance(BankHistoryPanel.class);
+				bankHistoryPanel.init();
+			}
+
+			return bankHistoryPanel;
+		}
+
+		return defaultPanel;
+	}
+
+	private PluginPanel getDefaultPanel()
+	{
+		List<String> accounts = tracker.getAvailableUsers();
+
+		if (accounts.isEmpty())
+		{
+			if (defaultBankValuePanel == null)
+			{
+				defaultBankValuePanel = new DefaultBankValuePanel();
+				defaultBankValuePanel.init();
+			}
+
+			return defaultBankValuePanel;
+		}
+
+		return null;
 	}
 
 	@Override
@@ -112,6 +147,17 @@ public class BankHistoryPlugin extends Plugin
 	{
 		if (event.getGroupId() == WidgetID.BANK_GROUP_ID)
 		{
+
+			if (navButton.getPanel() != bankHistoryPanel)
+			{
+				PluginPanel panel = getDesiredPanel();
+
+				if (panel == bankHistoryPanel)
+				{
+					navButton.setPanel(panel);
+				}
+			}
+
 			bankHistoryPanel.setDatasetButton(true);
 		}
 	}
