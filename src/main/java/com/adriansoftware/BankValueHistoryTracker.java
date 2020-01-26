@@ -94,8 +94,8 @@ public class BankValueHistoryTracker
 
 	static
 	{
-		HISTORY_CACHE = new File(RuneLite.CACHE_DIR, "/bank");
-		HISTORY_CACHE.mkdir();
+		HISTORY_CACHE = new File(RuneLite.PLUGINS_DIR, "bank-value-history-tracker");
+		HISTORY_CACHE.mkdirs();
 	}
 
 	/**
