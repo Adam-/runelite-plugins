@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
@@ -131,23 +132,21 @@ public class BankValueHistoryTracker
 	 */
 	public BankValueHistoryContainer getBankValueHistory(String username)
 	{
-		File playerHistoryFile = getFileForUser(username);
-		if (playerHistoryFile == null)
+		try
 		{
-			return null;
-		}
+			File playerHistoryFile = getFileForUser(username);
 
-		try (FileReader reader = new FileReader(playerHistoryFile))
-		{
-			playerHistoryFile.createNewFile();
-			log.debug("Creating bank history cache file at {}", playerHistoryFile.getAbsolutePath());
-			BankValueHistoryContainer container = GSON.fromJson(reader, BankValueHistoryContainer.class);
-			if (container == null)
+			try (FileReader reader = new FileReader(getFileForUser(username)))
 			{
-				return new BankValueHistoryContainer();
-			}
+				log.debug("Creating bank history cache file at {}", playerHistoryFile.getAbsolutePath());
+				BankValueHistoryContainer container = GSON.fromJson(reader, BankValueHistoryContainer.class);
+				if (container == null)
+				{
+					return new BankValueHistoryContainer();
+				}
 
-			return container;
+				return container;
+			}
 		}
 		catch (IOException e)
 		{
@@ -163,9 +162,16 @@ public class BankValueHistoryTracker
 	 * @param username user to get the data for
 	 * @return data file for user
 	 */
-	public File getFileForUser(String username)
+	public File getFileForUser(@NonNull String username) throws IOException
 	{
-		return new File(HISTORY_CACHE, username + EXTENTION);
+		File file = new File(HISTORY_CACHE, username + EXTENTION);
+
+		if (!file.exists())
+		{
+			file.createNewFile();
+		}
+
+		return file;
 	}
 
 
