@@ -28,6 +28,7 @@ import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import javax.inject.Inject;
+import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.events.GameStateChanged;
@@ -100,7 +101,7 @@ public class BankHistoryPlugin extends Plugin
 			if (bankHistoryPanel == null)
 			{
 				bankHistoryPanel = injector.getInstance(BankHistoryPanel.class);
-				bankHistoryPanel.init();
+				SwingUtilities.invokeLater(bankHistoryPanel::init);
 			}
 
 			return bankHistoryPanel;
@@ -118,7 +119,7 @@ public class BankHistoryPlugin extends Plugin
 			if (defaultBankValuePanel == null)
 			{
 				defaultBankValuePanel = new DefaultBankValuePanel();
-				defaultBankValuePanel.init();
+				SwingUtilities.invokeLater(defaultBankValuePanel::init);
 			}
 
 			return defaultBankValuePanel;
