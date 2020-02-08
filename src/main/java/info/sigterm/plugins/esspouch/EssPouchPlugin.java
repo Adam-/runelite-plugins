@@ -40,6 +40,9 @@ import net.runelite.api.ItemID;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.widgets.Widget;
+import static net.runelite.api.widgets.WidgetInfo.TO_CHILD;
+import static net.runelite.api.widgets.WidgetInfo.TO_GROUP;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -255,6 +258,7 @@ public class EssPouchPlugin extends Plugin
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
+		int itemId = -1;
 		switch (event.getMenuAction())
 		{
 			case ITEM_FIRST_OPTION:
@@ -263,13 +267,32 @@ public class EssPouchPlugin extends Plugin
 			case ITEM_FOURTH_OPTION:
 			case ITEM_FIFTH_OPTION:
 			case GROUND_ITEM_THIRD_OPTION: // Take
+				itemId = event.getId();
+				break;
+			case CC_OP:
+			case CC_OP_LOW_PRIORITY:
+				int widgetId = event.getWidgetId();
+				Widget widget = client.getWidget(TO_GROUP(widgetId), TO_CHILD(widgetId));
+				if (widget != null)
+				{
+					int child = event.getActionParam();
+					widget = widget.getChild(child);
+					if (widget != null)
+					{
+						itemId = widget.getItemId();
+					}
+				}
 				break;
 			default:
 				return;
 		}
 
-		final int id = event.getId();
-		final Pouch pouch = Pouch.forItem(id);
+		if (itemId == -1)
+		{
+			return;
+		}
+
+		final Pouch pouch = Pouch.forItem(itemId);
 		if (pouch == null)
 		{
 			return;
