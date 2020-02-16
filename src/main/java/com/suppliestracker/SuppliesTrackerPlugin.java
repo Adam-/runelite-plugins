@@ -797,6 +797,7 @@ public class SuppliesTrackerPlugin extends Plugin
 			default:
 				return;
 		}*/
+
 		// Uses stacks to push/pop for tick eating
 		// Create pattern to find eat/drink at beginning
 		Pattern eatPattern = Pattern.compile(EAT_PATTERN);
@@ -817,6 +818,10 @@ public class SuppliesTrackerPlugin extends Plugin
 			if (old.getItems() != null)
 			{
 				int pushItem = old.getItems()[event.getActionParam()].getId();
+				if (pushItem == PURPLE_SWEETS || pushItem == PURPLE_SWEETS_10476)
+				{
+					return;
+				}
 				MenuAction newAction = new MenuAction.ItemAction(ActionType.CONSUMABLE, old.getItems(), pushItem, slot);
 				actionStack.push(newAction);
 			}
@@ -960,6 +965,10 @@ public class SuppliesTrackerPlugin extends Plugin
 			else if (message.toLowerCase().contains("you bury the bones"))
 			{
 				prayer.OnChat(message);
+			}
+			else if (message.toLowerCase().contains("you eat the sweets."))
+			{
+				buildEntries(PURPLE_SWEETS_10476);
 			}
 			else if (message.toLowerCase().contains("dark lord"))
 			{
