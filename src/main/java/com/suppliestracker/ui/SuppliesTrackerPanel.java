@@ -80,6 +80,7 @@ public class SuppliesTrackerPanel extends PluginPanel
 	private int overallSuppliesUsed;
 	private int overallCost;
 
+
 	public SuppliesTrackerPanel(final ItemManager itemManager, SuppliesTrackerPlugin plugin)
 	{
 		updatePanel = new UpdatePanel(this);
@@ -145,8 +146,16 @@ public class SuppliesTrackerPanel extends PluginPanel
 		layoutPanel.add(logsContainer);
 
 		errorPanel.setContent("Supply trackers", "You have not used any supplies yet.\nCheck Configs for options.     \nMake sure to set blowpipe dart in configs");
-		add(updatePanel);
-		updatePanel.setVisible(true);
+		if (!plugin.getConfig().infoBox())
+		{
+			add(updatePanel);
+			updatePanel.setVisible(true);
+		}
+		else
+		{
+			add(errorPanel);
+			errorPanel.setVisible(true);
+		}
 		overallPanel.setVisible(false);
 		logsContainer.setVisible(false);
 		info = new JButton("Info");

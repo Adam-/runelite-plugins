@@ -44,6 +44,7 @@ import static com.suppliestracker.ActionType.*;
 import com.suppliestracker.Skills.Farming;
 import com.suppliestracker.Skills.Prayer;
 import com.suppliestracker.ui.SuppliesTrackerPanel;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.AnimationID;
 import static net.runelite.api.AnimationID.*;
@@ -224,6 +225,7 @@ public class SuppliesTrackerPlugin extends Plugin
 	private ItemManager itemManager;
 
 	@Inject
+	@Getter
 	private SuppliesTrackerConfig config;
 
 	@Inject

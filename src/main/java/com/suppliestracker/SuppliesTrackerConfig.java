@@ -42,14 +42,23 @@ public interface SuppliesTrackerConfig extends Config
 		return BlowpipeDartType.MITHRIL;
 	}
 
-
 	@ConfigItem(
-		keyName = "chargesBox",
-		name = "Show weapons charges used box?",
-		description = "Separates items with charges to show how many of those charges you used."
+			keyName = "chargesBox",
+			name = "Show weapons charges used box?",
+			description = "Separates items with charges to show how many of those charges you used."
 	)
 	default boolean chargesBox()
 	{
 		return false;
 	}
+
+	@ConfigItem(
+		keyName = "infoBox",
+		name = "Disable info box on startup?",
+		description = "Only shows info box when the info button is pressed"
+	)
+	default boolean infoBox()
+{
+	return false;
+}
 }

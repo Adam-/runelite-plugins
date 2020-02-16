@@ -231,6 +231,7 @@ public abstract class SuppliesBox extends JPanel
 	public void clearAll()
 	{
 		trackedItems.clear();
+		totalPrice = 0;
 		setVisible(false);
 	}
 
