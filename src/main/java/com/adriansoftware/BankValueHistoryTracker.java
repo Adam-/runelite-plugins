@@ -234,7 +234,7 @@ public class BankValueHistoryTracker
 		{
 			int currentBankTab = client.getVar(Varbits.CURRENT_BANK_TAB);
 			LocalDateTime lastEntry = getLastDataEntry(client.getUsername(), currentBankTab);
-			LocalDateTime nextUpdateTime = LocalDateTime.now().plusHours(config.getDefaultDatasetEntry());
+			LocalDateTime nextUpdateTime = lastEntry.plusHours(config.getDefaultDatasetEntry());
 
 			if (config.getOnlyManualEntries() && !force)
 			{
