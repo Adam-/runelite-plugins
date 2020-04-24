@@ -28,7 +28,7 @@
 #define PI 3.1415926535897932384626433832795f
 #define UNIT PI / 1024.0f
 
-#define LOCKED_REGIONS_SIZE 12
+#define LOCKED_REGIONS_SIZE 16
 
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
