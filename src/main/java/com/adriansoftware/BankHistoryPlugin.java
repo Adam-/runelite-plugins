@@ -157,9 +157,9 @@ public class BankHistoryPlugin extends Plugin
 				{
 					navButton.setPanel(panel);
 				}
+			} else {
+				bankHistoryPanel.setDatasetButton(true);
 			}
-
-			bankHistoryPanel.setDatasetButton(true);
 		}
 	}
 
