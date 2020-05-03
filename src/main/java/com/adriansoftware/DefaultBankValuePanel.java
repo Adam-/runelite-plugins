@@ -14,9 +14,8 @@ public class DefaultBankValuePanel extends PluginPanel
 	{
 		String html =
 				"<html>No account data found.<br/>" +
-				"1) Login to create an account entry.<br/>" +
-				"2) Restart the client.<br/>" +
-				"3) Open the bank to start tracking!" +
+				"Log in and open the bank to start<br/>" +
+						"tracking!<br/>" +
 				"</html>";
 		JLabel label = new JLabel(html);
 		label.setForeground(ColorScheme.GRAND_EXCHANGE_PRICE);
