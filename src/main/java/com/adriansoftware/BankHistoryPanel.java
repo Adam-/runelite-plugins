@@ -231,7 +231,7 @@ public class BankHistoryPanel extends PluginPanel
 
 		//bank tab selection
 		JPanel tabPanel = new JPanel();
-		JComboBox<String> tabSelectionCombo  = new JComboBox<>(DatePickerPanel.getArrayOfIntegers(0, 8, false));
+		JComboBox<String> tabSelectionCombo  = new JComboBox<>(DatePickerPanel.getArrayOfIntegers(0, 10, false));
 		tabSelectionCombo.addItemListener((event) ->
 		{
 			currentBankTab = Integer.parseInt((String) event.getItem());
