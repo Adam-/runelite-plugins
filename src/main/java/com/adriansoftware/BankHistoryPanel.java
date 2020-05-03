@@ -323,7 +323,9 @@ public class BankHistoryPanel extends PluginPanel
 
 	private Set<String> getAccounts(String username) {
 		Set<String> result = new HashSet<>(tracker.getAvailableUsers());
-		result.add(username);
+		if (!username.isEmpty()) {
+			result.add(username);
+		}
 
 		if (result.isEmpty()) {
 			throw new IllegalStateException("No accounts available");
