@@ -35,12 +35,7 @@ import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -103,17 +98,22 @@ public class BankHistoryPanel extends PluginPanel
 		return configManager.getConfig(BankHistoryConfig.class);
 	}
 
-	public void init()
+	public void init(String username)
 	{
-		init(false);
+		init(username, false);
 	}
 
-	private void init(boolean isNewWindow)
+	public void init()
+	{
+		init("", false);
+	}
+
+	private void init(String username, boolean isNewWindow)
 	{
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 		setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 		setBorder(new EmptyBorder(10, 10, 10, 10));
-		List<String> accounts = tracker.getAvailableUsers();
+		Set<String> accounts = getAccounts(username);
 
 		//wraps all user ui components to set a maximum height
 		JPanel uiWrapperPanel = new JPanel();
@@ -216,7 +216,7 @@ public class BankHistoryPanel extends PluginPanel
 				BankHistoryPanel panel = new BankHistoryPanel();
 				panel.setTracker(tracker);
 				panel.setConfig(config);
-				panel.init(true);
+				panel.init(username, true);
 				dialog.setPreferredSize(new Dimension(500, 500));
 
 				dialog.getContentPane().add(panel, BorderLayout.CENTER);
@@ -298,7 +298,7 @@ public class BankHistoryPanel extends PluginPanel
 		uiWrapperPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 		add(Box.createRigidArea(new Dimension(0, 5)));
 
-		loadGraph(account.isEmpty() ? accounts.get(0) : account);
+		loadGraph(account.isEmpty() ? accounts.stream().findFirst().get() : account);
 
 		// Increase/decrease panel (change) panel
 		// Done after the graph is loaded so we have the data points available
@@ -320,6 +320,17 @@ public class BankHistoryPanel extends PluginPanel
 			add(Box.createRigidArea(new Dimension(0, 10)));
 			add(openInNewWindowContainer);
 		}
+	}
+
+	private Set<String> getAccounts(String username) {
+		Set<String> result = new HashSet<>(tracker.getAvailableUsers());
+		result.add(username);
+
+		if (result.isEmpty()) {
+			throw new IllegalStateException("No accounts available");
+		}
+
+		return result;
 	}
 
 	private void updateDataset(String account)
