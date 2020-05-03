@@ -70,4 +70,14 @@ public interface BankHistoryConfig extends Config
 	{
 		return false;
 	}
+
+	@ConfigItem(
+			keyName = "defaultHideAccountStartup",
+			name = "Show accounts selection on startup",
+			description = "Whether or not to show account drop down on startup"
+	)
+	default boolean getShowAccounts()
+	{
+		return true;
+	}
 }

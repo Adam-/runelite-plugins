@@ -25,9 +25,8 @@
 package com.adriansoftware;
 
 import com.google.inject.Provides;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
+
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.math.RoundingMode;
@@ -40,15 +39,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -122,6 +113,13 @@ public class BankHistoryPanel extends PluginPanel
 
 		//account selection
 		JComboBox<String> accountSelectionCombo = new JComboBox<>(new Vector<>(accounts));
+		JCheckBox accountSelectionVisible = new JCheckBox("Show accounts");
+		accountSelectionVisible.setSelected(config.getShowAccounts());
+		accountSelectionVisible.addItemListener((event) -> {
+			accountSelectionCombo.setVisible(accountSelectionVisible.isSelected());
+		});
+
+		accountSelectionVisible.setFocusPainted(false);
 
 		accountSelectionCombo.addItemListener((change) ->
 		{
@@ -289,6 +287,7 @@ public class BankHistoryPanel extends PluginPanel
 
 		//add buttons/user interaction components here
 		uiWrapperPanel.add(accountSelectionCombo);
+		uiWrapperPanel.add(accountSelectionVisible);
 		uiWrapperPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 		uiWrapperPanel.add(advancedContainer);
 		uiWrapperPanel.add(simpleContainer);
