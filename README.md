@@ -8,7 +8,7 @@ Please consider [buying me a coffee](https://www.buymeacoffee.com/c4dSqRC) if yo
 - Track multiple accounts (drop down for changing account).
 - Graph of bank value over time.
 - Simple time range selection (All, Today, Past 24 hours, Last week, etc.).
-- Advanced time selection (Date/time.
+- Advanced time selection (Date/time).
 - Panel in right-hand view can be expanded in a new window.
 
 ### TODO:
