@@ -276,6 +276,11 @@ public class EssPouchPlugin extends Plugin
 				if (widget != null)
 				{
 					int child = event.getActionParam();
+					if (child == -1)
+					{
+						return;
+					}
+
 					widget = widget.getChild(child);
 					if (widget != null)
 					{
