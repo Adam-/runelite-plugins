@@ -80,6 +80,7 @@ public class SepulchrePlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
+		npcs.clear();
 		overlayManager.remove(npcOverlay);
 	}
 
