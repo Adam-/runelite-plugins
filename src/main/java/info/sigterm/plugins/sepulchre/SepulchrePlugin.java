@@ -32,7 +32,9 @@ import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
 import net.runelite.api.NPC;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.client.config.ConfigManager;
@@ -82,6 +84,16 @@ public class SepulchrePlugin extends Plugin
 	{
 		npcs.clear();
 		overlayManager.remove(npcOverlay);
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		if (event.getGameState() == GameState.LOGIN_SCREEN ||
+			event.getGameState() == GameState.HOPPING)
+		{
+			npcs.clear();
+		}
 	}
 
 	@Subscribe
