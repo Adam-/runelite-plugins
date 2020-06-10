@@ -1035,6 +1035,10 @@ public class SuppliesTrackerPlugin extends Plugin
 			{
 				buildEntries(HEALER_ICON_20802);
 			}
+			else if (event.getMessage().contains("Torfinn has retrieved some of your items."))
+			{
+				buildEntries(HEALER_ICON_22308);
+			}
 		}
 	}
 

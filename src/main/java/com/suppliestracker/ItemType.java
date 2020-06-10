@@ -109,7 +109,7 @@ public enum ItemType
 		{
 			return ItemType.CHARGES;
 		}
-		else if (item.getId() == HEALER_ICON_20802)
+		else if (item.getId() == HEALER_ICON_20802 || item.getId() == HEALER_ICON_22308)
 		{
 			return ItemType.DEATH;
 		}

@@ -301,7 +301,7 @@ public abstract class SuppliesBox extends JPanel
 
 		for (SuppliesTrackerItem item : items)
 		{
-			if (item.getId() == HEALER_ICON_20802)
+			if (item.getId() == HEALER_ICON_20802 || item.getId() == HEALER_ICON_22308)
 			{
 				totalPrice += item.getQuantity() * 100000;
 			}
@@ -333,10 +333,17 @@ public abstract class SuppliesBox extends JPanel
 				imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
 				AsyncBufferedImage itemImage = itemManager.getImage(getModifiedItemId(item.getName(), item.getId()), item.getQuantity(), item.getQuantity() > 1);
+
 				if (item.getId() == HEALER_ICON_20802)
 				{
 					itemImage = itemManager.getImage(LIL_ZIK, item.getQuantity(), item.getQuantity() > 1);
 				}
+
+				if (item.getId() == HEALER_ICON_22308)
+				{
+					itemImage = itemManager.getImage(VORKI, item.getQuantity(), item.getQuantity() > 1);
+				}
+
 				itemImage.addTo(imageLabel);
 				slotContainer.add(imageLabel);
 
@@ -715,9 +722,15 @@ public abstract class SuppliesBox extends JPanel
 		@Override
 		final String buildTooltip(int itemId, int qty, SuppliesTrackerItem item)
 		{
-			if (itemId == HEALER_ICON_20802) {
+			if (itemId == HEALER_ICON_20802)
+			{
 				final long price = 100000 * qty;
 				return "ToB Deaths" + " x " + qty + " (" + QuantityFormatter.quantityToStackSize(price) + "gp) ";
+			}
+			if (itemId == HEALER_ICON_22308)
+			{
+				final long price = 100000 * qty;
+				return "Vorkath Deaths" + " x " + qty + " (" + QuantityFormatter.quantityToStackSize(price) + "gp) ";
 			}
 			return "";
 		}
