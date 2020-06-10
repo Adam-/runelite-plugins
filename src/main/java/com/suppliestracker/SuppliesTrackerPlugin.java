@@ -1030,6 +1030,11 @@ public class SuppliesTrackerPlugin extends Plugin
 			{
 				skipProjectileCheckThisTick = true;
 			}
+			else if (event.getMessage().contains("A magical chest")
+					&& event.getMessage().contains("outside the Theatre of Blood"))
+			{
+				buildEntries(HEALER_ICON_20802);
+			}
 		}
 	}
 

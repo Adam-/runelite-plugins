@@ -46,6 +46,7 @@ public enum ItemType
 	JEWELLERY("Jewellery"),
 	CHARGES("Charges"),
 	FARMING("Farming"),
+	DEATH("Deaths"),
 	PRAYER("Prayer");
 
 
@@ -75,7 +76,8 @@ public enum ItemType
 			|| item.getName().toLowerCase().contains(" arrow") || item.getName().toLowerCase().contains("javelin")
 			|| item.getName().toLowerCase().contains("knive") || item.getName().toLowerCase().contains("throwing")
 			|| item.getName().toLowerCase().contains("zulrah's scale") || item.getName().toLowerCase().contains("cannonball")
-			|| item.getName().toLowerCase().contains("knife")|| item.getName().toLowerCase().contains("chinchompa"))
+			|| item.getName().toLowerCase().contains("knife")|| item.getName().toLowerCase().contains("chinchompa")
+			|| item.getName().toLowerCase().contains("thrownaxe"))
 		{
 			return ItemType.AMMO;
 		}
@@ -102,10 +104,14 @@ public enum ItemType
 			return ItemType.FARMING;
 		}
 		else if (item.getId() == SCYTHE_OF_VITUR || item.getId() == SANGUINESTI_STAFF ||
-			item.getId() == TRIDENT_OF_THE_SEAS || item.getId() == TRIDENT_OF_THE_SWAMP ||
-			item.getId() == BLADE_OF_SAELDOR)
+				item.getId() == TRIDENT_OF_THE_SEAS || item.getId() == TRIDENT_OF_THE_SWAMP ||
+				item.getId() == BLADE_OF_SAELDOR)
 		{
 			return ItemType.CHARGES;
+		}
+		else if (item.getId() == HEALER_ICON_20802)
+		{
+			return ItemType.DEATH;
 		}
 		return ItemType.FOOD;
 	}
