@@ -2,6 +2,8 @@ package com.loottable.views;
 
 import java.util.List;
 
+import javax.swing.SwingUtilities;
+
 import java.awt.BorderLayout;
 
 import com.loottable.views.components.LootTablePanel;
@@ -15,9 +17,10 @@ public class LootTablePluginPanel extends PluginPanel {
         setLayout(new BorderLayout());
     }
 
-	public void rebuildPanel(String monsterName, List<String[]> lootTable) {
-        LootTablePanel lootTablePanel = new LootTablePanel(lootTable);
-
-        add(lootTablePanel, BorderLayout.WEST);
+	public void rebuildPanel(String monsterName, List<String[]> lootTable, String filterText) {
+        SwingUtilities.invokeLater(() -> {
+            LootTablePanel lootTablePanel = new LootTablePanel(lootTable);
+            add(lootTablePanel, BorderLayout.WEST);
+        });
     }
 }

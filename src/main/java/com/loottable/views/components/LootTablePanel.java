@@ -19,7 +19,7 @@ public class LootTablePanel extends JPanel {
         ListIterator<String[]> iterator = lootTable.listIterator();
         while (iterator.hasNext()) {
             String[] lootRow = iterator.next();
-            ItemPanel itemPanel = new ItemPanel(lootRow[0], lootRow[1], lootRow[2], lootRow[3]);
+            ItemPanel itemPanel = new ItemPanel(lootRow[0], lootRow[1], lootRow[2], lootRow[3], lootRow[4]);
             lootTablePanel.add(itemPanel);
         }
         
