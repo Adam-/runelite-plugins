@@ -6,7 +6,6 @@ import java.net.URL;
 import java.awt.GridLayout;
 import java.awt.BorderLayout;
 import java.awt.image.BufferedImage;
-import java.awt.Color;
 
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
@@ -51,21 +50,8 @@ public class ItemPanel extends JPanel {
         add(container);
     }
 
-    private JPanel constructItemImage() {
-        JPanel container = new JPanel(new BorderLayout());
-        container.setSize(30, container.getHeight());
-
+    private void fetchImage(JLabel imageLabel) {
         try {
-            // HttpRequest request = HttpRequest.newBuilder()
-            //     .uri(URI.create("https://example.com/"))
-            //     .timeout(Duration.ofMinutes(2))
-            //     .header("Content-Type", "application/json")
-            //     .POST(BodyPublishers.ofFile(Paths.get("file.json")))
-            //     .build();
-            // client.sendAsync(request, BodyHandlers.ofString())
-            //     .thenApply(HttpResponse::body)
-                // .thenAccept(System.out::println);
-
             URL url = new URL(this.imageSource);
             final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty(
@@ -73,14 +59,24 @@ public class ItemPanel extends JPanel {
                 ScrapeWiki.userAgent
             );
             BufferedImage image = ImageIO.read(connection.getInputStream());
-            JLabel label = new JLabel(new ImageIcon(image));
-            label.setSize(35, label.getWidth());
-            container.add(label, BorderLayout.WEST);
-            container.setSize(35, container.getHeight());
-            return container;
-        } catch (Exception error) {
-            return container;
-        }
+            imageLabel.setIcon(new ImageIcon(image));
+        } catch (Exception error) {}
+    }
+
+    private JPanel constructItemImage() {
+        JPanel container = new JPanel(new BorderLayout());
+        container.setSize(30, container.getHeight());
+        JLabel imageLabel = new JLabel();
+
+        // Start thread to fetch image
+        Thread fetchImageThread = new Thread(() -> fetchImage(imageLabel));
+        fetchImageThread.start();
+    
+        imageLabel.setSize(35, imageLabel.getWidth());
+       
+        container.add(imageLabel, BorderLayout.WEST);
+        container.setSize(35, container.getHeight());
+        return container;
     }
 
     /**

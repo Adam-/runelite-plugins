@@ -2,8 +2,6 @@ package com.loottable.controllers;
 
 import java.util.List;
 
-import com.google.inject.Provider;
-import com.loottable.helpers.Log;
 import com.loottable.helpers.ScrapeWiki;
 import com.loottable.helpers.UiUtilities;
 import com.loottable.views.LootTablePluginPanel;
@@ -16,8 +14,6 @@ import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.MenuOptionClicked;
-import net.runelite.api.widgets.WidgetInfo;
-import net.runelite.client.menus.MenuManager;
 import net.runelite.client.menus.WidgetMenuOption;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
@@ -29,8 +25,6 @@ public class LootTableController {
     private NavigationButton navButton;
     private String monsterName;
     private String filterText;
-
-    private WidgetMenuOption widgetMenuOption;
 
     final private String LOOT_TABLE_MENU_OPTION = "Loot Table";
 

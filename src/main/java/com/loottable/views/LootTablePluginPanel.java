@@ -19,6 +19,7 @@ public class LootTablePluginPanel extends PluginPanel {
 
 	public void rebuildPanel(String monsterName, List<String[]> lootTable, String filterText) {
         SwingUtilities.invokeLater(() -> {
+            this.removeAll();
             LootTablePanel lootTablePanel = new LootTablePanel(lootTable);
             add(lootTablePanel, BorderLayout.WEST);
         });
