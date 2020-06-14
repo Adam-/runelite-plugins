@@ -2,7 +2,9 @@ package com.loottable.helpers;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -10,9 +12,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class ScrapeWiki {
-    private static String baseWikiUrl = "https://oldschool.runescape.wiki/w/";
-    private static String baseImageURL = "https://oldschool.runescape.wiki/";
-    public static String userAgent = "Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36";
+    private final static String baseWikiUrl = "https://oldschool.runescape.wiki/w/";
+    private static Document doc;
+
+    public final static String baseImageUrl = "https://oldschool.runescape.wiki";
+    public final static String userAgent = "Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36";
 
     /**
      * Scrapes wiki's html for npcs' drop tables
@@ -20,44 +24,66 @@ public class ScrapeWiki {
      *  / icon / item name / quantity / rarity / price
      * @param monsterName monster's loot table to fetch from wiki
      */
-    public static List<String[]> scrapeWiki(String monsterName) {
-        List<String[]> lootTable = new ArrayList<String[]>();
+    public static Map<String, List<String[]>> scrapeWiki(String monsterName) {
+        Map<String, List<String[]>> allLootTables = new HashMap<String, List<String[]>>();
         String parsedMonsterName = parseStringForUrl(monsterName);
-        Document doc;
         try {
             doc = Jsoup.connect(baseWikiUrl + parsedMonsterName).userAgent(userAgent).get();
-            Elements dropTableRows = doc.select("table.item-drops tbody tr");
+            Elements tableHeaders = doc.select("h3 span.mw-headline");
+            int tableIndex = 0;
+            for (Element tableHeader : tableHeaders) {
+                String tableHeaderString = tableHeader.text();
+                allLootTables.put(
+                    tableHeaderString,
+                    getTableContent(tableIndex)
+                );
+                tableIndex++;
+            }
+            
+        } catch (IOException error) {
+            Log.info(error.toString());
+        }
 
-            for (Element dropTableRow : dropTableRows) {
-                String[] lootRow = new String[5];
-                Elements dropTableCells = dropTableRow.select("td");
-                int index = 1;
+        return allLootTables;
+    }
 
-                for (Element dropTableCell : dropTableCells) {
-                    String cellContent = dropTableCell.text();
-                    Elements images = dropTableCell.select("img");
-                    if (images.size() != 0) {
-                        String imageSource = images.first().attr("src");
+    /**
+     * Unable to get (h3 span[id]) table selector working, just using an index for now
+     * @param tableHeader
+     * @return
+     */
+    private static List<String[]> getTableContent(int tableIndex) {
+        List<String[]> lootTable = new ArrayList<String[]>();
+        Elements dropTables = doc.select("h3 ~ table.item-drops");
+        Elements dropTableRows = dropTables.get(tableIndex).select("tbody tr");
 
-                        if (!imageSource.isEmpty()) {
-                            lootRow[0] = baseImageURL + imageSource;
-                        }
-                    }
+        for (Element dropTableRow : dropTableRows) {
+            String[] lootRow = new String[5];
+            Elements dropTableCells = dropTableRow.select("td");
+            int index = 1;
 
-                    if (cellContent != null && !cellContent.isEmpty() && index < 5) {
-                        cellContent = filterWikiTableContent(cellContent);
-                        lootRow[index] = cellContent;
-                        index++;
+            for (Element dropTableCell : dropTableCells) {
+                String cellContent = dropTableCell.text();
+                Elements images = dropTableCell.select("img");
+                if (images.size() != 0) {
+                    String imageSource = images.first().attr("src");
+
+                    if (!imageSource.isEmpty()) {
+                        lootRow[0] = baseImageUrl + imageSource;
                     }
                 }
 
-                // Don't add if item name hasn't been filled in
-                if (lootRow[0] != null) {
-                    lootTable.add(lootRow);
+                if (cellContent != null && !cellContent.isEmpty() && index < 5) {
+                    cellContent = filterWikiTableContent(cellContent);
+                    lootRow[index] = cellContent;
+                    index++;
                 }
             }
-        } catch (IOException error ) {
-            Log.info(error.toString());
+
+            // Don't add if item name hasn't been filled in
+            if (lootRow[0] != null) {
+                lootTable.add(lootRow);
+            }
         }
 
         return lootTable;
@@ -70,6 +96,10 @@ public class ScrapeWiki {
      */
     public static String filterWikiTableContent(String cellContent) {
         return cellContent.replaceAll("\\[.*\\]", "");
+    }
+
+    public static String parseHeaderToId(String header) {
+        return header.replaceAll("\s", "_");
     }
 
     public static String parseStringForUrl(String monsterName) {

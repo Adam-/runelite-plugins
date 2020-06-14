@@ -1,6 +1,7 @@
 package com.loottable.controllers;
 
 import java.util.List;
+import java.util.Map;
 
 import com.loottable.helpers.ScrapeWiki;
 import com.loottable.helpers.UiUtilities;
@@ -14,7 +15,6 @@ import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.MenuOptionClicked;
-import net.runelite.client.menus.WidgetMenuOption;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
@@ -73,8 +73,8 @@ public class LootTableController {
     public void onMenuOptionClicked(MenuOptionClicked event) {
         if (event.getMenuOption().equals(LOOT_TABLE_MENU_OPTION)) {
             this.monsterName = parseMenuTarget(event.getMenuTarget());
-            List<String[]> lootTable = ScrapeWiki.scrapeWiki(this.monsterName);
-            lootTablePluginPanel.rebuildPanel(this.monsterName, lootTable, this.filterText);
+            Map<String, List<String[]>> allLootTables = ScrapeWiki.scrapeWiki(this.monsterName);
+            lootTablePluginPanel.rebuildPanel(this.monsterName, allLootTables, this.filterText);
         }
     }
 

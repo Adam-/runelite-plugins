@@ -125,7 +125,7 @@ public class ItemPanel extends JPanel {
         quantityLabel.setHorizontalAlignment(JLabel.RIGHT);
         quantityLabel.setVerticalAlignment(JLabel.CENTER);
 
-        JLabel priceLabel = price == "Not sold" ? new JLabel(price) : new JLabel(price + "gp");
+        JLabel priceLabel = price.equals("Not sold") ? new JLabel(price) : new JLabel(price + "gp");
         priceLabel.setForeground(ColorScheme.GRAND_EXCHANGE_ALCH);
         priceLabel.setVerticalAlignment(JLabel.CENTER);
 
