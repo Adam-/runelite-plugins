@@ -98,10 +98,6 @@ public class ScrapeWiki {
         return cellContent.replaceAll("\\[.*\\]", "");
     }
 
-    public static String parseHeaderToId(String header) {
-        return header.replaceAll("\s", "_");
-    }
-
     public static String parseStringForUrl(String monsterName) {
         String parsedMonsterName = monsterName.replace(' ', '_');
         return parsedMonsterName.substring(0, 1).toUpperCase() + parsedMonsterName.substring(1);
