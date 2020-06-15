@@ -14,14 +14,11 @@ import net.runelite.client.ui.PluginPanel;
 
 public class LootTablePluginPanel extends PluginPanel {
     private static final long serialVersionUID = 5758361368464139958L;
-    
-    public LootTablePluginPanel() {
-    }
 
-	public void rebuildPanel(String monsterName, Map<String, List<String[]>> allLootTable, String filterText) {
+	public void rebuildPanel(String monsterName, Map<String, List<String[]>> allLootTable) {
         SwingUtilities.invokeLater(() -> {
             this.removeAll();
-            Header header = new Header(monsterName, filterText);
+            Header header = new Header(monsterName);
             LootTablePanel lootTablePanel = new LootTablePanel(allLootTable);
             add(header);
             add(lootTablePanel, BorderLayout.WEST);

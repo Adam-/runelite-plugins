@@ -24,7 +24,6 @@ public class LootTableController {
     private LootTablePluginPanel lootTablePluginPanel;
     private NavigationButton navButton;
     private String monsterName;
-    private String filterText;
 
     final private String LOOT_TABLE_MENU_OPTION = "Loot Table";
 
@@ -33,7 +32,6 @@ public class LootTableController {
         lootTablePluginPanel = new LootTablePluginPanel();
         setUpNavigationButton();
         this.monsterName = null;
-        this.filterText = null;
     }
 
     /**
@@ -74,7 +72,7 @@ public class LootTableController {
         if (event.getMenuOption().equals(LOOT_TABLE_MENU_OPTION)) {
             this.monsterName = parseMenuTarget(event.getMenuTarget());
             Map<String, List<String[]>> allLootTables = ScrapeWiki.scrapeWiki(this.monsterName);
-            lootTablePluginPanel.rebuildPanel(this.monsterName, allLootTables, this.filterText);
+            lootTablePluginPanel.rebuildPanel(this.monsterName, allLootTables);
         }
     }
 

@@ -11,7 +11,7 @@ import net.runelite.client.ui.FontManager;
 public class Header extends JPanel {
 	private static final long serialVersionUID = -5426065729242203114L;
 
-	public Header(String monsterName, String filterText) {
+	public Header(String monsterName) {
         JLabel monsterNameLabel = new JLabel(monsterName);
         monsterNameLabel.setFont(FontManager.getRunescapeBoldFont());
         monsterNameLabel.setForeground(ColorScheme.BRAND_ORANGE);
