@@ -39,7 +39,6 @@ public class ScrapeWiki {
                 );
                 tableIndex++;
             }
-            
         } catch (IOException error) {
             Log.info(error.toString());
         }
@@ -55,34 +54,35 @@ public class ScrapeWiki {
     private static List<String[]> getTableContent(int tableIndex) {
         List<String[]> lootTable = new ArrayList<String[]>();
         Elements dropTables = doc.select("h3 ~ table.item-drops");
-        Elements dropTableRows = dropTables.get(tableIndex).select("tbody tr");
+        if (dropTables.size() > tableIndex) {
+            Elements dropTableRows = dropTables.get(tableIndex).select("tbody tr");
+            for (Element dropTableRow : dropTableRows) {
+                String[] lootRow = new String[5];
+                Elements dropTableCells = dropTableRow.select("td");
+                int index = 1;
 
-        for (Element dropTableRow : dropTableRows) {
-            String[] lootRow = new String[5];
-            Elements dropTableCells = dropTableRow.select("td");
-            int index = 1;
+                for (Element dropTableCell : dropTableCells) {
+                    String cellContent = dropTableCell.text();
+                    Elements images = dropTableCell.select("img");
 
-            for (Element dropTableCell : dropTableCells) {
-                String cellContent = dropTableCell.text();
-                Elements images = dropTableCell.select("img");
-                if (images.size() != 0) {
-                    String imageSource = images.first().attr("src");
+                    if (images.size() != 0) {
+                        String imageSource = images.first().attr("src");
+                        if (!imageSource.isEmpty()) {
+                            lootRow[0] = baseImageUrl + imageSource;
+                        }
+                    }
 
-                    if (!imageSource.isEmpty()) {
-                        lootRow[0] = baseImageUrl + imageSource;
+                    if (cellContent != null && !cellContent.isEmpty() && index < 5) {
+                        cellContent = filterWikiTableContent(cellContent);
+                        lootRow[index] = cellContent;
+                        index++;
                     }
                 }
 
-                if (cellContent != null && !cellContent.isEmpty() && index < 5) {
-                    cellContent = filterWikiTableContent(cellContent);
-                    lootRow[index] = cellContent;
-                    index++;
+                // Don't add if item name hasn't been filled in
+                if (lootRow[0] != null) {
+                    lootTable.add(lootRow);
                 }
-            }
-
-            // Don't add if item name hasn't been filled in
-            if (lootRow[0] != null) {
-                lootTable.add(lootRow);
             }
         }
 

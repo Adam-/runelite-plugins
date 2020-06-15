@@ -40,13 +40,23 @@ public class ItemPanel extends JPanel {
         JPanel container = new JPanel(new BorderLayout());
         container.setBackground(ColorScheme.DARK_GRAY_COLOR);
         container.setBorder(UiUtilities.ITEM_BORDER);
+
+        JPanel paddingContainer = new JPanel(new BorderLayout());
+        int padding = 2;
+        paddingContainer.setBorder(new EmptyBorder(
+            padding, 
+            padding, 
+            padding, 
+            padding
+        ));
         
         JPanel leftPanel = constructLeftSide();
         JPanel rightPanel = constructRightSide();
 
-        container.add(leftPanel, BorderLayout.WEST);
-        container.add(rightPanel, BorderLayout.EAST);
+        paddingContainer.add(leftPanel, BorderLayout.WEST);
+        paddingContainer.add(rightPanel, BorderLayout.EAST);
 
+        container.add(paddingContainer);
         add(container);
     }
 
@@ -99,6 +109,7 @@ public class ItemPanel extends JPanel {
         itemNameLabel.setVerticalAlignment(JLabel.CENTER);
 
         JLabel rarityLabel = new JLabel(rarity);
+        rarityLabel.setFont(FontManager.getRunescapeSmallFont());
         rarityLabel.setHorizontalAlignment(JLabel.LEFT);
         rarityLabel.setVerticalAlignment(JLabel.CENTER);
 
@@ -121,11 +132,13 @@ public class ItemPanel extends JPanel {
         // rightSidePanel.setBorder(new EmptyBorder(2, 2, 2, 2));
 
         JLabel quantityLabel = new JLabel("x" + quantity);
+        quantityLabel.setFont(FontManager.getRunescapeSmallFont());
         quantityLabel.setBorder(new EmptyBorder(0, 0, 3, 0));
         quantityLabel.setHorizontalAlignment(JLabel.RIGHT);
         quantityLabel.setVerticalAlignment(JLabel.CENTER);
 
         JLabel priceLabel = price.equals("Not sold") ? new JLabel(price) : new JLabel(price + "gp");
+        priceLabel.setFont(FontManager.getRunescapeSmallFont());
         priceLabel.setForeground(ColorScheme.GRAND_EXCHANGE_ALCH);
         priceLabel.setVerticalAlignment(JLabel.CENTER);
 
