@@ -131,7 +131,7 @@ public class ItemPanel extends JPanel {
         JPanel rightSidePanel = new JPanel(new GridLayout(2, 1));
         // rightSidePanel.setBorder(new EmptyBorder(2, 2, 2, 2));
 
-        JLabel quantityLabel = new JLabel("x" + quantity);
+        JLabel quantityLabel = quantity.equals("N/A") ? new JLabel(quantity) : new JLabel("x" + quantity);
         quantityLabel.setFont(FontManager.getRunescapeSmallFont());
         quantityLabel.setBorder(new EmptyBorder(0, 0, 3, 0));
         quantityLabel.setHorizontalAlignment(JLabel.RIGHT);
