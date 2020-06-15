@@ -16,7 +16,7 @@ public class ScrapeWiki {
     private static Document doc;
 
     public final static String baseImageUrl = "https://oldschool.runescape.wiki";
-    public final static String userAgent = "Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36";
+    public final static String userAgent = "RuneLite";
 
     /**
      * Scrapes wiki's html for npcs' drop tables
