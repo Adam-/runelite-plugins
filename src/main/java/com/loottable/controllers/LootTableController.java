@@ -90,7 +90,7 @@ public class LootTableController {
                     UiUtilities.lootTableNavIcon
                 )
             )
-            .priority(2)
+            .priority(5)
             .panel(lootTablePluginPanel)
             .build();
         clientToolbar.addNavigation(navButton);
