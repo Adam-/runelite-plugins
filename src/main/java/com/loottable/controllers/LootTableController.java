@@ -1,7 +1,14 @@
 package com.loottable.controllers;
 
+import java.awt.event.ActionEvent;
+
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import com.loottable.helpers.ScrapeWiki;
 import com.loottable.helpers.UiUtilities;
@@ -29,7 +36,11 @@ public class LootTableController {
 
     public LootTableController(ClientToolbar clientToolbar) {
         this.clientToolbar = clientToolbar;
-        lootTablePluginPanel = new LootTablePluginPanel();
+        Consumer<String> onSearchBarTextChangedListener = text -> onSearchBarTextChanged(text);
+        lootTablePluginPanel = new LootTablePluginPanel(
+            (ActionEvent event) -> onSearchButtonPressed(event),
+            onSearchBarTextChangedListener
+        );
         setUpNavigationButton();
         this.monsterName = null;
     }
@@ -43,7 +54,6 @@ public class LootTableController {
         // Look for Attack option
         for (MenuEntry menuEntry : menuEntries) {
             if (menuEntry.getOption().equals("Attack")) {
-                // String monsterName = menuEntry.getTarget();
                 int widgetId = menuEntry.getParam1();
                 String monsterName = menuEntry.getTarget();
                 final MenuEntry lootTableMenuEntry = new MenuEntry();
@@ -52,15 +62,14 @@ public class LootTableController {
                 lootTableMenuEntry.setIdentifier(menuEntry.getIdentifier());
                 lootTableMenuEntry.setParam1(widgetId);
                 lootTableMenuEntry.setType(MenuAction.RUNELITE.getId());
-                client.setMenuEntries(ArrayUtils.addAll(menuEntries, lootTableMenuEntry));
-                return;
+                client.setMenuEntries(ArrayUtils.addAll(menuEntries, lootTableMenuEntry));     
             }
         }
     }
 
     /**
      * menuOptionTarget structured like <col=ffff00>Monk<col=ff00>  (level-2)
-     * We just want Monk to be returns
+     * We just want Monk to be returned
      * @param menuOptionTarget
      * @return
      */
@@ -76,14 +85,19 @@ public class LootTableController {
         }
     }
 
-    public void onSearchBarTextChange(String newText) {
+    public void onSearchButtonPressed(ActionEvent event) {
+        Map<String, List<String[]>> allLootTables = ScrapeWiki.scrapeWiki(this.monsterName);
+        lootTablePluginPanel.rebuildPanel(this.monsterName, allLootTables);
+    }
 
+    public void onSearchBarTextChanged(String text) {
+        this.monsterName = text;
     }
 
     private void setUpNavigationButton() {
         navButton = NavigationButton
             .builder()
-            .tooltip("Loot Tables")
+            .tooltip("Loot Table")
             .icon(
                 ImageUtil.getResourceStreamFromClass(
                     getClass(), 
