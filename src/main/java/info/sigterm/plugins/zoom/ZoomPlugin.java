@@ -13,7 +13,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 )
 public class ZoomPlugin extends Plugin
 {
-	private static final int INNER_ZOOM_LIMIT = 1200;
+	private static final int INNER_ZOOM_LIMIT = 1400;
 
 	@Inject
 	private Client client;
