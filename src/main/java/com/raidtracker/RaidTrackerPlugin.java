@@ -1,5 +1,7 @@
 package com.raidtracker;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.Getter;
@@ -19,6 +21,8 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.util.Text;
 import net.runelite.client.game.ItemManager;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -34,6 +38,8 @@ public class RaidTrackerPlugin extends Plugin
 	private static final String RAID_COMPLETE_MESSAGE = "Congratulations - your raid is complete!";
 	private static final String DUST_RECIPIENTS = "Dust recipients: ";
 	private static final String TWISTED_KIT_RECIPIENTS = "Twisted Kit recipients: ";
+
+
 
 	@Inject
 	private Client client;
@@ -52,36 +58,42 @@ public class RaidTrackerPlugin extends Plugin
 
 	@Getter
 	private int raidPartyID;
-	private boolean chestOpened;
-	private boolean raidComplete;
-	private boolean loggedIn;
-	private boolean challengeMode = false;
 
-	private int upperTime = -1;
-	private int middleTime = -1;
-	private int lowerTime = -1;
-	private int raidTime = -1;
-	private int totalPoints = -1;
-	private int personalPoints = -1;
-	private int teamSize = -1;
-	private double percentage = -1.0;
-	private String specialLoot = "";
-	private String specialLootReceiver = "";
-	private String kitReceiver = "";
-	private String dustReceiver = "";
-	private int lootSplit = -1;
+	private RaidTracker raidTracker = new RaidTracker() {{
+		chestOpened = false;
+		raidComplete = false;
+		loggedIn = false;
+		challengeMode = false;
+		upperTime = -1;
+		middleTime = -1;
+		lowerTime = -1;
+		raidTime = -1;
+		totalPoints = -1;
+		personalPoints = -1;
+		teamSize = -1;
+		percentage = -1.0;
+		specialLoot = "";
+		specialLootReceiver = "";
+		specialLootValue = -1;
+		kitReceiver = "";
+		dustReceiver = "";
+		lootSplitReceived = -1;
+		lootSplitPaid = -1;
+		lootList = new ArrayList<>();
+	}};
+
+
 
 	private static final WorldPoint TEMP_LOCATION = new WorldPoint(3360, 5152, 2);
 
+
 	@Override
-	protected void startUp() throws Exception
-	{
-		log.info("Example started!");
+	protected void startUp() {
+		log.info("Raid Tracker Started!");
 	}
 
 	@Override
-	protected void shutDown() throws Exception
-	{
+	protected void shutDown() {
 		inRaidChambers = false;
 		reset();
 	}
@@ -96,7 +108,7 @@ public class RaidTrackerPlugin extends Plugin
 		if (tempPartyID != raidPartyID)
 		{
 			// if the player is outside of a raid when the party state changed
-			if (loggedIn
+			if (raidTracker.isLoggedIn()
 					&& !tempInRaid)
 			{
 				reset();
@@ -109,7 +121,7 @@ public class RaidTrackerPlugin extends Plugin
 		if (tempInRaid != inRaidChambers)
 		{
 			// if the player is inside of a raid then check the raid
-			if (tempInRaid && loggedIn)
+			if (tempInRaid && raidTracker.isLoggedIn())
 			{
 				checkRaidPresence();
 			}
@@ -118,6 +130,7 @@ public class RaidTrackerPlugin extends Plugin
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public void onGameStateChanged(GameStateChanged event)
 	{
 		if (client.getGameState() == GameState.LOGGED_IN)
@@ -126,13 +139,14 @@ public class RaidTrackerPlugin extends Plugin
 			if (client.getLocalPlayer() == null
 					|| client.getLocalPlayer().getWorldLocation().equals(TEMP_LOCATION))
 			{
+				//noinspection UnnecessaryReturnStatement
 				return;
 			}
 		}
 		else if (client.getGameState() == GameState.LOGIN_SCREEN
 				|| client.getGameState() == GameState.CONNECTION_LOST)
 		{
-			loggedIn = false;
+			raidTracker.setLoggedIn(false);
 		}
 		else if (client.getGameState() == GameState.HOPPING)
 		{
@@ -146,85 +160,140 @@ public class RaidTrackerPlugin extends Plugin
 	{
 		if (inRaidChambers && event.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION) {
 			String message = Text.removeTags(event.getMessage());
+			log.info(message);
 			if (message.contains(LEVEL_COMPLETE_MESSAGE)) {
-				//TODO: save level times
+				if (message.startsWith("Upper"))
+				{
+					raidTracker.setUpperTime(stringTimeToSeconds(message.split(" level complete! Duration: ")[1]));
+				}
+				if (message.startsWith("Middle"))
+				{
+					raidTracker.setMiddleTime(stringTimeToSeconds(message.split(" level complete! Duration: ")[1]));
+				}
+				if (message.startsWith("Lower"))
+				{
+					raidTracker.setLowerTime(stringTimeToSeconds(message.split(" level complete! Duration: ")[1]));
+				}
 			}
 
 			if (message.startsWith(RAID_COMPLETE_MESSAGE)) {
-				totalPoints = client.getVar(Varbits.TOTAL_POINTS);
-				personalPoints = client.getVar(Varbits.PERSONAL_POINTS);
+				raidTracker.setTotalPoints(client.getVar(Varbits.TOTAL_POINTS));
 
-				percentage = personalPoints / (totalPoints / 100.0);
+				raidTracker.setPersonalPoints(client.getVar(Varbits.PERSONAL_POINTS));
 
-				raidComplete = true;
+				raidTracker.setPercentage(raidTracker.getPersonalPoints() / (raidTracker.getTotalPoints() / 100.0));
+
+				raidTracker.setRaidComplete(true);
 			}
 
-			if (raidComplete && message.startsWith("Team size:"))
+
+			//this won't run yet (team size wrong syntax?)
+			if (raidTracker.isRaidComplete() && message.contains("Team size:"))
 			{
 				String[] split = message.split(" ");
 				if (split[2].length() > 1)
 				{
-					teamSize = parseInt(split[2]);
+					raidTracker.setTeamSize(parseInt(split[2]));
 				}
 				else
 				{
-					teamSize = 1;
+					raidTracker.setTeamSize(1);
 				}
-				raidTime = parseInt(split[5].split(":")[0]) * 60 + parseInt(split[5].split(":")[1]);
+				raidTracker.setRaidTime(stringTimeToSeconds(split[5]));
 			}
 
 			//only special loot contain the "-" (except for the raid complete message)
-			if (raidComplete && message.contains("-"))
+			if (raidTracker.isRaidComplete() && message.contains("-"))
 			{
-				specialLootReceiver = message.split(" - ")[0];
-				specialLoot = message.split(" - ")[1];
-				//TODO: get value of special loot
+				raidTracker.setSpecialLootReceiver(message.split(" - ")[0]);
+				raidTracker.setSpecialLoot(message.split(" - ")[1]);
+
+				raidTracker.setSpecialLootValue(itemManager.search(raidTracker.getSpecialLoot()).get(0).getPrice());
+
 			}
 
 			//not sure if it's possible to get multiples but i'm not gonna bother coding that in
-			if (raidComplete && message.startsWith(TWISTED_KIT_RECIPIENTS))
+			if (raidTracker.isRaidComplete() && message.startsWith(TWISTED_KIT_RECIPIENTS))
 			{
-				kitReceiver = message.split(TWISTED_KIT_RECIPIENTS)[1];
+				raidTracker.setKitReceiver(message.split(TWISTED_KIT_RECIPIENTS)[1]);
 			}
-			if (raidComplete && message.startsWith(DUST_RECIPIENTS)) {
-				dustReceiver = message.split(DUST_RECIPIENTS)[1];
+			if (raidTracker.isRaidComplete() && message.startsWith(DUST_RECIPIENTS)) {
+				raidTracker.setDustReceiver(message.split(DUST_RECIPIENTS)[1]);
 			}
 
-			//challenge mode check
-			if (raidComplete && message.contains("Chambers of Xeric Challenge Mode"))
+			//challenge mode check, won't run yet
+			if (raidTracker.isRaidComplete() && message.contains("Chambers of Xeric Challenge Mode"))
 			{
-				challengeMode = true;
+				raidTracker.setChallengeMode(true);
 			}
 		}
 	}
 
 	@Subscribe
+	@SuppressWarnings("ConstantConditions")
 	public void onWidgetLoaded(WidgetLoaded event) {
+		log.info("widget loaded");
+		Player localPlayer = client.getLocalPlayer();
+
 		if (event.getGroupId() != WidgetID.CHAMBERS_OF_XERIC_REWARD_GROUP_ID ||
-				chestOpened) {
+				raidTracker.isChestOpened()) {
 			return;
 		}
 
-		chestOpened = true;
+		raidTracker.setChestOpened(true);
 
 		ItemContainer rewardItemContainer = client.getItemContainer(InventoryID.CHAMBERS_OF_XERIC_CHEST);
 		if (rewardItemContainer == null) {
 			return;
 		}
 
-		ArrayList<int[]> lootList = new ArrayList<int[]>();
+		ArrayList<RaidTrackerItem> lootList = raidTracker.getLootList();
 
 		Arrays.stream(rewardItemContainer.getItems())
 				.filter(item -> item.getId() > -1)
 				.forEach(item -> {
-					lootList.add(new int[] {
-							item.getId(),
-							item.getQuantity(),
-							itemManager.getItemPrice(item.getId()) * item.getQuantity()
-					});
-				});
+							ItemComposition comp = itemManager.getItemComposition(item.getId());
+							 lootList.add(new RaidTrackerItem() {
+								{
+									name = comp.getName();
+									id = comp.getId();
+									quantity = item.getQuantity();
+									price = comp.getPrice() * quantity;
+								}
+							});
+						});
 
-		//TODO: save values to logger
+		raidTracker.setLootList(lootList);
+
+		//TODO: cutoff for ffa, to be set in config
+
+		//TODO: change each split in sidebar (for example change split loot to ffa) and update it in the json
+		raidTracker.setLootSplitReceived(raidTracker.getSpecialLootValue() / raidTracker.getTeamSize());
+
+
+		if (raidTracker.getSpecialLootReceiver().toLowerCase().trim().equals(localPlayer.getName().toLowerCase().trim()))
+		{
+			raidTracker.setLootSplitPaid(raidTracker.getSpecialLootValue() - raidTracker.getLootSplitReceived());
+		}
+		try
+		{
+
+			//json format
+			String filename= "D:\\Projects\\raid-tracker\\testlogger.json";
+			FileWriter fw = new FileWriter(filename,true); //the true will append the new data
+			Gson gson = new GsonBuilder().create();
+
+			gson.toJson(raidTracker, fw);
+
+			fw.close();
+		}
+		catch(IOException ioe)
+		{
+			System.err.println("IOException: " + ioe.getMessage());
+		}
+		finally {
+			reset();
+		}
 	}
 	@Provides
 	RaidTrackerConfig provideConfig(ConfigManager configManager)
@@ -238,29 +307,35 @@ public class RaidTrackerPlugin extends Plugin
 		}
 
 		inRaidChambers = client.getVar(Varbits.IN_RAID) == 1;
+	}
 
-		if (!inRaidChambers) {
-			return;
-		}
+	private int stringTimeToSeconds(String s)
+	{
+		return parseInt(s.split(":")[0]) * 60 + parseInt(s.split(":")[1]);
 	}
 
 	private void reset()
 	{
-		chestOpened = false;
-		raidComplete = false;
-		challengeMode = false;
-		upperTime = -1;
-		middleTime = -1;
-		lowerTime = -1;
-		raidTime = -1;
-		teamSize = -1;
-		totalPoints = -1;
-		personalPoints = -1;
-		percentage = -1.0;
-		specialLoot = "";
-		specialLootReceiver = "";
-		kitReceiver = "";
-		dustReceiver = "";
-		lootSplit = -1;
+		raidTracker = new RaidTracker() {{
+			chestOpened = false;
+			raidComplete = false;
+			loggedIn = false;
+			challengeMode = false;
+			upperTime = -1;
+			middleTime = -1;
+			lowerTime = -1;
+			raidTime = -1;
+			totalPoints = -1;
+			personalPoints = -1;
+			teamSize = -1;
+			percentage = -1.0;
+			specialLoot = "";
+			specialLootReceiver = "";
+			specialLootValue = -1;
+			kitReceiver = "";
+			dustReceiver = "";
+			lootSplitReceived = -1;
+			lootSplitPaid = -1;
+		}};
 	}
 }
