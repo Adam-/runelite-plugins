@@ -3,7 +3,7 @@ package com.raidtracker;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Provides;
-import javax.inject.Inject;
+import com.google.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -13,7 +13,6 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.WidgetID;
-import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -47,43 +46,16 @@ public class RaidTrackerPlugin extends Plugin
 	@Inject
 	private RaidTrackerConfig config;
 
-	@Inject
-	private ClientThread clientThread;
 
 	@Inject
 	private ItemManager itemManager;
 
 	@Getter
-	private boolean inRaidChambers;
-
-	@Getter
 	private int raidPartyID;
 
-	private RaidTracker raidTracker = new RaidTracker() {{
-		chestOpened = false;
-		raidComplete = false;
-		loggedIn = false;
-		challengeMode = false;
-		upperTime = -1;
-		middleTime = -1;
-		lowerTime = -1;
-		raidTime = -1;
-		totalPoints = -1;
-		personalPoints = -1;
-		teamSize = -1;
-		percentage = -1.0;
-		specialLoot = "";
-		specialLootReceiver = "";
-		specialLootValue = -1;
-		kitReceiver = "";
-		dustReceiver = "";
-		lootSplitReceived = -1;
-		lootSplitPaid = -1;
-		lootList = new ArrayList<>();
-	}};
-
-
-
+	@Inject
+	private RaidTracker raidTracker;
+	
 	private static final WorldPoint TEMP_LOCATION = new WorldPoint(3360, 5152, 2);
 
 
@@ -94,9 +66,10 @@ public class RaidTrackerPlugin extends Plugin
 
 	@Override
 	protected void shutDown() {
-		inRaidChambers = false;
+		raidTracker.setInRaidChambers(false);
 		reset();
 	}
+
 
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
@@ -118,7 +91,7 @@ public class RaidTrackerPlugin extends Plugin
 		}
 
 		// if the player's raid state has changed
-		if (tempInRaid != inRaidChambers)
+		if (tempInRaid != raidTracker.isInRaidChambers())
 		{
 			// if the player is inside of a raid then check the raid
 			if (tempInRaid && raidTracker.isLoggedIn())
@@ -126,7 +99,7 @@ public class RaidTrackerPlugin extends Plugin
 				checkRaidPresence();
 			}
 
-			inRaidChambers = tempInRaid;
+			raidTracker.setInRaidChambers(tempInRaid);
 		}
 	}
 
@@ -154,11 +127,13 @@ public class RaidTrackerPlugin extends Plugin
 		}
 	}
 
-
+	@Inject
 	@Subscribe
-	public void onChatMessage(ChatMessage event)
+	public void onChatMessage(ChatMessage event, RaidTracker raidTracker)
 	{
-		if (inRaidChambers && event.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION) {
+		this.raidTracker = raidTracker;
+		raidTracker.setLoggedIn(true);
+		if (raidTracker.isInRaidChambers() && event.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION) {
 			String message = Text.removeTags(event.getMessage());
 			log.info(message);
 			if (message.contains(LEVEL_COMPLETE_MESSAGE)) {
@@ -184,6 +159,7 @@ public class RaidTrackerPlugin extends Plugin
 				raidTracker.setPercentage(raidTracker.getPersonalPoints() / (raidTracker.getTotalPoints() / 100.0));
 
 				raidTracker.setRaidComplete(true);
+				return;
 			}
 
 
@@ -232,7 +208,9 @@ public class RaidTrackerPlugin extends Plugin
 	@Subscribe
 	@SuppressWarnings("ConstantConditions")
 	public void onWidgetLoaded(WidgetLoaded event) {
-		log.info("widget loaded");
+		if (raidTracker.isInRaidChambers()) { //inRaidChambers
+			log.info("widget loaded");
+		}
 		Player localPlayer = client.getLocalPlayer();
 
 		if (event.getGroupId() != WidgetID.CHAMBERS_OF_XERIC_REWARD_GROUP_ID ||
@@ -301,12 +279,13 @@ public class RaidTrackerPlugin extends Plugin
 		return configManager.getConfig(RaidTrackerConfig.class);
 	}
 
+
 	private void checkRaidPresence() {
 		if (client.getGameState() != GameState.LOGGED_IN) {
 			return;
 		}
 
-		inRaidChambers = client.getVar(Varbits.IN_RAID) == 1;
+		raidTracker.setInRaidChambers(client.getVar(Varbits.IN_RAID) == 1);
 	}
 
 	private int stringTimeToSeconds(String s)
