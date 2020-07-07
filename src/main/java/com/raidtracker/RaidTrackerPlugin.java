@@ -19,6 +19,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.util.Text;
 import net.runelite.client.game.ItemManager;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -167,7 +168,7 @@ public class RaidTrackerPlugin extends Plugin
 			if (raidTracker.isRaidComplete() && message.contains("Team size:"))
 			{
 				String[] split = message.split(" ");
-				if (split[2].length() > 1)
+				if (StringUtils.isNumeric(split[2]))
 				{
 					raidTracker.setTeamSize(parseInt(split[2]));
 				}
@@ -175,7 +176,7 @@ public class RaidTrackerPlugin extends Plugin
 				{
 					raidTracker.setTeamSize(1);
 				}
-				raidTracker.setRaidTime(stringTimeToSeconds(split[5]));
+				raidTracker.setRaidTime(stringTimeToSeconds(split[4]));
 			}
 
 			//only special loot contain the "-" (except for the raid complete message)
@@ -198,9 +199,10 @@ public class RaidTrackerPlugin extends Plugin
 			}
 
 			//challenge mode check, won't run yet
-			if (raidTracker.isRaidComplete() && message.contains("Chambers of Xeric Challenge Mode"))
+			if (raidTracker.isRaidComplete() && message.contains("count is:"))
 			{
-				raidTracker.setChallengeMode(true);
+				raidTracker.setChallengeMode(message.contains("Chambers of Xeric Challenge Mode"));
+				raidTracker.setCompletionCount(parseInt(message.split("count is:")[1].trim()));
 			}
 		}
 	}

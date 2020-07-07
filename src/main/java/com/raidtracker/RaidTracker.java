@@ -21,6 +21,7 @@ public class RaidTracker {
     int personalPoints = -1;
     int teamSize = -1;
     double percentage = -1.0;
+    int completionCount = -1;
     String specialLoot = "";
     String specialLootReceiver = "";
     int specialLootValue = -1;
