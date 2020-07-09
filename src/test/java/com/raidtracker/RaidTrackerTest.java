@@ -3,10 +3,9 @@ package com.raidtracker;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import junit.framework.TestCase;
-import net.runelite.api.ChatMessageType;
-import net.runelite.api.Client;
-import net.runelite.api.Varbits;
+import net.runelite.api.*;
 import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.WidgetLoaded;
 import net.runelite.client.game.ItemManager;
 import net.runelite.http.api.item.ItemPrice;
 import org.junit.Before;
@@ -19,9 +18,12 @@ import com.google.inject.testing.fieldbinder.BoundFieldModule;
 import org.mockito.ArgumentMatchers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -51,6 +53,7 @@ public class RaidTrackerTest extends TestCase
 		Guice.createInjector(BoundFieldModule.of(this)).injectMembers(this);
 	}
 
+	//---------------------------------- onChatMessage tests ------------------------------------------------
 	@Test
 	public void TestRaidComplete()
 	{
@@ -147,5 +150,80 @@ public class RaidTrackerTest extends TestCase
 
 		assertEquals(443, raidTracker.getCompletionCount());
 	}
+
+	//---------------------------------- onWidgetLoaded tests ------------------------------------------------
+
+	@Test
+	public void TestChestOpened()
+	{
+		RaidTracker raidTracker = new RaidTracker();
+		raidTracker.setInRaidChambers(true);
+		raidTracker.setRaidComplete(true);
+
+		WidgetLoaded event = new WidgetLoaded();
+		event.setGroupId(540);
+
+		raidTrackerPlugin.checkChestOpened(event, raidTracker);
+
+		assertEquals(false, raidTracker.isChestOpened());
+
+		event.setGroupId(539); //539 is the COX reward group id
+		raidTrackerPlugin.checkChestOpened(event, raidTracker);
+
+		assertEquals(true, raidTracker.isChestOpened());
+
+	}
+
+	@Test
+	public void TestLootListFactory()
+	{
+		RaidTracker raidTracker = new RaidTracker();
+		raidTracker.setInRaidChambers(true);
+		raidTracker.setRaidComplete(true);
+
+
+		//------------------- general case - 2 stacks of regular items --------------------------
+		Item[] items = new Item[2];
+
+		items[0] = new Item(1, 500);
+		items[1] = new Item(2, 600);
+
+		ItemComposition comp1 = mock(ItemComposition.class);
+		ItemComposition comp2 = mock(ItemComposition.class);
+
+		when(itemManager.getItemComposition(1)).thenReturn(comp1);
+		when(itemManager.getItemComposition(2)).thenReturn(comp2);
+
+		when(comp1.getName()).thenReturn("Pure Essence");
+		when(comp1.getId()).thenReturn(1);
+		when(comp1.getPrice()).thenReturn(5);
+
+		when(comp2.getName()).thenReturn("Teak Planks");
+		when(comp2.getId()).thenReturn(2);
+		when(comp2.getPrice()).thenReturn(255);
+
+		ArrayList<RaidTrackerItem> lootList = raidTrackerPlugin.lootListFactory(items);
+
+		assertEquals(2, lootList.size());
+		assertEquals(2500, lootList.get(0).getPrice());
+		assertEquals(153000, lootList.get(1).getPrice());
+
+		//----------------------------------------- purple ----------------------------------------
+		items = new Item[1];
+		items[0] = new Item(3, 1);
+
+		ItemComposition comp3 = mock(ItemComposition.class);
+		when(itemManager.getItemComposition(3)).thenReturn(comp3);
+
+		when(comp3.getName()).thenReturn("Twisted Bow");
+		when(comp3.getId()).thenReturn(3);
+		when(comp3.getPrice()).thenReturn(1198653000);
+
+		lootList = raidTrackerPlugin.lootListFactory(items);
+
+		assertEquals(1, lootList.size());
+		assertEquals(1198653000, lootList.get(0).getPrice());
+	}
+
 
 }

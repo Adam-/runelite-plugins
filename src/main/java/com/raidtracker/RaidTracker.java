@@ -3,6 +3,7 @@ package com.raidtracker;
 import lombok.Data;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 @Data
 public class RaidTracker {
@@ -12,6 +13,7 @@ public class RaidTracker {
     boolean loggedIn = false;
     boolean challengeMode = false;
     boolean inRaidChambers = false;
+    boolean FreeForAll = false;
 
     int upperTime = -1;
     int middleTime = -1;
@@ -30,5 +32,5 @@ public class RaidTracker {
     int lootSplitReceived = -1;
     int lootSplitPaid = -1;
     ArrayList<RaidTrackerItem> lootList = new ArrayList<>();
-
+    String uniqueID = UUID.randomUUID().toString();
 }

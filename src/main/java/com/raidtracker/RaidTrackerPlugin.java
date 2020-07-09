@@ -1,9 +1,11 @@
 package com.raidtracker;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonWriter;
 import com.google.inject.Provides;
 import com.google.inject.Inject;
+import jdk.nashorn.internal.parser.JSONParser;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -19,14 +21,20 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.util.Text;
 import net.runelite.client.game.ItemManager;
+import net.runelite.http.api.RuneLiteAPI;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static java.lang.Integer.parseInt;
+import static net.runelite.client.RuneLite.RUNELITE_DIR;
 
 @Slf4j
 @PluginDescriptor(
@@ -163,8 +171,6 @@ public class RaidTrackerPlugin extends Plugin
 				return;
 			}
 
-
-			//this won't run yet (team size wrong syntax?)
 			if (raidTracker.isRaidComplete() && message.contains("Team size:"))
 			{
 				String[] split = message.split(" ");
@@ -207,73 +213,42 @@ public class RaidTrackerPlugin extends Plugin
 		}
 	}
 
+
 	@Subscribe
 	@SuppressWarnings("ConstantConditions")
 	public void onWidgetLoaded(WidgetLoaded event) {
-		if (raidTracker.isInRaidChambers()) { //inRaidChambers
-			log.info("widget loaded");
-		}
 		Player localPlayer = client.getLocalPlayer();
+
+		checkChestOpened(event, raidTracker);
 
 		if (event.getGroupId() != WidgetID.CHAMBERS_OF_XERIC_REWARD_GROUP_ID ||
 				raidTracker.isChestOpened()) {
 			return;
 		}
 
-		raidTracker.setChestOpened(true);
-
 		ItemContainer rewardItemContainer = client.getItemContainer(InventoryID.CHAMBERS_OF_XERIC_CHEST);
+
 		if (rewardItemContainer == null) {
 			return;
 		}
 
-		ArrayList<RaidTrackerItem> lootList = raidTracker.getLootList();
-
-		Arrays.stream(rewardItemContainer.getItems())
-				.filter(item -> item.getId() > -1)
-				.forEach(item -> {
-							ItemComposition comp = itemManager.getItemComposition(item.getId());
-							 lootList.add(new RaidTrackerItem() {
-								{
-									name = comp.getName();
-									id = comp.getId();
-									quantity = item.getQuantity();
-									price = comp.getPrice() * quantity;
-								}
-							});
-						});
-
-		raidTracker.setLootList(lootList);
+		raidTracker.setLootList(lootListFactory(rewardItemContainer.getItems()));
 
 		//TODO: cutoff for ffa, to be set in config
 
 		//TODO: change each split in sidebar (for example change split loot to ffa) and update it in the json
-		raidTracker.setLootSplitReceived(raidTracker.getSpecialLootValue() / raidTracker.getTeamSize());
 
+
+		raidTracker.setLootSplitReceived(raidTracker.getSpecialLootValue() / raidTracker.getTeamSize());
 
 		if (raidTracker.getSpecialLootReceiver().toLowerCase().trim().equals(localPlayer.getName().toLowerCase().trim()))
 		{
 			raidTracker.setLootSplitPaid(raidTracker.getSpecialLootValue() - raidTracker.getLootSplitReceived());
 		}
-		try
-		{
 
-			//json format
-			String filename= "D:\\Projects\\raid-tracker\\testlogger.json";
-			FileWriter fw = new FileWriter(filename,true); //the true will append the new data
-			Gson gson = new GsonBuilder().create();
+		writeToFile(raidTracker);
 
-			gson.toJson(raidTracker, fw);
-
-			fw.close();
-		}
-		catch(IOException ioe)
-		{
-			System.err.println("IOException: " + ioe.getMessage());
-		}
-		finally {
-			reset();
-		}
+		reset();
 	}
 	@Provides
 	RaidTrackerConfig provideConfig(ConfigManager configManager)
@@ -281,8 +256,105 @@ public class RaidTrackerPlugin extends Plugin
 		return configManager.getConfig(RaidTrackerConfig.class);
 	}
 
+	public void writeToFile(RaidTracker raidTracker)
+	{
+		//------------- initialization of folders -----------------------
 
-	private void checkRaidPresence() {
+		File dir = new File(RUNELITE_DIR, "loots");
+		dir.mkdir();
+		dir = new File(dir, client.getUsername());
+		dir.mkdir();
+		dir = new File(dir, "cox");
+		dir.mkdir();
+
+//		--------------- actual writing to the file ----------------------
+		try
+		{
+			//use json format so serializing and deserializing is easy
+			Gson gson = new GsonBuilder().create();
+
+			JsonParser parser = new JsonParser();
+
+			String fileName = dir.getAbsolutePath() + "\\raid_tracker_data.log";
+
+			FileWriter fw = new FileWriter(fileName,true); //the true will append the new data
+
+			gson.toJson(parser.parse(getJSONString(raidTracker, gson, parser)), fw);
+
+			fw.append(",\n");
+
+			fw.close();
+		}
+		catch(IOException ioe)
+		{
+			System.err.println("IOException: " + ioe.getMessage());
+		}
+	}
+
+	public String getJSONString(RaidTracker raidTracker, Gson gson, JsonParser parser)
+	{
+		JsonObject RTJson =  parser.parse(gson.toJson(raidTracker)).getAsJsonObject();
+
+
+		List<RaidTrackerItem> lootList = raidTracker.getLootList();
+
+		//------------------ temporary fix until i can get gson.tojson to work for arraylist<RaidTrackerItem> ---------
+		JsonArray lootListToString = new JsonArray();
+
+
+		for (int i = 0; i < lootList.size(); i++)
+		{
+			lootListToString.add(parser.parse(gson.toJson(lootList.get(i), new TypeToken<RaidTrackerItem>(){}.getType())));
+		}
+
+		RTJson.addProperty("lootList", lootListToString.toString());
+
+		//-------------------------------------------------------------------------------------------------------------
+
+//		System.out.println(
+//				gson.toJson(lootList, new TypeToken<List<RaidTrackerItem>>(){}.getType())); //[null], raidtrackerplugin is added to the list of types, which is automatically set to skipserialize true -> null return;
+
+
+
+		//massive bodge, works for now
+		return RTJson.toString().replace("\\\"", "\"").replace("\"[", "[").replace("]\"", "]");
+	}
+
+	public ArrayList<RaidTrackerItem> lootListFactory(Item[] items)
+	{
+		ArrayList<RaidTrackerItem> lootList = new ArrayList<>();
+		Arrays.stream(items)
+				.filter(item -> item.getId() > -1)
+				.forEach(item -> {
+					ItemComposition comp = itemManager.getItemComposition(item.getId());
+					lootList.add(new RaidTrackerItem() {
+						{
+							name = comp.getName();
+							id = comp.getId();
+							quantity = item.getQuantity();
+							price = comp.getPrice() * quantity;
+						}
+					});
+				});
+		return lootList;
+	}
+
+	public void checkChestOpened(WidgetLoaded event, RaidTracker raidTracker)
+	{
+		if (raidTracker.isInRaidChambers()) { //inRaidChambers
+			log.info("widget loaded");
+		}
+
+		if (event.getGroupId() != WidgetID.CHAMBERS_OF_XERIC_REWARD_GROUP_ID ||
+				raidTracker.isChestOpened()) {
+			return;
+		}
+
+		raidTracker.setChestOpened(true);
+	}
+
+	private void checkRaidPresence()
+	{
 		if (client.getGameState() != GameState.LOGGED_IN) {
 			return;
 		}
@@ -297,26 +369,6 @@ public class RaidTrackerPlugin extends Plugin
 
 	private void reset()
 	{
-		raidTracker = new RaidTracker() {{
-			chestOpened = false;
-			raidComplete = false;
-			loggedIn = false;
-			challengeMode = false;
-			upperTime = -1;
-			middleTime = -1;
-			lowerTime = -1;
-			raidTime = -1;
-			totalPoints = -1;
-			personalPoints = -1;
-			teamSize = -1;
-			percentage = -1.0;
-			specialLoot = "";
-			specialLootReceiver = "";
-			specialLootValue = -1;
-			kitReceiver = "";
-			dustReceiver = "";
-			lootSplitReceived = -1;
-			lootSplitPaid = -1;
-		}};
+		raidTracker = new RaidTracker();
 	}
 }
