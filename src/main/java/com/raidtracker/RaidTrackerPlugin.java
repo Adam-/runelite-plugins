@@ -2,10 +2,8 @@ package com.raidtracker;
 
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
-import com.google.gson.stream.JsonWriter;
 import com.google.inject.Provides;
 import com.google.inject.Inject;
-import jdk.nashorn.internal.parser.JSONParser;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -21,14 +19,11 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.util.Text;
 import net.runelite.client.game.ItemManager;
-import net.runelite.http.api.RuneLiteAPI;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -136,26 +131,64 @@ public class RaidTrackerPlugin extends Plugin
 		}
 	}
 
-	@Inject
 	@Subscribe
-	public void onChatMessage(ChatMessage event, RaidTracker raidTracker)
+	public void onChatMessage(ChatMessage event)
 	{
-		this.raidTracker = raidTracker;
+		checkChatMessage(event, raidTracker);
+	}
+
+
+	@Subscribe
+	public void onWidgetLoaded(WidgetLoaded event) {
+
+		if (event.getGroupId() != WidgetID.CHAMBERS_OF_XERIC_REWARD_GROUP_ID ||
+				raidTracker.isChestOpened()) {
+			return;
+		}
+
+		checkChestOpened(event, raidTracker);
+
+		ItemContainer rewardItemContainer = client.getItemContainer(InventoryID.CHAMBERS_OF_XERIC_CHEST);
+
+		if (rewardItemContainer == null) {
+			return;
+		}
+		else {
+			log.info(rewardItemContainer.toString());
+		}
+
+		raidTracker.setLootList(lootListFactory(rewardItemContainer.getItems()));
+		//TODO: cutoff for ffa, to be set in config
+
+		//TODO: change each split in sidebar (for example change split loot to ffa) and update it in the json
+
+		setSplits(raidTracker);
+
+		writeToFile(raidTracker);
+
+		reset();
+	}
+	@Provides
+	RaidTrackerConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(RaidTrackerConfig.class);
+	}
+
+
+	public void checkChatMessage(ChatMessage event, RaidTracker raidTracker)
+	{
 		raidTracker.setLoggedIn(true);
-		if (raidTracker.isInRaidChambers() && event.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION) {
+		if ((raidTracker.isInRaidChambers() && event.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION) || (raidTracker.isInRaidChambers() && event.getType() == ChatMessageType.GAMEMESSAGE)) {
 			String message = Text.removeTags(event.getMessage());
 			log.info(message);
 			if (message.contains(LEVEL_COMPLETE_MESSAGE)) {
-				if (message.startsWith("Upper"))
-				{
+				if (message.startsWith("Upper")) {
 					raidTracker.setUpperTime(stringTimeToSeconds(message.split(" level complete! Duration: ")[1]));
 				}
-				if (message.startsWith("Middle"))
-				{
+				if (message.startsWith("Middle")) {
 					raidTracker.setMiddleTime(stringTimeToSeconds(message.split(" level complete! Duration: ")[1]));
 				}
-				if (message.startsWith("Lower"))
-				{
+				if (message.startsWith("Lower")) {
 					raidTracker.setLowerTime(stringTimeToSeconds(message.split(" level complete! Duration: ")[1]));
 				}
 			}
@@ -168,104 +201,76 @@ public class RaidTrackerPlugin extends Plugin
 				raidTracker.setPercentage(raidTracker.getPersonalPoints() / (raidTracker.getTotalPoints() / 100.0));
 
 				raidTracker.setRaidComplete(true);
-				return;
 			}
 
-			if (raidTracker.isRaidComplete() && message.contains("Team size:"))
-			{
-				String[] split = message.split(" ");
-				if (StringUtils.isNumeric(split[2]))
-				{
-					raidTracker.setTeamSize(parseInt(split[2]));
-				}
-				else
-				{
+			if (raidTracker.isRaidComplete() && message.contains("Team size:")) {
+				String[] split = message.split("Team size: ");
+				if (StringUtils.isNumeric(split[1].split(" ")[0])) {
+					raidTracker.setTeamSize(parseInt(split[1].split(" ")[0]));
+				} else {
 					raidTracker.setTeamSize(1);
 				}
-				raidTracker.setRaidTime(stringTimeToSeconds(split[4]));
+				raidTracker.setRaidTime(stringTimeToSeconds(message.split("Duration: ")[1].split(" ")[0]));
 			}
 
 			//only special loot contain the "-" (except for the raid complete message)
-			if (raidTracker.isRaidComplete() && message.contains("-"))
-			{
+			if (raidTracker.isRaidComplete() && message.contains("-") && !message.startsWith(RAID_COMPLETE_MESSAGE)) {
 				raidTracker.setSpecialLootReceiver(message.split(" - ")[0]);
 				raidTracker.setSpecialLoot(message.split(" - ")[1]);
 
 				raidTracker.setSpecialLootValue(itemManager.search(raidTracker.getSpecialLoot()).get(0).getPrice());
-
 			}
 
 			//not sure if it's possible to get multiples but i'm not gonna bother coding that in
-			if (raidTracker.isRaidComplete() && message.startsWith(TWISTED_KIT_RECIPIENTS))
-			{
+			if (raidTracker.isRaidComplete() && message.startsWith(TWISTED_KIT_RECIPIENTS)) {
 				raidTracker.setKitReceiver(message.split(TWISTED_KIT_RECIPIENTS)[1]);
 			}
 			if (raidTracker.isRaidComplete() && message.startsWith(DUST_RECIPIENTS)) {
 				raidTracker.setDustReceiver(message.split(DUST_RECIPIENTS)[1]);
 			}
 
-			//challenge mode check, won't run yet
-			if (raidTracker.isRaidComplete() && message.contains("count is:"))
-			{
+			if (raidTracker.isRaidComplete() && message.contains("count is:")) {
 				raidTracker.setChallengeMode(message.contains("Chambers of Xeric Challenge Mode"));
 				raidTracker.setCompletionCount(parseInt(message.split("count is:")[1].trim()));
 			}
 		}
 	}
 
-
-	@Subscribe
 	@SuppressWarnings("ConstantConditions")
-	public void onWidgetLoaded(WidgetLoaded event) {
+	public void setSplits(RaidTracker raidTracker)
+	{
 		Player localPlayer = client.getLocalPlayer();
 
-		checkChestOpened(event, raidTracker);
+		int lootSplit = raidTracker.getSpecialLootValue() / raidTracker.getTeamSize();
 
-		if (event.getGroupId() != WidgetID.CHAMBERS_OF_XERIC_REWARD_GROUP_ID ||
-				raidTracker.isChestOpened()) {
-			return;
+		//to be set by the config
+//		boolean standardFFA = true;
+		int cutoff = 1000000;
+
+		if (raidTracker.getSpecialLoot().length() > 0) {
+			if (lootSplit < cutoff) {
+				raidTracker.setFreeForAll(true);
+				raidTracker.setLootSplitReceived(raidTracker.getSpecialLootValue());
+			} else if (raidTracker.getSpecialLootReceiver().toLowerCase().trim().equals(localPlayer.getName().toLowerCase().trim())) {
+				raidTracker.setLootSplitPaid(raidTracker.getSpecialLootValue() - lootSplit);
+				raidTracker.setLootSplitReceived(lootSplit);
+			} else {
+				raidTracker.setLootSplitReceived(lootSplit);
+			}
 		}
-
-		ItemContainer rewardItemContainer = client.getItemContainer(InventoryID.CHAMBERS_OF_XERIC_CHEST);
-
-		if (rewardItemContainer == null) {
-			return;
-		}
-
-		raidTracker.setLootList(lootListFactory(rewardItemContainer.getItems()));
-
-		//TODO: cutoff for ffa, to be set in config
-
-		//TODO: change each split in sidebar (for example change split loot to ffa) and update it in the json
-
-
-		raidTracker.setLootSplitReceived(raidTracker.getSpecialLootValue() / raidTracker.getTeamSize());
-
-		if (raidTracker.getSpecialLootReceiver().toLowerCase().trim().equals(localPlayer.getName().toLowerCase().trim()))
-		{
-			raidTracker.setLootSplitPaid(raidTracker.getSpecialLootValue() - raidTracker.getLootSplitReceived());
-		}
-
-		writeToFile(raidTracker);
-
-		reset();
-	}
-	@Provides
-	RaidTrackerConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(RaidTrackerConfig.class);
 	}
 
 	public void writeToFile(RaidTracker raidTracker)
 	{
 		//------------- initialization of folders -----------------------
+		log.info("writer started");
 
 		File dir = new File(RUNELITE_DIR, "loots");
-		dir.mkdir();
+		IGNORE_RESULT(dir.mkdir());
 		dir = new File(dir, client.getUsername());
-		dir.mkdir();
+		IGNORE_RESULT(dir.mkdir());
 		dir = new File(dir, "cox");
-		dir.mkdir();
+		IGNORE_RESULT(dir.mkdir());
 
 //		--------------- actual writing to the file ----------------------
 		try
@@ -281,7 +286,7 @@ public class RaidTrackerPlugin extends Plugin
 
 			gson.toJson(parser.parse(getJSONString(raidTracker, gson, parser)), fw);
 
-			fw.append(",\n");
+			fw.append("\n");
 
 			fw.close();
 		}
@@ -290,6 +295,9 @@ public class RaidTrackerPlugin extends Plugin
 			System.err.println("IOException: " + ioe.getMessage());
 		}
 	}
+
+	@SuppressWarnings("unused")
+	public void IGNORE_RESULT(boolean b) {}
 
 	public String getJSONString(RaidTracker raidTracker, Gson gson, JsonParser parser)
 	{
@@ -302,9 +310,9 @@ public class RaidTrackerPlugin extends Plugin
 		JsonArray lootListToString = new JsonArray();
 
 
-		for (int i = 0; i < lootList.size(); i++)
-		{
-			lootListToString.add(parser.parse(gson.toJson(lootList.get(i), new TypeToken<RaidTrackerItem>(){}.getType())));
+		for (RaidTrackerItem item : lootList) {
+			lootListToString.add(parser.parse(gson.toJson(item, new TypeToken<RaidTrackerItem>() {
+			}.getType())));
 		}
 
 		RTJson.addProperty("lootList", lootListToString.toString());
@@ -341,10 +349,6 @@ public class RaidTrackerPlugin extends Plugin
 
 	public void checkChestOpened(WidgetLoaded event, RaidTracker raidTracker)
 	{
-		if (raidTracker.isInRaidChambers()) { //inRaidChambers
-			log.info("widget loaded");
-		}
-
 		if (event.getGroupId() != WidgetID.CHAMBERS_OF_XERIC_REWARD_GROUP_ID ||
 				raidTracker.isChestOpened()) {
 			return;

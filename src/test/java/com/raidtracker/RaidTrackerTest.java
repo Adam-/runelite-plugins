@@ -2,10 +2,13 @@ package com.raidtracker;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
+import com.google.inject.internal.cglib.core.$CodeGenerationException;
 import junit.framework.TestCase;
 import net.runelite.api.*;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.WidgetLoaded;
+import net.runelite.client.RuneLite;
+import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.client.game.ItemManager;
 import net.runelite.http.api.item.ItemPrice;
 import org.junit.Before;
@@ -18,10 +21,8 @@ import com.google.inject.testing.fieldbinder.BoundFieldModule;
 import org.mockito.ArgumentMatchers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -62,8 +63,8 @@ public class RaidTrackerTest extends TestCase
 		when(client.getVar(ArgumentMatchers.any(Varbits.class))).thenReturn(5); //random integer, I chose 5
 		raidTracker.setInRaidChambers(true);
 
-		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Congratulations - your raid is complete!", "", 0);
-		raidTrackerPlugin.onChatMessage(message, raidTracker);
+		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Congratulations - your raid is complete! Team size: 15 Players Duration: 50:26 Personal best: 31:12", "", 0);
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
 		assertEquals(true, raidTracker.isRaidComplete());
 	}
@@ -75,14 +76,14 @@ public class RaidTrackerTest extends TestCase
 		raidTracker.setInRaidChambers(true);
 		raidTracker.setRaidComplete(true);
 
-		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Team size: Solo Duration: 40:26 Personal best: 31:12", "", 0);
-		raidTrackerPlugin.onChatMessage(message, raidTracker);
+		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Congratulations - your raid is complete! Team size: Solo Duration: 40:26 Personal best: 31:12", "", 0);
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
 		assertEquals(1, raidTracker.getTeamSize());
 		assertEquals(2426, raidTracker.getRaidTime());
 
-		message.setMessage("Team size: 15 Duration: 50:26 Personal best: 31:12");
-		raidTrackerPlugin.onChatMessage(message, raidTracker);
+		message.setMessage("Congratulations - your raid is complete! Team size: 15 Players Duration: 50:26 Personal best: 31:12");
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
 		assertEquals(15, raidTracker.getTeamSize());
 		assertEquals(3026, raidTracker.getRaidTime());
@@ -108,7 +109,7 @@ public class RaidTrackerTest extends TestCase
 		when(itemManager.search(anyString())).thenReturn(kodaiTestList);
 
 		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "K1NG DK - Kodai insignia", "", 0);
-		raidTrackerPlugin.onChatMessage(message, raidTracker);
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
 		assertEquals("K1NG DK", raidTracker.getSpecialLootReceiver());
 		assertEquals("Kodai insignia", raidTracker.getSpecialLoot());
@@ -123,10 +124,10 @@ public class RaidTrackerTest extends TestCase
 		raidTracker.setRaidComplete(true);
 
 		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Dust recipients: Canvasba", "", 0);
-		raidTrackerPlugin.onChatMessage(message, raidTracker);
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
 		message.setMessage("Twisted Kit recipients: BallerTom");
-		raidTrackerPlugin.onChatMessage(message, raidTracker);
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
 		assertEquals("Canvasba", raidTracker.getDustReceiver());
 		assertEquals("BallerTom", raidTracker.getKitReceiver());
@@ -139,14 +140,14 @@ public class RaidTrackerTest extends TestCase
 		raidTracker.setInRaidChambers(true);
 		raidTracker.setRaidComplete(true);
 
-		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Your completed Chambers of Xeric Challenge Mode count is: 57", "", 0);
-		raidTrackerPlugin.onChatMessage(message, raidTracker);
+		ChatMessage message  = new ChatMessage(null, ChatMessageType.GAMEMESSAGE, "", "Your completed Chambers of Xeric Challenge Mode count is: 57", "", 0);
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
 		assertEquals(true, raidTracker.isChallengeMode());
 		assertEquals(57, raidTracker.getCompletionCount());
 
 		message.setMessage("Your completed Chambers of Xeric count is: 443");
-		raidTrackerPlugin.onChatMessage(message, raidTracker);
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
 		assertEquals(443, raidTracker.getCompletionCount());
 	}
@@ -225,5 +226,49 @@ public class RaidTrackerTest extends TestCase
 		assertEquals(1198653000, lootList.get(0).getPrice());
 	}
 
+	@Test
+	public void TestLootSplits() {
+		//TODO: double purples
+		RaidTracker raidTracker = new RaidTracker();
+		raidTracker.setInRaidChambers(true);
+		raidTracker.setRaidComplete(true);
+
+		List<ItemPrice> kodaiTestList = new ArrayList<>();
+
+		ItemPrice kodaiTest = new ItemPrice();
+
+		kodaiTest.setId(0);
+		kodaiTest.setName("Kodai Insignia");
+		kodaiTest.setPrice(50505050);
+
+		kodaiTestList.add(kodaiTest);
+
+		Player player = mock(Player.class);
+
+		when(itemManager.search(anyString())).thenReturn(kodaiTestList);
+		when(client.getLocalPlayer()).thenReturn(player);
+		when(player.getName()).thenReturn("Canvasba");
+
+		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "K1NG DK - Kodai insignia", "", 0);
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
+
+		message.setMessage("Congratulations - your raid is complete! Team size: 15 Players Duration: 50:26 Personal best: 31:12");
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
+
+		raidTrackerPlugin.setSplits(raidTracker);
+
+		assertTrue(raidTracker.getLootSplitReceived() > -1);
+		assertEquals(-1, raidTracker.lootSplitPaid);
+
+
+		message.setMessage("Canvasba - Kodai insignia");
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
+		raidTrackerPlugin.setSplits(raidTracker);
+
+		assertTrue(raidTracker.getLootSplitReceived() > -1);
+		assertTrue(raidTracker.getLootSplitPaid() > -1);
+
+		assertFalse(raidTracker.isFreeForAll());
+	}
 
 }
