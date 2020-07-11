@@ -168,6 +168,7 @@ public class RaidTrackerPlugin extends Plugin
 
 		reset();
 	}
+
 	@Provides
 	RaidTrackerConfig provideConfig(ConfigManager configManager)
 	{
@@ -231,7 +232,7 @@ public class RaidTrackerPlugin extends Plugin
 
 			if (raidTracker.isRaidComplete() && message.contains("count is:")) {
 				raidTracker.setChallengeMode(message.contains("Chambers of Xeric Challenge Mode"));
-				raidTracker.setCompletionCount(parseInt(message.split("count is:")[1].trim()));
+				raidTracker.setCompletionCount(parseInt(message.split("count is:")[1].trim().replace(".", "")));
 			}
 		}
 	}
@@ -240,6 +241,8 @@ public class RaidTrackerPlugin extends Plugin
 	public void setSplits(RaidTracker raidTracker)
 	{
 		Player localPlayer = client.getLocalPlayer();
+
+		log.info(localPlayer.toString());
 
 		int lootSplit = raidTracker.getSpecialLootValue() / raidTracker.getTeamSize();
 

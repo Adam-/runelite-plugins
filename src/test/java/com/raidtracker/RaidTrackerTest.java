@@ -140,7 +140,7 @@ public class RaidTrackerTest extends TestCase
 		raidTracker.setInRaidChambers(true);
 		raidTracker.setRaidComplete(true);
 
-		ChatMessage message  = new ChatMessage(null, ChatMessageType.GAMEMESSAGE, "", "Your completed Chambers of Xeric Challenge Mode count is: 57", "", 0);
+		ChatMessage message  = new ChatMessage(null, ChatMessageType.GAMEMESSAGE, "", "Your completed Chambers of Xeric Challenge Mode count is: 57.", "", 0);
 		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
 		assertEquals(true, raidTracker.isChallengeMode());
