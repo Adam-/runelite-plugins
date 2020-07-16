@@ -42,10 +42,10 @@ import net.runelite.api.MenuAction;
 import net.runelite.api.Tile;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
-import net.runelite.api.events.PlayerDeath;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -159,9 +159,9 @@ public class DeathIndicatorPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onPlayerDeath(PlayerDeath playerDeath)
+	public void onActorDeath(ActorDeath actorDeath)
 	{
-		if (client.isInInstancedRegion() || playerDeath.getPlayer() != client.getLocalPlayer())
+		if (client.isInInstancedRegion() || actorDeath.getActor() != client.getLocalPlayer())
 		{
 			return;
 		}
