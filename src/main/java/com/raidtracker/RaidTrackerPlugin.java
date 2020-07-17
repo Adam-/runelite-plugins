@@ -242,7 +242,7 @@ public class RaidTrackerPlugin extends Plugin
 	{
 		Player localPlayer = client.getLocalPlayer();
 
-		log.info(localPlayer.toString());
+		log.info(localPlayer.getName());
 
 		int lootSplit = raidTracker.getSpecialLootValue() / raidTracker.getTeamSize();
 
