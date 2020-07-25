@@ -114,16 +114,6 @@ public class EquipmentScreenshotPlugin extends Plugin
 			put("Rune dart", ItemID.RUNE_DART).
 			put("Dragon dart", ItemID.DRAGON_DART).
 			build();
-	static final Map<Integer, Integer> DART_MATERIALS = new ImmutableMap.Builder<Integer, Integer>().
-			put(ItemID.BRONZE_DART, ItemID.BRONZE_BAR).
-			put(ItemID.IRON_DART, ItemID.IRON_BAR).
-			put(ItemID.STEEL_DART, ItemID.STEEL_BAR).
-			put(ItemID.BLACK_DART, -2).
-			put(ItemID.MITHRIL_DART, ItemID.MITHRIL_BAR).
-			put(ItemID.ADAMANT_DART, ItemID.ADAMANTITE_BAR).
-			put(ItemID.RUNE_DART, ItemID.RUNITE_BAR).
-			put(ItemID.DRAGON_DART, -1).
-			build();
 
 	private static final List<Integer> SNOWFLAKE_MAGIC_WEAPONS = new ImmutableList.Builder<Integer>().
 			add(ItemID.GUTHIX_STAFF).
@@ -646,10 +636,10 @@ public class EquipmentScreenshotPlugin extends Plugin
 
 			p = new Point(21, 228);
 			util.drawStatIcon(g2d, p, STAB_ICON, stabA, stabD);
-			util.drawStatIcon(g2d, util.translate(p, 37, 0), SLASH_ICON, slashA, slashD);
-			util.drawStatIcon(g2d, util.translate(p, 37, 0), CRUSH_ICON, crushA, crushD);
-			util.drawStatIcon(g2d, util.translate(p, 37, 0), MACIC_ICON, magicA, magicD);
-			util.drawStatIcon(g2d, util.translate(p, 37, 0), RANGED_ICON, rangeA, rangeD);
+			util.drawStatIcon(g2d, util.nextIconPosition(p), SLASH_ICON, slashA, slashD);
+			util.drawStatIcon(g2d, util.nextIconPosition(p), CRUSH_ICON, crushA, crushD);
+			util.drawStatIcon(g2d, util.nextIconPosition(p), MACIC_ICON, magicA, magicD);
+			util.drawStatIcon(g2d, util.nextIconPosition(p), RANGED_ICON, rangeA, rangeD);
 		}
 
 		g2d.dispose();

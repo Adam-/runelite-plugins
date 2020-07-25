@@ -39,7 +39,7 @@ import net.runelite.client.plugins.runepouch.Runes;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.OverlayUtil;
 
-public class EquipmentRunepouchOverlay
+class EquipmentRunepouchOverlay
 {
 	private static final Varbits[] AMOUNT_VARBITS =
 			{
@@ -68,7 +68,7 @@ public class EquipmentRunepouchOverlay
 		this.client = client;
 	}
 
-	public void renderRunepouchOverlay(Graphics2D graphics, Point location)
+	void renderRunepouchOverlay(Graphics2D graphics, Point location)
 	{
 		assert AMOUNT_VARBITS.length == RUNE_VARBITS.length;
 

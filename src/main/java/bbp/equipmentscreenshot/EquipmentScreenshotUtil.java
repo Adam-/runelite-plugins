@@ -42,7 +42,7 @@ import net.runelite.api.ItemContainer;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 
-public class EquipmentScreenshotUtil
+class EquipmentScreenshotUtil
 {
 	@Inject
 	private Client client;
@@ -56,9 +56,9 @@ public class EquipmentScreenshotUtil
 	@Inject
 	private EquipmentScreenshotConfig config;
 
-	public static final int EQUIPMENT_PADDING = 2;
+	static final int EQUIPMENT_PADDING = 2;
 
-	public static final Map<EquipmentInventorySlot, Point> EQUIPMENT_ICON_OFFSETS = new ImmutableMap.Builder<EquipmentInventorySlot, Point>().
+	private static final Map<EquipmentInventorySlot, Point> EQUIPMENT_ICON_OFFSETS = new ImmutableMap.Builder<EquipmentInventorySlot, Point>().
 			put(EquipmentInventorySlot.HEAD, new Point(6, 4)).
 			put(EquipmentInventorySlot.CAPE, new Point(5, 1)).
 			put(EquipmentInventorySlot.AMULET, new Point(8, 9)).
@@ -72,13 +72,13 @@ public class EquipmentScreenshotUtil
 			put(EquipmentInventorySlot.AMMO, new Point(5, 6)).
 			build();
 
-	public BufferedImage getImage(Item item)
+	BufferedImage getImage(Item item)
 	{
 		ItemComposition itemComposition = itemManager.getItemComposition(item.getId());
 		return itemManager.getImage(item.getId(), item.getQuantity(), itemComposition.isStackable());
 	}
 
-	public BufferedImage copy(BufferedImage bi)
+	BufferedImage copy(BufferedImage bi)
 	{
 		return new BufferedImage(
 				bi.getColorModel(),
@@ -87,7 +87,7 @@ public class EquipmentScreenshotUtil
 				null);
 	}
 
-	public BufferedImage getImageFromSpriteID(int spriteID, boolean crop, boolean useResourcePack)
+	BufferedImage getImageFromSpriteID(int spriteID, boolean crop, boolean useResourcePack)
 	{
 		BufferedImage bi = null;
 		if (useResourcePack && client.getSpriteOverrides().get(spriteID) != null)
@@ -103,35 +103,9 @@ public class EquipmentScreenshotUtil
 		return bi;
 	}
 
-	public BufferedImage getCroppedImageFromSpriteID(int spriteID, boolean useResourcePack)
+	BufferedImage getCroppedImageFromSpriteID(int spriteID, boolean useResourcePack)
 	{
 		return getImageFromSpriteID(spriteID, true, useResourcePack);
-	}
-
-	public BufferedImage getResourcePackImageFromSpriteID(int spriteID, boolean crop)
-	{
-		return getImageFromSpriteID(spriteID, crop, true);
-	}
-
-	public void drawStringFromInt(Graphics2D g2d, int string, Point p, int offsetX, int offsetY)
-	{
-		String str = Integer.toString(string);
-		if (str.charAt(0) != '-' && str.charAt(0) != '0')
-			str = "+" + str;
-		FontMetrics metrics = g2d.getFontMetrics(g2d.getFont());
-		int centerTextOffset = metrics.stringWidth(str) / 2;
-		g2d.drawString(str, p.x + offsetX - centerTextOffset, p.y + offsetY);
-	}
-
-	public void drawString(Graphics2D g2d, String str, Point p, int offsetX, int offsetY, boolean addPlusSign)
-	{
-		if (str.endsWith(".0%") || str.endsWith(".0"))
-			str = str.replace(".0", "");
-		if (addPlusSign && str.charAt(0) != '-' && str.charAt(0) != '0')
-			str = "+" + str;
-		FontMetrics metrics = g2d.getFontMetrics(g2d.getFont());
-		int centerTextOffset = metrics.stringWidth(str) / 2;
-		g2d.drawString(str, p.x + offsetX - centerTextOffset, p.y + offsetY);
 	}
 
 	void drawEquipmentIcon(Graphics2D g2d, EquipmentInventorySlot eis, Point p, Map<EquipmentInventorySlot, BufferedImage> EQUIPMENT_ICONS, boolean useResourcePack)
@@ -143,12 +117,7 @@ public class EquipmentScreenshotUtil
 		g2d.drawImage(bi, null, p.x + EQUIPMENT_PADDING + iconOffset.x, p.y + EQUIPMENT_PADDING + iconOffset.y);
 	}
 
-	void drawEquipmentIcon(Graphics2D g2d, EquipmentInventorySlot eis, Point p, Map<EquipmentInventorySlot, BufferedImage> EQUIPMENT_ICONS)
-	{
-		drawEquipmentIcon(g2d, eis, p, EQUIPMENT_ICONS, true);
-	}
-
-	public boolean isEmpty(ItemContainer ic)
+	boolean isEmpty(ItemContainer ic)
 	{
 		boolean empty = true;
 		for (Item i : ic.getItems())
@@ -162,7 +131,7 @@ public class EquipmentScreenshotUtil
 		return empty;
 	}
 
-	public BufferedImage trimImage(BufferedImage image)
+	private BufferedImage trimImage(BufferedImage image)
 	{
 		if (image == null)
 			return null;
@@ -233,7 +202,7 @@ public class EquipmentScreenshotUtil
 		return image.getSubimage(left, top, right - left + 1, bottom - top + 1);
 	}
 
-	public void tileImage(Graphics2D g2d, BufferedImage bi, Point start, Point finish)
+	void tileImage(Graphics2D g2d, BufferedImage bi, Point start, Point finish)
 	{
 		int x = Math.abs(start.x - finish.x) / bi.getWidth();
 		int y = Math.abs(start.y - finish.y) / bi.getHeight();
@@ -244,7 +213,7 @@ public class EquipmentScreenshotUtil
 					start.y + (!horizontal ? times * bi.getHeight() : 0));
 	}
 
-	public void drawIconWithText(Graphics2D g2d, Point d, BufferedImage bi, int spacing, String str, boolean addPlusSign)
+	void drawIconWithText(Graphics2D g2d, Point d, BufferedImage bi, int spacing, String str, boolean addPlusSign)
 	{
 		Point p = new Point(d.getLocation());
 		if (str.endsWith(".0%") || str.endsWith(".0"))
@@ -260,25 +229,25 @@ public class EquipmentScreenshotUtil
 		drawTextWithShadow(g2d, p, str);
 	}
 
-	public void drawIconWithText(Graphics2D g2d, Point p, int spriteID, boolean useResourcePack, int spacing, String str, boolean addPlusSign)
+	void drawIconWithText(Graphics2D g2d, Point p, int spriteID, boolean useResourcePack, int spacing, String str, boolean addPlusSign)
 	{
 		BufferedImage bi = getCroppedImageFromSpriteID(spriteID, useResourcePack);
 		drawIconWithText(g2d, p, bi, spacing, str, addPlusSign);
 	}
 
-	public void drawIconWithText(Graphics2D g2d, Point p, BufferedImage bi, int spacing, int i, boolean addPlusSign)
+	void drawIconWithText(Graphics2D g2d, Point p, BufferedImage bi, int spacing, int i, boolean addPlusSign)
 	{
 		String str = Integer.toString(i);
 		drawIconWithText(g2d, p, bi, spacing, str, addPlusSign);
 	}
 
-	public void drawIconWithText(Graphics2D g2d, Point p, int spriteID, boolean useResourcePack, int spacing, int i, boolean addPlusSign)
+	void drawIconWithText(Graphics2D g2d, Point p, int spriteID, boolean useResourcePack, int spacing, int i, boolean addPlusSign)
 	{
 		BufferedImage bi = getCroppedImageFromSpriteID(spriteID, useResourcePack);
 		drawIconWithText(g2d, p, bi, spacing, i, addPlusSign);
 	}
 
-	public void drawTextWithShadow(Graphics2D g2d, Point p, String str)
+	private void drawTextWithShadow(Graphics2D g2d, Point p, String str)
 	{
 		g2d.setColor(Color.black);
 		g2d.drawString(str, p.x + 1, p.y + 1);
@@ -287,16 +256,10 @@ public class EquipmentScreenshotUtil
 		g2d.drawString(str, p.x, p.y);
 	}
 
-	public void drawTextWithShadow(Graphics2D g2d, Point d, int hOffset, int vOffset, String str)
+	private void drawTextWithShadow(Graphics2D g2d, Point d, int hOffset, int vOffset, String str)
 	{
 		Point p = new Point(d.getLocation());
 		p.translate(hOffset, vOffset);
-		drawTextWithShadow(g2d, p, str);
-	}
-
-	public void drawTextWithShadow(Graphics2D g2d, Point p, int string)
-	{
-		String str = intToSignedString(string);
 		drawTextWithShadow(g2d, p, str);
 	}
 
@@ -331,9 +294,9 @@ public class EquipmentScreenshotUtil
 		return str;
 	}
 
-	Point translate(Point p, int xOffset, int yOffset)
+	Point nextIconPosition(Point p)
 	{
-		p.translate(xOffset, yOffset);
+		p.translate(37, 0);
 		return p;
 	}
 }

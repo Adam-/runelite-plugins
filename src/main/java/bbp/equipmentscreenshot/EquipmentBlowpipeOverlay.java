@@ -27,8 +27,10 @@ package bbp.equipmentscreenshot;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.util.Map;
 import javax.inject.Inject;
 
+import com.google.common.collect.ImmutableMap;
 import net.runelite.api.Client;
 import net.runelite.api.ItemID;
 import net.runelite.api.Point;
@@ -39,11 +41,23 @@ import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.OverlayUtil;
 import net.runelite.client.util.ImageUtil;
 
-public class EquipmentBlowpipeOverlay
+class EquipmentBlowpipeOverlay
 {
-	private final Client client;
+	private static final Map<Integer, Integer> DART_MATERIALS = new ImmutableMap.Builder<Integer, Integer>().
+			put(ItemID.BRONZE_DART, ItemID.BRONZE_BAR).
+			put(ItemID.IRON_DART, ItemID.IRON_BAR).
+			put(ItemID.STEEL_DART, ItemID.STEEL_BAR).
+			put(ItemID.BLACK_DART, -2).
+			put(ItemID.MITHRIL_DART, ItemID.MITHRIL_BAR).
+			put(ItemID.ADAMANT_DART, ItemID.ADAMANTITE_BAR).
+			put(ItemID.RUNE_DART, ItemID.RUNITE_BAR).
+			put(ItemID.DRAGON_DART, -1).
+			build();
 
 	private final int MAX_CHARGES = 16383;
+
+	@Inject
+	private Client client;
 
 	@Inject
 	private EquipmentScreenshotPlugin plugin;
@@ -57,16 +71,10 @@ public class EquipmentBlowpipeOverlay
 	@Inject
 	private EquipmentScreenshotConfig config;
 
-	@Inject
-	EquipmentBlowpipeOverlay(Client client)
-	{
-		this.client = client;
-	}
-
-	public void renderBlowpipeOverlay(Graphics2D graphics, Point location)
+	void renderBlowpipeOverlay(Graphics2D graphics, Point location)
 	{
 		BufferedImage dartImage = null;
-		Integer dartMat = plugin.DART_MATERIALS.get(plugin.getDartID());
+		Integer dartMat = DART_MATERIALS.get(plugin.getDartID());
 		if (dartMat != null)
 		{
 			if (dartMat == -1)
