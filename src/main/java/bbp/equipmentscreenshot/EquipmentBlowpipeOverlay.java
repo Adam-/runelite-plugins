@@ -24,7 +24,6 @@
  */
 package bbp.equipmentscreenshot;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.Map;
@@ -70,6 +69,9 @@ class EquipmentBlowpipeOverlay
 
 	@Inject
 	private EquipmentScreenshotConfig config;
+
+	@Inject
+	private EquipmentScreenshotUtil util;
 
 	void renderBlowpipeOverlay(Graphics2D graphics, Point location)
 	{
@@ -121,13 +123,9 @@ class EquipmentBlowpipeOverlay
 						new Point(location.getX() - 4, location.getY() + graphics.getFontMetrics().getHeight() * (i == 2 ? 1 : 0) - 7 + (i == 2 ? 11 : 0)),
 						resizedImg);
 
-				graphics.setColor(Color.black);
-				graphics.drawString("" + formatNumber(amount), location.getX() + 14,
-						location.getY() + 13 - (i == 2 ? 3 : 0) + (graphics.getFontMetrics().getHeight() - 1) * i);
-
-				graphics.setColor(config.textColor());
-				graphics.drawString("" + formatNumber(amount), location.getX() + 13,
-						location.getY() + 12 - (i == 2 ? 3 : 0) + (graphics.getFontMetrics().getHeight() - 1) * i);
+				// Draw dart and scale amount
+				int vOffset = 12 - (i == 2 ? 3 : 0) + (graphics.getFontMetrics().getHeight() - 1) * i;
+				util.drawTextWithShadow(graphics, location, 13, vOffset, "" + formatNumber(amount));
 			}
 		}
 	}

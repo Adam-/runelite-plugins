@@ -263,6 +263,13 @@ class EquipmentScreenshotUtil
 		drawTextWithShadow(g2d, p, str);
 	}
 
+	void drawTextWithShadow(Graphics2D g2d, net.runelite.api.Point d, int hOffset, int vOffset, String str)
+	{
+		Point p = new Point(d.getX(), d.getY());
+		p.translate(hOffset, vOffset);
+		drawTextWithShadow(g2d, p, str);
+	}
+
 	void drawStatIcon(Graphics2D g2d, Point p, BufferedImage bi, int a, int d)
 	{
 		boolean showStyleIcons = config.showAllOptions() || config.showStyleIcons();

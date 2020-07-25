@@ -24,7 +24,6 @@
  */
 package bbp.equipmentscreenshot;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -51,7 +50,8 @@ class EquipmentRunepouchOverlay
 			};
 	private static final Dimension IMAGE_SIZE = new Dimension(11, 11);
 
-	private final Client client;
+	@Inject
+	private Client client;
 
 	@Inject
 	private ItemManager itemManager;
@@ -63,15 +63,10 @@ class EquipmentRunepouchOverlay
 	private EquipmentScreenshotConfig config;
 
 	@Inject
-	EquipmentRunepouchOverlay(Client client)
-	{
-		this.client = client;
-	}
+	private EquipmentScreenshotUtil util;
 
 	void renderRunepouchOverlay(Graphics2D graphics, Point location)
 	{
-		assert AMOUNT_VARBITS.length == RUNE_VARBITS.length;
-
 		boolean showIcons = true;
 		if (configManager.getConfiguration("runepouch", "runeicons", Boolean.class) != null)
 			showIcons = configManager.getConfiguration("runepouch", "runeicons", Boolean.class);
@@ -92,13 +87,9 @@ class EquipmentRunepouchOverlay
 			if (rune == null)
 				continue;
 
-			graphics.setColor(Color.black);
-			graphics.drawString("" + formatNumber(amount), location.getX() + (showIcons ? 12 : 5),
-					location.getY() + 13 + (graphics.getFontMetrics().getHeight() - 1) * i);
-
-			graphics.setColor(config.textColor());
-			graphics.drawString("" + formatNumber(amount), location.getX() + (showIcons ? 11 : 4),
-					location.getY() + 12 + (graphics.getFontMetrics().getHeight() - 1) * i);
+			int hOffset = (showIcons ? 11 : 4);
+			int vOffset = 12 + (graphics.getFontMetrics().getHeight() - 1) * i;
+			util.drawTextWithShadow(graphics, location, hOffset, vOffset, "" + formatNumber(amount));
 
 			if (!showIcons)
 				continue;
