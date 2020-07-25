@@ -1,5 +1,7 @@
 # Equipment Screenshot
-Takes screenshots of inventory and equipt items for ease of sharing gear setups
+Takes screenshots of inventory and equipt items for ease of sharing gear setups<br/>
+You can take an equipment screenshot via the right-click menu on the Equipment tab.<br/>
+![menu](https://i.gyazo.com/bde107b53e19236a91a824e6f24a54bc.png)<br/>
 
 ## Overview of added features:
 Default settings:<br/>
