@@ -50,7 +50,7 @@ public class RLGL implements RuneLiteGL
 		}
 		else if (OSType.getOSType() == OSType.MacOS)
 		{
-			if (!"amd64".equals(arch))
+			if (!"x86_64".equals(arch))
 			{
 				throw new RuntimeException("Arch is unsupported: MacOS " + arch);
 			}
