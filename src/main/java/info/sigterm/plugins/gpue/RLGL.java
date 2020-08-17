@@ -31,6 +31,9 @@ public class RLGL implements RuneLiteGL
 	public void init(Canvas canvas) throws Exception
 	{
 		final String arch = System.getProperty("os.arch");
+
+		log.debug("Loading library for {} {}", arch, OSType.getOSType());
+
 		if (OSType.getOSType() == OSType.Linux)
 		{
 			if (!"amd64".equals(arch))
@@ -63,6 +66,8 @@ public class RLGL implements RuneLiteGL
 			{
 				throw new RuntimeException("Arch is unsupported: Windows " + arch);
 			}
+
+			System.loadLibrary("jawt");
 
 			try (InputStream in = getClass().getResourceAsStream("windows-" + arch + "/rlgl.dll"))
 			{
