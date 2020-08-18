@@ -214,4 +214,15 @@ public interface EquipmentScreenshotConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(
+		position = 87,
+		keyName = "button",
+		name = "Show button",
+		description = "Shows a button in the equipment interface to take a screenshot"
+	)
+	default boolean button()
+	{
+		return true;
+	}
 }

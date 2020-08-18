@@ -1,7 +1,8 @@
 # Equipment Screenshot
 Takes screenshots of inventory and equipt items for ease of sharing gear setups<br/>
-You can take an equipment screenshot via the right-click menu on the Equipment tab.<br/>
-![menu](https://i.gyazo.com/bde107b53e19236a91a824e6f24a54bc.png)<br/>
+You can take an equipment screenshot via the right-click menu on the Equipment tab, or the button in the equipment interface.<br/>
+When in resizable bottom line mode, the right-click menu is instead part of the Inventory tab(requires engine work to fix).<br/>
+![menu](https://i.gyazo.com/bde107b53e19236a91a824e6f24a54bc.png) ![button](https://i.gyazo.com/f60ef7694d5b5134769c9f6b21def1fc.png)<br/>
 
 ## Overview of added features:
 Default settings:<br/>
@@ -19,4 +20,5 @@ Equipment Screenshot plugin is licensed under the BSD 2-Clause License. See [LIC
 
 ## Author
 [Blackberry0Pie](https://github.com/Blackberry0Pie) / Truth Forger - Equipment Screenshot plugin<br/>
-[Tyler](http://github.com/tylerthardy) - Rune pouch overlay
+[Tyler](http://github.com/tylerthardy) - Rune pouch overlay<br/>
+[Raiyni](https://github.com/raiyni) - Screenshot button from the Bank Screenshot plugin
