@@ -172,7 +172,8 @@ public class DiscordLootLoggerPlugin extends Plugin
         }
 	}
 
-    private void sendWebhooks(WebhookBody webhookBody) {
+    private void sendWebhooks(WebhookBody webhookBody)
+	{
         String configUrl = config.webhook();
         if (Strings.isNullOrEmpty(configUrl))
         {
@@ -198,7 +199,8 @@ public class DiscordLootLoggerPlugin extends Plugin
 		}
 	}
 
-	private void sendWebhookWithScreenshot(HttpUrl url, MultipartBody.Builder requestBodyBuilder) {
+	private void sendWebhookWithScreenshot(HttpUrl url, MultipartBody.Builder requestBodyBuilder)
+	{
 		drawManager.requestNextFrameListener(image -> {
 			BufferedImage bufferedImage = (BufferedImage) image;
 			byte[] imageBytes;
@@ -217,7 +219,8 @@ public class DiscordLootLoggerPlugin extends Plugin
 		});
 	}
 
-	private void buildRequestAndSend(HttpUrl url, MultipartBody.Builder requestBodyBuilder) {
+	private void buildRequestAndSend(HttpUrl url, MultipartBody.Builder requestBodyBuilder)
+	{
 		RequestBody requestBody = requestBodyBuilder.build();
 		Request request = new Request.Builder()
 				.url(url)
@@ -227,7 +230,8 @@ public class DiscordLootLoggerPlugin extends Plugin
 	}
 
 
-	private byte[] convertImageToByteArray(BufferedImage bufferedImage) throws IOException {
+	private byte[] convertImageToByteArray(BufferedImage bufferedImage) throws IOException
+	{
 		byte[] imageBytes;
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         ImageIO.write(bufferedImage, "png", byteArrayOutputStream);
