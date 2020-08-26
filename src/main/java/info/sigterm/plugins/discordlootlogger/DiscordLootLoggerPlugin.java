@@ -3,19 +3,16 @@ package info.sigterm.plugins.discordlootlogger;
 import com.google.common.base.Strings;
 import com.google.inject.Provides;
 
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Actor;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.NPC;
 import net.runelite.client.config.ConfigManager;
@@ -29,12 +26,20 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.DrawManager;
 import net.runelite.client.util.ImageCapture;
+import net.runelite.client.plugins.loottracker.LootReceived;
 import net.runelite.client.util.Text;
 import net.runelite.client.util.WildcardMatcher;
 import static net.runelite.http.api.RuneLiteAPI.GSON;
-import static net.runelite.http.api.RuneLiteAPI.JSON;
-
-import okhttp3.*;
+import net.runelite.http.api.loottracker.LootRecordType;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 @Slf4j
 @PluginDescriptor(
@@ -103,14 +108,14 @@ public class DiscordLootLoggerPlugin extends Plugin
 			{
 				if (WildcardMatcher.matches(npcName, npc.getName()))
 				{
-					processLoot(npc, items);
+					processLoot(npc.getName(), items);
 					return;
 				}
 			}
 		}
 		else
 		{
-			processLoot(npc, items);
+			processLoot(npc.getName(), items);
 		}
 	}
 
@@ -118,17 +123,33 @@ public class DiscordLootLoggerPlugin extends Plugin
 	public void onPlayerLootReceived(PlayerLootReceived playerLootReceived)
 	{
 		Collection<ItemStack> items = playerLootReceived.getItems();
-		processLoot(playerLootReceived.getPlayer(), items);
+		processLoot(playerLootReceived.getPlayer().getName(), items);
 	}
 
-	private void processLoot(Actor from, Collection<ItemStack> items)
+	@Subscribe
+	public void onLootReceived(LootReceived lootReceived)
+	{
+		if (lootReceived.getType() != LootRecordType.EVENT)
+		{
+			return;
+		}
+
+		if (!lootReceived.getName().equals("Theatre of Blood") && !lootReceived.getName().equals("Chambers of Xeric"))
+		{
+			return;
+		}
+
+		processLoot(lootReceived.getName(), lootReceived.getItems());
+	}
+
+	private void processLoot(String name, Collection<ItemStack> items)
 	{
 		WebhookBody webhookBody = new WebhookBody();
 
 		long totalValue = 0;
 		StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append(from.getName()).append(":\n");
-		for (ItemStack item : items)
+		stringBuilder.append(name).append(":\n");
+		for (ItemStack item : stack(items))
 		{
 			int itemId = item.getId();
 			int qty = item.getQuantity();
@@ -176,7 +197,7 @@ public class DiscordLootLoggerPlugin extends Plugin
 
 	private void sendWebhookWithScreenshot(HttpUrl url, MultipartBody.Builder requestBodyBuilder) {
 		drawManager.requestNextFrameListener(image -> {
-			BufferedImage bufferedImage = getBufferedImageScreenshot(image);
+			BufferedImage bufferedImage = (BufferedImage) image;
 			byte[] imageBytes;
 			try {
 				imageBytes = convertImageToByteArray(bufferedImage);
@@ -200,13 +221,6 @@ public class DiscordLootLoggerPlugin extends Plugin
 		sendRequest(request);
 	}
 
-	private BufferedImage getBufferedImageScreenshot(Image image) {
-		BufferedImage bufferedImage = (BufferedImage) image;
-		Graphics2D bGr = bufferedImage.createGraphics();
-		bGr.drawImage(image, 0, 0, null);
-		bGr.dispose();
-		return bufferedImage;
-	}
 
 	private byte[] convertImageToByteArray(BufferedImage bufferedImage) throws IOException {
 		byte[] imageBytes;
@@ -216,17 +230,6 @@ public class DiscordLootLoggerPlugin extends Plugin
         imageBytes = byteArrayOutputStream.toByteArray();
         byteArrayOutputStream.close();
 		return imageBytes;
-	}
-
-	private void sendLootWebhook(WebhookBody webhookBody, HttpUrl url)
-	{
-
-		Request request = new Request.Builder()
-			.url(url)
-			.post(RequestBody.create(JSON, GSON.toJson(webhookBody)))
-			.build();
-
-		sendRequest(request);
 	}
 
 	private void sendRequest(Request request) {
@@ -244,5 +247,34 @@ public class DiscordLootLoggerPlugin extends Plugin
 				response.close();
 			}
 		});
+	}
+
+	private static Collection<ItemStack> stack(Collection<ItemStack> items)
+	{
+		final List<ItemStack> list = new ArrayList<>();
+
+		for (final ItemStack item : items)
+		{
+			int quantity = 0;
+			for (final ItemStack i : list)
+			{
+				if (i.getId() == item.getId())
+				{
+					quantity = i.getQuantity();
+					list.remove(i);
+					break;
+				}
+			}
+			if (quantity > 0)
+			{
+				list.add(new ItemStack(item.getId(), item.getQuantity() + quantity, item.getLocation()));
+			}
+			else
+			{
+				list.add(item);
+			}
+		}
+
+		return list;
 	}
 }
