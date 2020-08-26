@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -156,39 +158,50 @@ public class DiscordLootLoggerPlugin extends Plugin
             return;
         }
         HttpUrl url = HttpUrl.parse(configUrl);
-        sendLootWebhook(webhookBody, url);
-        if (config.sendScreenshot())
-        {
-			sendScreenShotWebhook(url);
-		}
+		sendWebhook(url, webhookBody);
     }
 
-    private void sendScreenShotWebhook(HttpUrl url)
+    private void sendWebhook(HttpUrl url, WebhookBody webhookBody)
 	{
+		MultipartBody.Builder requestBodyBuilder = new MultipartBody.Builder()
+				.setType(MultipartBody.FORM)
+				.addFormDataPart("payload_json", GSON.toJson(webhookBody));
+
+		if (config.sendScreenshot()) {
+			sendWebhookWithScreenshot(url, requestBodyBuilder);
+		} else {
+			buildRequestAndSend(url, requestBodyBuilder);
+		}
+	}
+
+	private void sendWebhookWithScreenshot(HttpUrl url, MultipartBody.Builder requestBodyBuilder) {
 		drawManager.requestNextFrameListener(image -> {
 			BufferedImage bufferedImage = getBufferedImageScreenshot(image);
 			byte[] imageBytes;
 			try {
-                 imageBytes = convertImageToByteArray(bufferedImage);
-            } catch (IOException e) {
-			    log.debug("Error converting image to byte array");
-			    return;
-            }
-			RequestBody requestBody = new MultipartBody.Builder()
-					.setType(MultipartBody.FORM)
-					.addFormDataPart("file", "image.png",
-							RequestBody.create(MediaType.parse("image/png"), imageBytes))
-					.build();
-			Request request = new Request.Builder()
-					.url(url)
-					.post(requestBody)
-					.build();
-			sendRequest(request);
+				imageBytes = convertImageToByteArray(bufferedImage);
+			} catch (IOException e) {
+				log.debug("Error converting image to byte array");
+				return;
+			}
+
+			requestBodyBuilder.addFormDataPart("file", "image.png",
+					RequestBody.create(MediaType.parse("image/png"), imageBytes));
+			buildRequestAndSend(url, requestBodyBuilder);
 		});
 	}
 
+	private void buildRequestAndSend(HttpUrl url, MultipartBody.Builder requestBodyBuilder) {
+		RequestBody requestBody = requestBodyBuilder.build();
+		Request request = new Request.Builder()
+				.url(url)
+				.post(requestBody)
+				.build();
+		sendRequest(request);
+	}
+
 	private BufferedImage getBufferedImageScreenshot(Image image) {
-		BufferedImage bufferedImage = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+		BufferedImage bufferedImage = (BufferedImage) image;
 		Graphics2D bGr = bufferedImage.createGraphics();
 		bGr.drawImage(image, 0, 0, null);
 		bGr.dispose();
