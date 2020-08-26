@@ -17,6 +17,15 @@ public interface DiscordLootLoggerConfig extends Config
 	String webhook();
 
 	@ConfigItem(
+			keyName = "sendScreenshot",
+			name = "Send Screenshot",
+			description = "Option to include a screenshot of the game client when receiving the loot."
+	)
+	default boolean sendScreenshot() {
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "lootnpcs",
 		name = "Loot NPCs",
 		description = "Only logs loot from these NPCs, comma separated"

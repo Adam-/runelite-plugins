@@ -2,14 +2,18 @@ package info.sigterm.plugins.discordlootlogger;
 
 import com.google.common.base.Strings;
 import com.google.inject.Provides;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
-import net.runelite.api.Client;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.NPC;
 import net.runelite.client.config.ConfigManager;
@@ -21,17 +25,14 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.ItemStack;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.DrawManager;
+import net.runelite.client.util.ImageCapture;
 import net.runelite.client.util.Text;
 import net.runelite.client.util.WildcardMatcher;
 import static net.runelite.http.api.RuneLiteAPI.GSON;
 import static net.runelite.http.api.RuneLiteAPI.JSON;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+
+import okhttp3.*;
 
 @Slf4j
 @PluginDescriptor(
@@ -47,6 +48,12 @@ public class DiscordLootLoggerPlugin extends Plugin
 
 	@Inject
 	private OkHttpClient okHttpClient;
+
+	@Inject
+	private ImageCapture imageCapture;
+
+	@Inject
+	private DrawManager drawManager;
 
 	private List<String> lootNpcs;
 
@@ -138,31 +145,84 @@ public class DiscordLootLoggerPlugin extends Plugin
 		if (targetValue == 0 || totalValue >= targetValue)
 		{
 			webhookBody.setContent(stringBuilder.toString());
-			sendWebhook(webhookBody);
-		}
+            sendWebhooks(webhookBody);
+        }
 	}
 
-	private void sendWebhook(WebhookBody webhookBody)
-	{
-		String configUrl = config.webhook();
-		if (Strings.isNullOrEmpty(configUrl))
-		{
-			return;
+    private void sendWebhooks(WebhookBody webhookBody) {
+        String configUrl = config.webhook();
+        if (Strings.isNullOrEmpty(configUrl))
+        {
+            return;
+        }
+        HttpUrl url = HttpUrl.parse(configUrl);
+        sendLootWebhook(webhookBody, url);
+        if (config.sendScreenshot())
+        {
+			sendScreenShotWebhook(url);
 		}
+    }
 
-		HttpUrl url = HttpUrl.parse(configUrl);
+    private void sendScreenShotWebhook(HttpUrl url)
+	{
+		drawManager.requestNextFrameListener(image -> {
+			BufferedImage bufferedImage = getBufferedImageScreenshot(image);
+			byte[] imageBytes;
+			try {
+                 imageBytes = convertImageToByteArray(bufferedImage);
+            } catch (IOException e) {
+			    log.debug("Error converting image to byte array");
+			    return;
+            }
+			RequestBody requestBody = new MultipartBody.Builder()
+					.setType(MultipartBody.FORM)
+					.addFormDataPart("file", "image.png",
+							RequestBody.create(MediaType.parse("image/png"), imageBytes))
+					.build();
+			Request request = new Request.Builder()
+					.url(url)
+					.post(requestBody)
+					.build();
+			sendRequest(request);
+		});
+	}
+
+	private BufferedImage getBufferedImageScreenshot(Image image) {
+		BufferedImage bufferedImage = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D bGr = bufferedImage.createGraphics();
+		bGr.drawImage(image, 0, 0, null);
+		bGr.dispose();
+		return bufferedImage;
+	}
+
+	private byte[] convertImageToByteArray(BufferedImage bufferedImage) throws IOException {
+		byte[] imageBytes;
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        ImageIO.write(bufferedImage, "png", byteArrayOutputStream);
+        byteArrayOutputStream.flush();
+        imageBytes = byteArrayOutputStream.toByteArray();
+        byteArrayOutputStream.close();
+		return imageBytes;
+	}
+
+	private void sendLootWebhook(WebhookBody webhookBody, HttpUrl url)
+	{
 
 		Request request = new Request.Builder()
 			.url(url)
 			.post(RequestBody.create(JSON, GSON.toJson(webhookBody)))
 			.build();
 
+		sendRequest(request);
+	}
+
+	private void sendRequest(Request request) {
 		okHttpClient.newCall(request).enqueue(new Callback()
 		{
 			@Override
 			public void onFailure(Call call, IOException e)
 			{
-				log.debug("Error submitting webhook", e);
+				log.debug("Error submitting loot webhook", e);
 			}
 
 			@Override
