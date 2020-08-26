@@ -3,6 +3,7 @@ package info.sigterm.plugins.discordlootlogger;
 import com.google.common.base.Strings;
 import com.google.inject.Provides;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -135,7 +136,7 @@ public class DiscordLootLoggerPlugin extends Plugin
 		long totalValue = 0;
 		StringBuilder stringBuilder = new StringBuilder();
 		stringBuilder.append(name).append(":\n");
-		for (ItemStack item : items)
+		for (ItemStack item : stack(items))
 		{
 			int itemId = item.getId();
 			int qty = item.getQuantity();
@@ -187,5 +188,34 @@ public class DiscordLootLoggerPlugin extends Plugin
 				response.close();
 			}
 		});
+	}
+
+	private static Collection<ItemStack> stack(Collection<ItemStack> items)
+	{
+		final List<ItemStack> list = new ArrayList<>();
+
+		for (final ItemStack item : items)
+		{
+			int quantity = 0;
+			for (final ItemStack i : list)
+			{
+				if (i.getId() == item.getId())
+				{
+					quantity = i.getQuantity();
+					list.remove(i);
+					break;
+				}
+			}
+			if (quantity > 0)
+			{
+				list.add(new ItemStack(item.getId(), item.getQuantity() + quantity, item.getLocation()));
+			}
+			else
+			{
+				list.add(item);
+			}
+		}
+
+		return list;
 	}
 }
