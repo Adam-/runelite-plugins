@@ -188,9 +188,12 @@ public class DiscordLootLoggerPlugin extends Plugin
 				.setType(MultipartBody.FORM)
 				.addFormDataPart("payload_json", GSON.toJson(webhookBody));
 
-		if (config.sendScreenshot()) {
+		if (config.sendScreenshot())
+		{
 			sendWebhookWithScreenshot(url, requestBodyBuilder);
-		} else {
+		}
+		else
+		{
 			buildRequestAndSend(url, requestBodyBuilder);
 		}
 	}
@@ -199,9 +202,11 @@ public class DiscordLootLoggerPlugin extends Plugin
 		drawManager.requestNextFrameListener(image -> {
 			BufferedImage bufferedImage = (BufferedImage) image;
 			byte[] imageBytes;
-			try {
+			try
+			{
 				imageBytes = convertImageToByteArray(bufferedImage);
-			} catch (IOException e) {
+			} catch (IOException e)
+			{
 				log.debug("Error converting image to byte array");
 				return;
 			}
