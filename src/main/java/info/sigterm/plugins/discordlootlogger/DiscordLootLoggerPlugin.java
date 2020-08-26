@@ -8,8 +8,6 @@ import java.util.Collections;
 import java.util.List;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Actor;
-import net.runelite.api.Client;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.NPC;
 import net.runelite.client.config.ConfigManager;
@@ -21,10 +19,12 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.ItemStack;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.loottracker.LootReceived;
 import net.runelite.client.util.Text;
 import net.runelite.client.util.WildcardMatcher;
 import static net.runelite.http.api.RuneLiteAPI.GSON;
 import static net.runelite.http.api.RuneLiteAPI.JSON;
+import net.runelite.http.api.loottracker.LootRecordType;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.HttpUrl;
@@ -94,14 +94,14 @@ public class DiscordLootLoggerPlugin extends Plugin
 			{
 				if (WildcardMatcher.matches(npcName, npc.getName()))
 				{
-					processLoot(npc, items);
+					processLoot(npc.getName(), items);
 					return;
 				}
 			}
 		}
 		else
 		{
-			processLoot(npc, items);
+			processLoot(npc.getName(), items);
 		}
 	}
 
@@ -109,16 +109,32 @@ public class DiscordLootLoggerPlugin extends Plugin
 	public void onPlayerLootReceived(PlayerLootReceived playerLootReceived)
 	{
 		Collection<ItemStack> items = playerLootReceived.getItems();
-		processLoot(playerLootReceived.getPlayer(), items);
+		processLoot(playerLootReceived.getPlayer().getName(), items);
 	}
 
-	private void processLoot(Actor from, Collection<ItemStack> items)
+	@Subscribe
+	public void onLootReceived(LootReceived lootReceived)
+	{
+		if (lootReceived.getType() != LootRecordType.EVENT)
+		{
+			return;
+		}
+
+		if (!lootReceived.getName().equals("Theatre of Blood") && !lootReceived.getName().equals("Chambers of Xeric"))
+		{
+			return;
+		}
+
+		processLoot(lootReceived.getName(), lootReceived.getItems());
+	}
+
+	private void processLoot(String name, Collection<ItemStack> items)
 	{
 		WebhookBody webhookBody = new WebhookBody();
 
 		long totalValue = 0;
 		StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append(from.getName()).append(":\n");
+		stringBuilder.append(name).append(":\n");
 		for (ItemStack item : items)
 		{
 			int itemId = item.getId();
