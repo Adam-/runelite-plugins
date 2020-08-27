@@ -36,7 +36,7 @@ public interface DiscordLootLoggerConfig extends Config
 	@ConfigItem(
 		keyName = "includeLowValueItems",
 		name = "Include Low Value Items",
-		description = "Only logs loot items worth more than the value set in loot value option."
+		description = "Only log loot items worth more than the value set in loot value option."
 	)
 	default boolean includeLowValueItems()
 	{
