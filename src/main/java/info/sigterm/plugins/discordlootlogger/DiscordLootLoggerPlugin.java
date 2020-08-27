@@ -159,9 +159,9 @@ public class DiscordLootLoggerPlugin extends Plugin
 
 			totalValue += total;
 
-			ItemComposition itemComposition = itemManager.getItemComposition(itemId);
 			if (config.includeLowValueItems() || total >= targetValue)
 			{
+				ItemComposition itemComposition = itemManager.getItemComposition(itemId);
 				stringBuilder.append(qty).append(" x ").append(itemComposition.getName()).append("\n");
 				webhookBody.getEmbeds().add(new WebhookBody.Embed(new WebhookBody.UrlEmbed(itemImageUrl(itemId))));
 			}
