@@ -127,7 +127,15 @@ public class RLGLContext
 
 	public native int glGenVertexArrays();
 
-	public native void glGetIntegerv1(int pname, int[] params, int p_off);
+	public native void glGenerateMipmap(int target);
+
+	public native boolean glGetBooleanv(int pname);
+
+	public native double glGetDoublev(int pname);
+
+	public native float glGetFloatv(int pname);
+
+	public native int glGetIntegerv(int pname);
 
 	public native String glGetProgramInfoLog(int program);
 
@@ -161,6 +169,8 @@ public class RLGLContext
 
 	public native void glTexImage2DMultisample(int target, int samples, int internalformat, int width, int height, boolean fixedsamplelocations);
 
+	public native void glTexParameterf(int target, int pname, float param);
+
 	public native void glTexParameteri(int target, int pname, int param);
 
 	public native void glTexStorage3D(int target, int levels, int internalformat, int width, int height, int depth);
@@ -192,4 +202,6 @@ public class RLGLContext
 	public native void glVertexAttribPointer(int index, int size, int type, boolean normalized, int stride, long ptr);
 
 	public native int glViewport(int x, int y, int width, int height);
+
+	public native boolean isExtensionAvailable(String name);
 }
