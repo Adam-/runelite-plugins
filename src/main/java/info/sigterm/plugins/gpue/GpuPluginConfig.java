@@ -24,14 +24,14 @@
  */
 package info.sigterm.plugins.gpue;
 
-import static info.sigterm.plugins.gpue.GpuPluginExperimental.MAX_DISTANCE;
-import static info.sigterm.plugins.gpue.GpuPluginExperimental.MAX_FOG_DEPTH;
-import info.sigterm.plugins.gpue.config.AntiAliasingMode;
-import info.sigterm.plugins.gpue.config.UIScalingMode;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Range;
+import static info.sigterm.plugins.gpue.GpuPluginExperimental.MAX_DISTANCE;
+import static info.sigterm.plugins.gpue.GpuPluginExperimental.MAX_FOG_DEPTH;
+import info.sigterm.plugins.gpue.config.AntiAliasingMode;
+import info.sigterm.plugins.gpue.config.UIScalingMode;
 
 @ConfigGroup("gpu")
 public interface GpuPluginConfig extends Config
@@ -107,5 +107,20 @@ public interface GpuPluginConfig extends Config
 	default boolean useComputeShaders()
 	{
 		return true;
+	}
+
+	@Range(
+		min = 0,
+		max = 16
+	)
+	@ConfigItem(
+		keyName = "anisotropicFilteringLevel",
+		name = "Anisotropic Filtering",
+		description = "Configures the anisotropic filtering level.",
+		position = 7
+	)
+	default int anisotropicFilteringLevel()
+	{
+		return 0;
 	}
 }

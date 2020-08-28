@@ -71,13 +71,13 @@ public class Template
 		return "";
 	}
 
-	public Template add(Function<String, String> fn)
+	public info.sigterm.plugins.gpue.template.Template add(Function<String, String> fn)
 	{
 		resourceLoaders.add(fn);
 		return this;
 	}
 
-	public Template addInclude(Class<?> clazz)
+	public info.sigterm.plugins.gpue.template.Template addInclude(Class<?> clazz)
 	{
 		return add(f ->
 		{

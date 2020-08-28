@@ -16,6 +16,8 @@ interface RuneLiteGL
 
 	void glDisable(int cap);
 
+	float glGetFloatv(int pname);
+
 	int glGetIntegerv(int pname);
 
 	String glGetProgramInfoLog(int program);
@@ -104,6 +106,8 @@ interface RuneLiteGL
 
 	void glActiveTexture(int texture);
 
+	void glTexParameterf(int target, int pname, float param);
+
 	void glTexParameteri(int target, int pname, int param);
 
 	void glTexImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, Buffer data);
@@ -147,4 +151,8 @@ interface RuneLiteGL
 	void glBlitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1, int dstY1, int mask, int filter);
 
 	String glGetShaderInfoLog(int shader);
+
+	void glGenerateMipmap(int target);
+
+	boolean isExtensionAvailable(String name);
 }

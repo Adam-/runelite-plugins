@@ -29,15 +29,17 @@ import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Texture;
 import net.runelite.api.TextureProvider;
-import static net.runelite.opengl.GL.*;
 import static net.runelite.opengl.GL.GL_CLAMP_TO_EDGE;
+import static net.runelite.opengl.GL.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT;
 import static net.runelite.opengl.GL.GL_NEAREST;
+import static net.runelite.opengl.GL.GL_NEAREST_MIPMAP_LINEAR;
 import static net.runelite.opengl.GL.GL_RGBA;
 import static net.runelite.opengl.GL.GL_RGBA8;
 import static net.runelite.opengl.GL.GL_TEXTURE0;
 import static net.runelite.opengl.GL.GL_TEXTURE1;
 import static net.runelite.opengl.GL.GL_TEXTURE_2D_ARRAY;
 import static net.runelite.opengl.GL.GL_TEXTURE_MAG_FILTER;
+import static net.runelite.opengl.GL.GL_TEXTURE_MAX_ANISOTROPY_EXT;
 import static net.runelite.opengl.GL.GL_TEXTURE_MIN_FILTER;
 import static net.runelite.opengl.GL.GL_TEXTURE_WRAP_S;
 import static net.runelite.opengl.GL.GL_UNSIGNED_BYTE;
@@ -62,7 +64,7 @@ class TextureManager
 
 		int textureArrayId = gl.glGenTexture();
 		gl.glBindTexture(GL_TEXTURE_2D_ARRAY, textureArrayId);
-		gl.glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, TEXTURE_SIZE, TEXTURE_SIZE, textures.length);
+		gl.glTexStorage3D(GL_TEXTURE_2D_ARRAY, 8, GL_RGBA8, TEXTURE_SIZE, TEXTURE_SIZE, textures.length);
 
 		gl.glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		gl.glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -79,9 +81,38 @@ class TextureManager
 
 		gl.glActiveTexture(GL_TEXTURE1);
 		gl.glBindTexture(GL_TEXTURE_2D_ARRAY, textureArrayId);
+		gl.glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 		gl.glActiveTexture(GL_TEXTURE0);
 
 		return textureArrayId;
+	}
+
+	void setAnisotropicFilteringLevel(int textureArrayId, int level, RuneLiteGL gl)
+	{
+		gl.glBindTexture(GL_TEXTURE_2D_ARRAY, textureArrayId);
+
+		//level = 0 means no mipmaps and no anisotropic filtering
+		if (level == 0)
+		{
+			gl.glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		}
+		//level = 1 means with mipmaps but without anisotropic filtering GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT defaults to 1.0 which is off
+		//level > 1 enables anisotropic filtering. It's up to the vendor what the values mean
+		//Even if anisotropic filtering isn't supported, mipmaps will be enabled with any level >= 1
+		else
+		{
+			// Set on GL_NEAREST_MIPMAP_LINEAR (bilinear filtering with mipmaps) since the pixel nature of the game means that nearest filtering
+			// looks best for objects up close but allows linear filtering to resolve possible aliasing and noise with mipmaps from far away objects.
+			gl.glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+		}
+
+		if (gl.isExtensionAvailable("GL_EXT_texture_filter_anisotropic"))
+		{
+			final float maxSamples = gl.glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+			//Clamp from 1 to max GL says it supports.
+			final float anisoLevel = Math.max(1, Math.min(maxSamples, level));
+			gl.glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisoLevel);
+		}
 	}
 
 	void freeTextureArray(RuneLiteGL gl, int textureArrayId)

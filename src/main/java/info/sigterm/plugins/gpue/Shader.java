@@ -26,11 +26,11 @@
 package info.sigterm.plugins.gpue;
 
 import com.google.common.annotations.VisibleForTesting;
-import info.sigterm.plugins.gpue.template.Template;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import info.sigterm.plugins.gpue.template.Template;
 import static net.runelite.opengl.GL.GL_COMPILE_STATUS;
 import static net.runelite.opengl.GL.GL_FALSE;
 import static net.runelite.opengl.GL.GL_LINK_STATUS;
@@ -57,7 +57,7 @@ public class Shader
 	{
 	}
 
-	public Shader add(int type, String name)
+	public info.sigterm.plugins.gpue.Shader add(int type, String name)
 	{
 		units.add(new Unit(type, name));
 		return this;

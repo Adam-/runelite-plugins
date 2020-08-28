@@ -26,9 +26,6 @@ package info.sigterm.plugins.gpue;
 
 import com.google.common.primitives.Ints;
 import com.google.inject.Provides;
-import info.sigterm.plugins.gpue.config.AntiAliasingMode;
-import info.sigterm.plugins.gpue.config.UIScalingMode;
-import info.sigterm.plugins.gpue.template.Template;
 import java.awt.Canvas;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -65,6 +62,9 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.PluginInstantiationException;
 import net.runelite.client.plugins.PluginManager;
+import info.sigterm.plugins.gpue.config.AntiAliasingMode;
+import info.sigterm.plugins.gpue.config.UIScalingMode;
+import info.sigterm.plugins.gpue.template.Template;
 import net.runelite.client.ui.DrawManager;
 import net.runelite.client.util.OSType;
 import static net.runelite.opengl.GL.GL_ARRAY_BUFFER;
@@ -139,10 +139,10 @@ public class GpuPluginExperimental extends Plugin implements DrawCallbacks
 	private GpuPluginConfig config;
 
 	@Inject
-	private TextureManager textureManager;
+	private info.sigterm.plugins.gpue.TextureManager textureManager;
 
 	@Inject
-	private SceneUploader sceneUploader;
+	private info.sigterm.plugins.gpue.SceneUploader sceneUploader;
 
 	@Inject
 	private DrawManager drawManager;
@@ -217,7 +217,7 @@ public class GpuPluginExperimental extends Plugin implements DrawCallbacks
 	private final float[] textureOffsets = new float[128];
 
 	private GpuIntBuffer vertexBuffer;
-	private GpuFloatBuffer uvBuffer;
+	private info.sigterm.plugins.gpue.GpuFloatBuffer uvBuffer;
 
 	private GpuIntBuffer modelBufferUnordered;
 	private GpuIntBuffer modelBufferSmall;
@@ -257,6 +257,7 @@ public class GpuPluginExperimental extends Plugin implements DrawCallbacks
 	private int lastStretchedCanvasWidth;
 	private int lastStretchedCanvasHeight;
 	private AntiAliasingMode lastAntiAliasingMode;
+	private int lastAnisotropicFilteringLevel = -1;
 
 	private int centerX;
 	private int centerY;
@@ -310,7 +311,7 @@ public class GpuPluginExperimental extends Plugin implements DrawCallbacks
 				canvas.setIgnoreRepaint(true);
 
 				vertexBuffer = new GpuIntBuffer();
-				uvBuffer = new GpuFloatBuffer();
+				uvBuffer = new info.sigterm.plugins.gpue.GpuFloatBuffer();
 
 				modelBufferUnordered = new GpuIntBuffer();
 				modelBufferSmall = new GpuIntBuffer();
@@ -509,7 +510,7 @@ public class GpuPluginExperimental extends Plugin implements DrawCallbacks
 		vboUiHandle = gl.glGenBuffers();
 		gl.glBindVertexArray(vaoUiHandle);
 
-		FloatBuffer vboUiBuf = GpuFloatBuffer.allocateDirect(5 * 4);
+		FloatBuffer vboUiBuf = info.sigterm.plugins.gpue.GpuFloatBuffer.allocateDirect(5 * 4);
 		vboUiBuf.put(new float[]{
 			// positions     // texture coords
 			1f, 1f, 0.0f, 1.0f, 0f, // top right
@@ -1011,6 +1012,15 @@ public class GpuPluginExperimental extends Plugin implements DrawCallbacks
 			int renderCanvasHeight = canvasHeight;
 			int renderViewportHeight = viewportHeight;
 			int renderViewportWidth = viewportWidth;
+
+			// Setup anisotropic filtering
+			final int anisotropicFilteringLevel = config.anisotropicFilteringLevel();
+
+			if (textureArrayId != -1 && lastAnisotropicFilteringLevel != anisotropicFilteringLevel)
+			{
+				textureManager.setAnisotropicFilteringLevel(textureArrayId, anisotropicFilteringLevel, gl);
+				lastAnisotropicFilteringLevel = anisotropicFilteringLevel;
+			}
 
 			if (client.isStretchedEnabled())
 			{

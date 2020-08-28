@@ -62,7 +62,7 @@ public class RLGL implements RuneLiteGL
 		}
 		else
 		{
-			if (!"amd64".equals(arch) && "!x86".equals(arch))
+			if (!"amd64".equals(arch) && !"x86".equals(arch))
 			{
 				throw new RuntimeException("Arch is unsupported: Windows " + arch);
 			}
@@ -131,11 +131,15 @@ public class RLGL implements RuneLiteGL
 	}
 
 	@Override
+	public float glGetFloatv(int pname)
+	{
+		return gl.glGetFloatv(pname);
+	}
+
+	@Override
 	public int glGetIntegerv(int pname)
 	{
-		int[] p = new int[1];
-		gl.glGetIntegerv1(pname, p, 0);
-		return p[0];
+		return gl.glGetIntegerv(pname);
 	}
 
 	@Override
@@ -417,6 +421,12 @@ public class RLGL implements RuneLiteGL
 	}
 
 	@Override
+	public void glTexParameterf(int target, int pname, float param)
+	{
+		gl.glTexParameterf(target, pname, param);
+	}
+
+	@Override
 	public void glTexParameteri(int target, int pname, int param)
 	{
 		gl.glTexParameteri(target, pname, param);
@@ -549,5 +559,17 @@ public class RLGL implements RuneLiteGL
 	public String glGetShaderInfoLog(int shader)
 	{
 		return gl.glGetShaderInfoLog(shader);
+	}
+
+	@Override
+	public void glGenerateMipmap(int target)
+	{
+		gl.glGenerateMipmap(target);
+	}
+
+	@Override
+	public boolean isExtensionAvailable(String name)
+	{
+		return gl.isExtensionAvailable(name);
 	}
 }
