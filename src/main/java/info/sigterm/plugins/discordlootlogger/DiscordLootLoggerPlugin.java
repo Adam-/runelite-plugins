@@ -147,7 +147,8 @@ public class DiscordLootLoggerPlugin extends Plugin
 
 		long totalValue = 0;
 		StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append(name).append(":\n");
+		stringBuilder.append("**").append(name).append("**").append(":\n");
+		final int targetValue = config.lootValue();
 		for (ItemStack item : stack(items))
 		{
 			int itemId = item.getId();
@@ -158,12 +159,14 @@ public class DiscordLootLoggerPlugin extends Plugin
 
 			totalValue += total;
 
-			ItemComposition itemComposition = itemManager.getItemComposition(itemId);
-			stringBuilder.append(qty).append(" x ").append(itemComposition.getName()).append("\n");
-			webhookBody.getEmbeds().add(new WebhookBody.Embed(new WebhookBody.UrlEmbed(itemImageUrl(itemId))));
+			if (config.includeLowValueItems() || total >= targetValue)
+			{
+				ItemComposition itemComposition = itemManager.getItemComposition(itemId);
+				stringBuilder.append(qty).append(" x ").append(itemComposition.getName()).append("\n");
+				webhookBody.getEmbeds().add(new WebhookBody.Embed(new WebhookBody.UrlEmbed(itemImageUrl(itemId))));
+			}
 		}
 
-		final int targetValue = config.lootValue();
 		if (targetValue == 0 || totalValue >= targetValue)
 		{
 			webhookBody.setContent(stringBuilder.toString());
