@@ -1,7 +1,5 @@
 package com.raidtracker;
 
-import com.google.gson.*;
-import com.google.gson.reflect.TypeToken;
 import com.google.inject.Provides;
 import com.google.inject.Inject;
 import lombok.Getter;
@@ -17,19 +15,18 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 import net.runelite.client.game.ItemManager;
-import org.apache.commons.lang3.StringUtils;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import javax.swing.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import static java.lang.Integer.parseInt;
-import static net.runelite.client.RuneLite.RUNELITE_DIR;
 
 @Slf4j
 @PluginDescriptor(
@@ -43,9 +40,11 @@ public class RaidTrackerPlugin extends Plugin
 	private static final String TWISTED_KIT_RECIPIENTS = "Twisted Kit recipients: ";
 
 
-
 	@Inject
 	private Client client;
+
+	@Inject
+	private ClientToolbar clientToolbar;
 
 	@Inject
 	private RaidTrackerConfig config;
@@ -62,10 +61,44 @@ public class RaidTrackerPlugin extends Plugin
 	
 	private static final WorldPoint TEMP_LOCATION = new WorldPoint(3360, 5152, 2);
 
+	private RaidTrackerPanel panel;
+	private NavigationButton navButton;
+
+	private FileReadWriter fw = new FileReadWriter();
+
+	@Provides
+	RaidTrackerConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(RaidTrackerConfig.class);
+	}
 
 	@Override
 	protected void startUp() {
-		log.info("Raid Tracker Started!");
+		panel = new RaidTrackerPanel(itemManager, this);
+
+		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "panel-icon.png");
+
+		navButton = NavigationButton.builder()
+				.tooltip("Raid Data Tracker")
+				.priority(6)
+				.icon(icon)
+				.panel(panel)
+				.build();
+
+		if (config.enableUI())
+		{
+			clientToolbar.addNavigation(navButton);
+		}
+
+		if (client.getGameState().equals(GameState.LOGGED_IN) || client.getGameState().equals(GameState.LOADING))
+		{
+			fw.updateUsername(client.getUsername());
+			SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					panel.loadRTList(fw);
+				}
+			});
+		}
 	}
 
 	@Override
@@ -107,9 +140,19 @@ public class RaidTrackerPlugin extends Plugin
 		}
 	}
 
-	@SuppressWarnings("unused")
+	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
+		if (event.getGameState() == GameState.LOGGING_IN)
+		{
+			fw.updateUsername(client.getUsername());
+			SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					panel.loadRTList(fw);
+				}
+			});
+		}
+
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			// skip event while the game decides if the player belongs in a raid or not
@@ -142,9 +185,11 @@ public class RaidTrackerPlugin extends Plugin
 	public void onWidgetLoaded(WidgetLoaded event) {
 
 		if (event.getGroupId() != WidgetID.CHAMBERS_OF_XERIC_REWARD_GROUP_ID ||
-				raidTracker.isChestOpened()) {
+				raidTracker.isChestOpened() || !raidTracker.isRaidComplete()) {
 			return;
 		}
+
+		raidTracker.setTeamSize(client.getVar(Varbits.RAID_PARTY_SIZE));
 
 		checkChestOpened(event, raidTracker);
 
@@ -152,9 +197,6 @@ public class RaidTrackerPlugin extends Plugin
 
 		if (rewardItemContainer == null) {
 			return;
-		}
-		else {
-			log.info(rewardItemContainer.toString());
 		}
 
 		raidTracker.setLootList(lootListFactory(rewardItemContainer.getItems()));
@@ -164,16 +206,12 @@ public class RaidTrackerPlugin extends Plugin
 
 		setSplits(raidTracker);
 
-		writeToFile(raidTracker);
+		fw.writeToFile(raidTracker);
+		panel.addDrop(raidTracker);
 
 		reset();
 	}
 
-	@Provides
-	RaidTrackerConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(RaidTrackerConfig.class);
-	}
 
 
 	public void checkChatMessage(ChatMessage event, RaidTracker raidTracker)
@@ -181,7 +219,6 @@ public class RaidTrackerPlugin extends Plugin
 		raidTracker.setLoggedIn(true);
 		if ((raidTracker.isInRaidChambers() && event.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION) || (raidTracker.isInRaidChambers() && event.getType() == ChatMessageType.GAMEMESSAGE)) {
 			String message = Text.removeTags(event.getMessage());
-			log.info(message);
 			if (message.contains(LEVEL_COMPLETE_MESSAGE)) {
 				if (message.startsWith("Upper")) {
 					raidTracker.setUpperTime(stringTimeToSeconds(message.split(" level complete! Duration: ")[1]));
@@ -205,12 +242,6 @@ public class RaidTrackerPlugin extends Plugin
 			}
 
 			if (raidTracker.isRaidComplete() && message.contains("Team size:")) {
-				String[] split = message.split("Team size: ");
-				if (StringUtils.isNumeric(split[1].split(" ")[0])) {
-					raidTracker.setTeamSize(parseInt(split[1].split(" ")[0]));
-				} else {
-					raidTracker.setTeamSize(1);
-				}
 				raidTracker.setRaidTime(stringTimeToSeconds(message.split("Duration: ")[1].split(" ")[0]));
 			}
 
@@ -242,18 +273,16 @@ public class RaidTrackerPlugin extends Plugin
 	{
 		Player localPlayer = client.getLocalPlayer();
 
-		log.info(localPlayer.getName());
-
 		int lootSplit = raidTracker.getSpecialLootValue() / raidTracker.getTeamSize();
 
-		//to be set by the config
-//		boolean standardFFA = true;
-		int cutoff = 1000000;
+		int cutoff = config.FFACutoff();
 
 		if (raidTracker.getSpecialLoot().length() > 0) {
-			if (lootSplit < cutoff) {
+			if (config.defaultFFA() || lootSplit < cutoff) {
 				raidTracker.setFreeForAll(true);
-				raidTracker.setLootSplitReceived(raidTracker.getSpecialLootValue());
+				if (raidTracker.getSpecialLootReceiver().toLowerCase().trim().equals(localPlayer.getName().toLowerCase().trim())) {
+					raidTracker.setLootSplitReceived(raidTracker.getSpecialLootValue());
+				}
 			} else if (raidTracker.getSpecialLootReceiver().toLowerCase().trim().equals(localPlayer.getName().toLowerCase().trim())) {
 				raidTracker.setLootSplitPaid(raidTracker.getSpecialLootValue() - lootSplit);
 				raidTracker.setLootSplitReceived(lootSplit);
@@ -263,73 +292,10 @@ public class RaidTrackerPlugin extends Plugin
 		}
 	}
 
-	public void writeToFile(RaidTracker raidTracker)
-	{
-		//------------- initialization of folders -----------------------
-		log.info("writer started");
-
-		File dir = new File(RUNELITE_DIR, "loots");
-		IGNORE_RESULT(dir.mkdir());
-		dir = new File(dir, client.getUsername());
-		IGNORE_RESULT(dir.mkdir());
-		dir = new File(dir, "cox");
-		IGNORE_RESULT(dir.mkdir());
-
-//		--------------- actual writing to the file ----------------------
-		try
-		{
-			//use json format so serializing and deserializing is easy
-			Gson gson = new GsonBuilder().create();
-
-			JsonParser parser = new JsonParser();
-
-			String fileName = dir.getAbsolutePath() + "\\raid_tracker_data.log";
-
-			FileWriter fw = new FileWriter(fileName,true); //the true will append the new data
-
-			gson.toJson(parser.parse(getJSONString(raidTracker, gson, parser)), fw);
-
-			fw.append("\n");
-
-			fw.close();
-		}
-		catch(IOException ioe)
-		{
-			System.err.println("IOException: " + ioe.getMessage());
-		}
-	}
-
-	@SuppressWarnings("unused")
-	public void IGNORE_RESULT(boolean b) {}
-
-	public String getJSONString(RaidTracker raidTracker, Gson gson, JsonParser parser)
-	{
-		JsonObject RTJson =  parser.parse(gson.toJson(raidTracker)).getAsJsonObject();
-
-
-		List<RaidTrackerItem> lootList = raidTracker.getLootList();
-
-		//------------------ temporary fix until i can get gson.tojson to work for arraylist<RaidTrackerItem> ---------
-		JsonArray lootListToString = new JsonArray();
-
-
-		for (RaidTrackerItem item : lootList) {
-			lootListToString.add(parser.parse(gson.toJson(item, new TypeToken<RaidTrackerItem>() {
-			}.getType())));
-		}
-
-		RTJson.addProperty("lootList", lootListToString.toString());
-
-		//-------------------------------------------------------------------------------------------------------------
-
-//		System.out.println(
-//				gson.toJson(lootList, new TypeToken<List<RaidTrackerItem>>(){}.getType())); //[null], raidtrackerplugin is added to the list of types, which is automatically set to skipserialize true -> null return;
 
 
 
-		//massive bodge, works for now
-		return RTJson.toString().replace("\\\"", "\"").replace("\"[", "[").replace("]\"", "]");
-	}
+
 
 	public ArrayList<RaidTrackerItem> lootListFactory(Item[] items)
 	{
