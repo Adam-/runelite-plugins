@@ -74,7 +74,7 @@ public class RaidTrackerPlugin extends Plugin
 
 	@Override
 	protected void startUp() {
-		panel = new RaidTrackerPanel(itemManager, this);
+		panel = new RaidTrackerPanel(itemManager);
 
 		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "panel-icon.png");
 
@@ -179,7 +179,6 @@ public class RaidTrackerPlugin extends Plugin
 	{
 		checkChatMessage(event, raidTracker);
 	}
-
 
 	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded event) {
@@ -291,11 +290,6 @@ public class RaidTrackerPlugin extends Plugin
 			}
 		}
 	}
-
-
-
-
-
 
 	public ArrayList<RaidTrackerItem> lootListFactory(Item[] items)
 	{

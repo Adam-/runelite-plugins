@@ -3,9 +3,11 @@ package com.raidtracker;
 
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemID;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
 
@@ -17,14 +19,14 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
+import java.text.NumberFormat;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class RaidTrackerPanel extends PluginPanel {
 
     private final ItemManager itemManager;
-    private final RaidTrackerPlugin plugin;
 
     private final static Color BACKGROUND_COLOR = ColorScheme.DARK_GRAY_COLOR;
 
@@ -35,9 +37,8 @@ public class RaidTrackerPanel extends PluginPanel {
     private boolean loaded = false;
     private final JPanel panel = new JPanel();
 
-    public RaidTrackerPanel(final ItemManager itemManager, final RaidTrackerPlugin plugin) {
+    public RaidTrackerPanel(final ItemManager itemManager) {
         this.itemManager = itemManager;
-        this.plugin = plugin;
 
         panel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
@@ -52,10 +53,23 @@ public class RaidTrackerPanel extends PluginPanel {
         panel.removeAll();
 
         JPanel title = getTitle();
+        JPanel killsLoggedPanel = getKillsLoggedPanel();
         JPanel uniquesPanel = getUniquesPanel();
+        JPanel pointsPanel = getPointsPanel();
+        JPanel splitsEarnedPanel = getSplitsEarnedPanel();
+        JPanel regularDrops = getRegularDropsPanel();
 
         panel.add(title);
+        panel.add(killsLoggedPanel);
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(uniquesPanel, BorderLayout.CENTER);
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        panel.add(pointsPanel);
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        panel.add(splitsEarnedPanel);
+        panel.add(Box.createRigidArea(new Dimension(0, 15)));
+        panel.add(regularDrops);
+        panel.add(Box.createRigidArea(new Dimension(0, 50)));
 
         panel.revalidate();
         panel.repaint();
@@ -68,7 +82,7 @@ public class RaidTrackerPanel extends PluginPanel {
         first.setBackground(BACKGROUND_COLOR);
 
         title.setBorder(new CompoundBorder(
-                new EmptyBorder(10, 8, 8, 8),
+                new EmptyBorder(5, 8, 8, 8),
                 new MatteBorder(0, 0, 1, 0, Color.GRAY)));
 
         title.setLayout(new BorderLayout());
@@ -85,33 +99,40 @@ public class RaidTrackerPanel extends PluginPanel {
     }
 
     private JPanel getUniquesPanel() {
+        final JPanel wrapper = new JPanel();
+        wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
+
+        final JPanel title = new JPanel();
+        title.setLayout(new GridLayout(0,3));
+        title.setBorder(new EmptyBorder(3, 3, 3, 3));
+        title.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
+
+        JLabel drop = textPanel("Drop");
+        JLabel titleSeen = textPanel("Seen");
+        JLabel titleReceived = textPanel("Received");
+
+        title.add(drop);
+        title.add(titleReceived);
+        title.add(titleSeen);
+
+
         final JPanel uniques = new JPanel();
 
-        uniques.setLayout(new GridBagLayout());
+        uniques.setLayout(new GridLayout(0,3));
         uniques.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         uniques.setBorder(new EmptyBorder(5, 5, 5, 5));
 
-        GridBagConstraints c = new GridBagConstraints();
-        c.fill = GridBagConstraints.BOTH;
-        c.gridx = 0;
-        c.gridy = 0;
-        c.ipady = 2;
-        c.ipadx = 30;
-        c.insets = new Insets(0,10,0,10);
-
-
+        int totalUniques = 0;
+        int totalOwnName = 0;
 
         for (RaidUniques unique : RaidUniques.values()) {
             final AsyncBufferedImage image = itemManager.getImage(unique.getItemID(), 1, false);
 
             final JLabel icon = new JLabel();
 
-            c.gridx = 0;
 
             icon.setIcon(new ImageIcon(resizeImage(image, 0.7)));
-            icon.setVerticalAlignment(SwingConstants.CENTER);
-            icon.setHorizontalAlignment(SwingConstants.CENTER);
-            uniques.add(icon, c);
+            uniques.add(icon);
 
             image.onLoaded(() ->
             {
@@ -146,23 +167,236 @@ public class RaidTrackerPanel extends PluginPanel {
             final JLabel seen = new JLabel(amountSeen, SwingConstants.LEFT);
 
             received.setForeground(Color.WHITE);
+            received.setFont(FontManager.getRunescapeSmallFont());
             seen.setForeground(Color.WHITE);
+            seen.setFont(FontManager.getRunescapeSmallFont());
 
             final String tooltip = getUniqueToolTip(unique, l.size(), l2.size());
 
+            totalUniques += l.size();
+            totalOwnName += l2.size();
+
+            int bottomBorder = 1;
+
+            if (unique.getName() == "Twisted Kit") {
+                bottomBorder = 0;
+            }
+
             icon.setToolTipText(tooltip);
+            icon.setBorder(new MatteBorder(0,0,bottomBorder,1,ColorScheme.LIGHT_GRAY_COLOR.darker()));
+            icon.setVerticalAlignment(SwingConstants.CENTER);
+            icon.setHorizontalAlignment(SwingConstants.CENTER);
+
             received.setToolTipText(tooltip);
+            received.setBorder(new MatteBorder(0,0,bottomBorder,1,ColorScheme.LIGHT_GRAY_COLOR.darker()));
+            received.setVerticalAlignment(SwingConstants.CENTER);
+            received.setHorizontalAlignment(SwingConstants.CENTER);
+
             seen.setToolTipText(tooltip);
+            seen.setBorder(new MatteBorder(0,0,bottomBorder,0,ColorScheme.LIGHT_GRAY_COLOR.darker()));
+            seen.setVerticalAlignment(SwingConstants.CENTER);
+            seen.setHorizontalAlignment(SwingConstants.CENTER);
 
-            c.gridx = 1;
-            uniques.add(received, c);
+            uniques.add(received);
 
-            c.gridx = 2;
-            uniques.add(seen, c);
-
-            c.gridy++;
+            uniques.add(seen);;
         }
-        return uniques;
+
+        JPanel total = new JPanel();
+        total.setLayout(new GridLayout(0,3));
+        total.setBorder(new EmptyBorder(3, 3, 3, 3));
+        total.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
+
+        JLabel totalText = textPanel("Total:");
+        JLabel totalOwnNameLabel = textPanel(Integer.toString(totalOwnName));
+        JLabel totalUniquesLabel = textPanel(Integer.toString(totalUniques));
+
+        total.add(totalText);
+        total.add(totalOwnNameLabel);
+        total.add(totalUniquesLabel);
+
+        wrapper.add(title);
+        wrapper.add(uniques);
+        wrapper.add(total);
+
+        return wrapper;
+    }
+
+    private JPanel getPointsPanel() {
+        final JPanel points = new JPanel();
+        points.setLayout(new GridLayout(0,2));
+        points.setBorder(new EmptyBorder(3, 3, 3, 3));
+        points.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
+
+        JLabel personalTitle = textPanel("Personal Points");
+        JLabel totalTitle = textPanel("Total Points");
+
+        points.add(personalTitle);
+        points.add(totalTitle);
+
+        int personalPoints = 0;
+        int totalPoints = 0;
+
+        if (loaded) {
+            personalPoints = RTList.stream().mapToInt(RaidTracker::getPersonalPoints).sum();
+            totalPoints = RTList.stream().mapToInt(RaidTracker::getTotalPoints).sum();
+        }
+
+        JLabel personalPointsLabel = textPanel(format(personalPoints));
+        personalPointsLabel.setToolTipText(NumberFormat.getInstance().format(personalPoints) + " Personal Points");
+        personalTitle.setToolTipText(NumberFormat.getInstance().format(personalPoints) + " Personal Points");
+
+        JLabel totalPointsLabel = textPanel(format(totalPoints));
+        totalPointsLabel.setToolTipText(NumberFormat.getInstance().format(totalPoints) + " Total Points");
+        totalTitle.setToolTipText(NumberFormat.getInstance().format(totalPoints) + " Total Points");
+
+        points.add(personalPointsLabel);
+        points.add(totalPointsLabel);
+
+        return points;
+    }
+
+    private JPanel getSplitsEarnedPanel() {
+        final JPanel wrapper = new JPanel();
+        wrapper.setLayout(new GridLayout(0,2));
+        wrapper.setBorder(new EmptyBorder(3, 3, 3, 3));
+        wrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
+
+        int splitGP = 0;
+
+        if (loaded) {
+            splitGP = RTList.stream().mapToInt(RaidTracker::getLootSplitReceived).sum();
+        }
+
+        JLabel textLabel = textPanel("Split GP earned:");
+        textLabel.setToolTipText("GP earned counting the split GP you earned from a drop");
+
+        JLabel valueLabel = textPanel(format(splitGP));
+        valueLabel.setToolTipText(NumberFormat.getInstance().format(splitGP) + " gp");
+
+        if (splitGP > 1000000) {
+            valueLabel.setForeground(Color.GREEN);
+        }
+
+        wrapper.add(textLabel);
+        wrapper.add(valueLabel);
+
+        return wrapper;
+    }
+
+    private JPanel getKillsLoggedPanel() {
+        final JPanel wrapper = new JPanel();
+        wrapper.setLayout(new GridLayout(0,2));
+        wrapper.setBorder(new EmptyBorder(3, 3, 3, 3));
+        wrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
+
+        int killsLogged = 0;
+
+        if (loaded) {
+            killsLogged = RTList.size();
+        }
+
+        JLabel textLabel = textPanel("Kills Logged:");
+        JLabel valueLabel = textPanel(Integer.toString(killsLogged));
+
+        wrapper.add(textLabel);
+        wrapper.add(valueLabel);
+
+        return wrapper;
+    }
+
+    private JPanel getRegularDropsPanel() {
+        final JPanel wrapper = new JPanel();
+        wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
+
+        if (loaded) {
+            Map<Integer, RaidTrackerItem> uniqueIDs = getDistinctRegularDrops();
+
+            if (uniqueIDs.values().size() > 0) {
+                RTList.forEach(RT -> RT.getLootList().forEach(item -> {
+                    RaidTrackerItem RTI = uniqueIDs.get(item.id);
+
+                    if (RTI != null) {
+                        int qty = RTI.getQuantity();
+                        RTI.setQuantity(qty + item.getQuantity());
+
+                        RTI.setPrice(itemManager.getItemPrice(item.id) * RTI.getQuantity());
+
+                        uniqueIDs.replace(item.id, RTI);
+                    }
+                }));
+
+                ArrayList<RaidTrackerItem> regularDropsList = new ArrayList<>(uniqueIDs.values());
+
+                regularDropsList.sort((o2, o1) -> Integer.compare(o1.getPrice(), o2.getPrice()));
+
+
+                int regularDropsSum = regularDropsList.stream().mapToInt(RaidTrackerItem::getPrice).sum();
+
+                final JPanel drops = new JPanel();
+                drops.setLayout(new GridLayout(0, 5));
+
+                for (RaidTrackerItem drop : regularDropsList) {
+                    AsyncBufferedImage image = itemManager.getImage(drop.getId(), drop.getQuantity(), drop.getQuantity() > 1);
+
+                    JPanel iconWrapper = new JPanel();
+                    iconWrapper.setPreferredSize(new Dimension(40, 40));
+                    iconWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+
+                    JLabel icon = new JLabel();
+                    image.addTo(icon);
+                    icon.setBorder(new EmptyBorder(0,5,0,0));
+
+                    image.onLoaded(() ->
+                    {
+                        image.addTo(icon);
+                        icon.revalidate();
+                        icon.repaint();
+                    });
+
+                    iconWrapper.add(icon, BorderLayout.CENTER);
+                    iconWrapper.setBorder(new MatteBorder(1, 0, 0, 1, ColorScheme.DARK_GRAY_COLOR));
+                    iconWrapper.setToolTipText(getRegularToolTip(drop));
+
+                    drops.add(iconWrapper);
+                }
+
+                final JPanel title = new JPanel();
+                title.setLayout(new GridLayout(0, 2));
+                title.setBorder(new EmptyBorder(3, 20, 3, 10));
+                title.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
+
+                JLabel textLabel = textPanel("Regular Drops");
+                textLabel.setHorizontalAlignment(SwingConstants.LEFT);
+
+                JLabel valueLabel = textPanel(format(regularDropsSum) + " gp");
+                valueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+                valueLabel.setForeground(Color.LIGHT_GRAY.darker());
+
+                title.add(textLabel);
+                title.add(valueLabel);
+
+
+                wrapper.add(title);
+                wrapper.add(drops);
+            }
+        }
+
+
+
+
+        return wrapper;
+    }
+
+    private JLabel textPanel(String text) {
+        JLabel label = new JLabel();
+        label.setText(text);
+        label.setForeground(Color.WHITE);
+        label.setVerticalAlignment(SwingConstants.CENTER);
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+        label.setFont(FontManager.getRunescapeSmallFont());
+
+        return label;
     }
 
     public BufferedImage resizeImage(BufferedImage before, double scale) {
@@ -208,9 +442,9 @@ public class RaidTrackerPanel extends PluginPanel {
 
     public ArrayList<RaidTracker> filterDustReceivers() {
         if (loaded) {
-            ArrayList<RaidTracker> filtered = new ArrayList<RaidTracker>(RTList.stream().filter(RT -> {
+            ArrayList<RaidTracker> filtered = RTList.stream().filter(RT -> {
                 return !RT.getDustReceiver().isEmpty();
-            }).collect(Collectors.toList()));
+            }).collect(Collectors.toCollection(ArrayList::new));
 
             return filtered;
         }
@@ -219,24 +453,24 @@ public class RaidTrackerPanel extends PluginPanel {
 
     public ArrayList<RaidTracker> filterOwnDrops(ArrayList<RaidTracker> l) {
         if (loaded) {
-            ArrayList<RaidTracker> filtered = new ArrayList<RaidTracker>(l.stream().filter(RT -> {
+            ArrayList<RaidTracker> filtered = l.stream().filter(RT -> {
 
                 if (RT.getSpecialLoot().isEmpty()) {
                     return false;
                 }
                 return RT.getLootList().get(0).getId() == RaidUniques.getByName(RT.getSpecialLoot()).getItemID();
-            }).collect(Collectors.toList()));
+            }).collect(Collectors.toCollection(ArrayList::new));
 
             return filtered;
         }
-        return new ArrayList<RaidTracker>();
+        return new ArrayList<>();
     }
 
     public ArrayList<RaidTracker> filterOwnKits(ArrayList<RaidTracker> l) {
         if (loaded) {
-            ArrayList<RaidTracker> filtered = new ArrayList<RaidTracker>(l.stream().filter(RT -> {
-                return RT.getLootList().stream().filter(loot -> loot.getId() == ItemID.TWISTED_ANCESTRAL_COLOUR_KIT).collect(Collectors.toList()).size() > 0;
-            }).collect(Collectors.toList()));
+            ArrayList<RaidTracker> filtered = l.stream().filter(RT -> {
+                return RT.getLootList().stream().filter(loot -> loot.getId() == ItemID.TWISTED_ANCESTRAL_COLOUR_KIT).count() > 0;
+            }).collect(Collectors.toCollection(ArrayList::new));
 
             return filtered;
         }
@@ -245,9 +479,9 @@ public class RaidTrackerPanel extends PluginPanel {
 
     public ArrayList<RaidTracker> filterOwnDusts(ArrayList<RaidTracker> l) {
         if (loaded) {
-            ArrayList<RaidTracker> filtered = new ArrayList<RaidTracker>(l.stream().filter(RT -> {
-                return RT.getLootList().stream().filter(loot -> loot.getId() == ItemID.METAMORPHIC_DUST).collect(Collectors.toList()).size() > 0;
-            }).collect(Collectors.toList()));
+            ArrayList<RaidTracker> filtered = l.stream().filter(RT -> {
+                return RT.getLootList().stream().filter(loot -> loot.getId() == ItemID.METAMORPHIC_DUST).count() > 0;
+            }).collect(Collectors.toCollection(ArrayList::new));
 
             return filtered;
         }
@@ -255,12 +489,16 @@ public class RaidTrackerPanel extends PluginPanel {
     }
 
     public String getUniqueToolTip(RaidUniques unique, int amountSeen, int amountReceived) {
-        String tooltip = "<html>" +
+
+        return "<html>" +
                 unique.getName() +  "<br>" +
                 "Received: " + Integer.toString(amountReceived) + "x" + "<br>" +
                 "Seen: " + Integer.toString(amountSeen) + "x";
+    }
 
-        return tooltip;
+    public String getRegularToolTip(RaidTrackerItem drop) {
+        return "<html>" + drop.getName() + " x " + drop.getQuantity() + "<br>" +
+                "Price: " + format(drop.getPrice()) + " gp";
     }
 
     public void addDrop(RaidTracker RT) {
@@ -268,5 +506,65 @@ public class RaidTrackerPanel extends PluginPanel {
         updateView();
     }
 
+
+    //yoinked from stackoverflow
+    private static final NavigableMap<Long, String> suffixes = new TreeMap<>();
+    static {
+        suffixes.put(1_000L, "k");
+        suffixes.put(1_000_000L, "M");
+        suffixes.put(1_000_000_000L, "B");
+    }
+
+    public static String format(long value) {
+        //Long.MIN_VALUE == -Long.MIN_VALUE so we need an adjustment here
+        if (value == Long.MIN_VALUE) return format(Long.MIN_VALUE + 1);
+        if (value < 0) return "-" + format(-value);
+        if (value < 1000) return Long.toString(value); //deal with easy case
+
+        Map.Entry<Long, String> e = suffixes.floorEntry(value);
+        Long divideBy = e.getKey();
+        String suffix = e.getValue();
+
+        long truncated = value / (divideBy / 10); //the number part of the output times 10
+        boolean hasDecimal = truncated < 100 && (truncated / 10d) != (truncated / 10);
+        return hasDecimal ? (truncated / 10d) + suffix : (truncated / 10) + suffix;
+    }
+
+    public Map<Integer, RaidTrackerItem> getDistinctRegularDrops() {
+        if (loaded) {
+            HashSet<Integer> uniqueIDs = new HashSet<>();
+
+            RTList.forEach(RT -> {
+                RT.getLootList().forEach(item -> {
+                    Boolean addToSet = true;
+                    for (RaidUniques unique : RaidUniques.values()) {
+                        if (item.getId() == unique.getItemID()) {
+                            addToSet = false;
+                            break;
+                        }
+                    }
+                    if (addToSet) {
+                        uniqueIDs.add(item.id);
+                    }
+                });
+            });
+
+            Map<Integer, RaidTrackerItem> m = new HashMap<>();
+
+            for (Integer i : uniqueIDs) {
+                ItemComposition IC = itemManager.getItemComposition(i);
+                m.put(i, new RaidTrackerItem() {
+                    {
+                        name = IC.getName();
+                        id = i;
+                        quantity = 0;
+                        price = 0;
+                    }});
+            }
+
+            return m;
+        }
+        return new HashMap<>();
+    }
 }
 
