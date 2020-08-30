@@ -4,7 +4,9 @@ import com.google.gson.*;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 
+import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import static net.runelite.client.RuneLite.RUNELITE_DIR;
@@ -24,11 +26,13 @@ public class FileReadWriter {
             //use json format so serializing and deserializing is easy
             Gson gson = new GsonBuilder().create();
 
+            JsonParser parser = new JsonParser();
+
             String fileName = this.dir + "\\raid_tracker_data.log";
 
             FileWriter fw = new FileWriter(fileName,true); //the true will append the new data
 
-            gson.toJson(raidTracker, fw);
+            gson.toJson(parser.parse(getJSONString(raidTracker, gson, parser)), fw);
 
             fw.append("\n");
 
@@ -38,6 +42,35 @@ public class FileReadWriter {
         {
             System.err.println("IOException: " + ioe.getMessage());
         }
+    }
+
+    public String getJSONString(RaidTracker raidTracker, Gson gson, JsonParser parser)
+    {
+        JsonObject RTJson =  parser.parse(gson.toJson(raidTracker)).getAsJsonObject();
+
+
+        List<RaidTrackerItem> lootList = raidTracker.getLootList();
+
+        //------------------ temporary fix until i can get gson.tojson to work for arraylist<RaidTrackerItem> ---------
+        JsonArray lootListToString = new JsonArray();
+
+
+        for (RaidTrackerItem item : lootList) {
+            lootListToString.add(parser.parse(gson.toJson(item, new TypeToken<RaidTrackerItem>() {
+            }.getType())));
+        }
+
+        RTJson.addProperty("lootList", lootListToString.toString());
+
+        //-------------------------------------------------------------------------------------------------------------
+
+//		System.out.println(
+//				gson.toJson(lootList, new TypeToken<List<RaidTrackerItem>>(){}.getType())); //[null], raidtrackerplugin is added to the list of types, which is automatically set to skipserialize true -> null return;
+
+
+
+        //massive bodge, works for now
+        return RTJson.toString().replace("\\\"", "\"").replace("\"[", "[").replace("]\"", "]");
     }
 
     public ArrayList<RaidTracker> readFromFile()
@@ -52,8 +85,7 @@ public class FileReadWriter {
             String line;
 
             ArrayList<RaidTracker> RTList = new ArrayList<>();
-
-            while ((line = bufferedreader.readLine()) != null) {
+            while ((line = bufferedreader.readLine()) != null && line.length() > 0) {
                 RTList.add(gson.fromJson(parser.parse(line), RaidTracker.class));
             }
 

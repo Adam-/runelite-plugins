@@ -8,17 +8,6 @@ import net.runelite.client.config.ConfigItem;
 public interface RaidTrackerConfig extends Config
 {
 	@ConfigItem(
-			keyName = "enableUI",
-			name = "Enable Side-Panel",
-			description = "Controls whether the side panel should be displayed, data will be logged either way"
-	)
-
-	default boolean enableUI()
-	{
-		return true;
-	}
-
-	@ConfigItem(
 		keyName = "defaultFFA",
 		name = "default FFA",
 		description = "Sets the default split to free for all, rather than split"

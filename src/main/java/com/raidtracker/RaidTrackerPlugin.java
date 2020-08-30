@@ -13,6 +13,7 @@ import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
@@ -85,10 +86,8 @@ public class RaidTrackerPlugin extends Plugin
 				.panel(panel)
 				.build();
 
-		if (config.enableUI())
-		{
-			clientToolbar.addNavigation(navButton);
-		}
+		clientToolbar.addNavigation(navButton);
+
 
 		if (client.getGameState().equals(GameState.LOGGED_IN) || client.getGameState().equals(GameState.LOADING))
 		{
@@ -98,6 +97,7 @@ public class RaidTrackerPlugin extends Plugin
 					panel.loadRTList(fw);
 				}
 			});
+
 		}
 	}
 
@@ -151,6 +151,7 @@ public class RaidTrackerPlugin extends Plugin
 					panel.loadRTList(fw);
 				}
 			});
+
 		}
 
 		if (client.getGameState() == GameState.LOGGED_IN)
@@ -206,12 +207,15 @@ public class RaidTrackerPlugin extends Plugin
 		setSplits(raidTracker);
 
 		fw.writeToFile(raidTracker);
-		panel.addDrop(raidTracker);
+
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				panel.addDrop(raidTracker);
+			}
+		});
 
 		reset();
 	}
-
-
 
 	public void checkChatMessage(ChatMessage event, RaidTracker raidTracker)
 	{

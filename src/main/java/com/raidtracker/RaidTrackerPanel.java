@@ -372,6 +372,7 @@ public class RaidTrackerPanel extends PluginPanel {
                 JLabel valueLabel = textPanel(format(regularDropsSum) + " gp");
                 valueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
                 valueLabel.setForeground(Color.LIGHT_GRAY.darker());
+                valueLabel.setToolTipText(NumberFormat.getInstance().format(regularDropsSum));
 
                 title.add(textLabel);
                 title.add(valueLabel);
@@ -381,9 +382,6 @@ public class RaidTrackerPanel extends PluginPanel {
                 wrapper.add(drops);
             }
         }
-
-
-
 
         return wrapper;
     }
@@ -420,13 +418,13 @@ public class RaidTrackerPanel extends PluginPanel {
 
     public ArrayList<RaidTracker> filterRTListByName(String name) {
         if (loaded) {
-            ArrayList<RaidTracker> filtered = new ArrayList<RaidTracker>(RTList.stream().filter(RT -> {
+            ArrayList<RaidTracker> filtered = new ArrayList<>(RTList.stream().filter(RT -> {
                 return name.toLowerCase().matches(RT.getSpecialLoot().toLowerCase());
             }).collect(Collectors.toList()));
 
             return filtered;
         }
-        return new ArrayList<RaidTracker>();
+        return new ArrayList<>();
     }
 
     public ArrayList<RaidTracker> filterKitReceivers() {
@@ -536,7 +534,7 @@ public class RaidTrackerPanel extends PluginPanel {
 
             RTList.forEach(RT -> {
                 RT.getLootList().forEach(item -> {
-                    Boolean addToSet = true;
+                    boolean addToSet = true;
                     for (RaidUniques unique : RaidUniques.values()) {
                         if (item.getId() == unique.getItemID()) {
                             addToSet = false;
