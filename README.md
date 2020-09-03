@@ -6,9 +6,8 @@ Logs COX data, like purple splits and total points, and can be viewed in a new s
 
 ## Images
 <img align="Top" src="https://i.imgur.com/NCSNGbw.png">
-![UI Part 2](https://i.imgur.com/l1wmKuO.png)
-![Config](https://i.imgur.com/e2aRLQh.png)
-
+<img align="Top" src="https://i.imgur.com/l1wmKuO.png">
+<img align="Top" src="https://i.imgur.com/e2aRLQh.png">
 
 ## Data Storage
 Data is stored at `~/.runelite/raid-data-tracker/cox/raid_tracker_data.log` where `USERNAME` is your account's login name (or email address).
