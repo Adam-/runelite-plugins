@@ -33,4 +33,5 @@ public class RaidTracker {
     int lootSplitPaid = -1;
     ArrayList<RaidTrackerItem> lootList = new ArrayList<>();
     String uniqueID = UUID.randomUUID().toString();
+    long date = System.currentTimeMillis();
 }

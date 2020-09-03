@@ -75,7 +75,7 @@ public class RaidTrackerPlugin extends Plugin
 
 	@Override
 	protected void startUp() {
-		panel = new RaidTrackerPanel(itemManager);
+		panel = new RaidTrackerPanel(itemManager, fw);
 
 		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "panel-icon.png");
 
@@ -92,12 +92,7 @@ public class RaidTrackerPlugin extends Plugin
 		if (client.getGameState().equals(GameState.LOGGED_IN) || client.getGameState().equals(GameState.LOADING))
 		{
 			fw.updateUsername(client.getUsername());
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					panel.loadRTList(fw);
-				}
-			});
-
+			SwingUtilities.invokeLater(() -> panel.loadRTList(fw));
 		}
 	}
 
@@ -146,11 +141,7 @@ public class RaidTrackerPlugin extends Plugin
 		if (event.getGameState() == GameState.LOGGING_IN)
 		{
 			fw.updateUsername(client.getUsername());
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					panel.loadRTList(fw);
-				}
-			});
+			SwingUtilities.invokeLater(() -> panel.loadRTList(fw));
 
 		}
 
@@ -208,13 +199,10 @@ public class RaidTrackerPlugin extends Plugin
 
 		fw.writeToFile(raidTracker);
 
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				panel.addDrop(raidTracker);
-			}
+		SwingUtilities.invokeLater(() -> {
+			panel.addDrop(raidTracker);
+			reset();
 		});
-
-		reset();
 	}
 
 	public void checkChatMessage(ChatMessage event, RaidTracker raidTracker)

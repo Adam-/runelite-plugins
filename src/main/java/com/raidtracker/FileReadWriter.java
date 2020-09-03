@@ -3,11 +3,14 @@ package com.raidtracker;
 import com.google.gson.*;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import static net.runelite.client.RuneLite.RUNELITE_DIR;
@@ -93,17 +96,23 @@ public class FileReadWriter {
             BufferedReader bufferedreader = new BufferedReader(new FileReader(fileName));
             String line;
 
+            boolean updateDates = false;
+
             ArrayList<RaidTracker> RTList = new ArrayList<>();
             while ((line = bufferedreader.readLine()) != null && line.length() > 0) {
+                if (!line.contains("Date:")) {
+                    updateDates = true;
+                }
                 RTList.add(gson.fromJson(parser.parse(line), RaidTracker.class));
             }
 
             bufferedreader.close();
 
+            if (updateDates) {
+                updateRTList(RTList);
+            }
+
             return RTList;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return new ArrayList<>();
         } catch (IOException e) {
             e.printStackTrace();
             return new ArrayList<>();
@@ -139,7 +148,7 @@ public class FileReadWriter {
         File newFile = new File(dir + "\\raid_tracker_data.log");
 
         try {
-            newFile.createNewFile();
+            IGNORE_RESULT(newFile.createNewFile());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -156,6 +165,30 @@ public class FileReadWriter {
         }
     }
 
+    public void updateRTList(ArrayList<RaidTracker> RTList) {
+        try {
+            Gson gson = new GsonBuilder().create();
+
+            JsonParser parser = new JsonParser();
+
+            String fileName = this.dir + "\\raid_tracker_data.log";
+
+
+            FileWriter fw = new FileWriter(fileName, false); //the true will append the new data
+
+            for (RaidTracker RT : RTList) {
+                gson.toJson(parser.parse(getJSONString(RT, gson, parser)), fw);
+
+                fw.append("\n");
+            }
+
+            fw.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void migrate() {
         File dir_deprecated_l1 = new File(RUNELITE_DIR, "loots");
         File dir_deprecated_l2 = new File(dir_deprecated_l1, username);
@@ -166,19 +199,17 @@ public class FileReadWriter {
         if (logFile_deprecated.exists()) {
             ArrayList<RaidTracker> temp = readFromFile(dir_deprecated_l3 + "\\raid_tracker_data.log");
 
-            temp.forEach(RT -> {
-                writeToFile(RT);
-            });
+            temp.forEach(this::writeToFile);
 
-            logFile_deprecated.delete();
-            dir_deprecated_l3.delete();
+            IGNORE_RESULT(logFile_deprecated.delete());
+            IGNORE_RESULT(dir_deprecated_l3.delete());
 
             //making sure to not delete any lootlogger directories if present
             if (dir_deprecated_l2.listFiles().length - 1 == 0) {
-                dir_deprecated_l2.delete();
+                IGNORE_RESULT(dir_deprecated_l2.delete());
             }
             if (dir_deprecated_l1.listFiles().length == 0) {
-                dir_deprecated_l1.delete();
+                IGNORE_RESULT(dir_deprecated_l1.delete());
             }
         }
     }

@@ -22,23 +22,29 @@ import java.awt.image.BufferedImage;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 public class RaidTrackerPanel extends PluginPanel {
 
     private final ItemManager itemManager;
-
-    private final static Color BACKGROUND_COLOR = ColorScheme.DARK_GRAY_COLOR;
+    private final FileReadWriter fw;
 
     @Setter
     private ArrayList<RaidTracker> RTList;
+
+    private final HashMap<String, RaidTracker> UUIDMap = new LinkedHashMap<>();
 
     @Setter
     private boolean loaded = false;
     private final JPanel panel = new JPanel();
 
-    public RaidTrackerPanel(final ItemManager itemManager) {
+    private JButton update;
+
+
+    public RaidTrackerPanel(final ItemManager itemManager, FileReadWriter fw) {
         this.itemManager = itemManager;
+        this.fw = fw;
 
         panel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
@@ -58,6 +64,7 @@ public class RaidTrackerPanel extends PluginPanel {
         JPanel pointsPanel = getPointsPanel();
         JPanel splitsEarnedPanel = getSplitsEarnedPanel();
         JPanel regularDrops = getRegularDropsPanel();
+        JPanel changePurples = getChangePurples();
 
         panel.add(title);
         panel.add(killsLoggedPanel);
@@ -69,7 +76,8 @@ public class RaidTrackerPanel extends PluginPanel {
         panel.add(splitsEarnedPanel);
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
         panel.add(regularDrops);
-        panel.add(Box.createRigidArea(new Dimension(0, 50)));
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
+        panel.add(changePurples);
 
         panel.revalidate();
         panel.repaint();
@@ -79,14 +87,14 @@ public class RaidTrackerPanel extends PluginPanel {
         final JPanel title = new JPanel();
 
         final JPanel first = new JPanel();
-        first.setBackground(BACKGROUND_COLOR);
+        first.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
         title.setBorder(new CompoundBorder(
                 new EmptyBorder(5, 8, 8, 8),
                 new MatteBorder(0, 0, 1, 0, Color.GRAY)));
 
         title.setLayout(new BorderLayout());
-        title.setBackground(BACKGROUND_COLOR);
+        title.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
         final JLabel text = new JLabel("Chambers of Xeric Data Tracker");
         text.setForeground(Color.WHITE);
@@ -126,6 +134,9 @@ public class RaidTrackerPanel extends PluginPanel {
         int totalOwnName = 0;
 
         for (RaidUniques unique : RaidUniques.values()) {
+            boolean isKit = false;
+            boolean isDust = false;
+
             final AsyncBufferedImage image = itemManager.getImage(unique.getItemID(), 1, false);
 
             final JLabel icon = new JLabel();
@@ -149,10 +160,12 @@ public class RaidTrackerPanel extends PluginPanel {
             if (unique.getName().matches("Metamorphatic Dust")) {
                 l = filterDustReceivers();
                 l2 = filterOwnDusts(l);
+                isDust = true;
             }
             else if (unique.getName().matches("Twisted Kit")) {
                 l = filterKitReceivers();
                 l2 = filterOwnKits(l);
+                isKit = true;
             }
             else {
                 l = filterRTListByName(unique.getName());
@@ -173,12 +186,14 @@ public class RaidTrackerPanel extends PluginPanel {
 
             final String tooltip = getUniqueToolTip(unique, l.size(), l2.size());
 
-            totalUniques += l.size();
-            totalOwnName += l2.size();
+            if (!isDust && !isKit) {
+                totalUniques += l.size();
+                totalOwnName += l2.size();
+            }
 
             int bottomBorder = 1;
 
-            if (unique.getName() == "Twisted Kit") {
+            if (unique.getName().equals("Twisted Kit")) {
                 bottomBorder = 0;
             }
 
@@ -199,7 +214,7 @@ public class RaidTrackerPanel extends PluginPanel {
 
             uniques.add(received);
 
-            uniques.add(seen);;
+            uniques.add(seen);
         }
 
         JPanel total = new JPanel();
@@ -207,7 +222,7 @@ public class RaidTrackerPanel extends PluginPanel {
         total.setBorder(new EmptyBorder(3, 3, 3, 3));
         total.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
 
-        JLabel totalText = textPanel("Total:");
+        JLabel totalText = textPanel("Total Purples:");
         JLabel totalOwnNameLabel = textPanel(Integer.toString(totalOwnName));
         JLabel totalUniquesLabel = textPanel(Integer.toString(totalUniques));
 
@@ -238,8 +253,8 @@ public class RaidTrackerPanel extends PluginPanel {
         int totalPoints = 0;
 
         if (loaded) {
-            personalPoints = RTList.stream().mapToInt(RaidTracker::getPersonalPoints).sum();
-            totalPoints = RTList.stream().mapToInt(RaidTracker::getTotalPoints).sum();
+            personalPoints = atleastZero(RTList.stream().mapToInt(RaidTracker::getPersonalPoints).sum());
+            totalPoints = atleastZero(RTList.stream().mapToInt(RaidTracker::getTotalPoints).sum());
         }
 
         JLabel personalPointsLabel = textPanel(format(personalPoints));
@@ -265,7 +280,9 @@ public class RaidTrackerPanel extends PluginPanel {
         int splitGP = 0;
 
         if (loaded) {
-            splitGP = RTList.stream().mapToInt(RaidTracker::getLootSplitReceived).sum();
+            splitGP = atleastZero(RTList.stream().mapToInt(RaidTracker::getLootSplitReceived).sum());
+
+
         }
 
         JLabel textLabel = textPanel("Split GP earned:");
@@ -386,7 +403,73 @@ public class RaidTrackerPanel extends PluginPanel {
         return wrapper;
     }
 
-    private JLabel textPanel(String text) {
+    private JPanel getChangePurples() {
+        final JPanel wrapper = new JPanel();
+        wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
+
+        ArrayList<SplitChanger> SCList = new ArrayList<>();
+
+        JPanel titleWrapper = new JPanel();
+        titleWrapper.setLayout(new GridBagLayout());
+        titleWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
+        titleWrapper.setBorder(new EmptyBorder(3,3,3,3));
+
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = SwingConstants.HORIZONTAL;
+        c.gridx = 0;
+        c.weightx = 1;
+
+        JLabel changes = textPanel("Change Purple Splits");
+        changes.setBorder(new EmptyBorder(0,5,0,0));
+
+        update = new JButton();
+        update.setText("Update");
+        update.setFont(FontManager.getRunescapeSmallFont());
+        update.setPreferredSize(new Dimension(60,20));
+        update.setEnabled(false);
+        update.setBorder(new EmptyBorder(2,2,2,2));
+        update.setToolTipText("Nothing to update");
+        update.addActionListener(e -> {
+            SCList.forEach(SC -> {
+                RaidTracker tempRaidTracker = SC.getRaidTracker();
+                UUIDMap.put(tempRaidTracker.getUniqueID(), tempRaidTracker);
+            });
+            RTList = new ArrayList<>(UUIDMap.values());
+            fw.updateRTList(RTList);
+
+            updateView();
+        });
+
+        c.anchor = GridBagConstraints.WEST;
+        titleWrapper.add(changes, c);
+
+        c.gridx++;
+        c.anchor = GridBagConstraints.EAST;
+
+        titleWrapper.add(update , c);
+
+        if (loaded) {
+            wrapper.add(titleWrapper);
+            wrapper.add(Box.createRigidArea(new Dimension(0, 2)));
+
+            for (RaidTracker RT : filterPurples()) {
+                SplitChanger SC = new SplitChanger(itemManager, RT, this);
+                SCList.add(SC);
+                wrapper.add(SC);
+                wrapper.add(Box.createRigidArea(new Dimension(0, 7)));
+            }
+        }
+
+        return wrapper;
+    }
+
+    public void setUpdateButton(boolean b) {
+        update.setEnabled(b);
+        update.setBackground(ColorScheme.BRAND_ORANGE);
+        update.setToolTipText("Update");
+    }
+
+    public JLabel textPanel(String text) {
         JLabel label = new JLabel();
         label.setText(text);
         label.setForeground(Color.WHITE);
@@ -412,86 +495,86 @@ public class RaidTrackerPanel extends PluginPanel {
 
     public void loadRTList(FileReadWriter fw) {
         RTList = fw.readFromFile();
+        for (RaidTracker RT : RTList) {
+            UUIDMap.put(RT.getUniqueID(), RT);
+        }
         loaded = true;
         updateView();
     }
 
     public ArrayList<RaidTracker> filterRTListByName(String name) {
         if (loaded) {
-            ArrayList<RaidTracker> filtered = new ArrayList<>(RTList.stream().filter(RT -> {
-                return name.toLowerCase().matches(RT.getSpecialLoot().toLowerCase());
-            }).collect(Collectors.toList()));
 
-            return filtered;
+            return RTList.stream().filter(RT -> name.toLowerCase().matches(RT.getSpecialLoot().toLowerCase()))
+                    .collect(Collectors.toCollection(ArrayList::new));
         }
         return new ArrayList<>();
     }
 
     public ArrayList<RaidTracker> filterKitReceivers() {
         if (loaded) {
-            ArrayList<RaidTracker> filtered = new ArrayList<RaidTracker>(RTList.stream().filter(RT -> {
-                return !RT.getKitReceiver().isEmpty();
-            }).collect(Collectors.toList()));
-
-            return filtered;
+            return RTList.stream().filter(RT -> !RT.getKitReceiver().isEmpty())
+                    .collect(Collectors.toCollection(ArrayList::new));
         }
-        return new ArrayList<RaidTracker>();
+        return new ArrayList<>();
     }
 
     public ArrayList<RaidTracker> filterDustReceivers() {
         if (loaded) {
-            ArrayList<RaidTracker> filtered = RTList.stream().filter(RT -> {
-                return !RT.getDustReceiver().isEmpty();
-            }).collect(Collectors.toCollection(ArrayList::new));
-
-            return filtered;
+            return RTList.stream().filter(RT -> !RT.getDustReceiver().isEmpty()).collect(Collectors.toCollection(ArrayList::new));
         }
-        return new ArrayList<RaidTracker>();
+        return new ArrayList<>();
     }
 
     public ArrayList<RaidTracker> filterOwnDrops(ArrayList<RaidTracker> l) {
         if (loaded) {
-            ArrayList<RaidTracker> filtered = l.stream().filter(RT -> {
+            return l.stream().filter(RT -> {
 
                 if (RT.getSpecialLoot().isEmpty()) {
                     return false;
                 }
                 return RT.getLootList().get(0).getId() == RaidUniques.getByName(RT.getSpecialLoot()).getItemID();
             }).collect(Collectors.toCollection(ArrayList::new));
-
-            return filtered;
         }
         return new ArrayList<>();
     }
 
     public ArrayList<RaidTracker> filterOwnKits(ArrayList<RaidTracker> l) {
         if (loaded) {
-            ArrayList<RaidTracker> filtered = l.stream().filter(RT -> {
-                return RT.getLootList().stream().filter(loot -> loot.getId() == ItemID.TWISTED_ANCESTRAL_COLOUR_KIT).count() > 0;
-            }).collect(Collectors.toCollection(ArrayList::new));
-
-            return filtered;
+            return l.stream().filter(RT -> RT.getLootList().stream()
+                    .anyMatch(loot -> loot.getId() == ItemID.TWISTED_ANCESTRAL_COLOUR_KIT))
+                    .collect(Collectors.toCollection(ArrayList::new));
         }
-        return new ArrayList<RaidTracker>();
+        return new ArrayList<>();
     }
 
     public ArrayList<RaidTracker> filterOwnDusts(ArrayList<RaidTracker> l) {
         if (loaded) {
-            ArrayList<RaidTracker> filtered = l.stream().filter(RT -> {
-                return RT.getLootList().stream().filter(loot -> loot.getId() == ItemID.METAMORPHIC_DUST).count() > 0;
-            }).collect(Collectors.toCollection(ArrayList::new));
 
-            return filtered;
+            return l.stream().filter(RT -> RT.getLootList().stream()
+                    .anyMatch(loot -> loot.getId() == ItemID.METAMORPHIC_DUST))
+                    .collect(Collectors.toCollection(ArrayList::new));
         }
-        return new ArrayList<RaidTracker>();
+        return new ArrayList<>();
+    }
+
+    public ArrayList<RaidTracker> filterPurples() {
+        if (loaded) {
+
+            return RTList.stream().filter(RT -> Stream.of(RaidUniques.values())
+                    .anyMatch(value -> value.getName().toLowerCase().equals(RT.getSpecialLoot().toLowerCase())))
+                    .collect(Collectors.toCollection(ArrayList::new));
+        }
+        return new ArrayList<>();
+
     }
 
     public String getUniqueToolTip(RaidUniques unique, int amountSeen, int amountReceived) {
 
         return "<html>" +
                 unique.getName() +  "<br>" +
-                "Received: " + Integer.toString(amountReceived) + "x" + "<br>" +
-                "Seen: " + Integer.toString(amountSeen) + "x";
+                "Received: " + amountReceived + "x" + "<br>" +
+                "Seen: " + amountSeen + "x";
     }
 
     public String getRegularToolTip(RaidTrackerItem drop) {
@@ -501,16 +584,20 @@ public class RaidTrackerPanel extends PluginPanel {
 
     public void addDrop(RaidTracker RT) {
         RTList.add(RT);
+        UUIDMap.put(RT.getUniqueID(), RT);
         updateView();
     }
 
+    public int atleastZero(int maybeLessThanZero) {
+        return Math.max(maybeLessThanZero, 0);
+    }
 
     //yoinked from stackoverflow
     private static final NavigableMap<Long, String> suffixes = new TreeMap<>();
     static {
         suffixes.put(1_000L, "k");
-        suffixes.put(1_000_000L, "M");
-        suffixes.put(1_000_000_000L, "B");
+        suffixes.put(1_000_000L, "m");
+        suffixes.put(1_000_000_000L, "b");
     }
 
     public static String format(long value) {
@@ -524,7 +611,7 @@ public class RaidTrackerPanel extends PluginPanel {
         String suffix = e.getValue();
 
         long truncated = value / (divideBy / 10); //the number part of the output times 10
-        boolean hasDecimal = truncated < 100 && (truncated / 10d) != (truncated / 10);
+        boolean hasDecimal = truncated < 100 && truncated % 10 != 0;
         return hasDecimal ? (truncated / 10d) + suffix : (truncated / 10) + suffix;
     }
 
@@ -532,20 +619,18 @@ public class RaidTrackerPanel extends PluginPanel {
         if (loaded) {
             HashSet<Integer> uniqueIDs = new HashSet<>();
 
-            RTList.forEach(RT -> {
-                RT.getLootList().forEach(item -> {
-                    boolean addToSet = true;
-                    for (RaidUniques unique : RaidUniques.values()) {
-                        if (item.getId() == unique.getItemID()) {
-                            addToSet = false;
-                            break;
-                        }
+            RTList.forEach(RT -> RT.getLootList().forEach(item -> {
+                boolean addToSet = true;
+                for (RaidUniques unique : RaidUniques.values()) {
+                    if (item.getId() == unique.getItemID()) {
+                        addToSet = false;
+                        break;
                     }
-                    if (addToSet) {
-                        uniqueIDs.add(item.id);
-                    }
-                });
-            });
+                }
+                if (addToSet) {
+                    uniqueIDs.add(item.id);
+                }
+            }));
 
             Map<Integer, RaidTrackerItem> m = new HashMap<>();
 
