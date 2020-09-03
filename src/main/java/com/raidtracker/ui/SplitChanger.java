@@ -1,5 +1,6 @@
-package com.raidtracker;
+package com.raidtracker.ui;
 
+import com.raidtracker.RaidTracker;
 import lombok.Getter;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
@@ -8,6 +9,7 @@ import net.runelite.client.util.AsyncBufferedImage;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.text.NumberFormat;
 import java.time.Instant;
@@ -236,7 +238,7 @@ public class SplitChanger extends JPanel {
     }
 
     private BufferedImage resizeImage(BufferedImage before) {
-        return raidTrackerPanel.resizeImage(before, 1.75);
+        return raidTrackerPanel.resizeImage(before, 1.75, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
     }
 
     private String getDateText() {

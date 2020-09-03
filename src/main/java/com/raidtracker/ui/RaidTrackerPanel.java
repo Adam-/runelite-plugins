@@ -1,6 +1,10 @@
-package com.raidtracker;
+package com.raidtracker.ui;
 
 
+import com.raidtracker.RaidTracker;
+import com.raidtracker.RaidTrackerConfig;
+import com.raidtracker.RaidTrackerItem;
+import com.raidtracker.filereadwriter.FileReadWriter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemComposition;
@@ -10,16 +14,22 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
+import net.runelite.client.util.ImageUtil;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.text.NumberFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -29,6 +39,7 @@ public class RaidTrackerPanel extends PluginPanel {
 
     private final ItemManager itemManager;
     private final FileReadWriter fw;
+    private final RaidTrackerConfig config;
 
     @Setter
     private ArrayList<RaidTracker> RTList;
@@ -41,10 +52,14 @@ public class RaidTrackerPanel extends PluginPanel {
 
     private JButton update;
 
+    private String dateFilter = "All Time";
+    private String cmFilter = "CM & Normal";
 
-    public RaidTrackerPanel(final ItemManager itemManager, FileReadWriter fw) {
+
+    public RaidTrackerPanel(final ItemManager itemManager, FileReadWriter fw, RaidTrackerConfig config) {
         this.itemManager = itemManager;
         this.fw = fw;
+        this.config = config;
 
         panel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
@@ -59,6 +74,7 @@ public class RaidTrackerPanel extends PluginPanel {
         panel.removeAll();
 
         JPanel title = getTitle();
+        JPanel filterPanel = getFilterPanel();
         JPanel killsLoggedPanel = getKillsLoggedPanel();
         JPanel uniquesPanel = getUniquesPanel();
         JPanel pointsPanel = getPointsPanel();
@@ -67,6 +83,8 @@ public class RaidTrackerPanel extends PluginPanel {
         JPanel changePurples = getChangePurples();
 
         panel.add(title);
+        panel.add(filterPanel);
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(killsLoggedPanel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(uniquesPanel, BorderLayout.CENTER);
@@ -78,6 +96,8 @@ public class RaidTrackerPanel extends PluginPanel {
         panel.add(regularDrops);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
         panel.add(changePurples);
+
+
 
         panel.revalidate();
         panel.repaint();
@@ -142,12 +162,12 @@ public class RaidTrackerPanel extends PluginPanel {
             final JLabel icon = new JLabel();
 
 
-            icon.setIcon(new ImageIcon(resizeImage(image, 0.7)));
+            icon.setIcon(new ImageIcon(resizeImage(image, 0.7, AffineTransformOp.TYPE_BILINEAR)));
             uniques.add(icon);
 
             image.onLoaded(() ->
             {
-                icon.setIcon(new ImageIcon(resizeImage(image, 0.7)));
+                icon.setIcon(new ImageIcon(resizeImage(image, 0.7, AffineTransformOp.TYPE_BILINEAR)));
                 icon.revalidate();
                 icon.repaint();
             });
@@ -253,8 +273,8 @@ public class RaidTrackerPanel extends PluginPanel {
         int totalPoints = 0;
 
         if (loaded) {
-            personalPoints = atleastZero(RTList.stream().mapToInt(RaidTracker::getPersonalPoints).sum());
-            totalPoints = atleastZero(RTList.stream().mapToInt(RaidTracker::getTotalPoints).sum());
+            personalPoints = atleastZero(getFilteredRTList().stream().mapToInt(RaidTracker::getPersonalPoints).sum());
+            totalPoints = atleastZero(getFilteredRTList().stream().mapToInt(RaidTracker::getTotalPoints).sum());
         }
 
         JLabel personalPointsLabel = textPanel(format(personalPoints));
@@ -280,7 +300,7 @@ public class RaidTrackerPanel extends PluginPanel {
         int splitGP = 0;
 
         if (loaded) {
-            splitGP = atleastZero(RTList.stream().mapToInt(RaidTracker::getLootSplitReceived).sum());
+            splitGP = atleastZero(getFilteredRTList().stream().mapToInt(RaidTracker::getLootSplitReceived).sum());
 
 
         }
@@ -310,7 +330,7 @@ public class RaidTrackerPanel extends PluginPanel {
         int killsLogged = 0;
 
         if (loaded) {
-            killsLogged = RTList.size();
+            killsLogged = getFilteredRTList().size();
         }
 
         JLabel textLabel = textPanel("Kills Logged:");
@@ -330,7 +350,7 @@ public class RaidTrackerPanel extends PluginPanel {
             Map<Integer, RaidTrackerItem> uniqueIDs = getDistinctRegularDrops();
 
             if (uniqueIDs.values().size() > 0) {
-                RTList.forEach(RT -> RT.getLootList().forEach(item -> {
+                getFilteredRTList().forEach(RT -> RT.getLootList().forEach(item -> {
                     RaidTrackerItem RTI = uniqueIDs.get(item.id);
 
                     if (RTI != null) {
@@ -428,6 +448,7 @@ public class RaidTrackerPanel extends PluginPanel {
         update.setPreferredSize(new Dimension(60,20));
         update.setEnabled(false);
         update.setBorder(new EmptyBorder(2,2,2,2));
+        update.setFocusPainted(false);
         update.setToolTipText("Nothing to update");
         update.addActionListener(e -> {
             SCList.forEach(SC -> {
@@ -449,17 +470,137 @@ public class RaidTrackerPanel extends PluginPanel {
         titleWrapper.add(update , c);
 
         if (loaded) {
-            wrapper.add(titleWrapper);
-            wrapper.add(Box.createRigidArea(new Dimension(0, 2)));
+            ArrayList<RaidTracker> purpleList = filterPurples();
 
-            for (RaidTracker RT : filterPurples()) {
-                SplitChanger SC = new SplitChanger(itemManager, RT, this);
-                SCList.add(SC);
-                wrapper.add(SC);
-                wrapper.add(Box.createRigidArea(new Dimension(0, 7)));
+            if (purpleList.size() > 0) {
+                wrapper.add(titleWrapper);
+                wrapper.add(Box.createRigidArea(new Dimension(0, 2)));
+
+                for (RaidTracker RT : purpleList) {
+                    SplitChanger SC = new SplitChanger(itemManager, RT, this);
+                    SCList.add(SC);
+                    wrapper.add(SC);
+                    wrapper.add(Box.createRigidArea(new Dimension(0, 7)));
+                }
             }
         }
 
+        return wrapper;
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    private JPanel getFilterPanel() {
+        final JPanel wrapper = new JPanel();
+        wrapper.setLayout(new GridBagLayout());
+        wrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
+        wrapper.setBorder(new EmptyBorder(5,5,5,5));
+
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = SwingConstants.HORIZONTAL;
+        c.weightx = 1;
+        c.weighty = 1;
+        c.gridx = 0;
+        c.gridy = 0;
+
+        JLabel filter = textPanel("Filter kills logged");
+        filter.setHorizontalAlignment(SwingConstants.LEFT);
+        filter.setBorder(new EmptyBorder(0,0,0,17));
+        c.anchor = GridBagConstraints.WEST;
+        wrapper.add(filter);
+
+        JComboBox<String> choices = new JComboBox<>(new String []{"All Time", "Today", "Last Week", "Last Month", "Last Year", "Last X Kills"});
+        choices.setSelectedItem(dateFilter);
+        choices.setPreferredSize(new Dimension(100, 25));
+        choices.setFocusable(false);
+
+        choices.addActionListener(e ->  {
+            dateFilter = choices.getSelectedItem().toString();
+            if (dateFilter.equals("Last X Kills")) {
+                choices.setToolTipText("X can be changed in the settings");
+            }
+            else {
+                choices.setToolTipText(null);
+            }
+            if (loaded) {
+                updateView();
+            }
+        });
+
+        JComboBox<String> cm = new JComboBox<>(new String []{"CM & Normal", "Normal Only", "CM Only"});
+        cm.setFocusable(false);
+        cm.setPreferredSize(new Dimension(108,25));
+        cm.setSelectedItem(cmFilter);
+        cm.addActionListener(e -> {
+            cmFilter = cm.getSelectedItem().toString();
+            if (loaded) {
+                updateView();
+            }
+        });
+
+        c.gridy = 1;
+        wrapper.add(Box.createRigidArea(new Dimension(0, 5)), c);
+
+        c.gridy = 2;
+        wrapper.add(choices, c);
+
+        c.gridx = 1;
+        c.anchor = GridBagConstraints.EAST;
+        wrapper.add(cm, c);
+
+
+        JPanel buttonWrapper = new JPanel();
+        buttonWrapper.setPreferredSize(new Dimension(50, 20));
+        buttonWrapper.setLayout(new GridLayout(0, 2, 2 ,0));
+        buttonWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
+
+        BufferedImage refreshIcon = ImageUtil.getResourceStreamFromClass(getClass(), "refresh-grey.png");
+        BufferedImage refreshHover = ImageUtil.getResourceStreamFromClass(getClass(), "refresh-white.png");
+        BufferedImage deleteIcon = ImageUtil.getResourceStreamFromClass(getClass(), "delete-grey.png");
+        BufferedImage deleteHover = ImageUtil.getResourceStreamFromClass(getClass(), "delete-white.png");
+
+        JButton refresh = imageButton(refreshIcon);
+        refresh.setToolTipText("Refresh kills logged");
+        refresh.addActionListener(e -> {
+            if (loaded) {
+                loadRTList();
+            }
+        });
+
+        JButton delete = imageButton(deleteIcon);
+        delete.setToolTipText("Delete all logged kills");
+        delete.addActionListener(e -> {
+            if (loaded) {
+                clearData();
+            }
+        });
+
+        refresh.addMouseListener(new MouseAdapter() {
+            public void mouseEntered (MouseEvent e){
+                refresh.setIcon(new ImageIcon(refreshHover));
+            }
+
+            public void mouseExited (java.awt.event.MouseEvent e){
+                refresh.setIcon(new ImageIcon(refreshIcon));
+            }
+        });
+
+        delete.addMouseListener(new MouseAdapter() {
+            public void mouseEntered (MouseEvent e){
+                delete.setIcon(new ImageIcon(deleteHover));
+            }
+
+            public void mouseExited (java.awt.event.MouseEvent e){
+                delete.setIcon(new ImageIcon(deleteIcon));
+            }
+        });
+
+
+        buttonWrapper.add(refresh);
+        buttonWrapper.add(delete);
+
+        c.gridy = 0;
+
+        wrapper.add(buttonWrapper, c);
         return wrapper;
     }
 
@@ -480,20 +621,31 @@ public class RaidTrackerPanel extends PluginPanel {
         return label;
     }
 
-    public BufferedImage resizeImage(BufferedImage before, double scale) {
+    public BufferedImage resizeImage(BufferedImage before, double scale, int af) {
         int w = before.getWidth();
         int h = before.getHeight();
         int w2 = (int) (w * scale);
         int h2 = (int) (h * scale);
         BufferedImage after = new BufferedImage(w2, h2, before.getType());
         AffineTransform scaleInstance = AffineTransform.getScaleInstance(scale, scale);
-        AffineTransformOp scaleOp = new AffineTransformOp(scaleInstance, AffineTransformOp.TYPE_BILINEAR);
+        AffineTransformOp scaleOp = new AffineTransformOp(scaleInstance, af);
         scaleOp.filter(before, after);
 
         return after;
     }
 
-    public void loadRTList(FileReadWriter fw) {
+    public JButton imageButton(BufferedImage image) {
+        JButton b = new JButton();
+        b.setIcon(new ImageIcon(image));
+        b.setOpaque(false);
+        b.setContentAreaFilled(false);
+        b.setBorderPainted(false);
+        b.setFocusPainted(false);
+
+        return b;
+    }
+
+    public void loadRTList() {
         RTList = fw.readFromFile();
         for (RaidTracker RT : RTList) {
             UUIDMap.put(RT.getUniqueID(), RT);
@@ -505,7 +657,7 @@ public class RaidTrackerPanel extends PluginPanel {
     public ArrayList<RaidTracker> filterRTListByName(String name) {
         if (loaded) {
 
-            return RTList.stream().filter(RT -> name.toLowerCase().matches(RT.getSpecialLoot().toLowerCase()))
+            return getFilteredRTList().stream().filter(RT -> name.toLowerCase().matches(RT.getSpecialLoot().toLowerCase()))
                     .collect(Collectors.toCollection(ArrayList::new));
         }
         return new ArrayList<>();
@@ -513,7 +665,7 @@ public class RaidTrackerPanel extends PluginPanel {
 
     public ArrayList<RaidTracker> filterKitReceivers() {
         if (loaded) {
-            return RTList.stream().filter(RT -> !RT.getKitReceiver().isEmpty())
+            return getFilteredRTList().stream().filter(RT -> !RT.getKitReceiver().isEmpty())
                     .collect(Collectors.toCollection(ArrayList::new));
         }
         return new ArrayList<>();
@@ -521,7 +673,7 @@ public class RaidTrackerPanel extends PluginPanel {
 
     public ArrayList<RaidTracker> filterDustReceivers() {
         if (loaded) {
-            return RTList.stream().filter(RT -> !RT.getDustReceiver().isEmpty()).collect(Collectors.toCollection(ArrayList::new));
+            return getFilteredRTList().stream().filter(RT -> !RT.getDustReceiver().isEmpty()).collect(Collectors.toCollection(ArrayList::new));
         }
         return new ArrayList<>();
     }
@@ -561,7 +713,7 @@ public class RaidTrackerPanel extends PluginPanel {
     public ArrayList<RaidTracker> filterPurples() {
         if (loaded) {
 
-            return RTList.stream().filter(RT -> Stream.of(RaidUniques.values())
+            return getFilteredRTList().stream().filter(RT -> Stream.of(RaidUniques.values())
                     .anyMatch(value -> value.getName().toLowerCase().equals(RT.getSpecialLoot().toLowerCase())))
                     .collect(Collectors.toCollection(ArrayList::new));
         }
@@ -619,7 +771,7 @@ public class RaidTrackerPanel extends PluginPanel {
         if (loaded) {
             HashSet<Integer> uniqueIDs = new HashSet<>();
 
-            RTList.forEach(RT -> RT.getLootList().forEach(item -> {
+            getFilteredRTList().forEach(RT -> RT.getLootList().forEach(item -> {
                 boolean addToSet = true;
                 for (RaidUniques unique : RaidUniques.values()) {
                     if (item.getId() == unique.getItemID()) {
@@ -649,5 +801,64 @@ public class RaidTrackerPanel extends PluginPanel {
         }
         return new HashMap<>();
     }
+
+    private ArrayList<RaidTracker> getFilteredRTList() {
+        ArrayList<RaidTracker> tempRTList;
+
+        if (cmFilter.equals("CM & Normal")) {
+            tempRTList = RTList;
+        }
+        else if (cmFilter.equals("CM Only")) {
+            tempRTList = RTList.stream().filter(RaidTracker::isChallengeMode)
+                    .collect(Collectors.toCollection(ArrayList::new));
+        }
+        else {
+            tempRTList = RTList.stream().filter(RT -> !RT.isChallengeMode())
+                    .collect(Collectors.toCollection(ArrayList::new));
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate lastWeek = today.minusDays(7);
+        LocalDate lastMonth = today.minusDays(30);
+        LocalDate lastYear = today.minusDays(365);
+
+        switch (dateFilter) {
+            case "All Time":
+                return tempRTList;
+            case "Today":
+                return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().equals(today))
+                        .collect(Collectors.toCollection(ArrayList::new));
+            case "Last Week":
+                return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().equals(lastWeek))
+                        .collect(Collectors.toCollection(ArrayList::new));
+            case "Last Month":
+                return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().equals(lastMonth))
+                        .collect(Collectors.toCollection(ArrayList::new));
+            case "Last Year":
+                return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().equals(lastYear))
+                        .collect(Collectors.toCollection(ArrayList::new));
+            case "Last X Kills":
+                return new ArrayList<>(tempRTList.subList(Math.max(tempRTList.size() - config.lastXKills(), 0), tempRTList.size()));
+        }
+
+        return RTList;
+    }
+
+    private void clearData()
+    {
+        // Confirm delete action
+        final int delete = JOptionPane.showConfirmDialog(this.getRootPane(), "<html>Are you sure you want to clear all data for this tab?<br/>There is no way to undo this action.</html>", "Warning", JOptionPane.YES_NO_OPTION);
+        if (delete == JOptionPane.YES_OPTION)
+        {
+            if (!fw.delete())
+            {
+                JOptionPane.showMessageDialog(this.getRootPane(), "Unable to clear stored data, please try again.");
+                return;
+            }
+
+            loadRTList();
+        }
+    }
+
 }
 

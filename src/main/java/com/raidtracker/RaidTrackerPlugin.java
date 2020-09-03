@@ -2,6 +2,8 @@ package com.raidtracker;
 
 import com.google.inject.Provides;
 import com.google.inject.Inject;
+import com.raidtracker.filereadwriter.FileReadWriter;
+import com.raidtracker.ui.RaidTrackerPanel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -13,7 +15,6 @@ import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
@@ -65,7 +66,7 @@ public class RaidTrackerPlugin extends Plugin
 	private RaidTrackerPanel panel;
 	private NavigationButton navButton;
 
-	private FileReadWriter fw = new FileReadWriter();
+	private final FileReadWriter fw = new FileReadWriter();
 
 	@Provides
 	RaidTrackerConfig provideConfig(ConfigManager configManager)
@@ -75,7 +76,7 @@ public class RaidTrackerPlugin extends Plugin
 
 	@Override
 	protected void startUp() {
-		panel = new RaidTrackerPanel(itemManager, fw);
+		panel = new RaidTrackerPanel(itemManager, fw, config);
 
 		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "panel-icon.png");
 
@@ -92,13 +93,14 @@ public class RaidTrackerPlugin extends Plugin
 		if (client.getGameState().equals(GameState.LOGGED_IN) || client.getGameState().equals(GameState.LOADING))
 		{
 			fw.updateUsername(client.getUsername());
-			SwingUtilities.invokeLater(() -> panel.loadRTList(fw));
+			SwingUtilities.invokeLater(() -> panel.loadRTList());
 		}
 	}
 
 	@Override
 	protected void shutDown() {
 		raidTracker.setInRaidChambers(false);
+		clientToolbar.removeNavigation(navButton);
 		reset();
 	}
 
@@ -141,7 +143,7 @@ public class RaidTrackerPlugin extends Plugin
 		if (event.getGameState() == GameState.LOGGING_IN)
 		{
 			fw.updateUsername(client.getUsername());
-			SwingUtilities.invokeLater(() -> panel.loadRTList(fw));
+			SwingUtilities.invokeLater(() -> panel.loadRTList());
 
 		}
 

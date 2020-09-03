@@ -1,9 +1,8 @@
-package com.raidtracker;
+package com.raidtracker.ui;
 
 import com.google.common.collect.ImmutableMap;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NonNull;
 import net.runelite.api.ItemID;
 
 import java.util.Map;

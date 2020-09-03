@@ -4,8 +4,8 @@ import lombok.Data;
 
 @Data
 public class RaidTrackerItem {
-    String name;
-    int id;
-    int quantity;
-    int price;
+    public String name;
+    public int id;
+    public int quantity;
+    public int price;
 }

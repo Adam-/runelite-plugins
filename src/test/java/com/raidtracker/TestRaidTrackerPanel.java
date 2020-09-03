@@ -4,6 +4,8 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.testing.fieldbinder.BoundFieldModule;
+import com.raidtracker.filereadwriter.FileReadWriter;
+import com.raidtracker.ui.RaidTrackerPanel;
 import junit.framework.TestCase;
 import net.runelite.api.Client;
 import org.junit.Before;
@@ -14,7 +16,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 

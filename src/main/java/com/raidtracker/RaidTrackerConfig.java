@@ -26,4 +26,12 @@ public interface RaidTrackerConfig extends Config
 	default int FFACutoff() {
 		return 1000000;
 	}
+
+	@ConfigItem(
+			keyName = "lastXKills",
+			name = "Last X Kills",
+			description = "When the 'Last X Kills' option is selected, this value is used as X"
+	)
+
+	default int lastXKills() {return 50;}
 }

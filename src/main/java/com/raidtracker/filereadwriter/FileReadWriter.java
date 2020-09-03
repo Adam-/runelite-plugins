@@ -1,16 +1,15 @@
-package com.raidtracker;
+package com.raidtracker.filereadwriter;
 
 import com.google.gson.*;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.reflect.TypeToken;
+import com.raidtracker.RaidTracker;
+import com.raidtracker.RaidTrackerItem;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import static net.runelite.client.RuneLite.RUNELITE_DIR;
@@ -187,6 +186,20 @@ public class FileReadWriter {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public boolean delete() {
+        File newFile = new File(dir + "\\raid_tracker_data.log");
+
+        boolean isDeleted = newFile.delete();
+
+        try {
+            IGNORE_RESULT(newFile.createNewFile());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return isDeleted;
     }
 
     public void migrate() {
