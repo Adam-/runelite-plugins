@@ -4,8 +4,6 @@
 
 Logs COX data, like purple splits and total points, and can be viewed in a new side panel. Purple splits can be changed aswell as of v1.2.
 
-##Images
-
 ![UI Part 1](https://i.imgur.com/NCSNGbw.png)
 ![UI Part 2](https://i.imgur.com/l1wmKuO.png)
 ![Config](https://i.imgur.com/e2aRLQh.png)
