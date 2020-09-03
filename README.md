@@ -16,6 +16,9 @@ Logs COX data, like purple splits and total points, and can be viewed in a new s
 ## Data Storage
 Data is stored at `~/.runelite/raid-data-tracker/cox/raid_tracker_data.log` where `USERNAME` is your account's login name (or email address).
 
+## Bugs & Problems
+If you find any bugs or problems, feel free to add me on discord, and I'll accept you asap: baniraai#0996
+
 ## Changelog: 
 ### v1.2:
 - Added the option to filter kills shown in the UI, based on time or a total number of kills. It is also possible with the filter to only show CM kills, no CM kills, or to show both.
