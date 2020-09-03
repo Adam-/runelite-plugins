@@ -5,9 +5,13 @@
 Logs COX data, like purple splits and total points, and can be viewed in a new side panel. Purple splits can be changed aswell as of v1.2.
 
 ## Images
-<img align="Top" src="https://i.imgur.com/NCSNGbw.png">
-<img align="Top" src="https://i.imgur.com/l1wmKuO.png">
-<img align="Top" src="https://i.imgur.com/e2aRLQh.png">
+<div class="row">
+  <img align="Top" src="https://i.imgur.com/NCSNGbw.png">
+  <img align="Top" src="https://i.imgur.com/vwNVqe4.png">
+  <img align="Top" src="https://i.imgur.com/SKVqNAy.png">
+  <img align="Top" src="https://i.imgur.com/vwNVqe4.png">
+  <img align="Top" src="https://i.imgur.com/LPOsdaM.png">
+</div>
 
 ## Data Storage
 Data is stored at `~/.runelite/raid-data-tracker/cox/raid_tracker_data.log` where `USERNAME` is your account's login name (or email address).
