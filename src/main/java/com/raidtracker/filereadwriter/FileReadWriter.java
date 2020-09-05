@@ -99,7 +99,7 @@ public class FileReadWriter {
 
             ArrayList<RaidTracker> RTList = new ArrayList<>();
             while ((line = bufferedreader.readLine()) != null && line.length() > 0) {
-                if (!line.contains("Date:")) {
+                if (!line.contains("date\":")) {
                     updateDates = true;
                 }
                 RTList.add(gson.fromJson(parser.parse(line), RaidTracker.class));
@@ -165,6 +165,8 @@ public class FileReadWriter {
     }
 
     public void updateRTList(ArrayList<RaidTracker> RTList) {
+        log.info("update RTList");
+        log.info(RTList.toString());
         try {
             Gson gson = new GsonBuilder().create();
 

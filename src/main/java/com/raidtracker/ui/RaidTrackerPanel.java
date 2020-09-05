@@ -13,6 +13,7 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
+import net.runelite.client.ui.components.ComboBoxListRenderer;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
 
@@ -346,6 +347,8 @@ public class RaidTrackerPanel extends PluginPanel {
         final JPanel wrapper = new JPanel();
         wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
 
+
+        //TODO: Stack elite clue scrolls
         if (loaded) {
             Map<Integer, RaidTrackerItem> uniqueIDs = getDistinctRegularDrops();
 
@@ -471,6 +474,7 @@ public class RaidTrackerPanel extends PluginPanel {
 
         if (loaded) {
             ArrayList<RaidTracker> purpleList = filterPurples();
+            purpleList.sort((o2, o1) -> Long.compare(o1.getDate(), o2.getDate()));
 
             if (purpleList.size() > 0) {
                 wrapper.add(titleWrapper);
@@ -530,6 +534,11 @@ public class RaidTrackerPanel extends PluginPanel {
         cm.setFocusable(false);
         cm.setPreferredSize(new Dimension(108,25));
         cm.setSelectedItem(cmFilter);
+
+        ComboBoxListRenderer renderer = new ComboBoxListRenderer();
+        renderer.setFont(FontManager.getRunescapeSmallFont());
+        cm.setRenderer(renderer);
+
         cm.addActionListener(e -> {
             cmFilter = cm.getSelectedItem().toString();
             if (loaded) {

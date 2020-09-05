@@ -5,6 +5,7 @@ import lombok.Getter;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.util.AsyncBufferedImage;
+import org.apache.commons.text.StringEscapeUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -142,7 +143,7 @@ public class SplitChanger extends JPanel {
         JLabel receivedBy = textPanel("received by: ");
         receivedBy.setForeground(ColorScheme.LIGHT_GRAY_COLOR.brighter());
 
-        JLabel receiver = textPanel(raidTracker.getSpecialLootReceiver());
+        JLabel receiver = textPanel(fixSpaces(raidTracker.getSpecialLootReceiver()));
         receiver.setForeground(ColorScheme.LIGHT_GRAY_COLOR.brighter());
 
         ReceivedWrapper.add(receivedBy);
@@ -338,6 +339,10 @@ public class SplitChanger extends JPanel {
             return false;
         }
         return true;
+    }
+
+    public String fixSpaces(String s) {
+        return StringEscapeUtils.unescapeJava(StringEscapeUtils.escapeJava(s).replace("\\u00C2\\u00A0", "\\u00A0"));
     }
 
 

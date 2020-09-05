@@ -14,12 +14,17 @@ Logs COX data, like purple splits and total points, and can be viewed in a new s
 </div>
 
 ## Data Storage
-Data is stored at `~/.runelite/raid-data-tracker/cox/raid_tracker_data.log` where `USERNAME` is your account's login name (or email address).
+Data is stored at `~/.runelite/raid-data-tracker/USERNAME/cox/raid_tracker_data.log` where `USERNAME` is your account's login name (or email address).
 
 ## Bugs & Problems
 If you find any bugs or problems, feel free to add me on discord, and I'll accept you asap: baniraai#0996
 
 ## Changelog: 
+### v1.2.1:
+- Fixed a bug where, if you switched from one account to the other, the data would overwrite the last account's.
+- Sorted the Change Purple list to be in chronological order
+- Fixed a bug for players that have a space in their name: The space would show as "Â ", now correctly shows as " "
+
 ### v1.2:
 - Added the option to filter kills shown in the UI, based on time or a total number of kills. It is also possible with the filter to only show CM kills, no CM kills, or to show both.
 - Added the option to change purple splits in the UI, rather than having to change the logfile itself. When you get a purple it will show at the bottom of the UI, where you can change the team size, split, and whether it was FFA or not. These values will then update to the log file.
