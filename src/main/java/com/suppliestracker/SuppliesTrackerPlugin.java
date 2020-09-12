@@ -148,12 +148,15 @@ public class SuppliesTrackerPlugin extends Plugin
 	private static final int LUNAR_HUMIDIFY = 6294;
 	private static final int PRAY_AT_ALTAR = 645;
 	private static final int ENSOULED_HEADS_ANIMATION = 7198;
+	private static final int IBANS_STAFF_ANIMATION = 708;
+	private static final int SLAYERS_STAFF_ANIMATION = 1576;
 	private final Deque<MenuAction> actionStack = new ArrayDeque<>();
 
 	//Item arrays
 	private final String[] RAIDS_CONSUMABLES = new String[]{"xeric's", "elder", "twisted", "revitalisation", "overload", "prayer enhance", "pysk", "suphi", "leckish", "brawk", "mycil", "roqed", "kyren", "guanic", "prael", "giral", "phluxia", "kryket", "murng", "psykk", "egniol"};
 	private final int[] TRIDENT_OF_THE_SEAS_IDS = new int[]{TRIDENT_OF_THE_SEAS, TRIDENT_OF_THE_SEAS_E, TRIDENT_OF_THE_SEAS_FULL};
 	private final int[] TRIDENT_OF_THE_SWAMP_IDS = new int[]{TRIDENT_OF_THE_SWAMP_E, TRIDENT_OF_THE_SWAMP, UNCHARGED_TOXIC_TRIDENT_E, UNCHARGED_TOXIC_TRIDENT};
+	private final int[] IBANS_STAFF_IDS = new int[]{IBANS_STAFF, IBANS_STAFF_U};
 
 	private ItemContainer old;
 	private int ammoId = 0;
@@ -599,6 +602,22 @@ public class SuppliesTrackerPlugin extends Plugin
 						}
 					}
 					break;
+				case IBANS_STAFF_ANIMATION:
+					//Iban's staff
+					for (int ibansStaff : IBANS_STAFF_IDS)
+					{
+						if (mainHand == ibansStaff)
+						{
+							if (config.chargesBox())
+							{
+								buildChargesEntries(IBANS_STAFF);
+								break;
+							}
+						}
+					}
+					// let case fall through to handle non-charge path through regular cast path
+					// to prevent double counting when manually casting from the spell book.
+				case SLAYERS_STAFF_ANIMATION:
 				case LOW_LEVEL_MAGIC_ATTACK:
 				case BARRAGE_ANIMATION:
 				case BLITZ_ANIMATION:
@@ -1273,14 +1292,17 @@ public class SuppliesTrackerPlugin extends Plugin
 				break;
 			case TRIDENT_OF_THE_SWAMP:
 				calculatedPrice = (itemManager.getItemPrice(CHAOS_RUNE) * newQuantity) + (itemManager.getItemPrice(DEATH_RUNE) * newQuantity) +
-					(itemManager.getItemPrice(FIRE_RUNE) * newQuantity) + (itemManager.getItemPrice(ZULRAHS_SCALES) * newQuantity);
+					(itemManager.getItemPrice(FIRE_RUNE) * newQuantity * 5) + (itemManager.getItemPrice(ZULRAHS_SCALES) * newQuantity);
 				break;
 			case TRIDENT_OF_THE_SEAS:
 				calculatedPrice = (itemManager.getItemPrice(CHAOS_RUNE) * newQuantity) + (itemManager.getItemPrice(DEATH_RUNE) * newQuantity) +
-					(itemManager.getItemPrice(FIRE_RUNE) * newQuantity) + (itemManager.getItemPrice(COINS_995) * newQuantity * 10);
+					(itemManager.getItemPrice(FIRE_RUNE) * newQuantity * 5) + (itemManager.getItemPrice(COINS_995) * newQuantity * 10);
 				break;
 			case SANGUINESTI_STAFF:
 				calculatedPrice = (itemManager.getItemPrice(BLOOD_RUNE) * newQuantity * 3);
+				break;
+			case IBANS_STAFF:
+				calculatedPrice = ((itemManager.getItemPrice(DEATH_RUNE) * newQuantity) + (itemManager.getItemPrice(FIRE_RUNE) * newQuantity * 5));
 				break;
 			case BLADE_OF_SAELDOR:
 				calculatedPrice = 0;
