@@ -407,23 +407,50 @@ public class SuppliesTrackerPlugin extends Plugin
 		if (equipment != null && equipment.getItems().length > EQUIPMENT_CAPE_SLOT)
 		{
 			int capeID = equipment.getItems()[EQUIPMENT_CAPE_SLOT].getId();
-			switch (capeID)
+
+			if (config.vorkathsHead())
 			{
-				case AVAS_ASSEMBLER:
-				case AVAS_ASSEMBLER_L:
-				case ASSEMBLER_MAX_CAPE:
-					percent = ASSEMBLER_PERCENT;
-					break;
-				case AVAS_ACCUMULATOR:
-				case AVAS_ACCUMULATOR_23609:
-				case ACCUMULATOR_MAX_CAPE:
-					// TODO: the ranging cape can be used as an attractor so this could be wrong
-				case RANGING_CAPE:
-					percent = ACCUMULATOR_PERCENT;
-					break;
-				case AVAS_ATTRACTOR:
-					percent = ATTRACTOR_PERCENT;
-					break;
+				switch (capeID)
+				{
+					case ASSEMBLER_MAX_CAPE:
+					case ASSEMBLER_MAX_CAPE_L:
+					case AVAS_ASSEMBLER:
+					case AVAS_ASSEMBLER_L:
+					case MAX_CAPE_13342:
+					case RANGING_CAPE:
+					case RANGING_CAPET:
+						percent = ASSEMBLER_PERCENT;
+						break;
+					case ACCUMULATOR_MAX_CAPE:
+					case AVAS_ACCUMULATOR:
+						percent = ACCUMULATOR_PERCENT;
+						break;
+					case AVAS_ATTRACTOR:
+						percent = ATTRACTOR_PERCENT;
+						break;
+				}
+			}
+			else
+			{
+				switch (capeID)
+				{
+					case ASSEMBLER_MAX_CAPE:
+					case ASSEMBLER_MAX_CAPE_L:
+					case AVAS_ASSEMBLER:
+					case AVAS_ASSEMBLER_L:
+						percent = ASSEMBLER_PERCENT;
+						break;
+					case ACCUMULATOR_MAX_CAPE:
+					case AVAS_ACCUMULATOR:
+					case MAX_CAPE_13342:
+					case RANGING_CAPE:
+					case RANGING_CAPET:
+						percent = ACCUMULATOR_PERCENT;
+						break;
+					case AVAS_ATTRACTOR:
+						percent = ATTRACTOR_PERCENT;
+						break;
+				}
 			}
 		}
 		return percent;
