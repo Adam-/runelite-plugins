@@ -19,7 +19,12 @@ Data is stored at `~/.runelite/raid-data-tracker/USERNAME/cox/raid_tracker_data.
 ## Bugs & Problems
 If you find any bugs or problems, feel free to add me on discord, and I'll accept you asap: baniraai#0996
 
-## Changelog: 
+## Changelog:
+
+### v1.2.2
+- Fixed a bug with the migrate function, where the wrong RaidTracker list was added to the new file.
+- Changed the value formatter to show decimals up until 100m instead of up until 10m.
+ 
 ### v1.2.1:
 - Fixed a bug where, if you switched from one account to the other, the data would overwrite the last account's.
 - Sorted the Change Purple list to be in chronological order

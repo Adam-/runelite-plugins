@@ -204,6 +204,8 @@ public class FileReadWriter {
         return isDeleted;
     }
 
+
+    @SuppressWarnings("ConstantConditions")
     public void migrate() {
         File dir_deprecated_l1 = new File(RUNELITE_DIR, "loots");
         File dir_deprecated_l2 = new File(dir_deprecated_l1, username);
@@ -214,7 +216,9 @@ public class FileReadWriter {
         if (logFile_deprecated.exists()) {
             ArrayList<RaidTracker> temp = readFromFile(dir_deprecated_l3 + "\\raid_tracker_data.log");
 
-            temp.forEach(this::writeToFile);
+            for (RaidTracker RT : temp) {
+                writeToFile(RT);
+            }
 
             IGNORE_RESULT(logFile_deprecated.delete());
             IGNORE_RESULT(dir_deprecated_l3.delete());

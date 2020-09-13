@@ -772,7 +772,7 @@ public class RaidTrackerPanel extends PluginPanel {
         String suffix = e.getValue();
 
         long truncated = value / (divideBy / 10); //the number part of the output times 10
-        boolean hasDecimal = truncated < 100 && truncated % 10 != 0;
+        boolean hasDecimal = truncated < 1000;
         return hasDecimal ? (truncated / 10d) + suffix : (truncated / 10) + suffix;
     }
 
