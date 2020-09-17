@@ -755,7 +755,7 @@ public abstract class SuppliesBox extends JPanel
 		{
 
 			final long price = item.getPrice();
-			return item.getName() + " x " + qty + " (" + QuantityFormatter.quantityToStackSize(price) + ") ";
+			return item.getName() + " x " + qty + " (" + QuantityFormatter.quantityToStackSize(price) + "gp) ";
 		}
 
 		@Override

@@ -30,6 +30,9 @@ package com.suppliestracker;
 
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -43,20 +46,23 @@ import javax.swing.SwingUtilities;
 import static com.suppliestracker.ActionType.*;
 import com.suppliestracker.Skills.Farming;
 import com.suppliestracker.Skills.Prayer;
+import com.suppliestracker.session.SessionHandler;
 import com.suppliestracker.ui.SuppliesTrackerPanel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.AnimationID;
 import static net.runelite.api.AnimationID.*;
+import static net.runelite.api.ItemID.*;
+import static net.runelite.client.RuneLite.RUNELITE_DIR;
+import net.runelite.api.AnimationID;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.EquipmentInventorySlot;
 import net.runelite.api.GameObject;
+import net.runelite.api.GameState;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
-import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemComposition;
-import static net.runelite.api.ItemID.*;
+import net.runelite.api.ItemContainer;
 import net.runelite.api.ObjectID;
 import net.runelite.api.Player;
 import net.runelite.api.Projectile;
@@ -67,6 +73,7 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameObjectSpawned;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuOptionClicked;
@@ -173,6 +180,10 @@ public class SuppliesTrackerPlugin extends Plugin
 	private int attackStyleVarbit = -1;
 	private int ticks = 0;
 	private int ticksInAnimation;
+
+	private Boolean sessionLoading = false;
+	private SessionHandler sessionHandler;
+	private String sessionUser = "";
 
 
 	//Rune pouch stuff
@@ -281,6 +292,8 @@ public class SuppliesTrackerPlugin extends Plugin
 		final BufferedImage header = ImageUtil.getResourceStreamFromClass(getClass(), "panel_icon.png");
 		panel.loadHeaderIcon(header);
 		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "panel_icon.png");
+
+		this.sessionHandler = new SessionHandler(client);
 
 		navButton = NavigationButton.builder()
 			.tooltip("Supplies Tracker")
@@ -1226,6 +1239,8 @@ public class SuppliesTrackerPlugin extends Plugin
 		calculatedPrice = ((long) itemManager.getItemPrice(itemId)) * ((long) newQuantity);
 		calculatedPrice = scalePriceByDoses(name, itemId, calculatedPrice);
 
+		if (!sessionLoading) sessionHandler.addtoSession(itemId, count, "");
+
 		// write the new quantity and calculated price for this entry
 		SuppliesTrackerItem newEntry = new SuppliesTrackerItem(
 			itemId,
@@ -1239,12 +1254,17 @@ public class SuppliesTrackerPlugin extends Plugin
 			panel.addItem(newEntry));
 	}
 
+	private void buildChargesEntries(int itemId)
+	{
+		buildChargesEntries(itemId, 1);
+	}
+
 	/**
 	 * Add an item to the supply tracker
 	 *
 	 * @param itemId the id of the item
 	 */
-	private void buildChargesEntries(int itemId)
+	private void buildChargesEntries(int itemId, int count)
 	{
 		final ItemComposition itemComposition = itemManager.getItemComposition(itemId);
 		String name = itemComposition.getName();
@@ -1254,11 +1274,11 @@ public class SuppliesTrackerPlugin extends Plugin
 		int newQuantity;
 		if (suppliesEntry.containsKey(itemId))
 		{
-			newQuantity = suppliesEntry.get(itemId).getQuantity() + 1;
+			newQuantity = suppliesEntry.get(itemId).getQuantity() + count;
 		}
 		else
 		{
-			newQuantity = 1;
+			newQuantity = count;
 		}
 
 		switch (itemId)
@@ -1309,6 +1329,11 @@ public class SuppliesTrackerPlugin extends Plugin
 				break;
 		}
 
+		if (!sessionLoading)
+		{
+			sessionHandler.addtoSession(itemId, count, "c");
+		}
+
 		// write the new quantity and calculated price for this entry
 		SuppliesTrackerItem newEntry = new SuppliesTrackerItem(
 			itemId,
@@ -1328,6 +1353,7 @@ public class SuppliesTrackerPlugin extends Plugin
 	public void clearSupplies()
 	{
 		suppliesEntry.clear();
+		sessionHandler.clearSupplies();
 	}
 
 	/**
@@ -1338,6 +1364,7 @@ public class SuppliesTrackerPlugin extends Plugin
 	public void clearItem(int itemId)
 	{
 		suppliesEntry.remove(itemId);
+		sessionHandler.clearItem(itemId);
 	}
 
 	/**
@@ -1511,6 +1538,61 @@ public class SuppliesTrackerPlugin extends Plugin
 		{
 			rune3 = client.getVar(RUNE_VARBITS[2]);
 			OLD_RUNE_VARBITS[2] = client.getVar(RUNE_VARBITS[2]);
+		}
+	}
+
+	@Subscribe
+	private void onGameStateChanged(final GameStateChanged event)
+	{
+		if (event.getGameState() == GameState.LOGGED_IN && !client.getUsername().equalsIgnoreCase(sessionUser))
+		{
+			sessionUser = client.getUsername();
+
+			//clear on new username login
+			suppliesEntry.clear();
+			SwingUtilities.invokeLater(() ->
+					panel.resetAll());
+			sessionHandler.clearSession();
+
+			try
+			{
+				File sessionFile = new File(RUNELITE_DIR + "/supplies/" + client.getUsername() + ".txt");
+
+				if (sessionFile.createNewFile())
+				{
+					return;
+				}
+				else
+				{
+					sessionLoading = true;
+					List<String> savedSupplies = Files.readAllLines(sessionFile.toPath());
+
+					for (String supplies: savedSupplies)
+					{
+						if (supplies.contains(":"))
+						{
+							String[] temp = supplies.split(":");
+
+							if (temp[0].contains("c"))
+							{
+								buildChargesEntries(Integer.parseInt(temp[0].replace("c", "")), Integer.parseInt(temp[1]));
+								sessionHandler.setupMaps(Integer.parseInt(temp[0].replace("c", "")), Integer.parseInt(temp[1]), "c");
+							}
+							else
+							{
+								buildEntries(Integer.parseInt(temp[0]), Integer.parseInt(temp[1]));
+								sessionHandler.setupMaps(Integer.parseInt(temp[0]), Integer.parseInt(temp[1]), "");
+							}
+
+						}
+					}
+					sessionLoading = false;
+				}
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}
 		}
 	}
 }
