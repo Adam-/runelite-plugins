@@ -12,7 +12,7 @@ import static net.runelite.client.RuneLite.RUNELITE_DIR;
 
 public class SessionHandler
 {
-	private static final File SESSION_DIR = new File(RUNELITE_DIR, "supplies");
+	private static final File SESSION_DIR = new File(RUNELITE_DIR, "supplies-tracker");
 
 	private final File playerFolder = SESSION_DIR;
 
@@ -71,7 +71,7 @@ public class SessionHandler
 	{
 		try
 		{
-			File sessionFile = new File(RUNELITE_DIR + "/supplies/" + client.getUsername() + ".txt");
+			File sessionFile = new File(RUNELITE_DIR + "/supplies-tracker/" + client.getUsername() + ".txt");
 
 			if (!sessionFile.createNewFile())
 			{

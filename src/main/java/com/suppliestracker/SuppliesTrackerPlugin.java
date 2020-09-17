@@ -1556,7 +1556,7 @@ public class SuppliesTrackerPlugin extends Plugin
 
 			try
 			{
-				File sessionFile = new File(RUNELITE_DIR + "/supplies/" + client.getUsername() + ".txt");
+				File sessionFile = new File(RUNELITE_DIR + "/supplies-tracker/" + client.getUsername() + ".txt");
 
 				if (sessionFile.createNewFile())
 				{
