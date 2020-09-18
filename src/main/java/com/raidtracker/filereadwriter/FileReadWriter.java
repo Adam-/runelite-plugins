@@ -20,12 +20,21 @@ public class FileReadWriter {
 
     @Getter
     private String username;
-    private String dir;
+    private String coxDir;
+    private String tobDir;
 
     private boolean startMigrate;
 
     public void writeToFile(RaidTracker raidTracker)
     {
+        String dir;
+
+        if (raidTracker.isInTheatreOfBlood()) {
+            dir = tobDir;
+        }
+        else {
+            dir = coxDir;
+        }
         try
         {
             //use json format so serializing and deserializing is easy
@@ -33,7 +42,7 @@ public class FileReadWriter {
 
             JsonParser parser = new JsonParser();
 
-            String fileName = this.dir + "\\raid_tracker_data.log";
+            String fileName = dir + "\\raid_tracker_data.log";
 
             FileWriter fw = new FileWriter(fileName,true); //the true will append the new data
 
@@ -45,7 +54,7 @@ public class FileReadWriter {
         }
         catch(IOException ioe)
         {
-            System.err.println("IOException: " + ioe.getMessage());
+            System.err.println("IOException: " + ioe.getMessage() + " in writeToFile");
         }
     }
 
@@ -78,14 +87,23 @@ public class FileReadWriter {
         return RTJson.toString().replace("\\\"", "\"").replace("\"[", "[").replace("]\"", "]");
     }
 
-    public ArrayList<RaidTracker> readFromFile(String alternateFile)
+    public ArrayList<RaidTracker> readFromFile(String alternateFile, boolean isTob)
     {
+        String dir;
+
+        if (isTob) {
+            dir = tobDir;
+        }
+        else {
+            dir = coxDir;
+        }
+
         String fileName;
         if (alternateFile.length() != 0) {
             fileName = alternateFile;
         }
         else {
-            fileName = this.dir + "\\raid_tracker_data.log";
+            fileName = dir + "\\raid_tracker_data.log";
         }
 
         try {
@@ -95,20 +113,28 @@ public class FileReadWriter {
             BufferedReader bufferedreader = new BufferedReader(new FileReader(fileName));
             String line;
 
-            boolean updateDates = false;
+            boolean update = false;
 
             ArrayList<RaidTracker> RTList = new ArrayList<>();
             while ((line = bufferedreader.readLine()) != null && line.length() > 0) {
-                if (!line.contains("date\":")) {
-                    updateDates = true;
+                if (!line.contains("date\":") || !line.contains("specialLootInOwnName")) { //the only variables that are explicitly needed, so it is checked.
+                    update = true;
                 }
-                RTList.add(gson.fromJson(parser.parse(line), RaidTracker.class));
+                try {
+                    RaidTracker parsed = gson.fromJson(parser.parse(line), RaidTracker.class);
+                    RTList.add(parsed);
+                }
+                catch (JsonSyntaxException e) {
+                    System.out.println("Bad line: " + line);
+                }
+
             }
 
             bufferedreader.close();
 
-            if (updateDates) {
-                updateRTList(RTList);
+            if (update) {
+                //should always be cox, but might aswell include the var.
+                updateRTList(RTList, isTob);
             }
 
             return RTList;
@@ -119,10 +145,14 @@ public class FileReadWriter {
     }
 
     public ArrayList<RaidTracker> readFromFile() {
-        return readFromFile("");
+        return readFromFile("", false);
     }
 
-    public String createFolders()
+    public ArrayList<RaidTracker> readFromFile(boolean isTob) {
+        return readFromFile("", isTob);
+    }
+
+    public void createFolders()
     {
         startMigrate = false;
         //old root folder: dir/loots/username/cox, adding migrate option.
@@ -142,42 +172,61 @@ public class FileReadWriter {
         IGNORE_RESULT(dir.mkdir());
         dir = new File(dir, username);
         IGNORE_RESULT(dir.mkdir());
-        dir = new File(dir, "cox");
-        IGNORE_RESULT(dir.mkdir());
-        File newFile = new File(dir + "\\raid_tracker_data.log");
+        File dir_cox = new File(dir, "cox");
+        File dir_tob = new File(dir, "tob");
+        IGNORE_RESULT(dir_cox.mkdir());
+        IGNORE_RESULT(dir_tob.mkdir());
+        File newCoxFile = new File(dir_cox + "\\raid_tracker_data.log");
+        File newTobFile = new File(dir_tob + "\\raid_tracker_data.log");
 
         try {
-            IGNORE_RESULT(newFile.createNewFile());
+            IGNORE_RESULT(newCoxFile.createNewFile());
+            IGNORE_RESULT(newTobFile.createNewFile());
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        return dir.getAbsolutePath();
+        this.coxDir = dir_cox.getAbsolutePath();
+        this.tobDir = dir_tob.getAbsolutePath();
     }
 
     public void updateUsername(final String username) {
         this.username = username;
-        this.dir = createFolders();
+        createFolders();
 
         if (startMigrate) {
             migrate();
         }
     }
 
-    public void updateRTList(ArrayList<RaidTracker> RTList) {
-        log.info("update RTList");
-        log.info(RTList.toString());
+    public void updateRTList(ArrayList<RaidTracker> RTList, boolean isTob) {
+        String dir;
+
+        if (isTob) {
+            dir = tobDir;
+        }
+        else {
+            dir = coxDir;
+        }
         try {
             Gson gson = new GsonBuilder().create();
 
             JsonParser parser = new JsonParser();
 
-            String fileName = this.dir + "\\raid_tracker_data.log";
+            String fileName = dir + "\\raid_tracker_data.log";
 
 
             FileWriter fw = new FileWriter(fileName, false); //the true will append the new data
 
             for (RaidTracker RT : RTList) {
+                if (RT.getLootSplitPaid() > 0) {
+                    RT.setSpecialLootInOwnName(true);
+                }
+                else {
+                    //bit of a wonky check, so try to avoid with lootsplitpaid if possible
+                    RT.setSpecialLootInOwnName(RT.getLootList().size() > 0 && RT.getLootList().get(0).getName().toLowerCase().equals(RT.getSpecialLoot().toLowerCase()));
+                }
+
                 gson.toJson(parser.parse(getJSONString(RT, gson, parser)), fw);
 
                 fw.append("\n");
@@ -190,7 +239,20 @@ public class FileReadWriter {
         }
     }
 
-    public boolean delete() {
+    public void updateRTList(ArrayList<RaidTracker> RTList) {
+        updateRTList(RTList, false);
+    }
+
+    public boolean delete(boolean isTob) {
+        String dir;
+
+        if (isTob) {
+            dir = tobDir;
+        }
+        else {
+            dir = coxDir;
+        }
+
         File newFile = new File(dir + "\\raid_tracker_data.log");
 
         boolean isDeleted = newFile.delete();
@@ -214,7 +276,7 @@ public class FileReadWriter {
         File logFile_deprecated = new File(dir_deprecated_l3 + "\\raid_tracker_data.log");
 
         if (logFile_deprecated.exists()) {
-            ArrayList<RaidTracker> temp = readFromFile(dir_deprecated_l3 + "\\raid_tracker_data.log");
+            ArrayList<RaidTracker> temp = readFromFile(dir_deprecated_l3 + "\\raid_tracker_data.log", false);
 
             for (RaidTracker RT : temp) {
                 writeToFile(RT);

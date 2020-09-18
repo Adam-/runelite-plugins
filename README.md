@@ -2,7 +2,7 @@
 
 ### Can be installed through the Runelite Pluginhub, under the name `Raid Tracker`
 
-Logs COX data, like purple splits and total points, and can be viewed in a new side panel. Purple splits can be changed aswell as of v1.2.
+Logs COX and TOB data, like purple splits, total points (in COX), or the amount of MVP's (in TOB). The data can be viewed in a side panel. Purple splits can be changed as of v1.2.
 
 ## Images
 <div class="row">
@@ -14,12 +14,20 @@ Logs COX data, like purple splits and total points, and can be viewed in a new s
 </div>
 
 ## Data Storage
-Data is stored at `~/.runelite/raid-data-tracker/USERNAME/cox/raid_tracker_data.log` where `USERNAME` is your account's login name (or email address).
+Data is stored at `~/.runelite/raid-data-tracker/USERNAME/RAID/raid_tracker_data.log` where `USERNAME` is your account's login name (or email address), and `RAID` is either cox or tob.
 
 ## Bugs & Problems
 If you find any bugs or problems, feel free to add me on discord, and I'll accept you asap: baniraai#0996
 
 ## Changelog:
+
+### v1.3
+- Added Theatre of Blood to the plugin.
+- Now tracking the COX and TOB pets.
+- Duplicate purples/dusts/kits in one KC are now tracked. Previously only the last of each was tracked.
+- Elite clues now stack.
+- Fixed a bug where the "Last Week" up until the "Last Year" filters weren't showing anything.
+
 
 ### v1.2.2
 - Fixed a bug with the migrate function, where the wrong RaidTracker list was added to the new file.

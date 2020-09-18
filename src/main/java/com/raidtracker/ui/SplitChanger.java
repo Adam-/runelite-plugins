@@ -16,6 +16,7 @@ import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -41,7 +42,7 @@ public class SplitChanger extends JPanel {
     }
 
     private JPanel getImagePanel() {
-        AsyncBufferedImage image = itemManager.getImage(RaidUniques.getByName(raidTracker.getSpecialLoot()).getItemID(), 1, false);
+        AsyncBufferedImage image = itemManager.getImage(getByName(raidTracker.getSpecialLoot()).getItemID(), 1, false);
 
         JPanel iconWrapper = new JPanel();
         iconWrapper.setLayout(new BoxLayout(iconWrapper, BoxLayout.Y_AXIS));
@@ -206,7 +207,7 @@ public class SplitChanger extends JPanel {
     }
 
     private void setFFA() {
-        boolean inOwnName = raidTracker.getLootList().get(0).getId() == RaidUniques.getByName(raidTracker.getSpecialLoot()).getItemID();
+        boolean inOwnName = raidTracker.isSpecialLootInOwnName();
 
         if (inOwnName) {
             raidTracker.setLootSplitReceived(raidTracker.getSpecialLootValue());
@@ -219,7 +220,7 @@ public class SplitChanger extends JPanel {
     }
 
     private void setSplit() {
-        boolean inOwnName = raidTracker.getLootList().get(0).getId() == RaidUniques.getByName(raidTracker.getSpecialLoot()).getItemID();
+        boolean inOwnName = raidTracker.isSpecialLootInOwnName();
 
         int splitSize = raidTracker.getSpecialLootValue() / raidTracker.getTeamSize();
 
@@ -239,7 +240,7 @@ public class SplitChanger extends JPanel {
     }
 
     private BufferedImage resizeImage(BufferedImage before) {
-        return raidTrackerPanel.resizeImage(before, 1.75, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+        return raidTrackerPanel.resizeImage(before, 1.75, AffineTransformOp.TYPE_BICUBIC);
     }
 
     private String getDateText() {
@@ -342,8 +343,25 @@ public class SplitChanger extends JPanel {
     }
 
     public String fixSpaces(String s) {
-        return StringEscapeUtils.unescapeJava(StringEscapeUtils.escapeJava(s).replace("\\u00C2\\u00A0", "\\u00A0"));
+        return StringEscapeUtils.unescapeJava(StringEscapeUtils.escapeJava(s).replace("\\u00C2\\u00A0", "\\u00A0").replace("\\u00EF\\u00BF\\u00BD", "\\u00A0"));
     }
 
+    private RaidUniques getByName(String name) {
+        EnumSet<RaidUniques> uniquesList = getUniquesList();
+        for (RaidUniques unique: uniquesList) {
+            if (unique.getName().toLowerCase().equals(name.toLowerCase())) {
+                return unique;
+            }
+        }
+        //should never reach this
+        return RaidUniques.OLMLET;
+    }
+
+    EnumSet<RaidUniques> getUniquesList() {
+        if (raidTrackerPanel.isTob()) {
+            return raidTrackerPanel.getTobUniques();
+        }
+        return raidTrackerPanel.getCoxUniques();
+    }
 
 }

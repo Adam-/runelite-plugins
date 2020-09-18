@@ -1,11 +1,8 @@
 package com.raidtracker.ui;
 
-import com.google.common.collect.ImmutableMap;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.runelite.api.ItemID;
-
-import java.util.Map;
 
 @AllArgsConstructor
 public enum RaidUniques {
@@ -22,29 +19,20 @@ public enum RaidUniques {
     KODAI("Kodai Insignia", ItemID.KODAI_INSIGNIA),
     TWISTED_BOW("Twisted Bow", ItemID.TWISTED_BOW),
     DUST("Metamorphatic Dust", ItemID.METAMORPHIC_DUST),
-    TWISTED_KIT("Twisted Kit", ItemID.TWISTED_ANCESTRAL_COLOUR_KIT);
+    TWISTED_KIT("Twisted Kit", ItemID.TWISTED_ANCESTRAL_COLOUR_KIT),
+    OLMLET("Olmlet", ItemID.OLMLET),
+    AVERNIC("Avernic defender hilt", ItemID.AVERNIC_DEFENDER_HILT),
+    RAPIER("Ghrazi rapier", ItemID.GHRAZI_RAPIER),
+    SANGSTAFF("Sanguinesti staff (uncharged)", ItemID.SANGUINESTI_STAFF_UNCHARGED),
+    JUSTI_FACEGUARD("Justiciar faceguard", ItemID.JUSTICIAR_FACEGUARD),
+    JUSTI_CHESTGUARD("Justiciar chestguard", ItemID.JUSTICIAR_CHESTGUARD),
+    JUSTI_LEGGUARDS("Justiciar legguards", ItemID.JUSTICIAR_LEGGUARDS),
+    SCYTHE("Scythe of vitur (uncharged)", ItemID.SCYTHE_OF_VITUR_UNCHARGED),
+    LILZIK("Lil' Zik", 22473);
 
     @Getter
     private final String name;
 
     @Getter
     private final int itemID;
-
-    private static final Map<String, RaidUniques> NAME_MAP;
-
-    static {
-        final ImmutableMap.Builder<String, RaidUniques> byName = ImmutableMap.builder();
-
-        for (RaidUniques unique : values())
-        {
-            byName.put(unique.getName().toLowerCase(), unique);
-        }
-
-        NAME_MAP = byName.build();
-    }
-
-    public static RaidUniques getByName(final String name) {
-        return NAME_MAP.get(name.toLowerCase());
-    }
-
 }

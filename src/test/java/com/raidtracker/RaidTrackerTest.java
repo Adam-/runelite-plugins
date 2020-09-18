@@ -2,10 +2,11 @@ package com.raidtracker;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
+import com.raidtracker.filereadwriter.FileReadWriter;
+import com.raidtracker.ui.RaidTrackerPanel;
 import junit.framework.TestCase;
 import net.runelite.api.*;
 import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.WidgetLoaded;
 import net.runelite.client.game.ItemManager;
 import net.runelite.http.api.item.ItemPrice;
 import org.junit.Before;
@@ -21,8 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RaidTrackerTest extends TestCase
@@ -167,6 +167,12 @@ public class RaidTrackerTest extends TestCase
 
 		Player player = mock(Player.class);
 
+		RaidTrackerPanel panel = mock(RaidTrackerPanel.class);
+		raidTrackerPlugin.setPanel(panel);
+
+		FileReadWriter fw = mock(FileReadWriter.class);
+		raidTrackerPlugin.setFw(fw);
+
 		when(itemManager.search(anyString())).thenReturn(kodaiTestList);
 		when(client.getLocalPlayer()).thenReturn(player);
 		when(player.getName()).thenReturn("Canvasba");
@@ -184,8 +190,8 @@ public class RaidTrackerTest extends TestCase
 		assertEquals(-1, raidTracker.lootSplitPaid);
 
 
-		message.setMessage("Canvasba - Kodai insignia");
-		raidTrackerPlugin.checkChatMessage(message, raidTracker);
+		raidTracker.setSpecialLootReceiver("Canvasba");
+		raidTracker.setSpecialLootInOwnName(true);
 		raidTrackerPlugin.setSplits(raidTracker);
 
 		assertTrue(raidTracker.getLootSplitReceived() > -1);
@@ -203,9 +209,10 @@ public class RaidTrackerTest extends TestCase
 		assertEquals(-1, raidTracker.getLootSplitPaid());
 
 		raidTracker.setSpecialLootReceiver("K1NG DK");
-		assertEquals("K1NG DK" , raidTracker.getSpecialLootReceiver());
+		raidTracker.setSpecialLootInOwnName(false);
+
 		raidTracker.setLootSplitReceived(-1);
-		raidTrackerPlugin.setSplits(raidTracker );
+		raidTrackerPlugin.setSplits(raidTracker);
 
 		assertEquals(-1 , raidTracker.getLootSplitReceived());
 	}
@@ -213,26 +220,6 @@ public class RaidTrackerTest extends TestCase
 
 	//---------------------------------- onWidgetLoaded tests ------------------------------------------------
 
-	@Test
-	public void TestChestOpened()
-	{
-		RaidTracker raidTracker = new RaidTracker();
-		raidTracker.setInRaidChambers(true);
-		raidTracker.setRaidComplete(true);
-
-		WidgetLoaded event = new WidgetLoaded();
-		event.setGroupId(540);
-
-		raidTrackerPlugin.checkChestOpened(event, raidTracker);
-
-		assertEquals(false, raidTracker.isChestOpened());
-
-		event.setGroupId(539); //539 is the COX reward group id
-		raidTrackerPlugin.checkChestOpened(event, raidTracker);
-
-		assertEquals(true, raidTracker.isChestOpened());
-
-	}
 
 	@Test
 	public void TestLootListFactory()

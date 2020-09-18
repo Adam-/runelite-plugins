@@ -5,15 +5,17 @@ import com.raidtracker.RaidTracker;
 import com.raidtracker.RaidTrackerConfig;
 import com.raidtracker.RaidTrackerItem;
 import com.raidtracker.filereadwriter.FileReadWriter;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemID;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.plugins.raids.Raid;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
-import net.runelite.client.ui.components.ComboBoxListRenderer;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
 
@@ -32,20 +34,24 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 public class RaidTrackerPanel extends PluginPanel {
 
-    private final ItemManager itemManager;
+    @Setter
+    private ItemManager itemManager;
     private final FileReadWriter fw;
     private final RaidTrackerConfig config;
 
     @Setter
     private ArrayList<RaidTracker> RTList;
+    private ArrayList<RaidTracker> tobRTList;
 
     private final HashMap<String, RaidTracker> UUIDMap = new LinkedHashMap<>();
+    private final HashMap<String, RaidTracker> TobUUIDMap = new LinkedHashMap<>();
 
     @Setter
     private boolean loaded = false;
@@ -53,8 +59,46 @@ public class RaidTrackerPanel extends PluginPanel {
 
     private JButton update;
 
+    @Setter
     private String dateFilter = "All Time";
+    @Setter
     private String cmFilter = "CM & Normal";
+    @Setter
+    private String mvpFilter = "Both";
+
+    @Getter
+    private boolean isTob = false;
+
+    @Getter
+    EnumSet<RaidUniques> tobUniques = EnumSet.of(
+            RaidUniques.AVERNIC,
+            RaidUniques.RAPIER,
+            RaidUniques.SANGSTAFF,
+            RaidUniques.JUSTI_FACEGUARD,
+            RaidUniques.JUSTI_CHESTGUARD,
+            RaidUniques.JUSTI_LEGGUARDS,
+            RaidUniques.SCYTHE,
+            RaidUniques.LILZIK
+    );
+
+    @Getter
+    EnumSet<RaidUniques> coxUniques = EnumSet.of(
+            RaidUniques.DEX,
+            RaidUniques.ARCANE,
+            RaidUniques.TWISTED_BUCKLER,
+            RaidUniques.DHCB,
+            RaidUniques.DINNY_B,
+            RaidUniques.ANCESTRAL_HAT,
+            RaidUniques.ANCESTRAL_TOP,
+            RaidUniques.ANCESTRAL_BOTTOM,
+            RaidUniques.DRAGON_CLAWS,
+            RaidUniques.ELDER_MAUL,
+            RaidUniques.KODAI,
+            RaidUniques.TWISTED_BOW,
+            RaidUniques.DUST,
+            RaidUniques.TWISTED_KIT,
+            RaidUniques.OLMLET
+    );
 
 
     public RaidTrackerPanel(final ItemManager itemManager, FileReadWriter fw, RaidTrackerConfig config) {
@@ -82,6 +126,7 @@ public class RaidTrackerPanel extends PluginPanel {
         JPanel splitsEarnedPanel = getSplitsEarnedPanel();
         JPanel regularDrops = getRegularDropsPanel();
         JPanel changePurples = getChangePurples();
+        JPanel mvpPanel = getMvpPanel();
 
         panel.add(title);
         panel.add(filterPanel);
@@ -90,15 +135,18 @@ public class RaidTrackerPanel extends PluginPanel {
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(uniquesPanel, BorderLayout.CENTER);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
-        panel.add(pointsPanel);
+        if (isTob) {
+            panel.add(mvpPanel);
+        }
+        else {
+            panel.add(pointsPanel);
+        }
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(splitsEarnedPanel);
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
         panel.add(regularDrops);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
-        panel.add(changePurples);
-
-
+        panel.add(changePurples); //not showing for some reason?
 
         panel.revalidate();
         panel.repaint();
@@ -106,23 +154,86 @@ public class RaidTrackerPanel extends PluginPanel {
 
     private JPanel getTitle() {
         final JPanel title = new JPanel();
+        title.setBorder(new EmptyBorder(3, 0, 10, 0));
+        title.setLayout(new BoxLayout(title,BoxLayout.Y_AXIS));
 
-        final JPanel first = new JPanel();
-        first.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-        title.setBorder(new CompoundBorder(
-                new EmptyBorder(5, 8, 8, 8),
-                new MatteBorder(0, 0, 1, 0, Color.GRAY)));
+        final JPanel buttonWrapper = new JPanel();
+        buttonWrapper.setLayout(new GridLayout(0,2));
+        buttonWrapper.setBorder(new EmptyBorder(5,0,0,0));
 
-        title.setLayout(new BorderLayout());
-        title.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        JPanel coxButtonWrapper = new JPanel();
+        coxButtonWrapper.setLayout(new GridLayout(0, 1));
+        JButton coxButton = new JButton();
+        coxButton.setText("Chambers of Xeric");
+        coxButton.setForeground(Color.white);
+        coxButton.setFont(FontManager.getRunescapeSmallFont());
+        coxButton.setContentAreaFilled(false);
+        coxButton.setOpaque(false);
+        coxButton.setFocusable(false);
+        coxButton.setBorderPainted(false);
+        coxButton.setBorder(new EmptyBorder(10, 0, 10, 0));
 
-        final JLabel text = new JLabel("Chambers of Xeric Data Tracker");
-        text.setForeground(Color.WHITE);
+        if (isTob) {
+            coxButtonWrapper.setBorder(new MatteBorder(0, 0, 1, 0, ColorScheme.LIGHT_GRAY_COLOR.darker()));
+        }
+        else {
+            coxButtonWrapper.setBorder(new MatteBorder(1, 1, 0, 1, ColorScheme.LIGHT_GRAY_COLOR.darker()));
+        }
+        coxButton.setFocusPainted(false);
+        coxButton.setToolTipText("Show Chambers of Xeric Loot");
+        coxButton.addActionListener(e -> {
+            if (isTob) {
+                isTob = false;
+                updateView();
+            }
+        });
 
-        first.add(text);
+        JPanel tobButtonWrapper = new JPanel();
+        tobButtonWrapper.setLayout(new GridLayout(0, 1));
+        JButton tobButton = new JButton();
+        tobButton.setText("Theatre of Blood");
+        tobButton.setForeground(Color.white);
+        tobButton.setFont(FontManager.getRunescapeSmallFont());
+        tobButton.setContentAreaFilled(false);
+        tobButton.setOpaque(false);
+        tobButton.setFocusable(false);
+        tobButton.setBorderPainted(false);
+        tobButton.setBorder(new EmptyBorder(7, 0, 7, 0));
 
-        title.add(first, BorderLayout.CENTER);
+        if (isTob) {
+            tobButtonWrapper.setBorder(new MatteBorder(1, 1, 0, 1, ColorScheme.LIGHT_GRAY_COLOR.darker()));
+        }
+        else {
+            tobButtonWrapper.setBorder(new MatteBorder(0, 0, 1, 0, ColorScheme.LIGHT_GRAY_COLOR.darker()));
+        }
+        tobButton.setFocusPainted(false);
+        tobButton.setToolTipText("Show Theatre of Blood Loot");
+        tobButton.addActionListener(e -> {
+            if (!isTob) {
+                isTob = true;
+                updateView();
+            }
+        });
+
+        coxButtonWrapper.add(coxButton);
+        tobButtonWrapper.add(tobButton);
+
+        buttonWrapper.add(coxButtonWrapper);
+        buttonWrapper.add(tobButtonWrapper);
+
+        JPanel titleLabelWrapper = new JPanel();
+        JLabel titleLabel = new JLabel("COX and TOB Data Tracker");
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setBorder(new CompoundBorder(
+                new MatteBorder(0, 0, 1, 0, ColorScheme.LIGHT_GRAY_COLOR.darker()),
+                new EmptyBorder(0, 20, 5, 20)
+        ));
+
+        titleLabelWrapper.add(titleLabel, BorderLayout.CENTER);
+
+        title.add(titleLabelWrapper);
+        title.add(buttonWrapper);
 
         return title;
     }
@@ -154,9 +265,10 @@ public class RaidTrackerPanel extends PluginPanel {
         int totalUniques = 0;
         int totalOwnName = 0;
 
-        for (RaidUniques unique : RaidUniques.values()) {
+        for (RaidUniques unique : getUniquesList()) {
             boolean isKit = false;
             boolean isDust = false;
+            boolean isPet = false;
 
             final AsyncBufferedImage image = itemManager.getImage(unique.getItemID(), 1, false);
 
@@ -188,6 +300,11 @@ public class RaidTrackerPanel extends PluginPanel {
                 l2 = filterOwnKits(l);
                 isKit = true;
             }
+            else if (unique.getName().matches("Olmlet") || unique.getName().matches("Lil' Zik")) {
+                l = filterPetReceivers();
+                l2 =filterOwnPets(l);
+                isPet = true;
+            }
             else {
                 l = filterRTListByName(unique.getName());
                 l2 = filterOwnDrops(l);
@@ -207,14 +324,14 @@ public class RaidTrackerPanel extends PluginPanel {
 
             final String tooltip = getUniqueToolTip(unique, l.size(), l2.size());
 
-            if (!isDust && !isKit) {
+            if (!isDust && !isKit && !isPet) {
                 totalUniques += l.size();
                 totalOwnName += l2.size();
             }
 
             int bottomBorder = 1;
 
-            if (unique.getName().equals("Twisted Kit")) {
+            if (unique.getName().equals("Olmlet") || unique.getName().equals("Lil' Zik")) {
                 bottomBorder = 0;
             }
 
@@ -331,7 +448,7 @@ public class RaidTrackerPanel extends PluginPanel {
         int killsLogged = 0;
 
         if (loaded) {
-            killsLogged = getFilteredRTList().size();
+            killsLogged = getDistinctKills(getFilteredRTList()).size();
         }
 
         JLabel textLabel = textPanel("Kills Logged:");
@@ -347,14 +464,18 @@ public class RaidTrackerPanel extends PluginPanel {
         final JPanel wrapper = new JPanel();
         wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
 
-
-        //TODO: Stack elite clue scrolls
         if (loaded) {
             Map<Integer, RaidTrackerItem> uniqueIDs = getDistinctRegularDrops();
 
             if (uniqueIDs.values().size() > 0) {
                 getFilteredRTList().forEach(RT -> RT.getLootList().forEach(item -> {
                     RaidTrackerItem RTI = uniqueIDs.get(item.id);
+
+                    if (RTI == null) {
+                        if (item.getName().toLowerCase().contains("clue")) {
+                            RTI = uniqueIDs.get(12073);
+                        }
+                    }
 
                     if (RTI != null) {
                         int qty = RTI.getQuantity();
@@ -454,13 +575,22 @@ public class RaidTrackerPanel extends PluginPanel {
         update.setFocusPainted(false);
         update.setToolTipText("Nothing to update");
         update.addActionListener(e -> {
-            SCList.forEach(SC -> {
-                RaidTracker tempRaidTracker = SC.getRaidTracker();
-                UUIDMap.put(tempRaidTracker.getUniqueID(), tempRaidTracker);
-            });
-            RTList = new ArrayList<>(UUIDMap.values());
-            fw.updateRTList(RTList);
-
+            if (isTob) {
+                SCList.forEach(SC -> {
+                    RaidTracker tempRaidTracker = SC.getRaidTracker();
+                    TobUUIDMap.put(tempRaidTracker.getUniqueID(), tempRaidTracker);
+                });
+                tobRTList = new ArrayList<>(TobUUIDMap.values());
+                fw.updateRTList(tobRTList, true);
+            }
+            else {
+                SCList.forEach(SC -> {
+                    RaidTracker tempRaidTracker = SC.getRaidTracker();
+                    UUIDMap.put(tempRaidTracker.getUniqueID(), tempRaidTracker);
+                });
+                RTList = new ArrayList<>(UUIDMap.values());
+                fw.updateRTList(RTList);
+            }
             updateView();
         });
 
@@ -535,16 +665,25 @@ public class RaidTrackerPanel extends PluginPanel {
         cm.setPreferredSize(new Dimension(108,25));
         cm.setSelectedItem(cmFilter);
 
-        ComboBoxListRenderer renderer = new ComboBoxListRenderer();
-        renderer.setFont(FontManager.getRunescapeSmallFont());
-        cm.setRenderer(renderer);
-
         cm.addActionListener(e -> {
             cmFilter = cm.getSelectedItem().toString();
             if (loaded) {
                 updateView();
             }
         });
+
+        JComboBox<String> mvp = new JComboBox<>(new String []{"Both", "My MVP", "Not My MVP"});
+        mvp.setFocusable(false);
+        mvp.setPreferredSize(new Dimension(108,25));
+        mvp.setSelectedItem(mvpFilter);
+
+        mvp.addActionListener(e -> {
+            mvpFilter = mvp.getSelectedItem().toString();
+            if (loaded) {
+                updateView();
+            }
+        });
+
 
         c.gridy = 1;
         wrapper.add(Box.createRigidArea(new Dimension(0, 5)), c);
@@ -554,8 +693,12 @@ public class RaidTrackerPanel extends PluginPanel {
 
         c.gridx = 1;
         c.anchor = GridBagConstraints.EAST;
-        wrapper.add(cm, c);
-
+        if (isTob) {
+            wrapper.add(mvp, c);
+        }
+        else {
+            wrapper.add(cm, c);
+        }
 
         JPanel buttonWrapper = new JPanel();
         buttonWrapper.setPreferredSize(new Dimension(50, 20));
@@ -613,6 +756,35 @@ public class RaidTrackerPanel extends PluginPanel {
         return wrapper;
     }
 
+    private JPanel getMvpPanel() {
+        final JPanel wrapper = new JPanel();
+        wrapper.setLayout(new GridLayout(0,2));
+        wrapper.setBorder(new EmptyBorder(3, 3, 3, 3));
+        wrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
+
+        int mvpAmount = 0;
+
+
+        if (loaded) {
+            mvpAmount = tobRTList.stream().mapToInt(RT -> {
+                if (RT.isMvpInOwnName()) {
+                    return 1;
+                }
+                return 0;
+            }).sum();
+
+
+        }
+
+        JLabel textLabel = textPanel("Total MVP's:");
+
+        JLabel valueLabel = textPanel(Integer.toString(mvpAmount));
+
+        wrapper.add(textLabel);
+        wrapper.add(valueLabel);
+        return wrapper;
+    }
+
     public void setUpdateButton(boolean b) {
         update.setEnabled(b);
         update.setBackground(ColorScheme.BRAND_ORANGE);
@@ -655,10 +827,18 @@ public class RaidTrackerPanel extends PluginPanel {
     }
 
     public void loadRTList() {
+        //TODO: support for a custom file so that it can be added to onedrive for example.
         RTList = fw.readFromFile();
         for (RaidTracker RT : RTList) {
             UUIDMap.put(RT.getUniqueID(), RT);
         }
+
+        tobRTList = fw.readFromFile(true);
+
+        for (RaidTracker RT : tobRTList) {
+            TobUUIDMap.put(RT.getUniqueID(), RT);
+        }
+
         loaded = true;
         updateView();
     }
@@ -687,14 +867,21 @@ public class RaidTrackerPanel extends PluginPanel {
         return new ArrayList<>();
     }
 
+    public ArrayList<RaidTracker> filterPetReceivers() {
+        if (loaded) {
+            return getFilteredRTList().stream().filter(RT -> !RT.getPetReceiver().isEmpty()).collect(Collectors.toCollection(ArrayList::new));
+        }
+        return new ArrayList<>();
+    }
+
     public ArrayList<RaidTracker> filterOwnDrops(ArrayList<RaidTracker> l) {
         if (loaded) {
             return l.stream().filter(RT -> {
 
-                if (RT.getSpecialLoot().isEmpty()) {
+                if (RT.getSpecialLoot().isEmpty() || RT.getLootList().size() == 0) {
                     return false;
                 }
-                return RT.getLootList().get(0).getId() == RaidUniques.getByName(RT.getSpecialLoot()).getItemID();
+                return RT.getLootList().get(0).getId() == getByName(RT.getSpecialLoot()).getItemID();
             }).collect(Collectors.toCollection(ArrayList::new));
         }
         return new ArrayList<>();
@@ -719,12 +906,23 @@ public class RaidTrackerPanel extends PluginPanel {
         return new ArrayList<>();
     }
 
+    public ArrayList<RaidTracker> filterOwnPets(ArrayList<RaidTracker> l) {
+        if (loaded) {
+            return l.stream().filter(RaidTracker::isPetInMyName).collect(Collectors.toCollection(ArrayList::new));
+        }
+        return new ArrayList<>();
+    }
+
     public ArrayList<RaidTracker> filterPurples() {
         if (loaded) {
-
-            return getFilteredRTList().stream().filter(RT -> Stream.of(RaidUniques.values())
-                    .anyMatch(value -> value.getName().toLowerCase().equals(RT.getSpecialLoot().toLowerCase())))
-                    .collect(Collectors.toCollection(ArrayList::new));
+            return getFilteredRTList().stream().filter(RT -> {
+                for (RaidUniques unique : getUniquesList()) {
+                    if (unique.getName().toLowerCase().equals(RT.getSpecialLoot().toLowerCase())) {
+                        return true;
+                    }
+                }
+                return false;
+            }).collect(Collectors.toCollection(ArrayList::new));
         }
         return new ArrayList<>();
 
@@ -743,10 +941,28 @@ public class RaidTrackerPanel extends PluginPanel {
                 "Price: " + format(drop.getPrice()) + " gp";
     }
 
+    public void addDrop(RaidTracker RT, boolean update) {
+        if (RT.isInTheatreOfBlood()) {
+            tobRTList.add(RT);
+        }
+        else {
+            RTList.add(RT);
+        }
+
+        if (update) {
+            //only add  item to the map when the parent raidtracker is added (child RT's are getting update false)
+            if (RT.isInTheatreOfBlood()) {
+                TobUUIDMap.put(RT.getUniqueID(), RT);
+            }
+            else {
+                UUIDMap.put(RT.getUniqueID(), RT);
+            }
+            updateView();
+        }
+    }
+
     public void addDrop(RaidTracker RT) {
-        RTList.add(RT);
-        UUIDMap.put(RT.getUniqueID(), RT);
-        updateView();
+        addDrop(RT, true);
     }
 
     public int atleastZero(int maybeLessThanZero) {
@@ -780,30 +996,44 @@ public class RaidTrackerPanel extends PluginPanel {
         if (loaded) {
             HashSet<Integer> uniqueIDs = new HashSet<>();
 
+            AtomicBoolean containsClue = new AtomicBoolean(false);
+
             getFilteredRTList().forEach(RT -> RT.getLootList().forEach(item -> {
                 boolean addToSet = true;
-                for (RaidUniques unique : RaidUniques.values()) {
+                for (RaidUniques unique : getUniquesList()) {
                     if (item.getId() == unique.getItemID()) {
                         addToSet = false;
                         break;
                     }
+                }
+                if (item.getName().contains("Clue Scroll")) {
+                    addToSet = false;
+                    containsClue.set(true);
                 }
                 if (addToSet) {
                     uniqueIDs.add(item.id);
                 }
             }));
 
+            if (containsClue.get()) {
+                //12073 is the ID of a random elite clue
+                uniqueIDs.add(12073);
+            }
+
             Map<Integer, RaidTrackerItem> m = new HashMap<>();
 
             for (Integer i : uniqueIDs) {
                 ItemComposition IC = itemManager.getItemComposition(i);
+
                 m.put(i, new RaidTrackerItem() {
                     {
                         name = IC.getName();
                         id = i;
                         quantity = 0;
                         price = 0;
-                    }});
+                    }
+                });
+
             }
 
             return m;
@@ -814,16 +1044,31 @@ public class RaidTrackerPanel extends PluginPanel {
     private ArrayList<RaidTracker> getFilteredRTList() {
         ArrayList<RaidTracker> tempRTList;
 
-        if (cmFilter.equals("CM & Normal")) {
-            tempRTList = RTList;
+        if (!loaded) {
+            return new ArrayList<>();
         }
-        else if (cmFilter.equals("CM Only")) {
-            tempRTList = RTList.stream().filter(RaidTracker::isChallengeMode)
-                    .collect(Collectors.toCollection(ArrayList::new));
+
+        if (isTob) {
+            if (mvpFilter.equals("Both")) {
+                tempRTList = tobRTList;
+            } else if (mvpFilter.equals("My MVP")) {
+                tempRTList = tobRTList.stream().filter(RaidTracker::isMvpInOwnName)
+                        .collect(Collectors.toCollection(ArrayList::new));
+            } else {
+                tempRTList = tobRTList.stream().filter(RT -> !RT.isMvpInOwnName())
+                        .collect(Collectors.toCollection(ArrayList::new));
+            }
         }
         else {
-            tempRTList = RTList.stream().filter(RT -> !RT.isChallengeMode())
-                    .collect(Collectors.toCollection(ArrayList::new));
+            if (cmFilter.equals("CM & Normal")) {
+                tempRTList = RTList;
+            } else if (cmFilter.equals("CM Only")) {
+                tempRTList = RTList.stream().filter(RaidTracker::isChallengeMode)
+                        .collect(Collectors.toCollection(ArrayList::new));
+            } else {
+                tempRTList = RTList.stream().filter(RT -> !RT.isChallengeMode())
+                        .collect(Collectors.toCollection(ArrayList::new));
+            }
         }
 
         LocalDate today = LocalDate.now();
@@ -838,19 +1083,52 @@ public class RaidTrackerPanel extends PluginPanel {
                 return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().equals(today))
                         .collect(Collectors.toCollection(ArrayList::new));
             case "Last Week":
-                return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().equals(lastWeek))
+                return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().isAfter(lastWeek))
                         .collect(Collectors.toCollection(ArrayList::new));
             case "Last Month":
-                return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().equals(lastMonth))
+                return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().isAfter(lastMonth))
                         .collect(Collectors.toCollection(ArrayList::new));
             case "Last Year":
-                return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().equals(lastYear))
+                return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().isAfter(lastYear))
                         .collect(Collectors.toCollection(ArrayList::new));
             case "Last X Kills":
-                return new ArrayList<>(tempRTList.subList(Math.max(tempRTList.size() - config.lastXKills(), 0), tempRTList.size()));
+                ArrayList<RaidTracker> tempUniqueKills = getDistinctKills(tempRTList);
+                ArrayList<RaidTracker> uniqueKills = new ArrayList<>(tempUniqueKills.subList(Math.max(tempUniqueKills.size() - config.lastXKills(), 0), tempUniqueKills.size()));
+
+                return tempRTList.stream().filter(RT -> uniqueKills.stream()
+                        .anyMatch(temp -> RT.getKillCountID().equals(temp.getKillCountID())))
+                        .collect(Collectors.toCollection(ArrayList::new));
         }
 
         return RTList;
+    }
+
+    public EnumSet<RaidUniques> getUniquesList() {
+        if (isTob) {
+            return tobUniques;
+        }
+        return coxUniques;
+    }
+
+    public RaidUniques getByName(String name) {
+        EnumSet<RaidUniques> uniquesList = getUniquesList();
+        for (RaidUniques unique: uniquesList) {
+            if (unique.getName().toLowerCase().equals(name.toLowerCase())) {
+                return unique;
+            }
+        }
+        //should never reach this
+        return RaidUniques.OLMLET;
+    }
+
+    public ArrayList<RaidTracker> getDistinctKills(ArrayList<RaidTracker> tempRTList) {
+        HashMap<String, RaidTracker> tempUUIDMap = new LinkedHashMap<>();
+
+        for (RaidTracker RT : tempRTList) {
+            tempUUIDMap.put(RT.getKillCountID(), RT);
+        }
+
+        return new ArrayList<>(tempUUIDMap.values());
     }
 
     private void clearData()
@@ -859,7 +1137,7 @@ public class RaidTrackerPanel extends PluginPanel {
         final int delete = JOptionPane.showConfirmDialog(this.getRootPane(), "<html>Are you sure you want to clear all data for this tab?<br/>There is no way to undo this action.</html>", "Warning", JOptionPane.YES_NO_OPTION);
         if (delete == JOptionPane.YES_OPTION)
         {
-            if (!fw.delete())
+            if (!fw.delete(isTob))
             {
                 JOptionPane.showMessageDialog(this.getRootPane(), "Unable to clear stored data, please try again.");
                 return;
