@@ -27,6 +27,7 @@ If you find any bugs or problems, feel free to add me on discord, and I'll accep
 - Duplicate purples/dusts/kits in one KC are now tracked. Previously only the last of each was tracked.
 - Elite clues now stack.
 - Fixed a bug where the "Last Week" up until the "Last Year" filters weren't showing anything.
+- The plugin now runs with -ea.
 
 
 ### v1.2.2

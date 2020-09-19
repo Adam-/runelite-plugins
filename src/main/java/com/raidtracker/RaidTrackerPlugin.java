@@ -14,6 +14,7 @@ import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetID;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -49,6 +50,9 @@ public class RaidTrackerPlugin extends Plugin
 	private Client client;
 
 	@Inject
+	private ClientThread clientThread;
+
+	@Inject
 	private ClientToolbar clientToolbar;
 
 	@Inject
@@ -78,7 +82,7 @@ public class RaidTrackerPlugin extends Plugin
 
 	@Override
 	protected void startUp() {
-		panel = new RaidTrackerPanel(itemManager, fw, config);
+		panel = new RaidTrackerPanel(itemManager, fw, config, clientThread);
 
 		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "panel-icon.png");
 
@@ -111,7 +115,7 @@ public class RaidTrackerPlugin extends Plugin
 	public void onVarbitChanged(VarbitChanged event)
 	{
 		boolean tempInRaid = client.getVar(Varbits.IN_RAID) == 1;
-		boolean tempInTob = client.getVar(Varbits.THEATRE_OF_BLOOD) == 1;
+		boolean tempInTob = client.getVar(Varbits.THEATRE_OF_BLOOD) > 1;
 
 		// if the player's raid state has changed
 		if (tempInRaid ^ raidTracker.isInRaidChambers()) {
@@ -137,9 +141,6 @@ public class RaidTrackerPlugin extends Plugin
 			}
 			else if (raidTracker.isRaidComplete()) {
 				//not tested
-				log.info("writing to file");
-				log.info(raidTracker.toString());
-
 				fw.writeToFile(raidTracker);
 
 				SwingUtilities.invokeLater(() -> {
@@ -148,7 +149,7 @@ public class RaidTrackerPlugin extends Plugin
 				});
 			}
 			else {
-				log.info(raidTracker.toString());
+				reset();
 			}
 		}
 	}
@@ -259,7 +260,7 @@ public class RaidTrackerPlugin extends Plugin
 				AtomicInteger deathsPlayer4 = new AtomicInteger();
 				AtomicInteger deathsPlayer5 = new AtomicInteger();
 
-				SwingUtilities.invokeLater(() -> {
+				clientThread.invokeLater(() -> {
 					mvp.set(getWidgetText(client.getWidget(459, 14)));
 					player1.set(getWidgetText(client.getWidget(459, 22)));
 					player2.set(getWidgetText(client.getWidget(459, 24)));
@@ -320,7 +321,8 @@ public class RaidTrackerPlugin extends Plugin
 
 		Player localPlayer = client.getLocalPlayer();
 
-		if ((raidTracker.isInRaidChambers() && event.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION) || (raidTracker.isInRaidChambers() && event.getType() == ChatMessageType.GAMEMESSAGE)) {
+		if ((raidTracker.isInRaidChambers() || raidTracker.isInTheatreOfBlood()) && event.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION ||
+				((raidTracker.isInRaidChambers() || raidTracker.isInTheatreOfBlood()) && event.getType() == ChatMessageType.GAMEMESSAGE)) {
 			String message = Text.removeTags(event.getMessage());
 			if (message.contains(LEVEL_COMPLETE_MESSAGE)) {
 				if (message.startsWith("Upper")) {
@@ -367,14 +369,13 @@ public class RaidTrackerPlugin extends Plugin
 						raidTracker.setXarpusTime(stringTimeToSeconds(message.toLowerCase().split("duration: ")[1].split(" total")[0]));
 						break;
 					case("the final challenge"):
-						raidTracker.setVerzikTime(stringTimeToSeconds(message.toLowerCase().split("duration: ")[1].split(" total")[0]));
+						raidTracker.setVerzikTime(stringTimeToSeconds(message.toLowerCase().split("duration: ")[1].split("theatre")[0]));
 						break;
 				}
 			}
 
 			if (message.toLowerCase().contains("theatre of blood wave completion")) {
-				raidTracker.setRaidComplete(true);
-				raidTracker.setRaidTime(stringTimeToSeconds(message.toLowerCase().split("time: ")[1]));
+				raidTracker.setRaidTime(stringTimeToSeconds(message.toLowerCase().split("time: ")[1].split("personal")[0]));
 			}
 
 			if (raidTracker.isRaidComplete() && message.contains("Team size:")) {
@@ -382,9 +383,10 @@ public class RaidTrackerPlugin extends Plugin
 			}
 
 			//works for tob
-			if (raidTracker.isRaidComplete() && message.contains("count is:")) {
+			if (message.contains("count is:")) {
 				raidTracker.setChallengeMode(message.contains("Chambers of Xeric Challenge Mode"));
 				raidTracker.setCompletionCount(parseInt(message.split("count is:")[1].trim().replace(".", "")));
+				raidTracker.setRaidComplete(true);
 			}
 
 			//only special loot contain the "-" (except for the raid complete message)
@@ -405,9 +407,7 @@ public class RaidTrackerPlugin extends Plugin
 
 					fw.writeToFile(altRT);
 
-					SwingUtilities.invokeLater(() -> {
-						panel.addDrop(altRT, false);
-					});
+					SwingUtilities.invokeLater(() -> panel.addDrop(altRT, false));
 				}
 				else {
 					raidTracker.setSpecialLootReceiver(message.split(" - ")[0]);
@@ -423,7 +423,7 @@ public class RaidTrackerPlugin extends Plugin
 				}
 			}
 
-			//for tob it works a bit different, not possible to get duplicates.
+			//for tob it works a bit different, not possible to get duplicates. - not tested in game yet.
 			if (raidTracker.isRaidComplete() && message.toLowerCase().contains("found something special")) {
 				raidTracker.setSpecialLootReceiver(message.toLowerCase().split(" found something special: ")[0]);
 				raidTracker.setSpecialLoot(message.toLowerCase().split(" found something special: ")[1]);
@@ -442,9 +442,7 @@ public class RaidTrackerPlugin extends Plugin
 
 					fw.writeToFile(altRT);
 
-					SwingUtilities.invokeLater(() -> {
-						panel.addDrop(altRT, false);
-					});
+					SwingUtilities.invokeLater(() -> panel.addDrop(altRT, false));
 				}
 				else{
 					raidTracker.setKitReceiver(message.split(TWISTED_KIT_RECIPIENTS)[1]);
@@ -459,9 +457,7 @@ public class RaidTrackerPlugin extends Plugin
 
 					fw.writeToFile(altRT);
 
-					SwingUtilities.invokeLater(() -> {
-						panel.addDrop(altRT, false);
-					});
+					SwingUtilities.invokeLater(() -> panel.addDrop(altRT, false));
 				}
 				else{
 					raidTracker.setDustReceiver(message.split(DUST_RECIPIENTS)[1]);
@@ -479,9 +475,7 @@ public class RaidTrackerPlugin extends Plugin
 
 					fw.writeToFile(altRT);
 
-					SwingUtilities.invokeLater(() -> {
-						panel.addDrop(altRT, false);
-					});
+					SwingUtilities.invokeLater(() -> panel.addDrop(altRT, false));
 				}
 				else {
 					if (message.toLowerCase().contains("untradeable drop") && client.getLocalPlayer() != null && client.getLocalPlayer().getName() != null) {
@@ -548,9 +542,8 @@ public class RaidTrackerPlugin extends Plugin
 		if (client.getGameState() != GameState.LOGGED_IN) {
 			return;
 		}
-		log.info("in theatre");
-		//1 = alive in party, 2 = spectating, 3 = dead spectating
-		raidTracker.setInTheatreOfBlood(client.getVar(Varbits.THEATRE_OF_BLOOD) == 1 || client.getVar(Varbits.THEATRE_OF_BLOOD) == 3);
+		//1 = in party outside, 2 = spectating, 3 = dead spectating
+		raidTracker.setInTheatreOfBlood(client.getVar(Varbits.THEATRE_OF_BLOOD) > 1);
 	}
 
 	private int stringTimeToSeconds(String s)

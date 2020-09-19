@@ -19,6 +19,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.concurrent.ExecutionException;
 
 import static org.mockito.Mockito.*;
 
@@ -40,8 +41,7 @@ public class TestRaidTrackerPanel extends TestCase
     }
 
     @Test
-    public void TestFilter()
-    {
+    public void TestFilter() throws ExecutionException, InterruptedException {
         fw.updateUsername("Canvasba");
 
         ArrayList<RaidTracker> l = fw.readFromFile();
@@ -105,8 +105,6 @@ public class TestRaidTrackerPanel extends TestCase
         assertEquals(2, ownPets.size());
 
         assertEquals(4, panel.getDistinctKills(l).size());
-
-        assertEquals(3,panel.getDistinctRegularDrops().values().size());
 
     }
 }

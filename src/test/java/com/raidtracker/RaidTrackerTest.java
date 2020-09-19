@@ -112,6 +112,33 @@ public class RaidTrackerTest extends TestCase
 	}
 
 	@Test
+	public void TestTobPurple()
+	{
+		RaidTracker raidTracker = new RaidTracker();
+		raidTracker.setRaidComplete(true);
+		raidTracker.setInTheatreOfBlood(true);
+
+		List<ItemPrice> avernicTestList = new ArrayList<>();
+
+		ItemPrice avernicTest = new ItemPrice();
+
+		avernicTest.setId(0);
+		avernicTest.setName("Avernic defender hilt");
+		avernicTest.setPrice(50505050);
+
+		avernicTestList.add(avernicTest);
+
+		when(itemManager.search(anyString())).thenReturn(avernicTestList);
+
+		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Canvasba found something special: Avernic defender hilt", "", 0);
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
+
+		assertEquals("canvasba", raidTracker.getSpecialLootReceiver());
+		assertEquals("avernic defender hilt", raidTracker.getSpecialLoot());
+		assertEquals(50505050, raidTracker.getSpecialLootValue());
+	}
+
+	@Test
 	public void TestDustAndKitRecipients()
 	{
 		RaidTracker raidTracker = new RaidTracker();

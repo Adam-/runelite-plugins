@@ -8,11 +8,10 @@ import com.raidtracker.filereadwriter.FileReadWriter;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemID;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
-import net.runelite.client.plugins.raids.Raid;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
@@ -34,8 +33,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -45,6 +44,7 @@ public class RaidTrackerPanel extends PluginPanel {
     private ItemManager itemManager;
     private final FileReadWriter fw;
     private final RaidTrackerConfig config;
+    private final ClientThread clientThread;
 
     @Setter
     private ArrayList<RaidTracker> RTList;
@@ -101,10 +101,11 @@ public class RaidTrackerPanel extends PluginPanel {
     );
 
 
-    public RaidTrackerPanel(final ItemManager itemManager, FileReadWriter fw, RaidTrackerConfig config) {
+    public RaidTrackerPanel(final ItemManager itemManager, FileReadWriter fw, RaidTrackerConfig config, ClientThread clientThread) {
         this.itemManager = itemManager;
         this.fw = fw;
         this.config = config;
+        this.clientThread = clientThread;
 
         panel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
@@ -196,13 +197,13 @@ public class RaidTrackerPanel extends PluginPanel {
         tobButton.setForeground(Color.white);
         tobButton.setFont(FontManager.getRunescapeSmallFont());
         tobButton.setContentAreaFilled(false);
-        tobButton.setOpaque(false);
         tobButton.setFocusable(false);
         tobButton.setBorderPainted(false);
         tobButton.setBorder(new EmptyBorder(7, 0, 7, 0));
 
         if (isTob) {
             tobButtonWrapper.setBorder(new MatteBorder(1, 1, 0, 1, ColorScheme.LIGHT_GRAY_COLOR.darker()));
+            coxButton.setOpaque(false);
         }
         else {
             tobButtonWrapper.setBorder(new MatteBorder(0, 0, 1, 0, ColorScheme.LIGHT_GRAY_COLOR.darker()));
@@ -465,82 +466,96 @@ public class RaidTrackerPanel extends PluginPanel {
         wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
 
         if (loaded) {
-            Map<Integer, RaidTrackerItem> uniqueIDs = getDistinctRegularDrops();
+            Map<Integer, RaidTrackerItem> uniqueIDs = new HashMap<>();
+            try {
+                //TODO: quite slow, see if adding of the regulardrops panel can be added later so the updateview thread doesn't have to wait
+                uniqueIDs = getDistinctRegularDrops().get();
+            } catch (InterruptedException | ExecutionException e) {
+                uniqueIDs = new HashMap<>();
+            } finally {
+                Map<Integer, Integer> priceMap = new HashMap<>();
 
-            if (uniqueIDs.values().size() > 0) {
-                getFilteredRTList().forEach(RT -> RT.getLootList().forEach(item -> {
-                    RaidTrackerItem RTI = uniqueIDs.get(item.id);
+                for (RaidTrackerItem item : uniqueIDs.values()) {
+                    priceMap.put(item.getId(), item.getPrice());
+                }
 
-                    if (RTI == null) {
-                        if (item.getName().toLowerCase().contains("clue")) {
-                            RTI = uniqueIDs.get(12073);
+                if (uniqueIDs.values().size() > 0) {
+                    for (RaidTracker RT : getFilteredRTList()) {
+                        for (RaidTrackerItem item : RT.getLootList()) {
+                            RaidTrackerItem RTI = uniqueIDs.get(item.getId());
+
+                            if (RTI == null) {
+                                if (item.getName().toLowerCase().contains("clue")) {
+                                    RTI = uniqueIDs.get(12073);
+                                }
+                            }
+
+                            if (RTI != null) {
+                                int qty = RTI.getQuantity();
+                                RTI.setQuantity(qty + item.getQuantity());
+
+                                RTI.setPrice(priceMap.get(item.getId()) * RTI.getQuantity());
+
+                                uniqueIDs.replace(item.getId(), RTI);
+                            }
                         }
                     }
 
-                    if (RTI != null) {
-                        int qty = RTI.getQuantity();
-                        RTI.setQuantity(qty + item.getQuantity());
+                    ArrayList<RaidTrackerItem> regularDropsList = new ArrayList<>(uniqueIDs.values());
 
-                        RTI.setPrice(itemManager.getItemPrice(item.id) * RTI.getQuantity());
-
-                        uniqueIDs.replace(item.id, RTI);
-                    }
-                }));
-
-                ArrayList<RaidTrackerItem> regularDropsList = new ArrayList<>(uniqueIDs.values());
-
-                regularDropsList.sort((o2, o1) -> Integer.compare(o1.getPrice(), o2.getPrice()));
+                    regularDropsList.sort((o2, o1) -> Integer.compare(o1.getPrice(), o2.getPrice()));
 
 
-                int regularDropsSum = regularDropsList.stream().mapToInt(RaidTrackerItem::getPrice).sum();
+                    int regularDropsSum = regularDropsList.stream().mapToInt(RaidTrackerItem::getPrice).sum();
 
-                final JPanel drops = new JPanel();
-                drops.setLayout(new GridLayout(0, 5));
+                    final JPanel drops = new JPanel();
+                    drops.setLayout(new GridLayout(0, 5));
 
-                for (RaidTrackerItem drop : regularDropsList) {
-                    AsyncBufferedImage image = itemManager.getImage(drop.getId(), drop.getQuantity(), drop.getQuantity() > 1);
+                    for (RaidTrackerItem drop : regularDropsList) {
+                        AsyncBufferedImage image = itemManager.getImage(drop.getId(), drop.getQuantity(), drop.getQuantity() > 1);
 
-                    JPanel iconWrapper = new JPanel();
-                    iconWrapper.setPreferredSize(new Dimension(40, 40));
-                    iconWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+                        JPanel iconWrapper = new JPanel();
+                        iconWrapper.setPreferredSize(new Dimension(40, 40));
+                        iconWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-                    JLabel icon = new JLabel();
-                    image.addTo(icon);
-                    icon.setBorder(new EmptyBorder(0,5,0,0));
-
-                    image.onLoaded(() ->
-                    {
+                        JLabel icon = new JLabel();
                         image.addTo(icon);
-                        icon.revalidate();
-                        icon.repaint();
-                    });
+                        icon.setBorder(new EmptyBorder(0, 5, 0, 0));
 
-                    iconWrapper.add(icon, BorderLayout.CENTER);
-                    iconWrapper.setBorder(new MatteBorder(1, 0, 0, 1, ColorScheme.DARK_GRAY_COLOR));
-                    iconWrapper.setToolTipText(getRegularToolTip(drop));
+                        image.onLoaded(() ->
+                        {
+                            image.addTo(icon);
+                            icon.revalidate();
+                            icon.repaint();
+                        });
 
-                    drops.add(iconWrapper);
+                        iconWrapper.add(icon, BorderLayout.CENTER);
+                        iconWrapper.setBorder(new MatteBorder(1, 0, 0, 1, ColorScheme.DARK_GRAY_COLOR));
+                        iconWrapper.setToolTipText(getRegularToolTip(drop));
+
+                        drops.add(iconWrapper);
+                    }
+
+                    final JPanel title = new JPanel();
+                    title.setLayout(new GridLayout(0, 2));
+                    title.setBorder(new EmptyBorder(3, 20, 3, 10));
+                    title.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
+
+                    JLabel textLabel = textPanel("Regular Drops");
+                    textLabel.setHorizontalAlignment(SwingConstants.LEFT);
+
+                    JLabel valueLabel = textPanel(format(regularDropsSum) + " gp");
+                    valueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+                    valueLabel.setForeground(Color.LIGHT_GRAY.darker());
+                    valueLabel.setToolTipText(NumberFormat.getInstance().format(regularDropsSum));
+
+                    title.add(textLabel);
+                    title.add(valueLabel);
+
+
+                    wrapper.add(title);
+                    wrapper.add(drops);
                 }
-
-                final JPanel title = new JPanel();
-                title.setLayout(new GridLayout(0, 2));
-                title.setBorder(new EmptyBorder(3, 20, 3, 10));
-                title.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
-
-                JLabel textLabel = textPanel("Regular Drops");
-                textLabel.setHorizontalAlignment(SwingConstants.LEFT);
-
-                JLabel valueLabel = textPanel(format(regularDropsSum) + " gp");
-                valueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-                valueLabel.setForeground(Color.LIGHT_GRAY.darker());
-                valueLabel.setToolTipText(NumberFormat.getInstance().format(regularDropsSum));
-
-                title.add(textLabel);
-                title.add(valueLabel);
-
-
-                wrapper.add(title);
-                wrapper.add(drops);
             }
         }
 
@@ -992,53 +1007,62 @@ public class RaidTrackerPanel extends PluginPanel {
         return hasDecimal ? (truncated / 10d) + suffix : (truncated / 10) + suffix;
     }
 
-    public Map<Integer, RaidTrackerItem> getDistinctRegularDrops() {
-        if (loaded) {
-            HashSet<Integer> uniqueIDs = new HashSet<>();
+    public Future<Map<Integer, RaidTrackerItem>> getDistinctRegularDrops()  {
+        CompletableFuture<Map<Integer, RaidTrackerItem>> future = new CompletableFuture<>();
 
-            AtomicBoolean containsClue = new AtomicBoolean(false);
+        clientThread.invokeLater(() -> {
 
-            getFilteredRTList().forEach(RT -> RT.getLootList().forEach(item -> {
-                boolean addToSet = true;
-                for (RaidUniques unique : getUniquesList()) {
-                    if (item.getId() == unique.getItemID()) {
+            if (loaded) {
+                HashSet<Integer> uniqueIDs = new HashSet<>();
+
+                AtomicBoolean containsClue = new AtomicBoolean(false);
+
+                getFilteredRTList().forEach(RT -> RT.getLootList().forEach(item -> {
+                    boolean addToSet = true;
+                    for (RaidUniques unique : getUniquesList()) {
+                        if (item.getId() == unique.getItemID()) {
+                            addToSet = false;
+                            break;
+                        }
+                    }
+                    if (item.getName().contains("Clue Scroll")) {
                         addToSet = false;
-                        break;
+                        containsClue.set(true);
                     }
-                }
-                if (item.getName().contains("Clue Scroll")) {
-                    addToSet = false;
-                    containsClue.set(true);
-                }
-                if (addToSet) {
-                    uniqueIDs.add(item.id);
-                }
-            }));
+                    if (addToSet) {
+                        uniqueIDs.add(item.id);
+                    }
+                }));
 
-            if (containsClue.get()) {
-                //12073 is the ID of a random elite clue
-                uniqueIDs.add(12073);
+                if (containsClue.get()) {
+                    //12073 is the ID of a random elite clue
+                    uniqueIDs.add(12073);
+                }
+
+                Map<Integer, RaidTrackerItem> m = new HashMap<>();
+
+                for (Integer i : uniqueIDs) {
+                    ItemComposition IC = itemManager.getItemComposition(i);
+
+                    m.put(i, new RaidTrackerItem() {
+                        {
+                            name = IC.getName();
+                            id = i;
+                            quantity = 0;
+                            price = itemManager.getItemPrice(i);
+                        }
+                    });
+
+                }
+
+                future.complete(m);
+                return;
             }
 
-            Map<Integer, RaidTrackerItem> m = new HashMap<>();
+            future.complete(new HashMap<>());
 
-            for (Integer i : uniqueIDs) {
-                ItemComposition IC = itemManager.getItemComposition(i);
-
-                m.put(i, new RaidTrackerItem() {
-                    {
-                        name = IC.getName();
-                        id = i;
-                        quantity = 0;
-                        price = 0;
-                    }
-                });
-
-            }
-
-            return m;
-        }
-        return new HashMap<>();
+        });
+        return future;
     }
 
     private ArrayList<RaidTracker> getFilteredRTList() {

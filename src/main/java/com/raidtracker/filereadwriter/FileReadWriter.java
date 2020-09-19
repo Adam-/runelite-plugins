@@ -37,6 +37,8 @@ public class FileReadWriter {
         }
         try
         {
+            log.info("writer started");
+
             //use json format so serializing and deserializing is easy
             Gson gson = new GsonBuilder().create();
 

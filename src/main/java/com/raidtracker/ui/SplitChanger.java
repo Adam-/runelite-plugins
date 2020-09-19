@@ -240,7 +240,7 @@ public class SplitChanger extends JPanel {
     }
 
     private BufferedImage resizeImage(BufferedImage before) {
-        return raidTrackerPanel.resizeImage(before, 1.75, AffineTransformOp.TYPE_BICUBIC);
+        return raidTrackerPanel.resizeImage(before, 1.75, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
     }
 
     private String getDateText() {
