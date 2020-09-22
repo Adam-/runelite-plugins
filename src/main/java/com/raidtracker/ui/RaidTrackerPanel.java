@@ -69,6 +69,8 @@ public class RaidTrackerPanel extends PluginPanel {
     @Getter
     private boolean isTob = false;
 
+    private JPanel regularDrops = new JPanel();
+
     @Getter
     EnumSet<RaidUniques> tobUniques = EnumSet.of(
             RaidUniques.AVERNIC,
@@ -125,9 +127,37 @@ public class RaidTrackerPanel extends PluginPanel {
         JPanel uniquesPanel = getUniquesPanel();
         JPanel pointsPanel = getPointsPanel();
         JPanel splitsEarnedPanel = getSplitsEarnedPanel();
-        JPanel regularDrops = getRegularDropsPanel();
         JPanel changePurples = getChangePurples();
         JPanel mvpPanel = getMvpPanel();
+
+        SwingUtilities.invokeLater(() -> {
+            regularDrops = getRegularDropsPanel();
+
+            panel.removeAll();
+
+            panel.add(title);
+            panel.add(filterPanel);
+            panel.add(Box.createRigidArea(new Dimension(0, 5)));
+            panel.add(killsLoggedPanel);
+            panel.add(Box.createRigidArea(new Dimension(0, 5)));
+            panel.add(uniquesPanel, BorderLayout.CENTER);
+            panel.add(Box.createRigidArea(new Dimension(0, 5)));
+            if (isTob) {
+                panel.add(mvpPanel);
+            }
+            else {
+                panel.add(pointsPanel);
+            }
+            panel.add(Box.createRigidArea(new Dimension(0, 5)));
+            panel.add(splitsEarnedPanel);
+            panel.add(Box.createRigidArea(new Dimension(0, 15)));
+            panel.add(regularDrops);
+            panel.add(Box.createRigidArea(new Dimension(0, 20)));
+            panel.add(changePurples);
+
+            panel.revalidate();
+            panel.repaint();
+        });
 
         panel.add(title);
         panel.add(filterPanel);
@@ -147,7 +177,7 @@ public class RaidTrackerPanel extends PluginPanel {
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
         panel.add(regularDrops);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
-        panel.add(changePurples); //not showing for some reason?
+        panel.add(changePurples);
 
         panel.revalidate();
         panel.repaint();

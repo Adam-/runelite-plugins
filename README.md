@@ -21,6 +21,10 @@ If you find any bugs or problems, feel free to add me on discord, and I'll accep
 
 ## Changelog:
 
+### v1.3.1
+- Fixed a bug caused by not importing the StringEscapeUtils dependency in build.gradle (not tested).
+- Improved ui performance by not pausing the swing thread, but updating the panel when the variable is loaded.
+
 ### v1.3
 - Added Theatre of Blood to the plugin.
 - Now tracking the COX and TOB pets.
