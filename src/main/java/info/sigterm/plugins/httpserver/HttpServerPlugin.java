@@ -2,6 +2,7 @@ package info.sigterm.plugins.httpserver;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.inject.Provides;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -12,6 +13,7 @@ import java.util.concurrent.Executors;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.Skill;
+import net.runelite.client.config.ConfigManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.http.api.RuneLiteAPI;
@@ -24,21 +26,45 @@ public class HttpServerPlugin extends Plugin
 	@Inject
 	private Client client;
 
+	@Inject
+	private HttpServerConfig config;
+
 	private HttpServer server;
 
 	@Override
 	protected void startUp() throws Exception
 	{
-		server = HttpServer.create(new InetSocketAddress(8080), 0);
-		server.createContext("/stats", new StatsHandler());
-		server.setExecutor(Executors.newSingleThreadExecutor());
-		server.start();
+
+		String[] ports = config.ports().split(",");
+		Exception ex = null;
+
+		for (String port : ports) {
+			try {
+				server = HttpServer.create(new InetSocketAddress(Integer.parseInt(port)), 0);
+				server.createContext("/stats", new StatsHandler());
+				server.setExecutor(Executors.newSingleThreadExecutor());
+				server.start();
+				return;
+			} catch (Exception e) {
+				ex = e;
+			}
+		}
+
+		if (ex != null) {
+			throw ex;
+		}
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
 		server.stop(1);
+	}
+
+	@Provides
+	HttpServerConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(HttpServerConfig.class);
 	}
 
 	class StatsHandler implements HttpHandler
