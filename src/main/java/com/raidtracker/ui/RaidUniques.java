@@ -18,7 +18,7 @@ public enum RaidUniques {
     ELDER_MAUL("Elder Maul", ItemID.ELDER_MAUL),
     KODAI("Kodai Insignia", ItemID.KODAI_INSIGNIA),
     TWISTED_BOW("Twisted Bow", ItemID.TWISTED_BOW),
-    DUST("Metamorphatic Dust", ItemID.METAMORPHIC_DUST),
+    DUST("Metamorphic Dust", ItemID.METAMORPHIC_DUST),
     TWISTED_KIT("Twisted Kit", ItemID.TWISTED_ANCESTRAL_COLOUR_KIT),
     OLMLET("Olmlet", ItemID.OLMLET),
     AVERNIC("Avernic defender hilt", ItemID.AVERNIC_DEFENDER_HILT),

@@ -24,6 +24,7 @@ import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 import net.runelite.client.game.ItemManager;
+import org.apache.commons.text.StringEscapeUtils;
 
 import javax.swing.*;
 import java.awt.image.BufferedImage;
@@ -73,6 +74,8 @@ public class RaidTrackerPlugin extends Plugin
 
 	@Setter
 	private FileReadWriter fw = new FileReadWriter();
+
+	private boolean writerStarted = false;
 
 	@Provides
 	RaidTrackerConfig provideConfig(ConfigManager configManager)
@@ -126,7 +129,13 @@ public class RaidTrackerPlugin extends Plugin
 			else if (raidTracker.isRaidComplete() && !raidTracker.isChestOpened()) {
 				//player just exited a raid, if the chest is not looted write the raid tracker anyway.
 				//might deprecate the writing after widgetloaded in the future, not decided yet.
+				if (writerStarted) {
+					return;
+				}
+
 				fw.writeToFile(raidTracker);
+
+				writerStarted = true;
 
 				SwingUtilities.invokeLater(() -> {
 					panel.addDrop(raidTracker);
@@ -141,7 +150,14 @@ public class RaidTrackerPlugin extends Plugin
 			}
 			else if (raidTracker.isRaidComplete()) {
 				//not tested
+
+				if (writerStarted) {
+					return;
+				}
+
 				fw.writeToFile(raidTracker);
+
+				writerStarted = true;
 
 				SwingUtilities.invokeLater(() -> {
 					panel.addDrop(raidTracker);
@@ -199,8 +215,6 @@ public class RaidTrackerPlugin extends Plugin
 					return;
 				}
 
-				raidTracker.setTeamSize(client.getVar(Varbits.RAID_PARTY_SIZE));
-
 				raidTracker.setChestOpened(true);
 
 				ItemContainer rewardItemContainer = client.getItemContainer(InventoryID.CHAMBERS_OF_XERIC_CHEST);
@@ -209,9 +223,15 @@ public class RaidTrackerPlugin extends Plugin
 					return;
 				}
 
+				if (writerStarted) {
+					return;
+				}
+
 				raidTracker.setLootList(lootListFactory(rewardItemContainer.getItems()));
 
 				fw.writeToFile(raidTracker);
+
+				writerStarted = true;
 
 				SwingUtilities.invokeLater(() -> {
 					panel.addDrop(raidTracker);
@@ -225,15 +245,6 @@ public class RaidTrackerPlugin extends Plugin
 					return;
 				}
 
-				int teamSize = 0;
-
-				for (int i = 6442; i  < 6447; i++) {
-					if (client.getVarbitValue(i) != 0) {
-						teamSize++;
-					}
-				}
-
-				raidTracker.setTeamSize(teamSize);
 
 				raidTracker.setChestOpened(true);
 
@@ -319,11 +330,16 @@ public class RaidTrackerPlugin extends Plugin
 	{
 		raidTracker.setLoggedIn(true);
 
-		Player localPlayer = client.getLocalPlayer();
+		String playerName = "";
+
+		if (client.getLocalPlayer() != null && client.getLocalPlayer().getName() != null) {
+			playerName = client.getLocalPlayer().getName();
+		}
 
 		if ((raidTracker.isInRaidChambers() || raidTracker.isInTheatreOfBlood()) && event.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION ||
 				((raidTracker.isInRaidChambers() || raidTracker.isInTheatreOfBlood()) && event.getType() == ChatMessageType.GAMEMESSAGE)) {
-			String message = Text.removeTags(event.getMessage());
+			//unescape java to avoid unicode
+			String message = unescapeJavaString(Text.removeTags(event.getMessage()));
 			if (message.contains(LEVEL_COMPLETE_MESSAGE)) {
 				if (message.startsWith("Upper")) {
 					raidTracker.setUpperTime(stringTimeToSeconds(message.split(" level complete! Duration: ")[1]));
@@ -342,6 +358,8 @@ public class RaidTrackerPlugin extends Plugin
 				raidTracker.setPersonalPoints(client.getVar(Varbits.PERSONAL_POINTS));
 
 				raidTracker.setPercentage(raidTracker.getPersonalPoints() / (raidTracker.getTotalPoints() / 100.0));
+
+				raidTracker.setTeamSize(client.getVar(Varbits.RAID_PARTY_SIZE));
 
 				raidTracker.setRaidComplete(true);
 
@@ -386,7 +404,17 @@ public class RaidTrackerPlugin extends Plugin
 			if (message.contains("count is:")) {
 				raidTracker.setChallengeMode(message.contains("Chambers of Xeric Challenge Mode"));
 				raidTracker.setCompletionCount(parseInt(message.split("count is:")[1].trim().replace(".", "")));
-				raidTracker.setRaidComplete(true);
+				if (raidTracker.isInTheatreOfBlood()) {
+					int teamSize = 0;
+
+					for (int i = 6442; i  < 6447; i++) {
+						if (client.getVarbitValue(i) != 0) {
+							teamSize++;
+						}
+					}
+					raidTracker.setTeamSize(teamSize);
+					raidTracker.setRaidComplete(true);
+				}
 			}
 
 			//only special loot contain the "-" (except for the raid complete message)
@@ -397,9 +425,8 @@ public class RaidTrackerPlugin extends Plugin
 					altRT.setSpecialLootReceiver(message.split(" - ")[0]);
 					altRT.setSpecialLoot(message.split(" - ")[1]);
 
-					if (localPlayer != null && localPlayer.getName() != null) {
-						altRT.setSpecialLootInOwnName(altRT.getSpecialLootReceiver().toLowerCase().trim().equals(localPlayer.getName().toLowerCase().trim()));
-					}
+					altRT.setSpecialLootInOwnName(altRT.getSpecialLootReceiver().toLowerCase().trim().equals(playerName.toLowerCase().trim()));
+
 
 					altRT.setSpecialLootValue(itemManager.search(raidTracker.getSpecialLoot()).get(0).getPrice());
 
@@ -415,74 +442,92 @@ public class RaidTrackerPlugin extends Plugin
 
 					raidTracker.setSpecialLootValue(itemManager.search(raidTracker.getSpecialLoot()).get(0).getPrice());
 
-					if (localPlayer != null && localPlayer.getName() != null) {
-						raidTracker.setSpecialLootInOwnName(raidTracker.getSpecialLootReceiver().toLowerCase().trim().equals(localPlayer.getName().toLowerCase().trim()));
-					}
+					raidTracker.setSpecialLootInOwnName(raidTracker.getSpecialLootReceiver().toLowerCase().trim().equals(playerName.toLowerCase().trim()));
+
 
 					setSplits(raidTracker);
 				}
 			}
 
 			//for tob it works a bit different, not possible to get duplicates. - not tested in game yet.
-			if (raidTracker.isRaidComplete() && message.toLowerCase().contains("found something special")) {
-				raidTracker.setSpecialLootReceiver(message.toLowerCase().split(" found something special: ")[0]);
-				raidTracker.setSpecialLoot(message.toLowerCase().split(" found something special: ")[1]);
+			if (raidTracker.isRaidComplete() && message.toLowerCase().contains("found something special") && !message.toLowerCase().contains("lil' zik")) {
+				raidTracker.setSpecialLootReceiver(message.split(" found something special: ")[0]);
+				raidTracker.setSpecialLoot(message.split(" found something special: ")[1]);
 
 				raidTracker.setSpecialLootValue(itemManager.search(raidTracker.getSpecialLoot()).get(0).getPrice());
 
-				if (localPlayer != null && localPlayer.getName() != null) {
-					raidTracker.setSpecialLootInOwnName(raidTracker.getSpecialLootReceiver().toLowerCase().trim().equals(localPlayer.getName().toLowerCase().trim()));
-				}
+				raidTracker.setSpecialLootInOwnName(raidTracker.getSpecialLootReceiver().toLowerCase().trim().equals(playerName.toLowerCase().trim()));
+
 			}
 
 			if (raidTracker.isRaidComplete() && message.startsWith(TWISTED_KIT_RECIPIENTS)) {
-				if (!raidTracker.getKitReceiver().isEmpty()) {
-					RaidTracker altRT = copyData();
-					altRT.setKitReceiver(message.split(TWISTED_KIT_RECIPIENTS)[1]);
+				String[] recipients = message.split(TWISTED_KIT_RECIPIENTS)[1].split(",");
 
-					fw.writeToFile(altRT);
+				for (String recip : recipients) {
+					if (raidTracker.getKitReceiver().isEmpty()) {
+						raidTracker.setKitReceiver(recip.trim());
+					}
+					else {
+						RaidTracker altRT = copyData();
+						altRT.setKitReceiver(recip.trim());
 
-					SwingUtilities.invokeLater(() -> panel.addDrop(altRT, false));
+						fw.writeToFile(altRT);
+
+						SwingUtilities.invokeLater(() -> panel.addDrop(altRT, false));
+					}
 				}
-				else{
-					raidTracker.setKitReceiver(message.split(TWISTED_KIT_RECIPIENTS)[1]);
-				}
-
 			}
 
 			if (raidTracker.isRaidComplete() && message.startsWith(DUST_RECIPIENTS)) {
-				if (!raidTracker.getDustReceiver().isEmpty()) {
-					RaidTracker altRT = copyData();
-					altRT.setDustReceiver(message.split(DUST_RECIPIENTS)[1]);
+				String[] recipients = message.split(DUST_RECIPIENTS)[1].split(",");
 
-					fw.writeToFile(altRT);
+				for (String recip : recipients) {
+					if (raidTracker.getDustReceiver().isEmpty()) {
+						raidTracker.setDustReceiver(recip.trim());
+					}
+					else {
+						RaidTracker altRT = copyData();
+						altRT.setDustReceiver(recip.trim());
 
-					SwingUtilities.invokeLater(() -> panel.addDrop(altRT, false));
-				}
-				else{
-					raidTracker.setDustReceiver(message.split(DUST_RECIPIENTS)[1]);
+						fw.writeToFile(altRT);
+
+						SwingUtilities.invokeLater(() -> panel.addDrop(altRT, false));
+					}
 				}
 			}
 
-			if (raidTracker.isRaidComplete() && (message.toLowerCase().contains("olmlet") || message.toLowerCase().contains("lil' zik") || message.toLowerCase().contains("you have a funny feeling"))) {
+			if (raidTracker.isRaidComplete() && (message.toLowerCase().contains("olmlet") || message.toLowerCase().contains("lil' zik")) || message.toLowerCase().contains("would have been followed")) {
+				boolean inOwnName = false;
+				boolean duplicate = message.toLowerCase().contains("would have been followed");
+
+				if (playerName.equals(message.split(" ")[0]) || duplicate)	{
+					inOwnName = true;
+				}
+
 				if (!raidTracker.getPetReceiver().isEmpty()) {
 					RaidTracker altRT = copyData();
-					if ((message.toLowerCase().contains("untradeable drop") || message.toLowerCase().contains("you have a funny feeling")) && client.getLocalPlayer() != null && client.getLocalPlayer().getName() != null) {
-						altRT.setPetReceiver(client.getLocalPlayer().getName().toLowerCase().trim());
-					} else {
+
+					if (duplicate) {
+						altRT.setPetReceiver(playerName);
+					}
+					else {
 						altRT.setPetReceiver(message.split(" ")[0]);
 					}
+
+					altRT.setPetInMyName(inOwnName);
 
 					fw.writeToFile(altRT);
 
 					SwingUtilities.invokeLater(() -> panel.addDrop(altRT, false));
 				}
 				else {
-					if (message.toLowerCase().contains("untradeable drop") && client.getLocalPlayer() != null && client.getLocalPlayer().getName() != null) {
-						raidTracker.setPetReceiver(client.getLocalPlayer().getName().toLowerCase().trim());
-					} else {
+					if (duplicate) {
+						raidTracker.setPetReceiver(playerName);
+					}
+					else {
 						raidTracker.setPetReceiver(message.split(" ")[0]);
 					}
+					raidTracker.setPetInMyName(inOwnName);
 				}
 			}
 		}
@@ -495,6 +540,7 @@ public class RaidTrackerPlugin extends Plugin
 
 		int cutoff = config.FFACutoff();
 
+		//
 		if (raidTracker.getSpecialLoot().length() > 0) {
 			if (config.defaultFFA() || lootSplit < cutoff) {
 				raidTracker.setFreeForAll(true);
@@ -567,5 +613,82 @@ public class RaidTrackerPlugin extends Plugin
 	private void reset()
 	{
 		raidTracker = new RaidTracker();
+		writerStarted = false;
+	}
+
+	//from stackoverflow
+	public String unescapeJavaString(String st) {
+
+		if (st == null) {
+			return null;
+		}
+
+		StringBuilder sb = new StringBuilder(st.length());
+
+		for (int i = 0; i < st.length(); i++) {
+			char ch = st.charAt(i);
+			if (ch == '\\') {
+				char nextChar = (i == st.length() - 1) ? '\\' : st
+						.charAt(i + 1);
+				// Octal escape?
+				if (nextChar >= '0' && nextChar <= '7') {
+					String code = "" + nextChar;
+					i++;
+					if ((i < st.length() - 1) && st.charAt(i + 1) >= '0'
+							&& st.charAt(i + 1) <= '7') {
+						code += st.charAt(i + 1);
+						i++;
+						if ((i < st.length() - 1) && st.charAt(i + 1) >= '0'
+								&& st.charAt(i + 1) <= '7') {
+							code += st.charAt(i + 1);
+							i++;
+						}
+					}
+					sb.append((char) Integer.parseInt(code, 8));
+					continue;
+				}
+				switch (nextChar) {
+					case '\\':
+						ch = '\\';
+						break;
+					case 'b':
+						ch = '\b';
+						break;
+					case 'f':
+						ch = '\f';
+						break;
+					case 'n':
+						ch = '\n';
+						break;
+					case 'r':
+						ch = '\r';
+						break;
+					case 't':
+						ch = '\t';
+						break;
+					case '\"':
+						ch = '\"';
+						break;
+					case '\'':
+						ch = '\'';
+						break;
+					// Hex Unicode: u????
+					case 'u':
+						if (i >= st.length() - 5) {
+							ch = 'u';
+							break;
+						}
+						int code = Integer.parseInt(
+								"" + st.charAt(i + 2) + st.charAt(i + 3)
+										+ st.charAt(i + 4) + st.charAt(i + 5), 16);
+						sb.append(Character.toChars(code));
+						i += 5;
+						continue;
+				}
+				i++;
+			}
+			sb.append(ch);
+		}
+		return sb.toString();
 	}
 }

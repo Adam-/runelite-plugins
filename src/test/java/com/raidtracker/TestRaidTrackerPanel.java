@@ -55,6 +55,7 @@ public class TestRaidTrackerPanel extends TestCase
         panel.setCmFilter("CM & Normal");
         panel.setDateFilter("All Time");
         panel.setMvpFilter("Both");
+        panel.setTeamSizeFilter("All sizes");
 
         when(panel.getUniquesList()).thenReturn(EnumSet.of(
                 RaidUniques.DEX,
@@ -75,9 +76,6 @@ public class TestRaidTrackerPanel extends TestCase
         ));
 
         ItemManager IM = mock(ItemManager.class);
-        ItemComposition IC = mock(ItemComposition.class);
-        when(IC.getName()).thenReturn("testName");
-        when(IM.getItemComposition(anyInt())).thenReturn(IC);
 
         panel.setItemManager(IM);
 

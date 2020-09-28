@@ -37,6 +37,9 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import static java.lang.Math.floor;
+import static java.util.Comparator.comparing;
+
 @Slf4j
 public class RaidTrackerPanel extends PluginPanel {
 
@@ -65,6 +68,8 @@ public class RaidTrackerPanel extends PluginPanel {
     private String cmFilter = "CM & Normal";
     @Setter
     private String mvpFilter = "Both";
+    @Setter
+    private String teamSizeFilter = "All sizes";
 
     @Getter
     private boolean isTob = false;
@@ -129,55 +134,114 @@ public class RaidTrackerPanel extends PluginPanel {
         JPanel splitsEarnedPanel = getSplitsEarnedPanel();
         JPanel changePurples = getChangePurples();
         JPanel mvpPanel = getMvpPanel();
+        JPanel timeSplitsPanel = getTimeSplitsPanel();
 
-        SwingUtilities.invokeLater(() -> {
-            regularDrops = getRegularDropsPanel();
+        if (config.showRegularDrops()) {
+            SwingUtilities.invokeLater(() -> {
+                regularDrops = getRegularDropsPanel();
 
-            panel.removeAll();
+                panel.removeAll();
 
+                if (config.showTitle()) {
+                    panel.add(title);
+                }
+
+                if (config.showFilters()) {
+                    panel.add(filterPanel);
+                }
+
+                panel.add(Box.createRigidArea(new Dimension(0, 5)));
+
+                if (config.showKillsLogged()) {
+                    panel.add(killsLoggedPanel);
+                    panel.add(Box.createRigidArea(new Dimension(0, 5)));
+                }
+
+                if (config.showUniquesTable()) {
+                    panel.add(uniquesPanel, BorderLayout.CENTER);
+                    panel.add(Box.createRigidArea(new Dimension(0, 5)));
+                }
+
+                if (isTob && config.showMVPs()) {
+                    panel.add(mvpPanel);
+                    panel.add(Box.createRigidArea(new Dimension(0, 5)));
+                }
+                else if (config.showPoints()){
+                    panel.add(pointsPanel);
+                    panel.add(Box.createRigidArea(new Dimension(0, 5)));
+                }
+
+                if (config.showSplitGPEarned()) {
+                    panel.add(splitsEarnedPanel);
+                    panel.add(Box.createRigidArea(new Dimension(0, 15)));
+                }
+
+                if (config.showTimeSplits()) {
+                    panel.add(timeSplitsPanel);
+                    panel.add(Box.createRigidArea(new Dimension(0, 15)));
+                }
+
+                if (config.showRegularDrops()) {
+                    panel.add(regularDrops);
+                    panel.add(Box.createRigidArea(new Dimension(0, 20)));
+                }
+
+                if (config.showSplitChanger()) {
+                    panel.add(changePurples);
+                }
+
+                panel.revalidate();
+                panel.repaint();
+            });
+        }
+
+        if (config.showTitle()) {
             panel.add(title);
+        }
+
+        if (config.showFilters()) {
             panel.add(filterPanel);
-            panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        }
+
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
+
+        if (config.showKillsLogged()) {
             panel.add(killsLoggedPanel);
             panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        }
+
+        if (config.showUniquesTable()) {
             panel.add(uniquesPanel, BorderLayout.CENTER);
             panel.add(Box.createRigidArea(new Dimension(0, 5)));
-            if (isTob) {
-                panel.add(mvpPanel);
-            }
-            else {
-                panel.add(pointsPanel);
-            }
+        }
+
+        if (isTob && config.showMVPs()) {
+            panel.add(mvpPanel);
             panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        }
+        else if (config.showPoints()){
+            panel.add(pointsPanel);
+            panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        }
+
+        if (config.showSplitGPEarned()) {
             panel.add(splitsEarnedPanel);
             panel.add(Box.createRigidArea(new Dimension(0, 15)));
+        }
+
+        if (config.showTimeSplits()) {
+            panel.add(timeSplitsPanel);
+            panel.add(Box.createRigidArea(new Dimension(0, 15)));
+        }
+
+        if (config.showRegularDrops()) {
             panel.add(regularDrops);
             panel.add(Box.createRigidArea(new Dimension(0, 20)));
+        }
+
+        if (config.showSplitChanger()) {
             panel.add(changePurples);
-
-            panel.revalidate();
-            panel.repaint();
-        });
-
-        panel.add(title);
-        panel.add(filterPanel);
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
-        panel.add(killsLoggedPanel);
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
-        panel.add(uniquesPanel, BorderLayout.CENTER);
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
-        if (isTob) {
-            panel.add(mvpPanel);
         }
-        else {
-            panel.add(pointsPanel);
-        }
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
-        panel.add(splitsEarnedPanel);
-        panel.add(Box.createRigidArea(new Dimension(0, 15)));
-        panel.add(regularDrops);
-        panel.add(Box.createRigidArea(new Dimension(0, 20)));
-        panel.add(changePurples);
 
         panel.revalidate();
         panel.repaint();
@@ -321,24 +385,27 @@ public class RaidTrackerPanel extends PluginPanel {
             ArrayList<RaidTracker> l;
             ArrayList<RaidTracker> l2;
 
-            if (unique.getName().matches("Metamorphatic Dust")) {
-                l = filterDustReceivers();
-                l2 = filterOwnDusts(l);
-                isDust = true;
-            }
-            else if (unique.getName().matches("Twisted Kit")) {
-                l = filterKitReceivers();
-                l2 = filterOwnKits(l);
-                isKit = true;
-            }
-            else if (unique.getName().matches("Olmlet") || unique.getName().matches("Lil' Zik")) {
-                l = filterPetReceivers();
-                l2 =filterOwnPets(l);
-                isPet = true;
-            }
-            else {
-                l = filterRTListByName(unique.getName());
-                l2 = filterOwnDrops(l);
+            switch (unique.getName()) {
+                case "Metamorphic Dust":
+                    l = filterDustReceivers();
+                    l2 = filterOwnDusts(l);
+                    isDust = true;
+                    break;
+                case "Twisted Kit":
+                    l = filterKitReceivers();
+                    l2 = filterOwnKits(l);
+                    isKit = true;
+                    break;
+                case "Olmlet":
+                case "Lil' Zik":
+                    l = filterPetReceivers();
+                    l2 = filterOwnPets(l);
+                    isPet = true;
+                    break;
+                default:
+                    l = filterRTListByName(unique.getName());
+                    l2 = filterOwnDrops(l);
+                    break;
             }
 
             amountSeen = Integer.toString(l.size());
@@ -362,7 +429,7 @@ public class RaidTrackerPanel extends PluginPanel {
 
             int bottomBorder = 1;
 
-            if (unique.getName().equals("Olmlet") || unique.getName().equals("Lil' Zik")) {
+            if (isPet) {
                 bottomBorder = 0;
             }
 
@@ -498,7 +565,6 @@ public class RaidTrackerPanel extends PluginPanel {
         if (loaded) {
             Map<Integer, RaidTrackerItem> uniqueIDs = new HashMap<>();
             try {
-                //TODO: quite slow, see if adding of the regulardrops panel can be added later so the updateview thread doesn't have to wait
                 uniqueIDs = getDistinctRegularDrops().get();
             } catch (InterruptedException | ExecutionException e) {
                 uniqueIDs = new HashMap<>();
@@ -655,7 +721,8 @@ public class RaidTrackerPanel extends PluginPanel {
                 wrapper.add(titleWrapper);
                 wrapper.add(Box.createRigidArea(new Dimension(0, 2)));
 
-                for (RaidTracker RT : purpleList) {
+                for (int i = 0; i < Math.min(purpleList.size(), 10); i++) {
+                    RaidTracker RT = purpleList.get(i);
                     SplitChanger SC = new SplitChanger(itemManager, RT, this);
                     SCList.add(SC);
                     wrapper.add(SC);
@@ -707,7 +774,7 @@ public class RaidTrackerPanel extends PluginPanel {
 
         JComboBox<String> cm = new JComboBox<>(new String []{"CM & Normal", "Normal Only", "CM Only"});
         cm.setFocusable(false);
-        cm.setPreferredSize(new Dimension(108,25));
+        cm.setPreferredSize(new Dimension(110,25));
         cm.setSelectedItem(cmFilter);
 
         cm.addActionListener(e -> {
@@ -719,11 +786,31 @@ public class RaidTrackerPanel extends PluginPanel {
 
         JComboBox<String> mvp = new JComboBox<>(new String []{"Both", "My MVP", "Not My MVP"});
         mvp.setFocusable(false);
-        mvp.setPreferredSize(new Dimension(108,25));
+        mvp.setPreferredSize(new Dimension(110,25));
         mvp.setSelectedItem(mvpFilter);
 
         mvp.addActionListener(e -> {
             mvpFilter = mvp.getSelectedItem().toString();
+            if (loaded) {
+                updateView();
+            }
+        });
+
+        JComboBox<String> teamSize;
+
+        if (isTob) {
+            teamSize = new JComboBox<>(new String []{"All sizes", "Solo", "Duo", "Trio", "4-man", "5-man"});
+        }
+        else {
+            teamSize = new JComboBox<>(new String []{"All sizes", "Solo", "Duo", "Trio", "4-man", "5-man", "6-man", "7-man", "8-10 Players", "11-14 Players", "15-24 Players", "24+ Players"});
+        }
+
+        teamSize.setFocusable(false);
+        teamSize.setPreferredSize(new Dimension(110,25));
+        teamSize.setSelectedItem(teamSizeFilter);
+
+        teamSize.addActionListener(e -> {
+            teamSizeFilter = teamSize.getSelectedItem().toString();
             if (loaded) {
                 updateView();
             }
@@ -744,6 +831,12 @@ public class RaidTrackerPanel extends PluginPanel {
         else {
             wrapper.add(cm, c);
         }
+
+        c.gridy = 3;
+        wrapper.add(Box.createRigidArea(new Dimension(0, 2)), c);
+
+        c.gridy = 4;
+        wrapper.add(teamSize, c);
 
         JPanel buttonWrapper = new JPanel();
         buttonWrapper.setPreferredSize(new Dimension(50, 20));
@@ -830,6 +923,77 @@ public class RaidTrackerPanel extends PluginPanel {
         return wrapper;
     }
 
+    private JPanel getTimeSplitsPanel() {
+        final JPanel wrapper = new JPanel();
+
+        if (loaded) {
+            wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
+            wrapper.setBorder(new EmptyBorder(3, 0, 0, 0));
+            wrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
+
+            final JPanel title = new JPanel();
+
+            title.setBorder(new EmptyBorder(3, 20, 3, 10));
+            title.setLayout(new GridLayout(0, 1));
+            title.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
+
+            JLabel textLabel = textPanel("Best Recorded Times");
+
+            title.add(textLabel);
+
+            JPanel timeTable = new JPanel();
+            timeTable.setLayout(new GridLayout(0, 2));
+            timeTable.setBorder(new EmptyBorder(5,3,1,3));
+            timeTable.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+
+            if (isTob) {
+                timeTable.add(textPanel("Maiden Time", 0));
+                timeTable.add(textPanel(secondsToMinuteString(getFilteredRTList().stream().filter(RT -> RT.getMaidenTime() > 0).min(comparing(RaidTracker::getMaidenTime)).orElse(new RaidTracker()).getMaidenTime()), 1));
+                timeTable.add(textPanel("Bloat Time", 0));
+                timeTable.add(textPanel(secondsToMinuteString(getFilteredRTList().stream().filter(RT -> RT.getBloatTime() > 0).min(comparing(RaidTracker::getBloatTime)).orElse(new RaidTracker()).getBloatTime()), 1));
+                timeTable.add(textPanel("Nylo Time", 0));
+                timeTable.add(textPanel(secondsToMinuteString(getFilteredRTList().stream().filter(RT -> RT.getNyloTime() > 0).min(comparing(RaidTracker::getNyloTime)).orElse(new RaidTracker()).getNyloTime()), 1));
+                timeTable.add(textPanel("Sotetseg Time", 0));
+                timeTable.add(textPanel(secondsToMinuteString(getFilteredRTList().stream().filter(RT -> RT.getSotetsegTime() > 0).min(comparing(RaidTracker::getSotetsegTime)).orElse(new RaidTracker()).getSotetsegTime()), 1));
+                timeTable.add(textPanel("Xarpus Time", 0));
+                timeTable.add(textPanel(secondsToMinuteString(getFilteredRTList().stream().filter(RT -> RT.getNyloTime() > 0).min(comparing(RaidTracker::getXarpusTime)).orElse(new RaidTracker()).getXarpusTime()), 1));
+                timeTable.add(textPanel("Verzik Time", 0));
+                timeTable.add(textPanel(secondsToMinuteString(getFilteredRTList().stream().filter(RT -> RT.getVerzikTime() > 0).min(comparing(RaidTracker::getVerzikTime)).orElse(new RaidTracker()).getVerzikTime()), 1));
+            } else {
+                timeTable.add(textPanel("Upper Level", 0));
+                timeTable.add(textPanel(secondsToMinuteString(getFilteredRTList().stream().filter(RT -> RT.getUpperTime() > 0).min(comparing(RaidTracker::getUpperTime)).orElse(new RaidTracker()).getUpperTime()), 1));
+
+                if (!cmFilter.equals("Normal Only")) {
+                    int middleTime = getFilteredRTList().stream().filter(RT -> RT.getMiddleTime() > 0).filter(RT -> RT.getMiddleTime() > 0).min(comparing(RaidTracker::getMiddleTime)).orElse(new RaidTracker()).getMiddleTime();
+                    if (middleTime > 0) {
+                        timeTable.add(textPanel("Middle Level", 0));
+                        timeTable.add(textPanel(secondsToMinuteString(middleTime), 1));
+                    }
+
+                }
+                timeTable.add(textPanel("Lower Level", 0));
+                timeTable.add(textPanel(secondsToMinuteString(getFilteredRTList().stream().filter(RT -> RT.getLowerTime() > 0).min(comparing(RaidTracker::getLowerTime)).orElse(new RaidTracker()).getLowerTime()), 1));
+
+                timeTable.add(textPanel("Olm Time", 0));
+
+                RaidTracker olmTimeRT = getFilteredRTList().stream()
+                        .filter(RT -> RT.getLowerTime() > 0 && RT.getRaidTime() > 0)
+                        .min(Comparator.comparingInt(o -> o.getRaidTime() - o.getLowerTime()))
+                        .orElse(new RaidTracker());
+
+                timeTable.add(textPanel(secondsToMinuteString(olmTimeRT.getRaidTime() - olmTimeRT.getLowerTime()), 1));
+            }
+
+            timeTable.add(textPanel("Overall Time", 2));
+            timeTable.add(textPanel(secondsToMinuteString(getFilteredRTList().stream().filter(RT -> RT.getRaidTime() > 0).min(comparing(RaidTracker::getRaidTime)).orElse(new RaidTracker()).getRaidTime()), 3));
+
+            wrapper.add(title);
+            wrapper.add(timeTable);
+        }
+
+        return wrapper;
+    }
+
     public void setUpdateButton(boolean b) {
         update.setEnabled(b);
         update.setBackground(ColorScheme.BRAND_ORANGE);
@@ -843,6 +1007,32 @@ public class RaidTrackerPanel extends PluginPanel {
         label.setVerticalAlignment(SwingConstants.CENTER);
         label.setHorizontalAlignment(SwingConstants.CENTER);
         label.setFont(FontManager.getRunescapeSmallFont());
+
+        return label;
+    }
+
+    public JLabel textPanel(String text, int borderOptions) {
+        JLabel label = new JLabel();
+        label.setText(text);
+        label.setForeground(Color.WHITE);
+        label.setVerticalAlignment(SwingConstants.CENTER);
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+        label.setFont(FontManager.getRunescapeSmallFont());
+
+        if (borderOptions == 0) {
+            label.setBorder(new CompoundBorder(
+                    new MatteBorder(0,0,1,1,ColorScheme.LIGHT_GRAY_COLOR.darker()),
+                    new EmptyBorder(5,3,5,3)));
+        }
+        else if (borderOptions == 1) {
+            label.setBorder(new MatteBorder(0,0,1,0,ColorScheme.LIGHT_GRAY_COLOR.darker()));
+        }
+        else if (borderOptions == 2) {
+            label.setBorder(new MatteBorder(0,0,0,1,ColorScheme.LIGHT_GRAY_COLOR.darker()));
+        }
+        else {
+            label.setBorder(new MatteBorder(0,0,0,0,ColorScheme.LIGHT_GRAY_COLOR.darker()));
+        }
 
         return label;
     }
@@ -890,8 +1080,7 @@ public class RaidTrackerPanel extends PluginPanel {
 
     public ArrayList<RaidTracker> filterRTListByName(String name) {
         if (loaded) {
-
-            return getFilteredRTList().stream().filter(RT -> name.toLowerCase().matches(RT.getSpecialLoot().toLowerCase()))
+            return getFilteredRTList().stream().filter(RT -> name.toLowerCase().equals(RT.getSpecialLoot().toLowerCase()))
                     .collect(Collectors.toCollection(ArrayList::new));
         }
         return new ArrayList<>();
@@ -1040,7 +1229,7 @@ public class RaidTrackerPanel extends PluginPanel {
     public Future<Map<Integer, RaidTrackerItem>> getDistinctRegularDrops()  {
         CompletableFuture<Map<Integer, RaidTrackerItem>> future = new CompletableFuture<>();
 
-        clientThread.invokeLater(() -> {
+        clientThread.invoke(() -> {
 
             if (loaded) {
                 HashSet<Integer> uniqueIDs = new HashSet<>();
@@ -1125,25 +1314,75 @@ public class RaidTrackerPanel extends PluginPanel {
             }
         }
 
-        LocalDate today = LocalDate.now();
-        LocalDate lastWeek = today.minusDays(7);
-        LocalDate lastMonth = today.minusDays(30);
-        LocalDate lastYear = today.minusDays(365);
+        switch (teamSizeFilter) {
+            case "Solo":
+                tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() == 1))
+                        .collect(Collectors.toCollection(ArrayList::new));
+                break;
+            case "Duo":
+                tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() == 2))
+                        .collect(Collectors.toCollection(ArrayList::new));
+                break;
+            case "Trio":
+                tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() == 3))
+                        .collect(Collectors.toCollection(ArrayList::new));
+                break;
+            case "4-man":
+                tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() == 4))
+                        .collect(Collectors.toCollection(ArrayList::new));
+                break;
+            case "5-man":
+                tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() == 5))
+                        .collect(Collectors.toCollection(ArrayList::new));
+                break;
+            case "6-man":
+                tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() == 6))
+                        .collect(Collectors.toCollection(ArrayList::new));
+                break;
+            case "7 Players":
+                tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() == 7))
+                        .collect(Collectors.toCollection(ArrayList::new));
+                break;
+            case "8-10 Players":
+                tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() >= 8 && RT.getTeamSize() <= 10))
+                        .collect(Collectors.toCollection(ArrayList::new));
+                break;
+            case "11-14 Players":
+                tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() >= 11 && RT.getTeamSize() <= 14))
+                        .collect(Collectors.toCollection(ArrayList::new));
+                break;
+            case "15+ Players":
+                tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() >= 15))
+                        .collect(Collectors.toCollection(ArrayList::new));
+                break;
+            default:
+                //all sizes
+
+        }
+
+        //if people want to crash my plugin using a system year of before 1970, that's fine
+        long now = System.currentTimeMillis();
+
+
+        long yesterday = now - 86400000L;
+        long lastWeek = now - 604800000L;
+        long lastMonth = now - 2629746000L;
+        long lastYear = now - 31536000000L;
 
         switch (dateFilter) {
             case "All Time":
                 return tempRTList;
             case "Today":
-                return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().equals(today))
+                return tempRTList.stream().filter(RT -> RT.getDate() > yesterday)
                         .collect(Collectors.toCollection(ArrayList::new));
             case "Last Week":
-                return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().isAfter(lastWeek))
+                return tempRTList.stream().filter(RT -> RT.getDate() > lastWeek)
                         .collect(Collectors.toCollection(ArrayList::new));
             case "Last Month":
-                return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().isAfter(lastMonth))
+                return tempRTList.stream().filter(RT -> RT.getDate() > lastMonth)
                         .collect(Collectors.toCollection(ArrayList::new));
             case "Last Year":
-                return tempRTList.stream().filter(RT -> Instant.ofEpochMilli(RT.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().isAfter(lastYear))
+                return tempRTList.stream().filter(RT -> RT.getDate() > lastYear)
                         .collect(Collectors.toCollection(ArrayList::new));
             case "Last X Kills":
                 ArrayList<RaidTracker> tempUniqueKills = getDistinctKills(tempRTList);
@@ -1200,6 +1439,14 @@ public class RaidTrackerPanel extends PluginPanel {
             loadRTList();
         }
     }
+
+    private String secondsToMinuteString(int seconds) {
+        if (seconds < 0) {
+            return "No time";
+        }
+        return seconds / 60 + ":" + (seconds % 60 < 10 ? "0" : "") + seconds % 60;
+    }
+
 
 }
 

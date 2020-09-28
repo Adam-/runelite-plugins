@@ -28,6 +28,76 @@ import static org.mockito.Mockito.*;
 public class RaidTrackerTest extends TestCase
 {
 
+
+	@Test
+	public void TestLootSplits() {
+		//TODO: double purples
+		RaidTracker raidTracker = new RaidTracker();
+		raidTracker.setInRaidChambers(true);
+		raidTracker.setRaidComplete(true);
+
+		List<ItemPrice> kodaiTestList = new ArrayList<>();
+
+		ItemPrice kodaiTest = new ItemPrice();
+
+		kodaiTest.setId(0);
+		kodaiTest.setName("Kodai Insignia");
+		kodaiTest.setPrice(50505050);
+
+		kodaiTestList.add(kodaiTest);
+
+		Player player = mock(Player.class);
+
+		RaidTrackerPanel panel = mock(RaidTrackerPanel.class);
+		raidTrackerPlugin.setPanel(panel);
+
+		FileReadWriter fw = mock(FileReadWriter.class);
+		raidTrackerPlugin.setFw(fw);
+
+		when(itemManager.search(anyString())).thenReturn(kodaiTestList);
+		when(client.getLocalPlayer()).thenReturn(player);
+		when(player.getName()).thenReturn("Canvasba");
+		when(raidTrackerConfig.FFACutoff()).thenReturn(1000000);
+
+		raidTracker.setTeamSize(3);
+
+		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "K1NG DK - Kodai insignia", "", 0);
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
+
+
+		raidTrackerPlugin.setSplits(raidTracker);
+
+		assertTrue(raidTracker.getLootSplitReceived() > -1);
+		assertEquals(-1, raidTracker.lootSplitPaid);
+
+
+		raidTracker.setSpecialLootReceiver("Canvasba");
+		raidTracker.setSpecialLootInOwnName(true);
+		raidTrackerPlugin.setSplits(raidTracker);
+
+		assertTrue(raidTracker.getLootSplitReceived() > -1);
+		assertTrue(raidTracker.getLootSplitPaid() > -1);
+
+		assertFalse(raidTracker.isFreeForAll());
+
+		//check ffa for below 1m split
+		raidTracker.setSpecialLootValue(2000000);
+		raidTracker.setLootSplitPaid(-1);
+		raidTrackerPlugin.setSplits(raidTracker);
+
+		assertTrue(raidTracker.isFreeForAll());
+		assertEquals(raidTracker.getLootSplitReceived(), 2000000);
+		assertEquals(-1, raidTracker.getLootSplitPaid());
+
+		raidTracker.setSpecialLootReceiver("K1NG DK");
+		raidTracker.setSpecialLootInOwnName(false);
+
+		raidTracker.setLootSplitReceived(-1);
+		raidTrackerPlugin.setSplits(raidTracker);
+
+		assertEquals(-1 , raidTracker.getLootSplitReceived());
+	}
+
 	@Mock
 	@Bind
 	private Client client;
@@ -63,7 +133,7 @@ public class RaidTrackerTest extends TestCase
 		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Congratulations - your raid is complete! Team size: 15 Players Duration: 50:26 Personal best: 31:12", "", 0);
 		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
-		assertEquals(true, raidTracker.isRaidComplete());
+		assertTrue(raidTracker.isRaidComplete());
 	}
 
 	@Test
@@ -133,8 +203,13 @@ public class RaidTrackerTest extends TestCase
 		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Canvasba found something special: Avernic defender hilt", "", 0);
 		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
-		assertEquals("canvasba", raidTracker.getSpecialLootReceiver());
-		assertEquals("avernic defender hilt", raidTracker.getSpecialLoot());
+		message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Canvasba found something special: Lil\\u0027 Zik", "", 0);
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
+
+		assertEquals("Canvasba", raidTracker.getSpecialLootReceiver());
+		assertEquals("Avernic defender hilt", raidTracker.getSpecialLoot());
+		assertFalse(raidTracker.petReceiver.isEmpty());
+		assertEquals("Canvasba", raidTracker.getPetReceiver());
 		assertEquals(50505050, raidTracker.getSpecialLootValue());
 	}
 
@@ -165,83 +240,13 @@ public class RaidTrackerTest extends TestCase
 		ChatMessage message  = new ChatMessage(null, ChatMessageType.GAMEMESSAGE, "", "Your completed Chambers of Xeric Challenge Mode count is: 57.", "", 0);
 		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
-		assertEquals(true, raidTracker.isChallengeMode());
+		assertTrue(raidTracker.isChallengeMode());
 		assertEquals(57, raidTracker.getCompletionCount());
 
 		message.setMessage("Your completed Chambers of Xeric count is: 443");
 		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
 		assertEquals(443, raidTracker.getCompletionCount());
-	}
-
-
-	@Test
-	public void TestLootSplits() {
-		//TODO: double purples
-		RaidTracker raidTracker = new RaidTracker();
-		raidTracker.setInRaidChambers(true);
-		raidTracker.setRaidComplete(true);
-
-		List<ItemPrice> kodaiTestList = new ArrayList<>();
-
-		ItemPrice kodaiTest = new ItemPrice();
-
-		kodaiTest.setId(0);
-		kodaiTest.setName("Kodai Insignia");
-		kodaiTest.setPrice(50505050);
-
-		kodaiTestList.add(kodaiTest);
-
-		Player player = mock(Player.class);
-
-		RaidTrackerPanel panel = mock(RaidTrackerPanel.class);
-		raidTrackerPlugin.setPanel(panel);
-
-		FileReadWriter fw = mock(FileReadWriter.class);
-		raidTrackerPlugin.setFw(fw);
-
-		when(itemManager.search(anyString())).thenReturn(kodaiTestList);
-		when(client.getLocalPlayer()).thenReturn(player);
-		when(player.getName()).thenReturn("Canvasba");
-		when(raidTrackerConfig.FFACutoff()).thenReturn(1000000);
-
-		raidTracker.setTeamSize(3);
-
-		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "K1NG DK - Kodai insignia", "", 0);
-		raidTrackerPlugin.checkChatMessage(message, raidTracker);
-
-
-		raidTrackerPlugin.setSplits(raidTracker);
-
-		assertTrue(raidTracker.getLootSplitReceived() > -1);
-		assertEquals(-1, raidTracker.lootSplitPaid);
-
-
-		raidTracker.setSpecialLootReceiver("Canvasba");
-		raidTracker.setSpecialLootInOwnName(true);
-		raidTrackerPlugin.setSplits(raidTracker);
-
-		assertTrue(raidTracker.getLootSplitReceived() > -1);
-		assertTrue(raidTracker.getLootSplitPaid() > -1);
-
-		assertFalse(raidTracker.isFreeForAll());
-
-		//check ffa for below 1m split
-		raidTracker.setSpecialLootValue(2000000);
-		raidTracker.setLootSplitPaid(-1);
-		raidTrackerPlugin.setSplits(raidTracker);
-
-		assertTrue(raidTracker.isFreeForAll());
-		assertEquals(raidTracker.getLootSplitReceived(), 2000000);
-		assertEquals(-1, raidTracker.getLootSplitPaid());
-
-		raidTracker.setSpecialLootReceiver("K1NG DK");
-		raidTracker.setSpecialLootInOwnName(false);
-
-		raidTracker.setLootSplitReceived(-1);
-		raidTrackerPlugin.setSplits(raidTracker);
-
-		assertEquals(-1 , raidTracker.getLootSplitReceived());
 	}
 
 

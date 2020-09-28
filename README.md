@@ -17,13 +17,25 @@ Logs COX and TOB data, like purple splits, total points (in COX), or the amount 
 Data is stored at `~/.runelite/raid-data-tracker/USERNAME/RAID/raid_tracker_data.log` where `USERNAME` is your account's login name (or email address), and `RAID` is either cox or tob.
 
 ## Bugs & Problems
-If you find any bugs or problems, feel free to add me on discord, and I'll accept you asap: baniraai#0996
+If you find any bugs or problems, feel free to add me on discord, and I'll accept you asap: `baniraai#0996`
 
 ## Changelog:
 
-### v1.3.1
-- Fixed a bug caused by not importing the StringEscapeUtils dependency in build.gradle (not tested).
-- Improved ui performance by not pausing the swing thread, but updating the panel when the variable is loaded.
+### v1.4
+- Added the option to disable any panel within the ui, if desired.
+- Added the option to filter by team size.
+- Added a time splits panel where the best splits for each boss/level completion can be seen
+- Added an icon for the plugin hub.
+- Added a maximum for the amount of uniques shown in the Change Purple Splits Panel.
+- Changed the way the Today filter works. Now it tracks everything from the past 24 hours, rather than every drop on that day after 12 PM.
+- Fixed a bug where all uniques were set to FFA, even though "default FFA" wasn't checked.
+- Fixed a bug where duplicate dust and kit recipients were tracked wrongly (this was because duplicate dusts and kits are split by a comma, rather than by a new line).
+- Fixed a bug where a unique wouldn't show in the uniques table even though it is in the log file.
+- Fixed a bug where it was possible that loot would write to the log file multiple times
+- Fixed a bug where the TOB pet would track with the regular uniques
+- Fixed a typo in Metamorphic Dust.
+- Removed any StringEscapeUtils usage from the plugin, and changed the function that used it accordingly. This to avoid a plugin crash for some players.
+- Improved ui performance by not pausing the swing thread, but instead updating the panel when the variable is loaded.
 
 ### v1.3
 - Added Theatre of Blood to the plugin.
