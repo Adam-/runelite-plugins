@@ -34,6 +34,7 @@ If you find any bugs or problems, feel free to add me on discord, and I'll accep
 - Fixed a bug where it was possible that loot would write to the log file multiple times
 - Fixed a bug where the TOB pet would track with the regular uniques
 - Fixed a typo in Metamorphic Dust.
+- Clue scrolls now *really* stack, there was a bug which caused the clues to not stack, contrary to the patch notes of v1.3
 - Removed any StringEscapeUtils usage from the plugin, and changed the function that used it accordingly. This to avoid a plugin crash for some players.
 - Improved ui performance by not pausing the swing thread, but instead updating the panel when the variable is loaded.
 

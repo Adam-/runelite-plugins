@@ -9,6 +9,8 @@ import org.apache.commons.text.StringEscapeUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
@@ -27,6 +29,7 @@ public class SplitChanger extends JPanel {
     public final RaidTracker raidTracker;
     private final ItemManager itemManager;
     private final RaidTrackerPanel raidTrackerPanel;
+    private boolean locked = false;
 
     public SplitChanger(final ItemManager itemManager, final RaidTracker raidTracker, final RaidTrackerPanel raidTrackerPanel) {
         this.itemManager = itemManager;
@@ -90,27 +93,30 @@ public class SplitChanger extends JPanel {
         splitReceived.setText(format(atleastZero(raidTracker.getLootSplitReceived())));
         splitReceived.setToolTipText(NumberFormat.getInstance().format(atleastZero(raidTracker.getLootSplitReceived())));
 
-        splitReceived.addActionListener(e -> {
-            int value = parse(splitReceived.getText());
+        splitReceived.getDocument().addDocumentListener((SimpleDocumentListener) e -> {
+            if (!locked) {
+                int value = parse(splitReceived.getText());
 
-            if (value != raidTracker.getLootSplitReceived()) {
-                raidTracker.setLootSplitReceived(value);
-                if (raidTracker.isFreeForAll()) {
-                    raidTracker.setSpecialLootValue(value);
+                if (value != raidTracker.getLootSplitReceived() && value != -5) {
+                    raidTracker.setLootSplitReceived(value);
+                    if (raidTracker.isFreeForAll()) {
+                        raidTracker.setSpecialLootValue(value);
+                    } else {
+                        raidTracker.setSpecialLootValue(value * raidTracker.getTeamSize());
+                        setSplit();
+                    }
+
+                    splitReceived.setToolTipText(NumberFormat.getInstance().format(atleastZero(raidTracker.getLootSplitReceived())));
+
+                    variablesChanged();
                 }
-                else {
-                    raidTracker.setSpecialLootValue(value * raidTracker.getTeamSize());
-                    setSplit();
-                }
-
-                splitReceived.setText(format(atleastZero(raidTracker.getLootSplitReceived())));
-                splitReceived.setToolTipText(NumberFormat.getInstance().format(atleastZero(raidTracker.getLootSplitReceived())));
-                splitReceivedLabel.requestFocusInWindow();
-
-                variablesChanged();
             }
         });
 
+        splitReceived.addActionListener(e -> {
+            //format the number when losing focus
+            splitReceived.setText(format(atleastZero(raidTracker.getLootSplitReceived())));
+        });
 
         splitReceivedWrapper.add(splitReceivedLabel);
         splitReceivedWrapper.add(splitReceived);
@@ -125,6 +131,8 @@ public class SplitChanger extends JPanel {
         ffa.addActionListener((e) -> {
             raidTracker.setFreeForAll(ffa.isSelected());
 
+            locked = true;
+
             if (ffa.isSelected()) {
                 setFFA();
             }
@@ -135,6 +143,8 @@ public class SplitChanger extends JPanel {
             splitReceived.setToolTipText(NumberFormat.getInstance().format(atleastZero(raidTracker.getLootSplitReceived())));
 
             variablesChanged();
+
+            locked = false;
         });
 
         JPanel ReceivedWrapper = new JPanel();
@@ -167,12 +177,15 @@ public class SplitChanger extends JPanel {
         JFormattedTextField spinnerTextField = ((JSpinner.DefaultEditor) editor).getTextField();
         spinnerTextField.setColumns(2);
         teamSize.addChangeListener(e -> {
+            locked = true;
             raidTracker.setTeamSize(Integer.parseInt(teamSize.getValue().toString()));
             setSplit();
             splitReceived.setText(format(atleastZero(raidTracker.getLootSplitReceived())));
             splitReceived.setToolTipText(NumberFormat.getInstance().format(atleastZero(raidTracker.getLootSplitReceived())));
 
             variablesChanged();
+
+            locked = false;
         });
 
         teamSizeWrapper.add(teamSizeLabel);
@@ -300,6 +313,9 @@ public class SplitChanger extends JPanel {
     }
 
     public static int parse (String s) {
+        if (s == null || s.length() == 0) {
+            return -5;
+        }
         char c = s.charAt(s.length() - 1);
         if (Character.isLetter(c)) {
             int multiplier;
@@ -314,7 +330,7 @@ public class SplitChanger extends JPanel {
                 multiplier = 1000000000;
             }
             else {
-                return 0;
+                return -5;
             }
 
 
@@ -327,7 +343,7 @@ public class SplitChanger extends JPanel {
         else if (isNumeric(s)) {
             return (int) Math.round(Double.parseDouble(s));
         }
-        return 0;
+        return -5;
     }
 
     public static boolean isNumeric(String strNum) {
@@ -439,6 +455,25 @@ public class SplitChanger extends JPanel {
             sb.append(ch);
         }
         return sb.toString();
+    }
+
+    //also from stackoverflow
+    @FunctionalInterface
+    public interface SimpleDocumentListener extends DocumentListener {
+        void update(DocumentEvent e);
+
+        @Override
+        default void insertUpdate(DocumentEvent e) {
+            update(e);
+        }
+        @Override
+        default void removeUpdate(DocumentEvent e) {
+            update(e);
+        }
+        @Override
+        default void changedUpdate(DocumentEvent e) {
+            update(e);
+        }
     }
 
 }

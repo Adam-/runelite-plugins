@@ -580,13 +580,8 @@ public class RaidTrackerPanel extends PluginPanel {
                         for (RaidTrackerItem item : RT.getLootList()) {
                             RaidTrackerItem RTI = uniqueIDs.get(item.getId());
 
-                            if (RTI == null) {
-                                if (item.getName().toLowerCase().contains("clue")) {
-                                    RTI = uniqueIDs.get(12073);
-                                }
-                            }
-
-                            if (RTI != null) {
+                            //making sure to not change the clues here as it's been handled in getDistinctRegularDrops
+                            if (RTI != null && RTI.getId() != 12073) {
                                 int qty = RTI.getQuantity();
                                 RTI.setQuantity(qty + item.getQuantity());
 
@@ -1234,28 +1229,25 @@ public class RaidTrackerPanel extends PluginPanel {
             if (loaded) {
                 HashSet<Integer> uniqueIDs = new HashSet<>();
 
-                AtomicBoolean containsClue = new AtomicBoolean(false);
+                int clues = 0;
 
-                getFilteredRTList().forEach(RT -> RT.getLootList().forEach(item -> {
-                    boolean addToSet = true;
-                    for (RaidUniques unique : getUniquesList()) {
-                        if (item.getId() == unique.getItemID()) {
+                for (RaidTracker RT : getFilteredRTList()) {
+                    for (RaidTrackerItem item : RT.getLootList()) {
+                        boolean addToSet = true;
+                        for (RaidUniques unique : getUniquesList()) {
+                            if (item.getId() == unique.getItemID()) {
+                                addToSet = false;
+                                break;
+                            }
+                        }
+                        if (item.getName().toLowerCase().contains("clue")) {
                             addToSet = false;
-                            break;
+                            clues++;
+                        }
+                        if (addToSet) {
+                            uniqueIDs.add(item.id);
                         }
                     }
-                    if (item.getName().contains("Clue Scroll")) {
-                        addToSet = false;
-                        containsClue.set(true);
-                    }
-                    if (addToSet) {
-                        uniqueIDs.add(item.id);
-                    }
-                }));
-
-                if (containsClue.get()) {
-                    //12073 is the ID of a random elite clue
-                    uniqueIDs.add(12073);
                 }
 
                 Map<Integer, RaidTrackerItem> m = new HashMap<>();
@@ -1274,8 +1266,20 @@ public class RaidTrackerPanel extends PluginPanel {
 
                 }
 
-                future.complete(m);
-                return;
+                if (clues > 0) {
+                    int finalClues = clues;
+                    m.put(12073, new RaidTrackerItem() {
+                        {
+                            name = "Clue scroll (elite)";
+                            id = 12073;
+                            quantity = finalClues;
+                            price = itemManager.getItemPrice(12073);
+                        }
+                    });
+
+                    future.complete(m);
+                    return;
+                }
             }
 
             future.complete(new HashMap<>());
