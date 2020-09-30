@@ -28,7 +28,7 @@ dependencies {
 }
 
 group = 'raidtracker'
-version = '1.4'
+version = '1.4.1'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {

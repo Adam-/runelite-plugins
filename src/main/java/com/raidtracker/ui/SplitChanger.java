@@ -169,7 +169,7 @@ public class SplitChanger extends JPanel {
         teamSizeLabel.setHorizontalAlignment(SwingConstants.LEFT);
         teamSizeWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-        SpinnerNumberModel model = new SpinnerNumberModel(raidTracker.getTeamSize(), 1, 100, 1);
+        SpinnerNumberModel model = new SpinnerNumberModel(Math.min(Math.max(1, raidTracker.getTeamSize()), 100), 1, 100, 1);
         JSpinner teamSize = new JSpinner(model);
         teamSize.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
         Component editor = teamSize.getEditor();
@@ -178,7 +178,7 @@ public class SplitChanger extends JPanel {
         spinnerTextField.setColumns(2);
         teamSize.addChangeListener(e -> {
             locked = true;
-            raidTracker.setTeamSize(Integer.parseInt(teamSize.getValue().toString()));
+            raidTracker.setTeamSize(Math.min(Math.max(1, Integer.parseInt(teamSize.getValue().toString())), 100));
             setSplit();
             splitReceived.setText(format(atleastZero(raidTracker.getLootSplitReceived())));
             splitReceived.setToolTipText(NumberFormat.getInstance().format(atleastZero(raidTracker.getLootSplitReceived())));

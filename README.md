@@ -21,6 +21,11 @@ If you find any bugs or problems, feel free to add me on discord, and I'll accep
 
 ## Changelog:
 
+### v1.4.1
+- Fixed a bug where the regular drops always returned an empty list, effectively removing the regular drops from the ui.
+- Fixed a bug in the Split Changer panel, where the plugin would crash if a team size was outside of the boundaries (1 - 100). Now if the team size is outside of the boundaries, a 1 will be used if it's below the lower limit, and a 100 if it's above the upper limit.
+- Changed the plugin-hub name to Raid Data Tracker so that the name is more descriptive.
+
 ### v1.4
 - Added the option to disable any panel within the ui, if desired.
 - Added the option to filter by team size.

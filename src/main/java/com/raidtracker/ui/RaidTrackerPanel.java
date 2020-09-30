@@ -183,7 +183,7 @@ public class RaidTrackerPanel extends PluginPanel {
 
                 if (config.showRegularDrops()) {
                     panel.add(regularDrops);
-                    panel.add(Box.createRigidArea(new Dimension(0, 20)));
+                    panel.add(Box.createRigidArea(new Dimension(0, 15)));
                 }
 
                 if (config.showSplitChanger()) {
@@ -236,7 +236,7 @@ public class RaidTrackerPanel extends PluginPanel {
 
         if (config.showRegularDrops()) {
             panel.add(regularDrops);
-            panel.add(Box.createRigidArea(new Dimension(0, 20)));
+            panel.add(Box.createRigidArea(new Dimension(0, 15)));
         }
 
         if (config.showSplitChanger()) {
@@ -1224,7 +1224,7 @@ public class RaidTrackerPanel extends PluginPanel {
     public Future<Map<Integer, RaidTrackerItem>> getDistinctRegularDrops()  {
         CompletableFuture<Map<Integer, RaidTrackerItem>> future = new CompletableFuture<>();
 
-        clientThread.invoke(() -> {
+        clientThread.invokeLater(() -> {
 
             if (loaded) {
                 HashSet<Integer> uniqueIDs = new HashSet<>();
@@ -1276,10 +1276,10 @@ public class RaidTrackerPanel extends PluginPanel {
                             price = itemManager.getItemPrice(12073);
                         }
                     });
-
-                    future.complete(m);
-                    return;
                 }
+
+                future.complete(m);
+                return;
             }
 
             future.complete(new HashMap<>());
