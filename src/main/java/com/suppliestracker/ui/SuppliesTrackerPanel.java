@@ -78,6 +78,7 @@ public class SuppliesTrackerPanel extends PluginPanel
 	private int overallSuppliesUsed;
 	private int overallCost;
 	private final SuppliesTrackerPlugin plugin;
+	public JButton switchTrack;
 
 
 	public SuppliesTrackerPanel(final ItemManager itemManager, SuppliesTrackerPlugin plugin)
@@ -139,6 +140,14 @@ public class SuppliesTrackerPanel extends PluginPanel
 
 		overallPanel.setVisible(false);
 		logsContainer.setVisible(true);
+
+		switchTrack = new JButton("Switch Tracking");
+		switchTrack.addActionListener(e ->
+		{
+			plugin.switchTracking();
+		});
+
+		layoutPanel.add(switchTrack);
 
 		errorPanel.setContent("Supply trackers", "You have not used any supplies yet.\nCheck Configs for options.     \nMake sure to set blowpipe dart in configs");
 		add(errorPanel);
