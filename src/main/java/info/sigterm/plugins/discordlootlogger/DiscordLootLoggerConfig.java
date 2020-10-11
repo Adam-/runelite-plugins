@@ -52,4 +52,14 @@ public interface DiscordLootLoggerConfig extends Config
 	{
 		return 0;
 	}
+
+	@ConfigItem(
+		keyName = "stackvalue",
+		name = "Include Stack Value",
+		description = "Include the value of each stack."
+	)
+	default boolean stackValue()
+	{
+		return true;
+	}
 }
