@@ -35,6 +35,17 @@ import net.runelite.client.config.Keybind;
 public interface RegionLockerConfig extends Config
 {
 	@ConfigItem(
+			keyName = "dropdownRegions",
+			name = "Current Region",
+			description = "Show all region map limitations",
+			position = -1
+	)
+	default TrailblazerRegion dropdownRegions()
+	{
+		return TrailblazerRegion.NONE;
+	}
+
+	@ConfigItem(
 			keyName = "renderLockedRegions",
 			name = "Enable gray chunks",
 			description = "Adds graphical change to all chunk that are locked",
