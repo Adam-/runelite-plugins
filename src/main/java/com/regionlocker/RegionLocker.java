@@ -79,7 +79,7 @@ public class RegionLocker
 
 		regions.clear();
 
-		setRegions(StringToList(config.dropdownRegions().getRegions()), RegionTypes.UNLOCKED);
+		//setRegions(StringToList(config.trailblazerRegion().getRegions()), RegionTypes.UNLOCKED);
 
 		String unlockedString = config.unlockedRegions();
 		List<String> unlockedRegions = StringToList(unlockedString);

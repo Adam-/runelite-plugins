@@ -8,7 +8,6 @@ import java.util.Map;
 @Getter
 public enum TrailblazerRegion
 {
-    //<editor-fold desc="Enums">
     NONE("None", ""),
     MISTHALIN("Misthalin", "12079, 12335, 12080, 12336, 12592, 12337, 12593, 12849, 12338, 12594, 12850, 12339, 12595, 12851, 12340, 12596, 12852, 13108, 13364, 12341, 12597, 12853, 13109, 13365, 12342, 12598, 12854, 13110, 13366, 13622, 14142, 14398, 14654, 14910, 15166, 14653, 14909, 14652, 14908, 15164, 14395, 14651, 14907, 15163, 14394, 14650, 14906, 15162, 14393, 14905, 15418"),
     KARAMJA("Karamja", "11315, 11314, 10802, 11058, 10801, 11057, 11313, 11569, 11825, 11056, 11312, 11568, 11055, 11311, 11567, 11823, 11054, 11310, 11566, 11822,11053, 11309, 11565, 11821"),
@@ -23,21 +22,8 @@ public enum TrailblazerRegion
     UPPER_ZEAH("Upper Zeah", "5690, 5691, 5692, 5693, 5946, 5947, 5948, 5949, 5050, 6202, 6203, 6204, 6206, 6205, 6207, 6458, 6458, 6459, 6460, 6461, 6462, 6463, 6714, 6715, 6716, 6717, 6718, 6719, 6970, 6971, 6972, 6973, 6974, 7226, 7227, 7228, 7229, 7484, 7485"),
     KEBOS("Kebos", "4662, 4663, 4664, 4665, 4666, 4667, 4918, 4919, 4920, 4921, 4922, 4923, 4924, 5174, 5175, 5176, 5177, 5178, 5179, 5180, 5430, 5431, 5432, 5433, 5434, 5435, 5436");
 
-    public static final Map<String, TrailblazerRegion> trailblazerRegions;
-    static
-    {
-        ImmutableMap.Builder<String, TrailblazerRegion> builder = new ImmutableMap.Builder<>();
-
-        for (TrailblazerRegion region : values())
-        {
-            builder.put(region.getName(), region);
-        }
-
-        trailblazerRegions = builder.build();
-    }
-
-    public final String name;
-    public final String regions;
+    public String name;
+    public String regions;
 
     TrailblazerRegion(String name, String regions)
     {
