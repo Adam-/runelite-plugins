@@ -96,12 +96,16 @@ class RegionLockerOverlay extends Overlay
 		int regionPixelSize = (int) Math.ceil(REGION_SIZE * pixelsPerTile);
 
 		Point mousePos = client.getMouseCanvasPosition();
-
+		/*
+		int currentId = client.getLocalPlayer().getWorldLocation().getRegionID();
+		graphics.setColor(WHITE_TRANSLUCENT);
+		if (config.drawRegionId())
+			graphics.drawString("Current chunk: " + currentId, (int)worldMapRect.getY() + LABEL_PADDING, (int)worldMapRect.getX());
+		*/
 		for (int x = xRegionMin; x < xRegionMax; x += REGION_SIZE)
 		{
 			for (int y = yRegionMin; y < yRegionMax; y += REGION_SIZE)
 			{
-
 				int yTileOffset = -(yTileMin - y);
 				int xTileOffset = x + widthInTiles / 2 - worldMapPosition.getX();
 
@@ -109,7 +113,6 @@ class RegionLockerOverlay extends Overlay
 				int yPos = (worldMapRect.height - (int) (yTileOffset * pixelsPerTile)) + (int) worldMapRect.getY();
 				// Offset y-position by a single region to correct for drawRect starting from the top
 				yPos -= regionPixelSize;
-
 
 				int regionId = ((x >> 6) << 8) | (y >> 6);
 				String regionText = String.valueOf(regionId);
