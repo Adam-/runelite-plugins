@@ -100,7 +100,8 @@ import net.runelite.client.util.OSType;
 	name = "Region GPU",
 	description = "GPU plugin with unique shader for locked chunks",
 	enabledByDefault = false,
-	tags = {"fog", "draw distance", "chunk", "locker"}
+	tags = {"fog", "draw distance", "chunk", "locker"},
+	loadInSafeMode = false
 )
 @Slf4j
 public class RegionGpuPlugin extends Plugin implements DrawCallbacks

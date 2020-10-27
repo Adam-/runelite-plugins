@@ -25,42 +25,53 @@
 package com.regionlocker;
 
 import java.awt.Color;
-import net.runelite.client.config.Alpha;
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
-import net.runelite.client.config.Keybind;
+
+import net.runelite.client.config.*;
 
 @ConfigGroup(RegionLockerPlugin.CONFIG_KEY)
 public interface RegionLockerConfig extends Config
 {
-	@ConfigItem(
-			keyName = "renderLockedRegions",
-			name = "Enable gray chunks",
-			description = "Adds graphical change to all chunk that are locked",
+	@ConfigSection(
+			name = "Regions",
+			description = "Settings relating to chunks that you can unlock",
 			position = 0
 	)
-	default boolean renderLockedRegions()
-	{
-		return true;
-	}
+	String regionSettings = "regionSettings";
 
-	@ConfigItem(
-			keyName = "renderRegionBorders",
-			name = "Render chunk borders",
-			description = "Draws the chunk borders in the environment",
+	@ConfigSection(
+			name = "Environment Looks",
+			description = "Settings relating to locked regions look",
 			position = 1
 	)
-	default boolean renderRegionBorders()
+	String environmentSettings = "environmentSettings";
+
+	@ConfigSection(
+			name = "Map Settings",
+			description = "Settings relating to the map overlay",
+			position = 2
+	)
+	String mapSettings = "mapSettings";
+
+	// Region Settings
+
+	@ConfigItem(
+			keyName = "trailblazerRegion",
+			name = "Unlock area",
+			description = "Unlock a complete area on the surface based on Trailblazer Leagues",
+			position = 15,
+			section = regionSettings
+	)
+	default TrailblazerRegion trailblazerRegion()
 	{
-		return false;
+		return TrailblazerRegion.NONE;
 	}
 
 	@ConfigItem(
 			keyName = "unlockUnderground",
 			name = "Unlock underground",
 			description = "Unlock all underground chunks",
-			position = 4
+			position = 16,
+			section = regionSettings
 	)
 	default boolean unlockUnderground()
 	{
@@ -71,7 +82,8 @@ public interface RegionLockerConfig extends Config
 			keyName = "unlockRealms",
 			name = "Unlock realms",
 			description = "Unlock all realm chunks like Zanaris and the TzHaar area",
-			position = 5
+			position = 17,
+			section = regionSettings
 	)
 	default boolean unlockRealms()
 	{
@@ -79,10 +91,138 @@ public interface RegionLockerConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "unlockedRegions",
+			name = "Unlocked chunks",
+			description = "List of unlocked regions seperated by a ',' symbol",
+			position = 18,
+			section = regionSettings
+	)
+	default String unlockedRegions()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+			keyName = "unlockableRegions",
+			name = "Unlockable chunks",
+			description = "List of unlockable regions seperated by a ',' symbol",
+			position = 19,
+			section = regionSettings
+	)
+	default String unlockableRegions()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+			keyName = "blacklistedRegions",
+			name = "Blacklisted chunks",
+			description = "List of blacklisted regions seperated by a ',' symbol",
+			position = 20,
+			section = regionSettings
+	)
+	default String blacklistedRegions()
+	{
+		return "";
+	}
+
+	// Environment Looks
+
+	@ConfigItem(
+			keyName = "renderLockedRegions",
+			name = "Locked chunk shader",
+			description = "Adds graphical change to all chunk that are locked",
+			position = 21,
+			section = environmentSettings
+	)
+	default boolean renderLockedRegions()
+	{
+		return true;
+	}
+
+	@Alpha
+	@ConfigItem(
+			keyName = "shaderGrayColor",
+			name = "Chunk shader color",
+			description = "The color of the locked chunks in the shader",
+			position = 22,
+			section = environmentSettings
+	)
+	default Color shaderGrayColor()
+	{
+		return new Color(0, 31, 77, 204);
+	}
+
+	@Alpha
+	@ConfigItem(
+			keyName = "shaderGrayAmount",
+			name = "Chunk shader opacity",
+			description = "The amount of gray scale that is applied to a locked chunk in the shader (alpha only)",
+			position = 23,
+			section = environmentSettings
+	)
+	default Color shaderGrayAmount()
+	{
+		return new Color(0, 0, 0, 204);
+	}
+
+	@ConfigItem(
+			keyName = "hardBorder",
+			name = "Hard chunk border",
+			description = "True = hard border cutoff, False = chunk border gradient",
+			position = 24,
+			section = environmentSettings
+	)
+	default boolean hardBorder()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "renderRegionBorders",
+			name = "Draw chunk border lines",
+			description = "Draw the chunk borders in the environment marked by lines",
+			position = 25,
+			section = environmentSettings
+	)
+	default boolean renderRegionBorders()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "regionBorderWidth",
+			name = "Chunk border width",
+			description = "How wide the region border will be",
+			position = 26,
+			section = environmentSettings
+	)
+	default int regionBorderWidth()
+	{
+		return 1;
+	}
+
+	@Alpha
+	@ConfigItem(
+			keyName = "regionBorderColor",
+			name = "Chunk border color",
+			description = "The color of the chunk borders",
+			position = 27,
+			section = environmentSettings
+	)
+	default Color regionBorderColor()
+	{
+		return new Color(0, 200, 83, 200);
+	}
+
+	// Map Settings
+
+	@ConfigItem(
 			keyName = "drawMapOverlay",
 			name = "Draw chunks on map",
 			description = "Draw a color overlay for each locked/unlocked chunk",
-			position = 6
+			position = 28,
+			section = mapSettings
 	)
 	default boolean drawMapOverlay()
 	{
@@ -93,46 +233,12 @@ public interface RegionLockerConfig extends Config
 			keyName = "invertMapOverlay",
 			name = "Invert map overlay",
 			description = "Switches which chunks the map will draw the color overlay for (true = locked, false = unlocked)",
-			position = 7
+			position = 29,
+			section = mapSettings
 	)
 	default boolean invertMapOverlay()
 	{
 		return true;
-	}
-
-	@ConfigItem(
-			keyName = "hardBorder",
-			name = "Hard chunk border cutoff",
-			description = "Switches which chunks the map will draw the color overlay for (true = locked, false = unlocked)",
-			position = 8
-	)
-	default boolean hardBorder()
-	{
-		return true;
-	}
-
-	@Alpha
-	@ConfigItem(
-			keyName = "shaderGrayColor",
-			name = "Chunk shader color",
-			description = "The color of the locked chunks in the shader",
-			position = 9
-	)
-	default Color shaderGrayColor()
-	{
-		return new Color(0, 31, 77, 204);
-	}
-
-	@Alpha
-	@ConfigItem(
-			keyName = "shaderGrayAmount",
-			name = "Chunk gray opacity",
-			description = "The amount of gray scale that is applied to a locked chunk in the shader (alpha only)",
-			position = 10
-	)
-	default Color shaderGrayAmount()
-	{
-		return new Color(0, 0, 0, 204);
 	}
 
 	@Alpha
@@ -140,7 +246,8 @@ public interface RegionLockerConfig extends Config
 			keyName = "mapOverlayColor",
 			name = "Map overlay color",
 			description = "The color the map overlay will draw the chunks in",
-			position = 11
+			position = 30,
+			section = mapSettings
 	)
 	default Color mapOverlayColor()
 	{
@@ -152,7 +259,8 @@ public interface RegionLockerConfig extends Config
 			keyName = "unlockableOverlayColor",
 			name = "Unlockable overlay color",
 			description = "The color the map overlay will draw the unlockable chunks in",
-			position = 12
+			position = 31,
+			section = mapSettings
 	)
 	default Color unlockableOverlayColor()
 	{
@@ -164,41 +272,20 @@ public interface RegionLockerConfig extends Config
 			keyName = "blacklistedOverlayColor",
 			name = "Blacklisted overlay color",
 			description = "The color the map overlay will draw the blacklisted chunks in",
-			position = 13
+			position = 32,
+			section = mapSettings
 	)
 	default Color blacklistedOverlayColor()
 	{
 		return new Color(0, 0, 0, 200);
 	}
 
-	@Alpha
-	@ConfigItem(
-			keyName = "regionBorderColor",
-			name = "Chunk border color",
-			description = "The color of the chunk borders",
-			position = 14
-	)
-	default Color regionBorderColor()
-	{
-		return new Color(0, 200, 83, 200);
-	}
-
-	@ConfigItem(
-			keyName = "regionBorderWidth",
-			name = "Chunk border width",
-			description = "How wide the region border will be",
-			position = 15
-	)
-	default int regionBorderWidth()
-	{
-		return 1;
-	}
-
 	@ConfigItem(
 			keyName = "drawMapGrid",
 			name = "Draw map grid",
 			description = "Draw the grid of chunks on the map",
-			position = 16
+			position = 33,
+			section = mapSettings
 	)
 	default boolean drawMapGrid()
 	{
@@ -209,7 +296,8 @@ public interface RegionLockerConfig extends Config
 			keyName = "drawRegionId",
 			name = "Draw region IDs",
 			description = "Draw the chunk ID for each chunk on the map",
-			position = 17
+			position = 34,
+			section = mapSettings
 	)
 	default boolean drawRegionId()
 	{
@@ -220,7 +308,8 @@ public interface RegionLockerConfig extends Config
 			keyName = "unlockKey",
 			name = "Unlock hotkey",
 			description = "When you hold this key you can click on the map to unlock a chunk",
-			position = 19
+			position = 35,
+			section = mapSettings
 	)
 	default Keybind unlockKey()
 	{
@@ -231,43 +320,11 @@ public interface RegionLockerConfig extends Config
 			keyName = "blacklistKey",
 			name = "Blacklist hotkey",
 			description = "When you hold this key you can click on the map to blacklist a chunk",
-			position = 20
+			position = 36,
+			section = mapSettings
 	)
 	default Keybind blacklistKey()
 	{
 		return Keybind.CTRL;
-	}
-
-	@ConfigItem(
-			keyName = "unlockedRegions",
-			name = "Unlocked chunks",
-			description = "List of unlocked regions seperated by a ',' symbol",
-			position = 21
-	)
-	default String unlockedRegions()
-	{
-		return "";
-	}
-
-	@ConfigItem(
-			keyName = "unlockableRegions",
-			name = "Unlockable chunks",
-			description = "List of unlockable regions seperated by a ',' symbol",
-			position = 22
-	)
-	default String unlockableRegions()
-	{
-		return "";
-	}
-
-	@ConfigItem(
-			keyName = "blacklistedRegions",
-			name = "Blacklisted chunks",
-			description = "List of blacklisted regions seperated by a ',' symbol",
-			position = 23
-	)
-	default String blacklistedRegions()
-	{
-		return "";
 	}
 }
