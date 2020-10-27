@@ -30,6 +30,8 @@
 
 #define FOG_SCENE_EDGE_MIN TILE_SIZE
 #define FOG_SCENE_EDGE_MAX (103 * TILE_SIZE)
+#define FOG_CORNER_ROUNDING 1.5
+#define FOG_CORNER_ROUNDING_SQUARED FOG_CORNER_ROUNDING * FOG_CORNER_ROUNDING
 
 layout (location = 0) in ivec4 VertexPosition;
 layout (location = 1) in vec4 uv;
@@ -50,18 +52,20 @@ uniform float brightness;
 uniform int useFog;
 uniform int fogDepth;
 uniform int drawDistance;
+uniform mat4 projectionMatrix;
 
 uniform int useGray;
 uniform int baseX;
 uniform int baseY;
 uniform int lockedRegions[LOCKED_REGIONS_SIZE];
 
+out float vGrayAmount;
+
 out ivec3 vPosition;
 out vec4 vColor;
 out float vHsl;
 out vec4 vUv;
 out float vFogAmount;
-out float vGrayAmount;
 
 #include hsl_to_rgb.glsl
 
@@ -115,7 +119,13 @@ void main()
   int fogNorth = min(FOG_SCENE_EDGE_MAX, cameraZ + drawDistance - TILE_SIZE);
 
   // Calculate distance from the scene edge
-  float fogDistance = min(min(vertex.x - fogWest, fogEast - vertex.x), min(vertex.z - fogSouth, fogNorth - vertex.z));
+  int xDist = min(vertex.x - fogWest, fogEast - vertex.x);
+  int zDist = min(vertex.z - fogSouth, fogNorth - vertex.z);
+  float nearestEdgeDistance = min(xDist, zDist);
+  float secondNearestEdgeDistance = max(xDist, zDist);
+  float fogDistance = nearestEdgeDistance - FOG_CORNER_ROUNDING * TILE_SIZE *
+      max(0, (nearestEdgeDistance + FOG_CORNER_ROUNDING_SQUARED) /
+             (secondNearestEdgeDistance + FOG_CORNER_ROUNDING_SQUARED));
 
   vFogAmount = fogFactorLinear(fogDistance, 0, fogDepth * TILE_SIZE) * useFog;
 

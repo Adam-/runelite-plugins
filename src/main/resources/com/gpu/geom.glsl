@@ -60,9 +60,10 @@ in float vFogAmount[];
 in float vGrayAmount[];
 
 out vec4 Color;
-centroid out float fHsl;
-out vec4 fUv;
+noperspective centroid out float fHsl;
+out vec2 fUv;
 out float fogAmount;
+flat out int textureId;
 out float grayAmount;
 
 #include to_screen.glsl
@@ -87,45 +88,34 @@ float isLocked(int x, int y) {
 }
 
 void main() {
-  ivec3 cameraPos = ivec3(cameraX, cameraY, cameraZ);
-  vec3 screenA = toScreen(vPosition[0] - cameraPos, cameraYaw, cameraPitch, centerX, centerY, zoom);
-  vec3 screenB = toScreen(vPosition[1] - cameraPos, cameraYaw, cameraPitch, centerX, centerY, zoom);
-  vec3 screenC = toScreen(vPosition[2] - cameraPos, cameraYaw, cameraPitch, centerX, centerY, zoom);
-
-  if (-screenA.z < 50 || -screenB.z < 50 || -screenC.z < 50) {
-    // the client does not draw a triangle if any vertex distance is <50
-    return;
-  }
-
-
   ivec3 center = (vPosition[0] + vPosition[1] + vPosition[2])/3;
   float locked = useGray * isLocked(center.x, center.z);
 
-  vec4 tmp = vec4(screenA.xyz, 1.0);
   Color = vColor[0];
   fHsl = vHsl[0];
-  fUv = vUv[0];
+  fUv = vUv[0].yz;
+  textureId = int(vUv[0].x);
   fogAmount = vFogAmount[0];
   grayAmount = useHardBorder * locked + (1 - useHardBorder) * vGrayAmount[0];
-  gl_Position  = projectionMatrix * tmp;
+  gl_Position  = projectionMatrix * vec4(vPosition[0], 1.f);
   EmitVertex();
 
-  tmp = vec4(screenB.xyz, 1.0);
   Color = vColor[1];
   fHsl = vHsl[1];
-  fUv = vUv[1];
+  fUv = vUv[1].yz;
+  textureId = int(vUv[1].x);
   fogAmount = vFogAmount[1];
   grayAmount =  useHardBorder * locked + (1 - useHardBorder) * vGrayAmount[1];
-  gl_Position  = projectionMatrix * tmp;
+  gl_Position  = projectionMatrix * vec4(vPosition[1], 1.f);
   EmitVertex();
 
-  tmp = vec4(screenC.xyz, 1.0);
   Color = vColor[2];
   fHsl = vHsl[2];
-  fUv = vUv[2];
+  fUv = vUv[2].yz;
+  textureId = int(vUv[2].x);
   fogAmount = vFogAmount[2];
   grayAmount =  useHardBorder * locked + (1 - useHardBorder) * vGrayAmount[2];
-  gl_Position  = projectionMatrix * tmp;
+  gl_Position  = projectionMatrix * vec4(vPosition[2], 1.f);
   EmitVertex();
 
   EndPrimitive();
