@@ -25,10 +25,8 @@
 package com.regionlocker;
 
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.client.config.ConfigManager;
@@ -49,6 +47,7 @@ public class RegionLocker
 	public static boolean hardBorder;
 	private static boolean unlockReamls;
 	private static boolean unlockUnderground;
+	private static TrailblazerRegion trailblazerRegion;
 
 	RegionLocker(Client client, RegionLockerConfig config, ConfigManager configManager)
 	{
@@ -76,10 +75,9 @@ public class RegionLocker
 		grayColor = config.shaderGrayColor();
 		grayAmount = config.shaderGrayAmount().getAlpha();
 		hardBorder = config.hardBorder();
+		trailblazerRegion = config.trailblazerRegion();
 
 		regions.clear();
-
-		//setRegions(StringToList(config.trailblazerRegion().getRegions()), RegionTypes.UNLOCKED);
 
 		String unlockedString = config.unlockedRegions();
 		List<String> unlockedRegions = StringToList(unlockedString);
@@ -153,6 +151,10 @@ public class RegionLocker
 	public static RegionTypes getType(int regionId)
 	{
 		String id = Integer.toString(regionId);
+		if (!id.equals("") && trailblazerRegion != null && trailblazerRegion != TrailblazerRegion.NONE && trailblazerRegion.regions != null) {
+			if (Arrays.asList(trailblazerRegion.regions).contains(id))
+				return RegionTypes.UNLOCKED;
+		}
 		int y = getY(regionId);
 		if (unlockReamls && y >= 4160 && y < 5952) return RegionTypes.UNLOCKED;
 		if (unlockUnderground && y >= 8960) return RegionTypes.UNLOCKED;
