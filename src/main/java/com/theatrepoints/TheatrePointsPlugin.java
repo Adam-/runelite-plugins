@@ -25,7 +25,7 @@ import static com.theatrepoints.TheatrePointsConstant.*;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Theatre Points",
+	name = "ToB Drop Chance",
 	description = "Displays estimated team and personal drop chance information at ToB"
 )
 public class TheatrePointsPlugin extends Plugin {
