@@ -26,6 +26,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.loottracker.LootReceived;
 import net.runelite.client.ui.DrawManager;
 import net.runelite.client.util.ImageCapture;
+import net.runelite.client.util.QuantityFormatter;
 import net.runelite.client.util.Text;
 import net.runelite.client.util.WildcardMatcher;
 import static net.runelite.http.api.RuneLiteAPI.GSON;
@@ -157,7 +158,12 @@ public class DiscordLootLoggerPlugin extends Plugin
 			if (config.includeLowValueItems() || total >= targetValue)
 			{
 				ItemComposition itemComposition = itemManager.getItemComposition(itemId);
-				stringBuilder.append(qty).append(" x ").append(itemComposition.getName()).append("\n");
+				stringBuilder.append(qty).append(" x ").append(itemComposition.getName());
+				if (config.stackValue())
+				{
+					stringBuilder.append(" (").append(QuantityFormatter.quantityToStackSize(total)).append(")").append("\n");
+				}
+				stringBuilder.append("\n");
 				webhookBody.getEmbeds().add(new WebhookBody.Embed(new WebhookBody.UrlEmbed(itemImageUrl(itemId))));
 			}
 		}
