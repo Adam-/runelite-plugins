@@ -129,7 +129,7 @@ public class DiscordLootLoggerPlugin extends Plugin
 	@Subscribe
 	public void onLootReceived(LootReceived lootReceived)
 	{
-		if (lootReceived.getType() != LootRecordType.EVENT)
+		if (lootReceived.getType() != LootRecordType.EVENT && lootReceived.getType() != LootRecordType.PICKPOCKET)
 		{
 			return;
 		}
