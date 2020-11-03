@@ -1,4 +1,4 @@
-# Theatre Points
+# ToB Drop Chance Overlay
 Displays estimated team and personal drop chance information at ToB
 
 Assumes MVP points are distributed evenly (thus, an estimate)
