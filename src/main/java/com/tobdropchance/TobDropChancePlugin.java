@@ -1,7 +1,6 @@
-package com.theatrepoints;
+package com.tobdropchance;
 
 import com.google.inject.Provides;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
@@ -21,32 +20,32 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 
-import static com.theatrepoints.TheatrePointsConstant.*;
+import static com.tobdropchance.TobDropChanceConstant.*;
 
 @Slf4j
 @PluginDescriptor(
 	name = "ToB Drop Chance",
 	description = "Displays estimated team and personal drop chance information at ToB"
 )
-public class TheatrePointsPlugin extends Plugin {
+public class TobDropChancePlugin extends Plugin {
 
     @Inject
     private Client client;
 
 	@Inject
-	private TheatrePointsConfig config;
+	private TobDropChanceConfig config;
 
 	@Provides
-	TheatrePointsConfig provideConfig(ConfigManager configManager)
+	TobDropChanceConfig provideConfig(ConfigManager configManager)
 	{
-		return configManager.getConfig(TheatrePointsConfig.class);
+		return configManager.getConfig(TobDropChanceConfig.class);
 	}
 
 	@Inject
     private OverlayManager overlayManager;
 
     @Inject
-    private TheatrePointsOverlay overlay;
+    private TobDropChanceOverlay overlay;
 
     boolean inRaid;
 

@@ -1,10 +1,11 @@
-package com.theatrepoints;
+package com.tobdropchance;
 
 import net.runelite.api.Varbits;
 
 import java.util.regex.Pattern;
 
-public class TheatrePointsConstant {
+public class TobDropChanceConstant
+{
 
     public static final Varbits THEATRE_STATUS_VARP = Varbits.THEATRE_OF_BLOOD;
 

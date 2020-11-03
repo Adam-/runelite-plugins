@@ -1,11 +1,11 @@
-package com.theatrepoints;
+package com.tobdropchance;
 
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
-@ConfigGroup("TheatrePointsConfig")
-public interface TheatrePointsConfig extends Config {
+@ConfigGroup("TobDropChanceConfig")
+public interface TobDropChanceConfig extends Config {
 
     @ConfigItem(
             position = 0,

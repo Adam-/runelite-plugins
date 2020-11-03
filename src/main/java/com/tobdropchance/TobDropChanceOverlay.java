@@ -1,4 +1,4 @@
-package com.theatrepoints;
+package com.tobdropchance;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -16,17 +16,17 @@ import java.util.Map;
 
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
-import static com.theatrepoints.TheatrePointsConstant.*;
+import static com.tobdropchance.TobDropChanceConstant.*;
 import net.runelite.client.util.Text;
 
-public class TheatrePointsOverlay extends OverlayPanel {
+public class TobDropChanceOverlay extends OverlayPanel {
 
     private Client client;
-    private TheatrePointsPlugin plugin;
-    private TheatrePointsConfig config;
+    private TobDropChancePlugin plugin;
+    private TobDropChanceConfig config;
 
     @Inject
-    private TheatrePointsOverlay(TheatrePointsPlugin plugin, Client client, TheatrePointsConfig config) {
+    private TobDropChanceOverlay(TobDropChancePlugin plugin, Client client, TobDropChanceConfig config) {
     	super(plugin);
         this.client = client;
         this.plugin = plugin;
