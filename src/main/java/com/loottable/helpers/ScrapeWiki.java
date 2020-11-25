@@ -19,9 +19,9 @@ public class ScrapeWiki {
     public final static String userAgent = "RuneLite";
 
     /**
-     * Scrapes wiki's html for npcs' drop tables
-     * Tables rows structured like:
-     *  / icon / item name / quantity / rarity / price
+     * Scrapes wiki's html for npcs' drop tables Tables rows structured like: / icon
+     * / item name / quantity / rarity / price
+     * 
      * @param monsterName monster's loot table to fetch from wiki
      */
     public static Map<String, List<String[]>> scrapeWiki(String monsterName) {
@@ -33,10 +33,7 @@ public class ScrapeWiki {
             int tableIndex = 0;
             for (Element tableHeader : tableHeaders) {
                 String tableHeaderString = tableHeader.text();
-                allLootTables.put(
-                    tableHeaderString,
-                    getTableContent(tableIndex)
-                );
+                allLootTables.put(tableHeaderString, getTableContent(tableIndex));
                 tableIndex++;
             }
         } catch (IOException error) {
@@ -47,7 +44,9 @@ public class ScrapeWiki {
     }
 
     /**
-     * Unable to get (h3 span[id]) table selector working, just using an index for now
+     * Unable to get (h3 span[id]) table selector working, just using an index for
+     * now
+     * 
      * @param tableHeader
      * @return
      */
@@ -91,6 +90,7 @@ public class ScrapeWiki {
 
     /**
      * Filters out unwanted text like footnotes i.e. [d2]
+     * 
      * @param cellContent
      * @return
      */
@@ -99,7 +99,8 @@ public class ScrapeWiki {
     }
 
     public static String parseStringForUrl(String monsterName) {
-        String parsedMonsterName = monsterName.replace(' ', '_');
+        String parsedMonsterName = monsterName.replaceAll("[^a-zA-Z0-9]", "");
+        parsedMonsterName = parsedMonsterName.replace(' ', '_');
         return parsedMonsterName.substring(0, 1).toUpperCase() + parsedMonsterName.substring(1);
     }
 }
