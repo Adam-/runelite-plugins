@@ -1,4 +1,4 @@
-package com.example;
+package com.larsvansoest.runelite.clueitems;
 
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
