@@ -1,4 +1,4 @@
-package com.larsvansoest.runelite.clueitems.items;
+package com.larsvansoest.runelite.clueitems.data;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -8,14 +8,14 @@ import java.util.stream.Collectors;
 
 public class EmoteClueItemsProvider
 {
-    private final HashSet<Integer> beginnerItems;
-    private final HashSet<Integer> easyItems;
-    private final HashSet<Integer> mediumItems;
-    private final HashSet<Integer> hardItems;
-    private final HashSet<Integer> eliteItems;
-    private final HashSet<Integer> masterItems;
+    private HashSet<Integer> beginnerItems;
+    private HashSet<Integer> easyItems;
+    private HashSet<Integer> mediumItems;
+    private HashSet<Integer> hardItems;
+    private HashSet<Integer> eliteItems;
+    private HashSet<Integer> masterItems;
 
-    public EmoteClueItemsProvider()
+    public void loadItems()
     {
         this.beginnerItems = this.toHashSet(EmoteClueItems.Beginner.ids);
         this.easyItems = this.toHashSet(EmoteClueItems.Easy.ids);

@@ -1,4 +1,4 @@
-package com.larsvansoest.runelite.clueitems.items;
+package com.larsvansoest.runelite.clueitems.data;
 
 import net.runelite.api.ItemID;
 
@@ -631,5 +631,5 @@ enum EmoteClueItems {
         this.ids = ids;
     }
 
-    public int[] ids;
+    int[] ids;
 }
