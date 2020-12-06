@@ -36,4 +36,10 @@ public class ScrapeWikiTest {
         String result = ScrapeWiki.filterWikiTableContent(testContent);
         assertEquals(expected, result);
     }
+
+    @Test
+    public void testParseStringForUrlLesserDemon() {
+        String urlString = ScrapeWiki.parseStringForUrl("Lesser Demon");
+        assertEquals("Lesser_demon", urlString);
+    }
 }

@@ -99,8 +99,8 @@ public class ScrapeWiki {
     }
 
     public static String parseStringForUrl(String monsterName) {
-        String parsedMonsterName = monsterName.replaceAll("[^a-zA-Z0-9]", "");
-        parsedMonsterName = parsedMonsterName.replace(' ', '_');
+        String parsedMonsterName = monsterName.replace(' ', '_');
+        parsedMonsterName = parsedMonsterName.replaceAll("[^a-zA-Z0-9_]", "").toLowerCase();
         return parsedMonsterName.substring(0, 1).toUpperCase() + parsedMonsterName.substring(1);
     }
 }
