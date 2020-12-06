@@ -4,8 +4,8 @@ import com.google.inject.Provides;
 import javax.inject.Inject;
 
 import com.larsvansoest.runelite.clueitems.data.EmoteClueItemsProvider;
-import com.larsvansoest.runelite.clueitems.overlay.ClueItemOverlay;
-import com.larsvansoest.runelite.clueitems.overlay.icons.ClueIconProvider;
+import com.larsvansoest.runelite.clueitems.overlay.EmoteClueItemOverlay;
+import com.larsvansoest.runelite.clueitems.overlay.icons.EmoteClueIconProvider;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.client.config.ConfigManager;
@@ -16,15 +16,18 @@ import net.runelite.client.ui.overlay.OverlayManager;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Clue Items"
+	name = "Emote Clue Items",
+	description = "Highlight required items for emote clue steps.",
+	tags = {"emote", "clue", "item", "items", "scroll"},
+	enabledByDefault = false
 )
-public class ExamplePlugin extends Plugin
+public class EmoteClueItemsPlugin extends Plugin
 {
 	@Inject
 	private Client client;
 
 	@Inject
-	private ExampleConfig config;
+	private EmoteClueItemsConfig config;
 
 	@Inject
 	private OverlayManager overlayManager;
@@ -32,22 +35,21 @@ public class ExamplePlugin extends Plugin
 	@Inject
 	private ItemManager itemManager;
 
-	private ClueItemOverlay overlay;
+	private EmoteClueItemOverlay overlay;
 
 	@Override
 	protected void startUp() throws Exception
 	{
-		ClueIconProvider clueIconProvider = new ClueIconProvider();
+		// Load images
+		EmoteClueIconProvider clueIconProvider = new EmoteClueIconProvider();
 		clueIconProvider.fetchBuffers();
 
+		// Load clue item data
 		EmoteClueItemsProvider emoteClueItemsProvider = new EmoteClueItemsProvider();
 		emoteClueItemsProvider.loadItems();
 
-		this.overlay = new ClueItemOverlay(itemManager, emoteClueItemsProvider, clueIconProvider);
-
+		this.overlay = new EmoteClueItemOverlay(itemManager, emoteClueItemsProvider, clueIconProvider);
 		this.overlayManager.add(this.overlay);
-
-		log.info("Overlay booted.");
 	}
 
 	@Override
@@ -57,8 +59,8 @@ public class ExamplePlugin extends Plugin
 	}
 
 	@Provides
-	ExampleConfig provideConfig(ConfigManager configManager)
+	EmoteClueItemsConfig provideConfig(ConfigManager configManager)
 	{
-		return configManager.getConfig(ExampleConfig.class);
+		return configManager.getConfig(EmoteClueItemsConfig.class);
 	}
 }
