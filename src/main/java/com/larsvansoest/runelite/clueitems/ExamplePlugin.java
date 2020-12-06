@@ -5,13 +5,11 @@ import javax.inject.Inject;
 
 import com.larsvansoest.runelite.clueitems.data.EmoteClueItemsProvider;
 import com.larsvansoest.runelite.clueitems.overlay.ClueItemOverlay;
-import com.larsvansoest.runelite.clueitems.overlay.icon.ClueIconProvider;
+import com.larsvansoest.runelite.clueitems.overlay.icons.ClueIconProvider;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.events.GameStateChanged;
-import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -31,6 +29,9 @@ public class ExamplePlugin extends Plugin
 	@Inject
 	private OverlayManager overlayManager;
 
+	@Inject
+	private ItemManager itemManager;
+
 	private ClueItemOverlay overlay;
 
 	@Override
@@ -42,7 +43,7 @@ public class ExamplePlugin extends Plugin
 		EmoteClueItemsProvider emoteClueItemsProvider = new EmoteClueItemsProvider();
 		emoteClueItemsProvider.loadItems();
 
-		this.overlay = new ClueItemOverlay(emoteClueItemsProvider, clueIconProvider);
+		this.overlay = new ClueItemOverlay(itemManager, emoteClueItemsProvider, clueIconProvider);
 
 		this.overlayManager.add(this.overlay);
 
