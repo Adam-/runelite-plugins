@@ -7,6 +7,7 @@ import net.runelite.client.ui.overlay.components.ImageComponent;
 import javax.imageio.ImageIO;
 import java.io.IOException;
 import java.util.Objects;
+import net.runelite.client.util.ImageUtil;
 
 /**
  * <p>Provides ImageComponent loading utilities for icons used in the {@link EmoteClueItemOverlay} class.</p>
@@ -33,6 +34,6 @@ public class EmoteClueIconProvider
 
 	private ImageComponent fetchBuffer(String iconSource) throws IOException
 	{
-		return new ImageComponent(ImageIO.read(Objects.requireNonNull(this.getClass().getResource(iconSource))));
+		return new ImageComponent(ImageUtil.getResourceStreamFromClass(this.getClass(), iconSource));
 	}
 }
