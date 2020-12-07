@@ -4,9 +4,7 @@ import com.larsvansoest.runelite.clueitems.overlay.EmoteClueItemOverlay;
 import java.awt.image.BufferedImage;
 import net.runelite.client.ui.overlay.components.ImageComponent;
 
-import javax.imageio.ImageIO;
 import java.io.IOException;
-import java.util.Objects;
 import net.runelite.client.util.ImageUtil;
 
 /**

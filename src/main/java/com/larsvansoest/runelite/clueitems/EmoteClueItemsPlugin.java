@@ -7,7 +7,7 @@ import com.larsvansoest.runelite.clueitems.data.EmoteClueItemsProvider;
 import com.larsvansoest.runelite.clueitems.overlay.EmoteClueItemOverlay;
 import com.larsvansoest.runelite.clueitems.overlay.icons.EmoteClueIconProvider;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.*;
+import net.runelite.api.Client;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;

@@ -2,13 +2,15 @@ package com.larsvansoest.runelite.clueitems.overlay;
 
 import com.larsvansoest.runelite.clueitems.data.EmoteClueItemsProvider;
 import com.larsvansoest.runelite.clueitems.overlay.icons.EmoteClueIconProvider;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Rectangle;
 import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.WidgetItemOverlay;
 import net.runelite.client.ui.overlay.components.ImageComponent;
 
 import javax.inject.Inject;
-import java.awt.*;
 import java.util.HashSet;
 
 /**

@@ -2,8 +2,6 @@ package com.larsvansoest.runelite.clueitems.overlay.icons;
 
 import net.runelite.client.ui.overlay.components.ImageComponent;
 
-import java.awt.image.BufferedImage;
-
 public class EmoteClueRibbonCollection
 {
 	public ImageComponent getBeginnerRibbon()
