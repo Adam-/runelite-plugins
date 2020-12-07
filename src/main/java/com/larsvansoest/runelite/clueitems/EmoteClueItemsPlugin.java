@@ -19,7 +19,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	name = "Emote Clue Items",
 	description = "Highlight required items for emote clue steps.",
 	tags = {"emote", "clue", "item", "items", "scroll"},
-	enabledByDefault = false
+	enabledByDefault = true
 )
 public class EmoteClueItemsPlugin extends Plugin
 {
