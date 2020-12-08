@@ -141,6 +141,7 @@ public class DiscordLootLoggerPlugin extends Plugin
 	{
 		WebhookBody webhookBody = new WebhookBody();
 
+		boolean sendMessage = false;
 		long totalValue = 0;
 		StringBuilder stringBuilder = new StringBuilder();
 		stringBuilder.append("**").append(name).append("**").append(":\n");
@@ -157,18 +158,19 @@ public class DiscordLootLoggerPlugin extends Plugin
 
 			if (config.includeLowValueItems() || total >= targetValue)
 			{
+				sendMessage = true;
 				ItemComposition itemComposition = itemManager.getItemComposition(itemId);
 				stringBuilder.append(qty).append(" x ").append(itemComposition.getName());
 				if (config.stackValue())
 				{
-					stringBuilder.append(" (").append(QuantityFormatter.quantityToStackSize(total)).append(")").append("\n");
+					stringBuilder.append(" (").append(QuantityFormatter.quantityToStackSize(total)).append(")");
 				}
 				stringBuilder.append("\n");
 				webhookBody.getEmbeds().add(new WebhookBody.Embed(new WebhookBody.UrlEmbed(itemImageUrl(itemId))));
 			}
 		}
 
-		if (targetValue == 0 || totalValue >= targetValue)
+		if (sendMessage)
 		{
 			webhookBody.setContent(stringBuilder.toString());
 			sendWebhook(webhookBody);
