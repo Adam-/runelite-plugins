@@ -2,7 +2,7 @@ package com.larsvansoest.runelite.clueitems.overlay.icons;
 
 import net.runelite.client.ui.overlay.components.ImageComponent;
 
-public class EmoteClueRibbonCollection
+public class RibbonCollection
 {
 	public ImageComponent getBeginnerRibbon()
 	{
@@ -41,7 +41,7 @@ public class EmoteClueRibbonCollection
 	private final ImageComponent eliteRibbon;
 	private final ImageComponent masterRibbon;
 
-	public EmoteClueRibbonCollection(ImageComponent beginnerRibbon, ImageComponent easyRibbon, ImageComponent mediumRibbon, ImageComponent hardRibbon, ImageComponent eliteRibbon, ImageComponent masterRibbon)
+	public RibbonCollection(ImageComponent beginnerRibbon, ImageComponent easyRibbon, ImageComponent mediumRibbon, ImageComponent hardRibbon, ImageComponent eliteRibbon, ImageComponent masterRibbon)
 	{
 		this.beginnerRibbon = beginnerRibbon;
 		this.easyRibbon = easyRibbon;

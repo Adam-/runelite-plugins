@@ -2,7 +2,7 @@ package com.larsvansoest.runelite.clueitems.data;
 
 import net.runelite.api.ItemID;
 
-enum EmoteClueItems
+enum Items
 {
 
 	Beginner(
@@ -102,7 +102,7 @@ enum EmoteClueItems
 		ItemID.BRONZE_FULL_HELM,
 		ItemID.BRONZE_SQ_SHIELD,
 		ItemID.BROWN_APRON,
-		ItemID.BRUISE_BLUE_SNELM,
+		ItemID.BRUISE_BLUE_SNELM_3343,
 		ItemID.DIAMOND_RING,
 		ItemID.GREEN_HAT,
 		ItemID.GREEN_ROBE_TOP,
@@ -127,14 +127,14 @@ enum EmoteClueItems
 		ItemID.PURPLE_GLOVES,
 
 		// Any ring of dueling
-		ItemID.RING_OF_DUELING8,
-		ItemID.RING_OF_DUELING7,
-		ItemID.RING_OF_DUELING6,
-		ItemID.RING_OF_DUELING5,
-		ItemID.RING_OF_DUELING4,
-		ItemID.RING_OF_DUELING3,
-		ItemID.RING_OF_DUELING2,
 		ItemID.RING_OF_DUELING1,
+		ItemID.RING_OF_DUELING2,
+		ItemID.RING_OF_DUELING3,
+		ItemID.RING_OF_DUELING4,
+		ItemID.RING_OF_DUELING5,
+		ItemID.RING_OF_DUELING6,
+		ItemID.RING_OF_DUELING7,
+		ItemID.RING_OF_DUELING8,
 
 		ItemID.RING_OF_FORGING,
 		ItemID.RING_OF_LIFE,
@@ -150,9 +150,15 @@ enum EmoteClueItems
 		ItemID.STEEL_SQ_SHIELD,
 
 		// Any team cape
-		ItemID.TEAM_CAPE_X,
-		ItemID.TEAM_CAPE_ZERO,
 		ItemID.TEAM1_CAPE,
+		ItemID.TEAM2_CAPE,
+		ItemID.TEAM3_CAPE,
+		ItemID.TEAM4_CAPE,
+		ItemID.TEAM5_CAPE,
+		ItemID.TEAM6_CAPE,
+		ItemID.TEAM7_CAPE,
+		ItemID.TEAM8_CAPE,
+		ItemID.TEAM9_CAPE,
 		ItemID.TEAM10_CAPE,
 		ItemID.TEAM11_CAPE,
 		ItemID.TEAM12_CAPE,
@@ -163,7 +169,6 @@ enum EmoteClueItems
 		ItemID.TEAM17_CAPE,
 		ItemID.TEAM18_CAPE,
 		ItemID.TEAM19_CAPE,
-		ItemID.TEAM2_CAPE,
 		ItemID.TEAM20_CAPE,
 		ItemID.TEAM21_CAPE,
 		ItemID.TEAM22_CAPE,
@@ -174,7 +179,6 @@ enum EmoteClueItems
 		ItemID.TEAM27_CAPE,
 		ItemID.TEAM28_CAPE,
 		ItemID.TEAM29_CAPE,
-		ItemID.TEAM3_CAPE,
 		ItemID.TEAM30_CAPE,
 		ItemID.TEAM31_CAPE,
 		ItemID.TEAM32_CAPE,
@@ -185,7 +189,6 @@ enum EmoteClueItems
 		ItemID.TEAM37_CAPE,
 		ItemID.TEAM38_CAPE,
 		ItemID.TEAM39_CAPE,
-		ItemID.TEAM4_CAPE,
 		ItemID.TEAM40_CAPE,
 		ItemID.TEAM41_CAPE,
 		ItemID.TEAM42_CAPE,
@@ -196,12 +199,9 @@ enum EmoteClueItems
 		ItemID.TEAM47_CAPE,
 		ItemID.TEAM48_CAPE,
 		ItemID.TEAM49_CAPE,
-		ItemID.TEAM5_CAPE,
 		ItemID.TEAM50_CAPE,
-		ItemID.TEAM6_CAPE,
-		ItemID.TEAM7_CAPE,
-		ItemID.TEAM8_CAPE,
-		ItemID.TEAM9_CAPE
+		ItemID.TEAM_CAPE_X,
+		ItemID.TEAM_CAPE_ZERO
 	),
 
 	Hard(
@@ -210,6 +210,9 @@ enum EmoteClueItems
 		ItemID.AMULET_OF_GLORY,
 		ItemID.AMULET_OF_POWER,
 		ItemID.AMULET_OF_STRENGTH,
+		ItemID.BLUE_DHIDE_BODY,
+		ItemID.BLUE_DHIDE_CHAPS,
+		ItemID.BLUE_DHIDE_VAMBRACES,
 		ItemID.BONE_SPEAR,
 
 		// Any god crozier
@@ -229,8 +232,8 @@ enum EmoteClueItems
 		ItemID.BLACK_HEADBAND,
 		ItemID.BLUE_HEADBAND,
 		ItemID.BROWN_HEADBAND,
-		ItemID.GREEN_HEADBAND,
 		ItemID.GOLD_HEADBAND,
+		ItemID.GREEN_HEADBAND,
 		ItemID.PINK_HEADBAND,
 		ItemID.RED_HEADBAND,
 		ItemID.WHITE_HEADBAND,
@@ -297,7 +300,15 @@ enum EmoteClueItems
 	),
 
 	Elite(
+		// Any amulet of glory
 		ItemID.AMULET_OF_GLORY,
+		ItemID.AMULET_OF_GLORY1,
+		ItemID.AMULET_OF_GLORY2,
+		ItemID.AMULET_OF_GLORY3,
+		ItemID.AMULET_OF_GLORY4,
+		ItemID.AMULET_OF_GLORY5,
+		ItemID.AMULET_OF_GLORY6,
+
 		ItemID.BARROWS_GLOVES,
 		ItemID.BLACK_SALAMANDER,
 
@@ -387,13 +398,13 @@ enum EmoteClueItems
 		ItemID.ABYSSAL_WHIP,
 
 		// Any amulet of glory
-		ItemID.AMULET_OF_GLORY6,
-		ItemID.AMULET_OF_GLORY5,
-		ItemID.AMULET_OF_GLORY4,
-		ItemID.AMULET_OF_GLORY3,
-		ItemID.AMULET_OF_GLORY2,
-		ItemID.AMULET_OF_GLORY1,
 		ItemID.AMULET_OF_GLORY,
+		ItemID.AMULET_OF_GLORY1,
+		ItemID.AMULET_OF_GLORY2,
+		ItemID.AMULET_OF_GLORY3,
+		ItemID.AMULET_OF_GLORY4,
+		ItemID.AMULET_OF_GLORY5,
+		ItemID.AMULET_OF_GLORY6,
 
 		ItemID.AMULET_OF_THE_DAMNED,
 		ItemID.ARCLIGHT,
@@ -628,7 +639,7 @@ enum EmoteClueItems
 		ItemID.ZAMORAK_GODSWORD
 	);
 
-	EmoteClueItems(int... ids)
+	Items(int... ids)
 	{
 		this.ids = ids;
 	}

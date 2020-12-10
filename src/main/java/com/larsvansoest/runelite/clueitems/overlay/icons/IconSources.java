@@ -1,6 +1,6 @@
 package com.larsvansoest.runelite.clueitems.overlay.icons;
 
-abstract class EmoteClueIconSources
+abstract class IconSources
 {
 	public static final String BEGINNER_RIBBON = "/icons/ribbons/beginner_ribbon.png";
 	public static final String EASY_RIBBON = "/icons/ribbons/easy_ribbon.png";

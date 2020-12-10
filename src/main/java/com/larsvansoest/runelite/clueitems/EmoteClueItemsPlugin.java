@@ -1,11 +1,12 @@
 package com.larsvansoest.runelite.clueitems;
 
 import com.google.inject.Provides;
+import com.larsvansoest.runelite.clueitems.overlay.config.ConfigProvider;
 import javax.inject.Inject;
 
-import com.larsvansoest.runelite.clueitems.data.EmoteClueItemsProvider;
+import com.larsvansoest.runelite.clueitems.data.ItemsProvider;
 import com.larsvansoest.runelite.clueitems.overlay.EmoteClueItemOverlay;
-import com.larsvansoest.runelite.clueitems.overlay.icons.EmoteClueIconProvider;
+import com.larsvansoest.runelite.clueitems.overlay.icons.IconProvider;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.client.config.ConfigManager;
@@ -40,15 +41,15 @@ public class EmoteClueItemsPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		// Load images
-		EmoteClueIconProvider clueIconProvider = new EmoteClueIconProvider();
+		IconProvider clueIconProvider = new IconProvider();
 		clueIconProvider.fetchBuffers();
 
-		// Load clue item data
-		EmoteClueItemsProvider emoteClueItemsProvider = new EmoteClueItemsProvider();
+		ItemsProvider emoteClueItemsProvider = new ItemsProvider();
 		emoteClueItemsProvider.loadItems();
 
-		this.overlay = new EmoteClueItemOverlay(itemManager, emoteClueItemsProvider, clueIconProvider);
+		ConfigProvider configProvider = new ConfigProvider(config);
+
+		this.overlay = new EmoteClueItemOverlay(itemManager, configProvider, emoteClueItemsProvider, clueIconProvider);
 		this.overlayManager.add(this.overlay);
 	}
 
