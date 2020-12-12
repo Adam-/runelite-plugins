@@ -1,4 +1,4 @@
-## Emote Clue Items v1.1.0
+## Emote Clue Items v1.1.0 [![Plugin Installs](http://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/installs/plugin/emote-clue-items&label=Active%20installs)](https://runelite.net/plugin-hub/Lars%20van%20Soest)
 Emote Clue Items is a simple RuneLite plugin which highlights items required for emote clue steps. 
 
 
