@@ -1,6 +1,6 @@
 package com.larsvansoest.runelite.clueitems.overlay.widgets;
 
-public enum Container
+public enum ItemWidgetContainer
 {
 	Inventory(),
 
@@ -12,7 +12,7 @@ public enum Container
 
 	GuidePrices(),
 
-	SeedVault(),
+	KeptOnDeath(),
 
 	Equipment()
 }

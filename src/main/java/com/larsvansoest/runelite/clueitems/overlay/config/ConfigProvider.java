@@ -1,7 +1,7 @@
 package com.larsvansoest.runelite.clueitems.overlay.config;
 
 import com.larsvansoest.runelite.clueitems.EmoteClueItemsConfig;
-import com.larsvansoest.runelite.clueitems.overlay.widgets.Container;
+import com.larsvansoest.runelite.clueitems.overlay.widgets.ItemWidgetContainer;
 
 public class ConfigProvider
 {
@@ -12,13 +12,15 @@ public class ConfigProvider
 		this.config = config;
 	}
 
-	public boolean interfaceGroupSelected(Container container)
+	public boolean interfaceGroupSelected(ItemWidgetContainer container)
 	{
 		switch (container)
 		{
 			case Bank:
-			case DepositBox:
 				return config.highlightBank();
+
+			case DepositBox:
+				return config.highlightDepositBox();
 
 			case Inventory:
 				return config.highlightInventory();
@@ -28,6 +30,12 @@ public class ConfigProvider
 
 			case Shop:
 				return config.highlightShop();
+
+			case KeptOnDeath:
+				return config.highlightKeptOnDeath();
+
+			case GuidePrices:
+				return config.highlightGuidePrices();
 
 			default:
 				return false;

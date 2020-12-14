@@ -1,5 +1,5 @@
-## Emote Clue Items v1.1.0 [![Plugin Installs](http://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/installs/plugin/emote-clue-items&label=Active%20installs)](https://runelite.net/plugin-hub/Lars%20van%20Soest)
-Emote Clue Items is a simple RuneLite plugin which highlights items required for emote clue steps. 
+## Emote Clue Items v1.2.0 [![Plugin Installs](http://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/installs/plugin/emote-clue-items&label=Active%20installs)](https://runelite.net/plugin-hub/Lars%20van%20Soest)
+Emote Clue Items is a light RuneLite plugin which highlights items required for emote clue steps. 
 
 
 ### Take back your bank space
@@ -10,11 +10,10 @@ Items in your bank, inventory and equipment are highlighted by their respective 
 
 [![Image from Gyazo](https://i.gyazo.com/4acd5ebcd9bbffb559f900e843a54bd6.gif)](https://gyazo.com/4acd5ebcd9bbffb559f900e843a54bd6)
 
+### Highlight across a plethora of in-game interfaces
+Celebrating grossing over 400 active installs within only a week after its release, version 1.2.0 of Emote Clue Items comes with an optimised widget engine to consistently highlight items across multiple interfaces at lightning speed.
 
-## Version 1.1.0
-Celebrating grossing over 150 active installs within only 3 days after its release, version 1.1.0 of Emote Clue Items comes with some quality ensuring improvements, and some configuration settings! 
-
-### Toggle interfaces
-With the new version, users can specify which windows to highlight.
+#### Toggle interfaces
+As shown below, interfaces can be toggled in the user settings menu.
 
 [![Image from Gyazo](https://i.gyazo.com/486930cf7273d273a622a16d625e7b14.gif)](https://gyazo.com/486930cf7273d273a622a16d625e7b14)

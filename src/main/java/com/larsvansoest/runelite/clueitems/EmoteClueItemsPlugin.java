@@ -8,7 +8,6 @@ import com.larsvansoest.runelite.clueitems.data.ItemsProvider;
 import com.larsvansoest.runelite.clueitems.overlay.EmoteClueItemOverlay;
 import com.larsvansoest.runelite.clueitems.overlay.icons.IconProvider;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
@@ -19,14 +18,10 @@ import net.runelite.client.ui.overlay.OverlayManager;
 @PluginDescriptor(
 	name = "Emote Clue Items",
 	description = "Highlight required items for emote clue steps.",
-	tags = {"emote", "clue", "item", "items", "scroll"},
-	enabledByDefault = true
+	tags = {"emote", "clue", "item", "items", "scroll"}
 )
 public class EmoteClueItemsPlugin extends Plugin
 {
-	@Inject
-	private Client client;
-
 	@Inject
 	private EmoteClueItemsConfig config;
 
