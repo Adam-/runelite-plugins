@@ -11,7 +11,7 @@ Items in your bank, inventory and equipment are highlighted by their respective 
 [![Image from Gyazo](https://i.gyazo.com/4acd5ebcd9bbffb559f900e843a54bd6.gif)](https://gyazo.com/4acd5ebcd9bbffb559f900e843a54bd6)
 
 ### Highlight across a plethora of in-game interfaces
-Celebrating grossing over 400 active installs within only a week after its release, version 1.2.0 of Emote Clue Items comes with an optimised widget engine to consistently highlight items across multiple interfaces at lightning speed.
+Celebrating grossing over 400 active installs within only a week after its release, version 1.2.0 of Emote Clue Items comes with an optimised widget classifier to consistently highlight items across multiple interfaces at lightning speed.
 
 #### Toggle interfaces
 As shown below, interfaces can be toggled in the user settings menu.
