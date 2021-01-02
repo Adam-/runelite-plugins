@@ -24,20 +24,19 @@
  */
 package info.sigterm.plugins.gpue;
 
+import info.sigterm.plugins.gpue.config.AntiAliasingMode;
+import info.sigterm.plugins.gpue.config.ColorBlindMode;
+import info.sigterm.plugins.gpue.config.UIScalingMode;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Range;
-import static info.sigterm.plugins.gpue.GpuPluginExperimental.MAX_DISTANCE;
-import static info.sigterm.plugins.gpue.GpuPluginExperimental.MAX_FOG_DEPTH;
-import info.sigterm.plugins.gpue.config.AntiAliasingMode;
-import info.sigterm.plugins.gpue.config.UIScalingMode;
 
 @ConfigGroup("gpu")
 public interface GpuPluginConfig extends Config
 {
 	@Range(
-		max = MAX_DISTANCE
+		max = GpuPluginExperimental.MAX_DISTANCE
 	)
 	@ConfigItem(
 		keyName = "drawDistance",
@@ -84,7 +83,7 @@ public interface GpuPluginConfig extends Config
 	}
 
 	@Range(
-		max = MAX_FOG_DEPTH
+		max = GpuPluginExperimental.MAX_FOG_DEPTH
 	)
 	@ConfigItem(
 		keyName = "fogDepth",
@@ -122,5 +121,16 @@ public interface GpuPluginConfig extends Config
 	default int anisotropicFilteringLevel()
 	{
 		return 0;
+	}
+
+	@ConfigItem(
+		keyName = "colorBlindMode",
+		name = "Colorblindness Correction",
+		description = "Adjusts colors to account for colorblindness",
+		position = 8
+	)
+	default ColorBlindMode colorBlindMode()
+	{
+		return ColorBlindMode.NONE;
 	}
 }
