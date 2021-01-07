@@ -44,7 +44,6 @@ import java.nio.IntBuffer;
 import javax.inject.Inject;
 import javax.swing.SwingUtilities;
 import jogamp.nativewindow.SurfaceScaleUtils;
-import jogamp.nativewindow.macosx.OSXUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.BufferProvider;
 import net.runelite.api.Client;
@@ -709,36 +708,28 @@ public class GpuPluginExperimental extends Plugin implements DrawCallbacks
 		final Scene scene = client.getScene();
 		scene.setDrawDistance(getDrawDistance());
 
-		invokeOnMainThread(() ->
-		{
-			// UBO. Only the first 32 bytes get modified here, the rest is the constant sin/cos table.
-			gl.glBindBuffer(GL_UNIFORM_BUFFER, uniformBufferId);
-			uniformBuffer.clear();
-			uniformBuffer
-				.put(yaw)
-				.put(pitch)
-				.put(client.getCenterX())
-				.put(client.getCenterY())
-				.put(client.getScale())
-				.put(client.getCameraX2())
-				.put(client.getCameraY2())
-				.put(client.getCameraZ2());
-			uniformBuffer.flip();
+		// UBO. Only the first 32 bytes get modified here, the rest is the constant sin/cos table.
+		gl.glBindBuffer(GL_UNIFORM_BUFFER, uniformBufferId);
+		uniformBuffer.clear();
+		uniformBuffer
+			.put(yaw)
+			.put(pitch)
+			.put(client.getCenterX())
+			.put(client.getCenterY())
+			.put(client.getScale())
+			.put(client.getCameraX2())
+			.put(client.getCameraY2())
+			.put(client.getCameraZ2());
+		uniformBuffer.flip();
 
-			gl.glBufferSubData(GL_UNIFORM_BUFFER, 0, uniformBuffer.limit() * Integer.BYTES, uniformBuffer);
-			gl.glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		gl.glBufferSubData(GL_UNIFORM_BUFFER, 0, uniformBuffer.limit() * Integer.BYTES, uniformBuffer);
+		gl.glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-			gl.glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBufferId);
-		});
+		gl.glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBufferId);
 	}
 
 	@Override
 	public void postDrawScene()
-	{
-		invokeOnMainThread(this::postDraw);
-	}
-
-	private void postDraw()
 	{
 		if (!useComputeShaders)
 		{
@@ -922,7 +913,7 @@ public class GpuPluginExperimental extends Plugin implements DrawCallbacks
 	@Override
 	public void draw(int overlayColor)
 	{
-		invokeOnMainThread(() -> drawFrame(overlayColor));
+		drawFrame(overlayColor);
 	}
 
 	private void resize(int canvasWidth, int canvasHeight, int viewportWidth, int viewportHeight)
@@ -1581,17 +1572,5 @@ public class GpuPluginExperimental extends Plugin implements DrawCallbacks
 	{
 		final int limit = useComputeShaders ? MAX_DISTANCE : DEFAULT_DISTANCE;
 		return Ints.constrainToRange(config.drawDistance(), 0, limit);
-	}
-
-	private static void invokeOnMainThread(Runnable runnable)
-	{
-		if (OSType.getOSType() == OSType.MacOS)
-		{
-			OSXUtil.RunOnMainThread(true, false, runnable);
-		}
-		else
-		{
-			runnable.run();
-		}
 	}
 }
