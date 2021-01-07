@@ -43,7 +43,6 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import javax.inject.Inject;
 import javax.swing.SwingUtilities;
-import jogamp.nativewindow.SurfaceScaleUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.BufferProvider;
 import net.runelite.api.Client;
@@ -1545,7 +1544,7 @@ public class GpuPluginExperimental extends Plugin implements DrawCallbacks
 
 	private int getScaledValue(final double scale, final int value)
 	{
-		return SurfaceScaleUtils.scale(value, (float) scale);
+		return (int) (value * scale + 0.5f);
 	}
 
 	private void glDpiAwareViewport(final int x, final int y, final int width, final int height)
