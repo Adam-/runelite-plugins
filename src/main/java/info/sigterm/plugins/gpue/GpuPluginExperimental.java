@@ -716,9 +716,9 @@ public class GpuPluginExperimental extends Plugin implements DrawCallbacks
 			.put(client.getCenterX())
 			.put(client.getCenterY())
 			.put(client.getScale())
-			.put(client.getCameraX2())
-			.put(client.getCameraY2())
-			.put(client.getCameraZ2());
+			.put(cameraX)
+			.put(cameraY)
+			.put(cameraZ);
 		uniformBuffer.flip();
 
 		gl.glBufferSubData(GL_UNIFORM_BUFFER, 0, uniformBuffer.limit() * Integer.BYTES, uniformBuffer);
