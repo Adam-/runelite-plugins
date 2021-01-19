@@ -25,6 +25,7 @@ The overview panel allows for querying and sorting the data. Moreover, the input
 
 ### Planned future updates
 -   STASH unit build and fill status integration.
+    * Config option to disable overlay for stashed items.
 -   Add buttons to display EmoteClue locations on the in-game world map.
 -   Tab to display item collection log only.
 -   Tab to display STASH unit requirements only.
