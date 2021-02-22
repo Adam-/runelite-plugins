@@ -1,6 +1,6 @@
 package com.banktaglayouts;
 
-import com.google.inject.Provides;
+import com.google.common.util.concurrent.Runnables;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.ItemComposition;
@@ -10,7 +10,6 @@ import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.DraggingWidgetChanged;
 import net.runelite.api.events.ScriptPostFired;
-import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
@@ -19,6 +18,7 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.ItemVariationMapping;
+import net.runelite.client.game.chatbox.ChatboxPanelManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -73,13 +73,10 @@ public class BankTagLayoutsPlugin extends Plugin
 	public static final String TAG_SEARCH = "tag:";
 	public static final String LAYOUT_CONFIG_KEY_PREFIX = "layout_";
 	public static final String ENABLE_LAYOUT = "Enable layout";
-	public static final String DISABLE_LAYOUT = "Disable layout";
+	public static final String DISABLE_LAYOUT = "Delete layout";
 
 	@Inject
 	private Client client;
-
-	@Inject
-	private BankTagLayoutsConfig config;
 
 	@Inject
 	private OverlayManager overlayManager;
@@ -105,7 +102,10 @@ public class BankTagLayoutsPlugin extends Plugin
 	@Inject
 	private BankSearch bankSearch;
 
-	private static final boolean debug = true;
+	@Inject
+	private ChatboxPanelManager chatboxPanelManager;
+
+	private static final boolean debug = false;
 
 	@Override
 	protected void startUp() throws Exception
@@ -119,47 +119,9 @@ public class BankTagLayoutsPlugin extends Plugin
 		overlayManager.remove(hasItemOverlay);
 	}
 
-	@Provides
-	BankTagLayoutsConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(BankTagLayoutsConfig.class);
-	}
-
 	@Subscribe
 	public void onCommandExecuted(CommandExecuted commandExecuted) {
 	    if (!debug) return;
-
-	    // garbage, ignore this.
-		if ("migratebanktaglayouts".equals(commandExecuted.getCommand())) {
-			System.out.println("migrating bank tag layouts");
-
-			for (String configurationKey : configManager.getConfigurationKeys("banktags")) {
-//				System.out.println("key is " + configurationKey);
-				if (configurationKey.contains(LAYOUT_CONFIG_KEY_PREFIX)) {
-					String layout = configManager.getConfiguration("banktags", configurationKey.substring("banktags.".length()));
-
-					System.out.println("moving layout " + configurationKey.substring("banktags.custom_banktagorder_".length()) + " ");
-					configurationKey = LAYOUT_CONFIG_KEY_PREFIX + configurationKey.substring("banktags.custom_banktagorder_".length());
-					System.out.println(CONFIG_GROUP + "-" + configurationKey + "-" + layout);
-					configManager.setConfiguration(CONFIG_GROUP, configurationKey, layout);
-				}
-			}
-		}
-
-		if ("migratebanktaglayoutsdry".equals(commandExecuted.getCommand())) {
-			System.out.println("migrating bank tag layouts");
-
-			for (String configurationKey : configManager.getConfigurationKeys("banktags")) {
-//				System.out.println("key is " + configurationKey);
-				if (configurationKey.contains("banktags.custom_banktagorder_")) {
-					String layout = configManager.getConfiguration("banktags", configurationKey);
-
-					System.out.println("moving layout " + configurationKey.substring("banktags.custom_banktagorder_".length()) + " ");
-					configurationKey = LAYOUT_CONFIG_KEY_PREFIX + configurationKey.substring("banktags.custom_banktagorder_".length());
-//					configManager.setConfiguration(CONFIG_GROUP, configurationKey, layout);
-				}
-			}
-		}
 
 		if ("debugoverlay".equals(commandExecuted.getCommand())) {
 			debugOverlay = !debugOverlay;
@@ -184,58 +146,6 @@ public class BankTagLayoutsPlugin extends Plugin
 					if (debug) System.out.println("item " + itemName(integerIntegerEntry.getKey()) + " has " + integerIntegerEntry.getValue() + " values.");
 				}
 			}
-		}
-		if ("deletebanktags".equals(commandExecuted.getCommand())) {
-			if (debug) System.out.println("deletebanktags");
-			for (String configurationKey : configManager.getConfigurationKeys(CONFIG_GROUP)) {
-//				System.out.println("key is " + configurationKey);
-				if (configurationKey.contains(LAYOUT_CONFIG_KEY_PREFIX)) {
-					configManager.unsetConfiguration(CONFIG_GROUP, configurationKey);
-					if (debug) System.out.println("deleting " + configurationKey.substring(9, configurationKey.length()));
-				}
-			}
-		}
-		if ("removeItem".equals(commandExecuted.getCommand())) {
-			TagTab activeTab = tabInterface.getActiveTab();
-			String bankTag = activeTab.getTag();
-			Map<Integer, Integer> bankOrder = getBankOrder(bankTag);
-			int arg1 = Integer.valueOf(commandExecuted.getArguments()[0]);
-			if (debug) System.out.println("removing " + arg1 + " from " + bankTag);
-			if (!bankOrder.containsKey(arg1)) {
-				if (debug) System.out.println("key not found");
-			}
-			bankOrder.remove(arg1);
-			configManager.setConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + bankTag, bankTagOrderMapToString(bankOrder));
-		}
-		if ("deletecurrenttaborder".equals(commandExecuted.getCommand()) || "dcto".equals(commandExecuted.getCommand())) {
-			TagTab activeTab = tabInterface.getActiveTab();
-			String bankTag = activeTab.getTag();
-			if (debug) System.out.println("deletecurrenttaborder: \"" + bankTag + "\"");
-			if (debug) System.out.println(LAYOUT_CONFIG_KEY_PREFIX + bankTag);
-			for (String configurationKey : configManager.getConfigurationKeys(CONFIG_GROUP)) {
-				if (debug) System.out.println("key is " + configurationKey);
-				if (configurationKey.equals(CONFIG_GROUP + "." + LAYOUT_CONFIG_KEY_PREFIX + bankTag)) {
-					String substring = configurationKey.substring(CONFIG_GROUP.length() + ".".length(), configurationKey.length());
-					String s = configManager.getConfiguration(CONFIG_GROUP, substring);
-					configManager.unsetConfiguration(CONFIG_GROUP, substring);
-					configManager.setConfiguration(CONFIG_GROUP, configurationKey, "");
-					if (debug) System.out.println("deleting " + configurationKey.substring(9, configurationKey.length()) + " (" + s + ")");
-				}
-			}
-		}
-		if ("cleanemptyspots".equals(commandExecuted.getCommand())) {
-			TagTab activeTab = tabInterface.getActiveTab();
-			String bankTag = activeTab.getTag();
-			Map<Integer, Integer> itemIdsToIndexes = getBankOrder(bankTag);
-			List<Integer> itemIdsToRemove = new ArrayList<>();
-			for (Map.Entry<Integer, Integer> entry : itemIdsToIndexes.entrySet()) {
-				if (!indexToWidget.containsKey(entry.getValue()) || entry.getValue() > 300) {
-					itemIdsToRemove.add(entry.getKey());
-				}
-			}
-			itemIdsToRemove.forEach(itemIdsToIndexes::remove);
-			if (debug) System.out.println("removed empty slots in " + bankTag);
-			configManager.setConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + bankTag, bankTagOrderMapToString(itemIdsToIndexes));
 		}
 	}
 
@@ -281,7 +191,6 @@ public class BankTagLayoutsPlugin extends Plugin
 			String widgetName = Text.removeTags(clicked.getName());
 			String action = clicked.getActions()[e.getOp() - 1];
 			if (debug) System.out.println("clicked " + widgetName + ", option is " + action);
-			if (clicked.getActions().length >= e.getOp()) System.out.println(action);
 			if (action.equals(ENABLE_LAYOUT)) {
 				if (debug) System.out.println("enabling layout on " + widgetName);
 				enableLayout(widgetName);
@@ -306,10 +215,18 @@ public class BankTagLayoutsPlugin extends Plugin
 	}
 
 	private void disableLayout(String bankTagName) {
-		configManager.unsetConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + bankTagName);
-		if (tabInterface.getActiveTab() != null && bankTagName.equals(tabInterface.getActiveTab().getTag())) {
-		    bankSearch.layoutBank();
-		}
+		chatboxPanelManager.openTextMenuInput("Delete layout for " + bankTagName + "?")
+				.option("Yes", () ->
+						clientThread.invoke(() ->
+						{
+							configManager.unsetConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + bankTagName);
+							if (tabInterface.getActiveTab() != null && bankTagName.equals(tabInterface.getActiveTab().getTag())) {
+								bankSearch.layoutBank();
+							}
+						})
+				)
+				.option("No", Runnables::doNothing)
+				.build();
 	}
 
 //	@Subscribe
@@ -345,7 +262,6 @@ public class BankTagLayoutsPlugin extends Plugin
 				})
 				.findAny().isPresent();
 		if (!bankTagExists) {
-			System.out.println("bank tag " + bankTagName + " does not exist");
 			return;
 		}
 
