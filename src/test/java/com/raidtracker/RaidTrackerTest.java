@@ -153,7 +153,14 @@ public class RaidTrackerTest extends TestCase
 
 		assertEquals(3027, raidTracker.getRaidTime());
 
+		//dey0 case
 		message.setMessage("Middle level complete! Duration: 7:53 Total: 20:50");
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
+
+		assertEquals(1250, raidTracker.getMiddleTime());
+
+		//regular case
+		message.setMessage("Middle level complete! Duration: 20:50");
 		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
 		assertEquals(1250, raidTracker.getMiddleTime());

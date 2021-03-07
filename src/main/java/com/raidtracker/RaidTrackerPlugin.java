@@ -343,58 +343,60 @@ public class RaidTrackerPlugin extends Plugin
 			String message = unescapeJavaString(Text.removeTags(event.getMessage()));
 
 			if (message.contains(LEVEL_COMPLETE_MESSAGE)) {
+				String timeString = message.split("complete! Duration: ")[1];
+
 				if (message.startsWith("Upper")) {
-					raidTracker.setUpperTime(stringTimeToSeconds(message.split("complete! Duration: ")[1].split(" ")[2]));
+					raidTracker.setUpperTime(stringTimeToSeconds(timeString.split(" ")[timeString.split(" ").length - 1]));
 				}
 				if (message.startsWith("Middle")) {
-					raidTracker.setMiddleTime(stringTimeToSeconds(message.split("complete! Duration: ")[1].split(" ")[2]));
+					raidTracker.setMiddleTime(stringTimeToSeconds(timeString.split(" ")[timeString.split(" ").length - 1]));
 				}
 				if (message.startsWith("Lower")) {
-					raidTracker.setLowerTime(stringTimeToSeconds(message.split("complete! Duration: ")[1].split(" ")[2]));
+					raidTracker.setLowerTime(stringTimeToSeconds(timeString.split(" ")[timeString.split(" ").length - 1]));
 				}
 
 				if (message.toLowerCase().contains("shamans")) {
-					raidTracker.setShamansTime(stringTimeToSeconds(message.split("complete! Duration: ")[1].split(" ")[0]));
+					raidTracker.setShamansTime(stringTimeToSeconds(timeString.split(" ")[0]));
 				}
 
 				if (message.toLowerCase().contains("vasa")) {
-					raidTracker.setVasaTime(stringTimeToSeconds(message.split("complete! Duration: ")[1].split(" ")[0]));
+					raidTracker.setVasaTime(stringTimeToSeconds(timeString.split(" ")[0]));
 				}
 
 				if (message.toLowerCase().contains("vanguards")) {
-					raidTracker.setVanguardsTime(stringTimeToSeconds(message.split("complete! Duration: ")[1].split(" ")[0]));
+					raidTracker.setVanguardsTime(stringTimeToSeconds(timeString.split(" ")[0]));
 				}
 
 				if (message.toLowerCase().contains("mystics")) {
-					raidTracker.setMysticsTime(stringTimeToSeconds(message.split("complete! Duration: ")[1].split(" ")[0]));
+					raidTracker.setMysticsTime(stringTimeToSeconds(timeString.split(" ")[0]));
 				}
 
 				if (message.toLowerCase().contains("tekton")) {
-					raidTracker.setTektonTime(stringTimeToSeconds(message.split("complete! Duration: ")[1].split(" ")[0]));
+					raidTracker.setTektonTime(stringTimeToSeconds(timeString.split(" ")[0]));
 				}
 
 				if (message.toLowerCase().contains("muttadiles")) {
-					raidTracker.setMuttadilesTime(stringTimeToSeconds(message.split("complete! Duration: ")[1].split(" ")[0]));
+					raidTracker.setMuttadilesTime(stringTimeToSeconds(timeString.split(" ")[0]));
 				}
 
 				if (message.toLowerCase().contains("vespula")) {
-					raidTracker.setVespulaTime(stringTimeToSeconds(message.split("complete! Duration: ")[1].split(" ")[0]));
+					raidTracker.setVespulaTime(stringTimeToSeconds(timeString.split(" ")[0]));
 				}
 
 				if (message.toLowerCase().contains("ice demon")) {
-					raidTracker.setIceDemonTime(stringTimeToSeconds(message.split("complete! Duration: ")[1].split(" ")[0]));
+					raidTracker.setIceDemonTime(stringTimeToSeconds(timeString.split(" ")[0]));
 				}
 
 				if (message.toLowerCase().contains("thieving")) {
-					raidTracker.setThievingTime(stringTimeToSeconds(message.split("complete! Duration: ")[1].split(" ")[0]));
+					raidTracker.setThievingTime(stringTimeToSeconds(timeString.split(" ")[0]));
 				}
 
 				if (message.toLowerCase().contains("tightrope")) {
-					raidTracker.setTightropeTime(stringTimeToSeconds(message.split("complete! Duration: ")[1].split(" ")[0]));
+					raidTracker.setTightropeTime(stringTimeToSeconds(timeString.split(" ")[0]));
 				}
 
 				if (message.toLowerCase().contains("crabs")) {
-					raidTracker.setCrabsTime(stringTimeToSeconds(message.split("complete! Duration: ")[1].split(" ")[0]));
+					raidTracker.setCrabsTime(stringTimeToSeconds(timeString.split(" ")[0]));
 				}
 
 			}
