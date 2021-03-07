@@ -23,8 +23,6 @@ public class FileReadWriter {
     private String coxDir;
     private String tobDir;
 
-    private boolean startMigrate;
-
     public void writeToFile(RaidTracker raidTracker)
     {
         String dir;
@@ -115,13 +113,8 @@ public class FileReadWriter {
             BufferedReader bufferedreader = new BufferedReader(new FileReader(fileName));
             String line;
 
-            boolean update = false;
-
             ArrayList<RaidTracker> RTList = new ArrayList<>();
             while ((line = bufferedreader.readLine()) != null && line.length() > 0) {
-                if (!line.contains("date\":") || !line.contains("specialLootInOwnName")) { //the only variables that are explicitly needed, so it is checked.
-                    update = true;
-                }
                 try {
                     RaidTracker parsed = gson.fromJson(parser.parse(line), RaidTracker.class);
                     RTList.add(parsed);
@@ -133,12 +126,6 @@ public class FileReadWriter {
             }
 
             bufferedreader.close();
-
-            if (update) {
-                //should always be cox, but might aswell include the var.
-                updateRTList(RTList, isTob);
-            }
-
             return RTList;
         } catch (IOException e) {
             e.printStackTrace();
@@ -156,20 +143,6 @@ public class FileReadWriter {
 
     public void createFolders()
     {
-        startMigrate = false;
-        //old root folder: dir/loots/username/cox, adding migrate option.
-        File dir_deprecated = new File(RUNELITE_DIR, "loots");
-
-        if (dir_deprecated.exists()) {
-            dir_deprecated = new File(dir_deprecated, username);
-            if (dir_deprecated.exists()) {
-                dir_deprecated = new File(dir_deprecated, "cox");
-                if (dir_deprecated.exists()) {
-                    startMigrate = true;
-                }
-            }
-        }
-
         File dir = new File(RUNELITE_DIR, "raid-data tracker");
         IGNORE_RESULT(dir.mkdir());
         dir = new File(dir, username);
@@ -195,10 +168,6 @@ public class FileReadWriter {
     public void updateUsername(final String username) {
         this.username = username;
         createFolders();
-
-        if (startMigrate) {
-            migrate();
-        }
     }
 
     public void updateRTList(ArrayList<RaidTracker> RTList, boolean isTob) {
@@ -268,35 +237,5 @@ public class FileReadWriter {
         return isDeleted;
     }
 
-
-    @SuppressWarnings("ConstantConditions")
-    public void migrate() {
-        File dir_deprecated_l1 = new File(RUNELITE_DIR, "loots");
-        File dir_deprecated_l2 = new File(dir_deprecated_l1, username);
-        File dir_deprecated_l3 = new File(dir_deprecated_l2, "cox");
-
-        File logFile_deprecated = new File(dir_deprecated_l3 + "\\raid_tracker_data.log");
-
-        if (logFile_deprecated.exists()) {
-            ArrayList<RaidTracker> temp = readFromFile(dir_deprecated_l3 + "\\raid_tracker_data.log", false);
-
-            for (RaidTracker RT : temp) {
-                writeToFile(RT);
-            }
-
-            IGNORE_RESULT(logFile_deprecated.delete());
-            IGNORE_RESULT(dir_deprecated_l3.delete());
-
-            //making sure to not delete any lootlogger directories if present
-            if (dir_deprecated_l2.listFiles().length - 1 == 0) {
-                IGNORE_RESULT(dir_deprecated_l2.delete());
-            }
-            if (dir_deprecated_l1.listFiles().length == 0) {
-                IGNORE_RESULT(dir_deprecated_l1.delete());
-            }
-        }
-    }
-
-    @SuppressWarnings("unused")
     public void IGNORE_RESULT(boolean b) {}
 }

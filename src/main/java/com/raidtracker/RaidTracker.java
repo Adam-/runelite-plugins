@@ -20,6 +20,20 @@ public class RaidTracker {
     int middleTime = -1;
     int lowerTime = -1;
     int raidTime = -1;
+
+    int shamansTime = -1;
+    int vasaTime = -1;
+    int vanguardsTime = -1;
+    int mysticsTime = -1;
+    int tektonTime = -1;
+    int muttadilesTime = -1;
+    int guardiansTime = -1;
+    int vespulaTime = -1;
+    int iceDemonTime = -1;
+    int thievingTime = -1;
+    int tightropeTime = -1;
+    int crabsTime = -1;
+
     int totalPoints = -1;
     int personalPoints = -1;
     int teamSize = -1;

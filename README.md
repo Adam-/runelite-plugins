@@ -21,6 +21,14 @@ If you find any bugs or problems, feel free to add me on discord, and I'll accep
 
 ## Changelog:
 
+### v1.4.2
+- Added dey0 time tracking to the raid_tracker_data.log file, toggleable in the settings. Adding these times to the ui are planned for the next version.
+- Increased the amount of date filters in the filter panel: added a filter for 12 hours, 3 days and 3 months.
+- Deleted verification-metadata as it was not necessary and caused the plugin not to build as of v1.7.0 runelite.
+- Fixed raid times > 1 hour not counting the extra hour.
+- Fixed a bug where the filters > 7 people wouldn't work; all the kills were shown instead.
+- Fixed a bug where times wouldn't be tracked if precise timing was enabled. The times are now rounded in the tracker instead.
+
 ### v1.4.1
 - Fixed a bug where the regular drops always returned an empty list, effectively removing the regular drops from the ui.
 - Fixed a bug in the Split Changer panel, where the plugin would crash if a team size was outside of the boundaries (1 - 100). Now if the team size is outside of the boundaries, a 1 will be used if it's below the lower limit, and a 100 if it's above the upper limit.
@@ -75,3 +83,6 @@ If you find any bugs or problems, feel free to add me on discord, and I'll accep
 ### v1.0
 - Added functionality to log the raid data to a file. 
 
+## Planned changes
+- Adding room specific best times in Chambers of Xeric. This will only work with dey0's cox timers plugin, and is togglable in the settings.
+- Adding the ability to add, and edit kc's through the ui rather than through the raid_tracker_data.log file.

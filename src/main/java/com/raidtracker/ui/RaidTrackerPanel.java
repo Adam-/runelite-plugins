@@ -749,14 +749,14 @@ public class RaidTrackerPanel extends PluginPanel {
         c.anchor = GridBagConstraints.WEST;
         wrapper.add(filter);
 
-        JComboBox<String> choices = new JComboBox<>(new String []{"All Time", "Today", "Last Week", "Last Month", "Last Year", "Last X Kills"});
+        JComboBox<String> choices = new JComboBox<>(new String []{"All Time", "12 Hours", "Today", "3 Days", "Week", "Month","3 Months", "Year", "X Kills"});
         choices.setSelectedItem(dateFilter);
         choices.setPreferredSize(new Dimension(100, 25));
         choices.setFocusable(false);
 
         choices.addActionListener(e ->  {
             dateFilter = choices.getSelectedItem().toString();
-            if (dateFilter.equals("Last X Kills")) {
+            if (dateFilter.equals("X Kills")) {
                 choices.setToolTipText("X can be changed in the settings");
             }
             else {
@@ -838,10 +838,10 @@ public class RaidTrackerPanel extends PluginPanel {
         buttonWrapper.setLayout(new GridLayout(0, 2, 2 ,0));
         buttonWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
 
-        BufferedImage refreshIcon = ImageUtil.getResourceStreamFromClass(getClass(), "refresh-grey.png");
-        BufferedImage refreshHover = ImageUtil.getResourceStreamFromClass(getClass(), "refresh-white.png");
-        BufferedImage deleteIcon = ImageUtil.getResourceStreamFromClass(getClass(), "delete-grey.png");
-        BufferedImage deleteHover = ImageUtil.getResourceStreamFromClass(getClass(), "delete-white.png");
+        BufferedImage refreshIcon = ImageUtil.loadImageResource(getClass(), "refresh-grey.png");
+        BufferedImage refreshHover = ImageUtil.loadImageResource(getClass(), "refresh-white.png");
+        BufferedImage deleteIcon = ImageUtil.loadImageResource(getClass(), "delete-grey.png");
+        BufferedImage deleteHover = ImageUtil.loadImageResource(getClass(), "delete-white.png");
 
         JButton refresh = imageButton(refreshIcon);
         refresh.setToolTipText("Refresh kills logged");
@@ -1216,9 +1216,9 @@ public class RaidTrackerPanel extends PluginPanel {
         Long divideBy = e.getKey();
         String suffix = e.getValue();
 
-        long truncated = value / (divideBy / 10); //the number part of the output times 10
+        long truncated = value / (divideBy / 100); //the number part of the output times 100
         boolean hasDecimal = truncated < 1000;
-        return hasDecimal ? (truncated / 10d) + suffix : (truncated / 10) + suffix;
+        return hasDecimal ? (truncated / 100d) + suffix : (truncated / 100) + suffix;
     }
 
     public Future<Map<Integer, RaidTrackerItem>> getDistinctRegularDrops()  {
@@ -1343,7 +1343,7 @@ public class RaidTrackerPanel extends PluginPanel {
                 tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() == 6))
                         .collect(Collectors.toCollection(ArrayList::new));
                 break;
-            case "7 Players":
+            case "7-man":
                 tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() == 7))
                         .collect(Collectors.toCollection(ArrayList::new));
                 break;
@@ -1355,8 +1355,11 @@ public class RaidTrackerPanel extends PluginPanel {
                 tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() >= 11 && RT.getTeamSize() <= 14))
                         .collect(Collectors.toCollection(ArrayList::new));
                 break;
-            case "15+ Players":
-                tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() >= 15))
+            case "15-24 Players":
+				tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() >= 15 && RT.getTeamSize() <= 24))
+					.collect(Collectors.toCollection(ArrayList::new));
+			case "24+ Players":
+                tempRTList = tempRTList.stream().filter(RT -> (RT.getTeamSize() >= 25))
                         .collect(Collectors.toCollection(ArrayList::new));
                 break;
             default:
@@ -1368,27 +1371,39 @@ public class RaidTrackerPanel extends PluginPanel {
         long now = System.currentTimeMillis();
 
 
+        long last12Hours = now - 43200000L;
         long yesterday = now - 86400000L;
+        long last3Days = now - 259200000L;
         long lastWeek = now - 604800000L;
         long lastMonth = now - 2629746000L;
+        long last3Months = now - 7889400000L;
         long lastYear = now - 31536000000L;
 
         switch (dateFilter) {
             case "All Time":
                 return tempRTList;
+			case "12 Hours":
+				return tempRTList.stream().filter(RT -> RT.getDate() > last12Hours)
+					.collect(Collectors.toCollection(ArrayList::new));
             case "Today":
                 return tempRTList.stream().filter(RT -> RT.getDate() > yesterday)
                         .collect(Collectors.toCollection(ArrayList::new));
-            case "Last Week":
+			case "3 Days":
+				return tempRTList.stream().filter(RT -> RT.getDate() > last3Days)
+					.collect(Collectors.toCollection(ArrayList::new));
+            case "Week":
                 return tempRTList.stream().filter(RT -> RT.getDate() > lastWeek)
                         .collect(Collectors.toCollection(ArrayList::new));
-            case "Last Month":
+            case "Month":
                 return tempRTList.stream().filter(RT -> RT.getDate() > lastMonth)
                         .collect(Collectors.toCollection(ArrayList::new));
-            case "Last Year":
+			case "3 Months":
+				return tempRTList.stream().filter(RT -> RT.getDate() > last3Months)
+					.collect(Collectors.toCollection(ArrayList::new));
+            case "Year":
                 return tempRTList.stream().filter(RT -> RT.getDate() > lastYear)
                         .collect(Collectors.toCollection(ArrayList::new));
-            case "Last X Kills":
+            case "X Kills":
                 ArrayList<RaidTracker> tempUniqueKills = getDistinctKills(tempRTList);
                 ArrayList<RaidTracker> uniqueKills = new ArrayList<>(tempUniqueKills.subList(Math.max(tempUniqueKills.size() - config.lastXKills(), 0), tempUniqueKills.size()));
 

@@ -143,15 +143,27 @@ public class RaidTrackerTest extends TestCase
 		raidTracker.setInRaidChambers(true);
 		raidTracker.setRaidComplete(true);
 
-		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Congratulations - your raid is complete! Team size: Solo Duration: 40:26 Personal best: 31:12", "", 0);
+		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Congratulations - your raid is complete! Team size: Solo Duration: 1:40:26 Personal best: 31:12", "", 0);
 		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
-		assertEquals(2426, raidTracker.getRaidTime());
+		assertEquals(6026, raidTracker.getRaidTime());
 
-		message.setMessage("Congratulations - your raid is complete! Team size: 11-15 Players Duration: 50:26 Personal best: 31:12");
+		message.setMessage("Congratulations - your raid is complete! Team size: 11-15 Players Duration: 50:26.6 Personal best: 31:12");
 		raidTrackerPlugin.checkChatMessage(message, raidTracker);
 
-		assertEquals(3026, raidTracker.getRaidTime());
+		assertEquals(3027, raidTracker.getRaidTime());
+
+		message.setMessage("Middle level complete! Duration: 7:53 Total: 20:50");
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
+
+		assertEquals(1250, raidTracker.getMiddleTime());
+
+		message.setMessage("Combat room 'Vanguards' complete! Duration: 3:19 Total: 16:16");
+		raidTrackerPlugin.checkChatMessage(message, raidTracker);
+
+		assertEquals(199, raidTracker.getVanguardsTime());
+
+
 	}
 
 	@Test
@@ -302,6 +314,8 @@ public class RaidTrackerTest extends TestCase
 
 		assertEquals(1, lootList.size());
 		assertEquals(1198653000, lootList.get(0).getPrice());
+
+
 	}
 
 }

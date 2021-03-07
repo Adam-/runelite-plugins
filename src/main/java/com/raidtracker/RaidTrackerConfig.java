@@ -46,6 +46,14 @@ public interface RaidTrackerConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "dey0Tracker",
+		name = "Log raid room times (dey0)",
+		description = "Track raid room times with dey0's raid timers plugin. This will replace the regular time splits panel with more detailed times of each part of the raid"
+	)
+	default boolean dey0Tracker() { return false; }
+
+
+	@ConfigItem(
 			keyName = "showKillsLogged",
 			name = "Show Kills Logged",
 			description = "Disable this checkmark to hide the Kills Logged panel in the ui"
