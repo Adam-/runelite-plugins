@@ -1,18 +1,30 @@
 package com.banktaglayouts;
 
+import com.google.common.collect.ObjectArrays;
 import com.google.common.util.concurrent.Runnables;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
 import net.runelite.api.ItemComposition;
+import net.runelite.api.MenuAction;
+import net.runelite.api.MenuEntry;
+import net.runelite.api.MessageNode;
+import net.runelite.api.ScriptEvent;
 import net.runelite.api.ScriptID;
 import net.runelite.api.VarClientStr;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.DraggingWidgetChanged;
+import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.ScriptPreFired;
+import net.runelite.api.widgets.ItemQuantityMode;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetID;
 import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.api.widgets.WidgetType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -27,14 +39,24 @@ import net.runelite.client.plugins.banktags.BankTagsPlugin;
 import net.runelite.client.plugins.banktags.TagManager;
 import net.runelite.client.plugins.banktags.tabs.TabInterface;
 import net.runelite.client.plugins.banktags.tabs.TagTab;
+import net.runelite.client.plugins.menuentryswapper.ShiftDepositMode;
+import net.runelite.client.plugins.menuentryswapper.ShiftWithdrawMode;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
+import org.apache.commons.lang3.ArrayUtils;
 
 import javax.inject.Inject;
+import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,9 +64,28 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.IntPredicate;
+import java.util.function.Predicate;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 @Slf4j
-/* TODO for release
+/* TODO
+    upgrade "enable layout" action.
+    inventory setups.
+    autolayout.
+    import/export.
+    enable on all by default.
+    	should still be selectively disable-able.
+    fake items.
+    duplicate tab.
+    	Can easily be done with an export then an import, but this would be nice for convenience I guess.
+    Lines still show up if you have layout enabled.
+
+    am i unable to drag an item from one tag to another? Not a huge deal but still.
+    	This is also a use case for that pr I submitted on the view tags thing.
+
 	high:
 	// dragging an item doesn't seem to use its new itemId in the new position - instead it uses the old saved value.
 		// Apparently this doesn't even happen, lol. Problem solved before it even existed.
@@ -58,22 +99,28 @@ import java.util.Set;
 
 	low:
 	// TODO treat variant items which have a placeholder for each variant (e.g. potions) as non-variant items. Probably need to build a list by iterating all items in the game.
+		// What is the point of this???? What would it accomplish? Idk why i wrote this weeks ago.
 
 	very low:
 	// TODO Maybe fake placeholders so you can see that an item is supposed to be in a currently empty slot?
  */
 @PluginDescriptor(
-	name = "Bank Tag Layouts",
+	name = "Bank Tag Layouts in dev",
+	description = "Right click a bank tag tabs and click \"Enable layout\", select the tag tab, then drag items in the tag to reposition them.",
 	tags = {"bank", "tag", "layout"}
 )
 @PluginDependency(BankTagsPlugin.class)
 public class BankTagLayoutsPlugin extends Plugin
 {
+	public static final IntPredicate FILTERED_CHARS = c -> "</>:".indexOf(c) == -1;
+
 	public static final String CONFIG_GROUP = "banktaglayouts";
 	public static final String TAG_SEARCH = "tag:";
 	public static final String LAYOUT_CONFIG_KEY_PREFIX = "layout_";
 	public static final String ENABLE_LAYOUT = "Enable layout";
 	public static final String DISABLE_LAYOUT = "Delete layout";
+	public static final String IMPORT_LAYOUT = "Import layout";
+	public static final String EXPORT_LAYOUT = "Export layout";
 
 	@Inject
 	private Client client;
@@ -105,7 +152,7 @@ public class BankTagLayoutsPlugin extends Plugin
 	@Inject
 	private ChatboxPanelManager chatboxPanelManager;
 
-	private static final boolean debug = false;
+	private static final boolean debug = true;
 
 	@Override
 	protected void startUp() throws Exception
@@ -125,6 +172,10 @@ public class BankTagLayoutsPlugin extends Plugin
 
 		if ("debugoverlay".equals(commandExecuted.getCommand())) {
 			debugOverlay = !debugOverlay;
+		}
+		if ("itemname".equals(commandExecuted.getCommand())) {
+			String[] arguments = commandExecuted.getArguments();
+			client.addChatMessage(ChatMessageType.PUBLICCHAT, "bla", itemName(Integer.valueOf(arguments[0])) + " " + arguments[0], "bla");
 		}
 		if ("printplaceholders".equals(commandExecuted.getCommand())) {
 			Map<Integer, Integer> map = new HashMap<>();
@@ -149,6 +200,18 @@ public class BankTagLayoutsPlugin extends Plugin
 		}
 	}
 
+
+//	@Subscribe(priority = -1) // I want to run after the Bank Tags plugin does, since it will interfere with the layout-ing if hiding tab separators is enabled.
+	@Subscribe
+	public void onScriptPreFired(ScriptPreFired event) {
+//		if (event.getScriptId() == ScriptID.BANKMAIN_BUILD) {
+//		if (event.getScriptId() == 276) {
+//			System.out.println("before: " + client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).getDynamicChildren().length);
+//			client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).deleteAllChildren();
+//			System.out.println("after: " + client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).getDynamicChildren().length);
+//		}
+	}
+
 	@Subscribe(priority = -1) // I want to run after the Bank Tags plugin does, since it will interfere with the layout-ing if hiding tab separators is enabled.
 	public void onScriptPostFired(ScriptPostFired event) {
 		if (event.getScriptId() == ScriptID.BANKMAIN_BUILD) {
@@ -159,6 +222,7 @@ public class BankTagLayoutsPlugin extends Plugin
 	// The current indexes for where each widget should appear in the custom bank layout. Should be ignored if there is not tab active.
 	private final Map<Integer, Widget> indexToWidget = new HashMap<>();
 
+	// TODO rewrite to use onmenuentryadded.
 	@Subscribe
 	public void onClientTick(ClientTick t) {
 		Widget widget = client.getWidget(12, 9);
@@ -166,39 +230,155 @@ public class BankTagLayoutsPlugin extends Plugin
 		for (Widget dynamicChild : widget.getDynamicChildren()) {
 		    if (dynamicChild.getActions() == null) continue;
 			List<String> actions = Arrays.asList(dynamicChild.getActions());
-			if (!actions.contains("View tag tab")) continue;
+			if (actions.contains("View tag tab")) {
+				String bankTagName = Text.removeTags(dynamicChild.getName());
+				int index = actions.indexOf(ENABLE_LAYOUT);
+				if (index == -1) {
+					index = actions.indexOf(DISABLE_LAYOUT);
+					if (index == -1) {
+						index = actions.size() + 1;
 
-			String bankTagName = Text.removeTags(dynamicChild.getName());
-			int index = actions.indexOf(ENABLE_LAYOUT);
-			if (index == -1) {
-				index = actions.indexOf(DISABLE_LAYOUT);
+						hookOnOpListener(dynamicChild, (e) -> {
+							Widget clicked = e.getSource();
+							String widgetName = Text.removeTags(clicked.getName());
+							String action = clicked.getActions()[e.getOp() - 1];
+							if (debug) System.out.println("clicked " + widgetName + ", option is " + action);
+							if (action.equals(ENABLE_LAYOUT)) {
+								if (debug) System.out.println("enabling layout on " + widgetName);
+								enableLayout(widgetName);
+								return true;
+							} else if (action.equals(DISABLE_LAYOUT)) {
+								if (debug) System.out.println("disable layout on " + widgetName);
+								disableLayout(widgetName);
+								return true;
+							} else if (action.equals(EXPORT_LAYOUT)) {
+								exportLayout(widgetName);
+								return true;
+							}
+							return false;
+						});
+					}
+				}
+
+				dynamicChild.setAction(index, hasLayoutEnabled(bankTagName) ? DISABLE_LAYOUT : ENABLE_LAYOUT);
+				dynamicChild.setAction(index + 1, EXPORT_LAYOUT);
+			} else if (actions.contains("New tag tab")) {
+				int index = actions.indexOf(IMPORT_LAYOUT);
 				if (index == -1) {
 					index = actions.size() + 1;
 
-					setUpTagTab(dynamicChild);
+					hookOnOpListener(dynamicChild, (e) -> {
+						Widget clicked = e.getSource();
+						String widgetName = Text.removeTags(clicked.getName());
+						String action = clicked.getActions()[e.getOp() - 1];
+						if (action.equals(IMPORT_LAYOUT)) {
+							try {
+								importLayout();
+							} catch (IOException | UnsupportedFlavorException | NoSuchFieldException | IllegalAccessException | NoSuchMethodException | InvocationTargetException ioException) {
+								ioException.printStackTrace();
+							}
+							return true;
+						}
+						return false;
+					});
 				}
-			}
 
-			dynamicChild.setAction(index, hasLayoutEnabled(bankTagName) ? DISABLE_LAYOUT : ENABLE_LAYOUT);
+				dynamicChild.setAction(index, IMPORT_LAYOUT);
+			}
 		}
 	}
 
-	// Hooks the widget's onOpListener to handle my extra option.
-	private void setUpTagTab(Widget dynamicChild) {
+	private void importLayout() throws IOException, UnsupportedFlavorException, NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+	    System.out.println("importLayout");
+		final String dataString = Toolkit
+				.getDefaultToolkit()
+				.getSystemClipboard()
+				.getData(DataFlavor.stringFlavor)
+				.toString()
+				.trim();
+
+		// TODO import warning overwrite.
+		// TODO base64encoding. It's not like people are gonna edit it anyways.
+
+		String[] split = dataString.split(",tag:");
+		if (split.length == 0 || split.length > 2) {
+			System.out.println("split[0] is " + split[0]);
+			throw new IllegalArgumentException();
+		}
+		String substring = split[0].substring("banktaglayout,".length());
+		String layoutString = substring.substring(substring.indexOf(","));
+		String name = substring.substring(0, substring.indexOf(","));
+		System.out.println("layout: " + layoutString + " " + name);
+		Map<Integer, Integer> layout = bankTagOrderStringToMap(layoutString);
+
+		System.out.println("saving layout for tab " + name);
+		configManager.setConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + name, bankTagOrderMapToString(layout));
+
+		if (split.length == 2) {
+		    System.out.println("importing tag data. " + split[1]);
+			final Iterator<String> dataIter = Text.fromCSV(split[1]).iterator();
+			dataIter.next(); // skip name.
+			StringBuilder sb = new StringBuilder();
+			for (char c : name.toCharArray())
+			{
+				if (FILTERED_CHARS.test(c))
+				{
+					sb.append(c);
+				}
+			}
+
+			// TODO precheck all reflective stuff to make sure it actually exists.
+
+			if (sb.length() == 0)
+			{
+			    chatMessage("couldn't import tag tab");
+				return;
+			}
+
+			name = sb.toString();
+
+			final String icon = dataIter.next();
+			Object tabManager = getTabManager();
+
+			Method setIcon = tabManager.getClass().getDeclaredMethod("setIcon", String.class, String.class);
+			setIcon.setAccessible(true);
+			setIcon.invoke(tabManager, name, icon);
+
+			while (dataIter.hasNext())
+			{
+				final int itemId = Integer.parseInt(dataIter.next());
+				tagManager.addTag(itemId, name, itemId < 0);
+			}
+
+			Method loadTab = tabInterface.getClass().getDeclaredMethod("loadTab", String.class);
+			loadTab.setAccessible(true);
+			loadTab.invoke(tabInterface, name);
+			Method save = tagManager.getClass().getDeclaredMethod("save");
+			save.setAccessible(true);
+			save.invoke(tagManager);
+			Method scrollTab = tabInterface.getClass().getDeclaredMethod("scrollTab", int.class);
+			scrollTab.setAccessible(true);
+			scrollTab.invoke(tabInterface, 0);
+
+			if (tabInterface.getActiveTab() != null && name.equals(tabInterface.getActiveTab().getTag()))
+			{
+				Method openTag = tabInterface.getClass().getDeclaredMethod("openTag", String.class);
+				openTag.setAccessible(true);
+				openTag.invoke(tabInterface, tabInterface.getActiveTab());
+			}
+		}
+	}
+
+	/**
+	 * Hooks the widget's onOpListener.
+	 *
+	 * @param hook the hook. should return true if the click is to be consumed, false otherwise.
+ 	 */
+	private void hookOnOpListener(Widget dynamicChild, Predicate<ScriptEvent> hook) {
 		JavaScriptCallback jsc = (JavaScriptCallback) dynamicChild.getOnOpListener()[0];
 		dynamicChild.setOnOpListener((JavaScriptCallback) (e) -> {
-			Widget clicked = e.getSource();
-			String widgetName = Text.removeTags(clicked.getName());
-			String action = clicked.getActions()[e.getOp() - 1];
-			if (debug) System.out.println("clicked " + widgetName + ", option is " + action);
-			if (action.equals(ENABLE_LAYOUT)) {
-				if (debug) System.out.println("enabling layout on " + widgetName);
-				enableLayout(widgetName);
-			} else if (action.equals(DISABLE_LAYOUT)) {
-				if (debug) System.out.println("disable layout on " + widgetName);
-				disableLayout(widgetName);
-			} else {
-				jsc.run(e);
+		    if (!hook.test(e)) {
+		    	jsc.run(e);
 			}
 		});
 	}
@@ -238,7 +418,17 @@ public class BankTagLayoutsPlugin extends Plugin
 //		}
 //    }
 //
+
+	// TODO my test tabs disappeared?
+
+	private final Set<Widget> fakeItemsPool = new HashSet<>();
+	private final Set<Widget> fakeItemsInUse = new HashSet<>();
+
 	private void applyCustomBankTagItemPositions() {
+//	    new Exception("stacktrace").printStackTrace(System.out);
+		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		markFakeItemsUnused();
+
 		TagTab activeTab = tabInterface.getActiveTab();
 		String bankTagName;
 		if (activeTab == null) {
@@ -254,14 +444,7 @@ public class BankTagLayoutsPlugin extends Plugin
 
 		if (debug) System.out.println("applyCustomBankTagItemPositions");
 
-		// TODO can I use "icon_" instead of "item_"?
-		boolean bankTagExists = configManager.getConfigurationKeys("banktags" + "." + "item_").stream()
-				.filter(key -> {
-					List<String> tags = Arrays.asList(configManager.getConfiguration("banktags", key.substring("banktags.".length())).split(","));
-					return tags.contains(bankTagName);
-				})
-				.findAny().isPresent();
-		if (!bankTagExists) {
+		if (!bankTagExists(bankTagName)) {
 			return;
 		}
 
@@ -269,12 +452,35 @@ public class BankTagLayoutsPlugin extends Plugin
 		Map<Integer, Integer> itemPositionIndexes = getBankOrder(bankTagName);
 		if (itemPositionIndexes == null) return;
 
+		/* TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!! try to fake this behavior again, this time with more items in the tab.
+			remember that arcane spirit shield is not a variant item.
+		 */
+
 		cleanItemsNotInBankTag(itemPositionIndexes, bankTagName);
 		cleanDuplicateIndexes(itemPositionIndexes);
 
-		assignVariantItemPositions(itemPositionIndexes);
+		Collection<Integer> noBankItemPresent = new HashSet<>(itemPositionIndexes.keySet()); // TODO delete.
 
-		for (Widget bankItem : client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).getDynamicChildren()) {
+		assignVariantItemPositions(itemPositionIndexes, noBankItemPresent);
+
+//		boolean found = false;
+//		for (Widget bankItem : client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).getDynamicChildren()) {
+//			if (bankItem.getItemId() == 21776) {
+//				found = true;
+//			}
+//		}
+//		if (!found) {
+//			System.out.println("adding");
+//			client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).createChild(-1, WidgetType.GRAPHIC);
+//			Widget[] dynamicChildren = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).getDynamicChildren();
+//			Widget dynamicChild = dynamicChildren[dynamicChildren.length - 1];
+//			dynamicChild.setItemId(21776);
+//			dynamicChild.setHidden(false);
+//		}
+//
+		// now layout items that don't have variants.
+
+		for (Widget bankItem : bankItemContainer.getDynamicChildren()) {
 			if (bankItem.isHidden()) continue;
 
 			int itemId = bankItem.getItemId();
@@ -285,16 +491,18 @@ public class BankTagLayoutsPlugin extends Plugin
 			int nonPlaceholderId = getNonPlaceholderId(itemId);
 
 			if (!itemShouldBeTreatedAsHavingVariants(nonPlaceholderId)) {
-				if (debug) System.out.println("\tassigning position for " + itemName(itemId) + ": ");
+				if (debug) System.out.println("\tassigning position for " + itemName(itemId) + itemId + ": ");
 				int indexForItem = getIndexForItem(itemId, itemPositionIndexes);
 				if (indexForItem != -1) {
 					if (debug) System.out.println("\t\texisting position: " + indexForItem);
 					indexToWidget.put(indexForItem, bankItem);
+					noBankItemPresent.remove(bankItem);
 				} else {
-					int newIndex = assignPosition(itemPositionIndexes, itemId);
+					int newIndex = assignPosition(itemPositionIndexes);
 					itemPositionIndexes.put(itemId, newIndex);
 					if (debug) System.out.println("\t\tnew position: " + newIndex);
 					indexToWidget.put(newIndex, bankItem);
+					noBankItemPresent.remove(bankItem);
 				}
 			}
 
@@ -302,11 +510,92 @@ public class BankTagLayoutsPlugin extends Plugin
 				customBankTagOrderInsert(bankTagName, ev.getSource());
 			});
 		}
+		System.out.println(bankItemContainer.getDynamicChildren().length);
+		for (Map.Entry<Integer, Integer> entry : itemPositionIndexes.entrySet()) {
+			Integer index = entry.getValue();
+			if (indexToWidget.containsKey(index)) {
+				continue;
+			}
+
+			Widget child = getFakeItem();
+			child.setItemId(getNonPlaceholderId(entry.getKey()));
+			child.setHidden(false);
+
+			child.setOriginalWidth(36);
+			child.setOriginalHeight(32);
+			child.setOpacity(25);
+			child.setItemQuantityMode(ItemQuantityMode.NEVER);
+			System.out.println("putting fake item " + entry.getKey() + " to " + index);
+			indexToWidget.put(index, child);
+		}
+
 		if (debug) System.out.println("tag items: " + itemPositionIndexes.toString());
 
 		setItemPositions(indexToWidget);
 		configManager.setConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + bankTagName, bankTagOrderMapToString(itemPositionIndexes));
 		if (debug) System.out.println("saved tag " + bankTagName);
+	}
+
+	private void markFakeItemsUnused() {
+		Iterator<Widget> iter = fakeItemsInUse.iterator();
+		while (iter.hasNext()) {
+			Widget next = iter.next();
+			next.setHidden(true);
+			next.setItemId(-1);
+			fakeItemsPool.add(next);
+			iter.remove();
+		}
+	}
+
+	private Widget getFakeItem() {
+	    if (fakeItemsPool.isEmpty()) {
+			Widget child = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).createChild(-1, WidgetType.GRAPHIC);
+			fakeItemsInUse.add(child);
+			return child;
+		}
+
+		Widget next = fakeItemsPool.iterator().next();
+	    fakeItemsPool.remove(next);
+	    fakeItemsInUse.add(next);
+	    return next;
+	}
+
+	@Subscribe
+	public void onMenuEntryAdded(MenuEntryAdded menuEntryAdded)
+	{
+		MenuEntry hopTo = new MenuEntry();
+		hopTo.setOption(client.getMouseCanvasPosition().getX() > 200 ? "test option 1" : "test option 2");
+		hopTo.setTarget("bla");
+		hopTo.setType(MenuAction.RUNELITE.getId());
+//		hopTo.setParam0(event.getActionParam0());
+//		hopTo.setParam1(event.getActionParam1());
+
+		if (menuEntryAdded.getOption().equalsIgnoreCase("cancel")) {
+			insertMenuEntry(hopTo, client.getMenuEntries(), true);
+		}
+	}
+
+	private void insertMenuEntry(MenuEntry newEntry, MenuEntry[] entries, boolean after)
+	{
+		MenuEntry[] newMenu = ObjectArrays.concat(entries, newEntry);
+
+		if (after)
+		{
+			int menuEntryCount = newMenu.length;
+			ArrayUtils.swap(newMenu, menuEntryCount - 1, menuEntryCount - 2);
+		}
+
+		client.setMenuEntries(newMenu);
+	}
+
+	// TODO can I use "icon_" instead of "item_"?
+	private boolean bankTagExists(String bankTagName) {
+		return configManager.getConfigurationKeys("banktags" + "." + "item_").stream()
+				.filter(key -> {
+					List<String> tags = Arrays.asList(configManager.getConfiguration("banktags", key.substring("banktags.".length())).split(","));
+					return tags.contains(bankTagName);
+				})
+				.findAny().isPresent();
 	}
 
 	private void cleanItemsNotInBankTag(Map<Integer, Integer> itemPositionIndexes, String bankTagName) {
@@ -320,12 +609,8 @@ public class BankTagLayoutsPlugin extends Plugin
 					if (debug) System.out.println("removing " + itemName(itemId) + " (" + itemId + ") because it is no longer in the bank tag");
 					iter.remove();
 				}
-			} catch (NoSuchMethodException e) {
-				e.printStackTrace();
-			} catch (InvocationTargetException e) {
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				e.printStackTrace();
+			} catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+				if (debug) e.printStackTrace();
 			}
 		}
 	}
@@ -336,7 +621,7 @@ public class BankTagLayoutsPlugin extends Plugin
 		return (boolean) method.invoke(tagManager, itemId, search);
 	}
 
-	private void assignVariantItemPositions(Map<Integer, Integer> itemPositionIndexes) {
+	private void assignVariantItemPositions(Map<Integer, Integer> itemPositionIndexes, Collection<Integer> noBankItemPresent) {
 		Map<Integer, List<Widget>> variantItemsInBank = new HashMap<>(); // key is the variant base id; the list contains the item widgets that go in this variant base id;
 		for (Widget bankItem : client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).getDynamicChildren()) {
 			if (bankItem.isHidden()) continue;
@@ -356,6 +641,8 @@ public class BankTagLayoutsPlugin extends Plugin
 			}
 		}
 		if (debug) System.out.println("variant items in bank: " + variantItemsInBank);
+
+		// TODO what if people remove the sidebar.
 
 		Map<Integer, List<Integer>> variantItemsInLayout = new HashMap<>(); // key is the variant base id; the list contains the item id of the items.
 		ArrayList<Map.Entry<Integer, Integer>> entries = new ArrayList<>(itemPositionIndexes.entrySet());
@@ -391,8 +678,9 @@ public class BankTagLayoutsPlugin extends Plugin
 				if (!itemIds.contains(itemId)) continue;
 
 				int index = itemPositionIndexes.get(itemId);
-				if (debug) System.out.println("item " + itemName(itemId) + " assigned on pass 1 to index " + index);
+				if (debug) System.out.println("item " + itemName(itemId) + " (" + itemId + ") assigned on pass 1 to index " + index);
 				indexToWidget.put(index, widget);
+				noBankItemPresent.remove(variationBaseId);
 				iter.remove();
 			}
 
@@ -400,15 +688,15 @@ public class BankTagLayoutsPlugin extends Plugin
 			iter = notYetPositionedWidgets.iterator();
 			while (iter.hasNext()) {
 				Widget widget = iter.next();
-				int itemId = switchPlaceholderId(widget.getItemId());
 
 				List<Integer> itemIds = variantItemsInLayout.get(variationBaseId);
 				if (itemIds == null) continue; // TODO do I need this line?
 				for (Integer id : itemIds) {
 					int index = itemPositionIndexes.get(id);
 					if (!indexToWidget.containsKey(index)) {
-						if (debug) System.out.println("item " + itemName(itemId) + " assigned on pass 3 to index " + index);
+						if (debug) System.out.println("item " + itemName(switchPlaceholderId(widget.getItemId())) + switchPlaceholderId(widget.getItemId()) + " assigned on pass 3 to index " + index);
 						indexToWidget.put(index, widget);
+						noBankItemPresent.remove(variationBaseId);
 						iter.remove();
 						break;
 					}
@@ -418,10 +706,11 @@ public class BankTagLayoutsPlugin extends Plugin
 			if (!notYetPositionedWidgets.isEmpty()) {
 				for (Widget notYetPositionedWidget : notYetPositionedWidgets) {
 					int itemId = notYetPositionedWidget.getItemId();
-					int index = assignPosition(itemPositionIndexes, itemId);
+					int index = assignPosition(itemPositionIndexes);
 					itemPositionIndexes.put(itemId, index);
-					if (debug) System.out.println("\t\tnew position: " + index);
+					if (debug) System.out.println("\t\tnew position: " + index + notYetPositionedWidget.getItemId());
 					indexToWidget.put(index, notYetPositionedWidget);
+					noBankItemPresent.remove(variationBaseId);
 				}
 			}
 		}
@@ -478,6 +767,89 @@ public class BankTagLayoutsPlugin extends Plugin
 		return (configuration == null) ? null : bankTagOrderStringToMap(configuration);
 	}
 
+	private void exportLayout(String tagName) {
+	    // TODO check that layout is enabled. Do this also for the right-click option.
+//		"banktaglayout,tagName,layoutstring,tag:tagstring";
+		String layout = "banktaglayout," + tagName + ",";
+		layout += configManager.getConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + tagName);
+
+		TagTab tagTab = null;
+		try {
+			tagTab = getTab(tagName);
+		} catch (ReflectiveOperationException e) {
+			if (debug) e.printStackTrace();
+			chatMessage("Couldn't get tab string.");
+		}
+
+		if (tagTab != null) {
+			List<String> data = new ArrayList<>();
+			data.add(tagTab.getTag());
+			data.add(String.valueOf(tagTab.getIconItemId()));
+
+			for (Integer item : tagManager.getItemsForTag(tagTab.getTag())) {
+				data.add(String.valueOf(item));
+			}
+
+			layout += ",tag:" + Text.toCSV(data);
+		}
+
+		if (debug) System.out.println("export: \"" + layout + "\"");
+
+		Deflater d = new Deflater();
+		d.setInput(layout.getBytes());
+		byte[] output = new byte[10000];
+		int a = d.deflate(output);
+		Inflater i = new Inflater();
+		i.setInput(output);
+		byte[] out = new byte[10000];
+		try {
+		    System.out.println(i.inflate(out));
+			i.inflate(out);
+		} catch (DataFormatException e) {
+			e.printStackTrace();
+		}
+		System.out.println("compressed length: " + a + " " + layout.getBytes().length + " " + out.length);
+
+		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(layout), null);
+		chatMessage("Copied to clipboard");
+	}
+
+	private MessageNode chatMessage(String message) {
+		return client.addChatMessage(ChatMessageType.GAMEMESSAGE, "bla", message, "bla");
+	}
+
+	private static String escapeCommas(String s) {
+		String escaped = s.replaceAll("\\\\", "\\\\\\\\").replaceAll(",", "\\,");
+		System.out.println("escaped: " + escaped);
+		return escaped;
+	}
+
+	public static void main(String[] args) {
+
+		String x = escapeCommas("hello, there\\");
+		System.out.println(x);
+		System.out.println(unescapeCommas(x));
+	}
+
+	private static String unescapeCommas(String s) {
+		return s.replaceAll("\\,", ",").replaceAll("\\\\", "\\");
+	}
+
+	private TagTab getTab(String tagName) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+		Object tabManager = getTabManager();
+
+		Method find = tabManager.getClass().getDeclaredMethod("find", String.class);
+		find.setAccessible(true);
+		return (TagTab) find.invoke(tabManager, tagName);
+	}
+
+	private Object getTabManager() throws NoSuchFieldException, IllegalAccessException {
+		Field tabManagerField = TabInterface.class.getDeclaredField("tabManager");
+		tabManagerField.setAccessible(true);
+		Object o = tabManagerField.get(tabInterface);
+		return o;
+	}
+
 	private String bankTagOrderMapToString(Map<Integer, Integer> itemPositionMap) {
 		StringBuilder sb = new StringBuilder();
 		for (Map.Entry<Integer, Integer> integerIntegerEntry : itemPositionMap.entrySet()) {
@@ -515,6 +887,7 @@ public class BankTagLayoutsPlugin extends Plugin
 				}
 			}
 
+			System.out.println("hiding widget " + child.getItemId());
 			child.setHidden(true);
 			child.revalidate();
 		}
@@ -524,6 +897,7 @@ public class BankTagLayoutsPlugin extends Plugin
 			Widget widget = entry.getValue();
 			int index = entry.getKey();
 
+			System.out.println("moving widget " + widget.getItemId() + " to " + ((index % 8) * 48 + 51) + ", " + (index / 8) * 36);
 			widget.setOriginalX((index % 8) * 48 + 51);
 			widget.setOriginalY((index / 8) * 36);
 			widget.revalidate();
@@ -657,7 +1031,7 @@ public class BankTagLayoutsPlugin extends Plugin
 		return null;
 	}
 
-	private static int assignPosition(Map<Integer, Integer> itemPositionIndexes, int itemId) {
+	private static int assignPosition(Map<Integer, Integer> itemPositionIndexes) {
 		List<Integer> indexes = new ArrayList<>(itemPositionIndexes.values());
 		indexes.sort(Integer::compare);
 		int lastIndex = -1;
@@ -668,7 +1042,6 @@ public class BankTagLayoutsPlugin extends Plugin
 			lastIndex = integer;
 		}
 		lastIndex++;
-		if (debug) System.out.println("\t\t!!! assigning new position for item " + itemId + " to " + lastIndex);
 		return lastIndex;
 	}
 
