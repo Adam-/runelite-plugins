@@ -2,77 +2,106 @@ package com.banktaglayouts;
 
 import net.runelite.api.Client;
 import net.runelite.api.ItemComposition;
+import net.runelite.api.Point;
+import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.ItemVariationMapping;
 import net.runelite.client.plugins.banktags.tabs.TabInterface;
 import net.runelite.client.plugins.banktags.tabs.TagTab;
 import net.runelite.client.ui.overlay.WidgetItemOverlay;
+import net.runelite.client.ui.overlay.tooltip.Tooltip;
+import net.runelite.client.ui.overlay.tooltip.TooltipManager;
+import net.runelite.client.util.AsyncBufferedImage;
 
 import javax.inject.Inject;
+import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.Map;
 
 public class HasItemOverlay extends WidgetItemOverlay {
     private static final Dimension IMAGE_SIZE = new Dimension(11, 11);
 
-    private final Client client;
+    @Inject
+    private Client client;
 
     @Inject
     private ItemManager itemManager;
 
     @Inject
-    private TabInterface tabInterface;
-
-    private final BankTagLayoutsPlugin bankTagLayoutsPlugin;
+    private TooltipManager tooltipManager;
 
     @Inject
-    HasItemOverlay(BankTagLayoutsPlugin bankTagLayoutsPlugin, Client client)
+    private TabInterface tabInterface;
+
+    @Inject
+    private BankTagLayoutsPlugin bankTagLayoutsPlugin;
+
+    HasItemOverlay()
     {
-        this.bankTagLayoutsPlugin = bankTagLayoutsPlugin;
-        this.client = client;
 		showOnBank();
     }
+
+    private Tooltip tooltip = null;
 
     @Override
     public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem itemWidget)
     {
-        if (tabInterface.getActiveTab() == null)
-        {
-            return;
-        }
+        System.out.println("render");
+//        if (tabInterface.getActiveTab() == null)
+//        {
+//            return;
+//        }
 
-        if (!bankTagLayoutsPlugin.debugOverlay) return;
+//        if (!bankTagLayoutsPlugin.debugOverlay) return;
 
-        int yoffset = itemWidget.getWidget().getCanvasLocation().getY() - itemWidget.getWidget().getOriginalY() + 3;
+        System.out.println(tabInterface + " " + bankTagLayoutsPlugin.tabInterface);
         TagTab activeTab = tabInterface.getActiveTab();
         if (activeTab == null) {
-            System.out.println("active tab was null.");
             return;
         }
-        Map<Integer, Integer> itemIdToIndexes = bankTagLayoutsPlugin.getBankOrder(activeTab.getTag());
-        for (Map.Entry<Integer, Integer> integerIntegerEntry : itemIdToIndexes.entrySet()) {
-            int index = integerIntegerEntry.getValue();
-            int x = (index % 8) * 48 + 51 + 37;
-            int y = (index / 8) * 36 + yoffset;
-            int indexItemId = integerIntegerEntry.getKey();
-            ItemComposition itemComposition = itemManager.getItemComposition(indexItemId);
-            boolean placeholder = itemComposition.getPlaceholderTemplateId() == 14401;
-            int nonPlaceholderId = bankTagLayoutsPlugin.getNonPlaceholderId(indexItemId);
-            boolean hasVariants = ItemVariationMapping.getVariations(ItemVariationMapping.map(indexItemId)).size() > 1;
-            int variantBase = ItemVariationMapping.map(nonPlaceholderId);
-            String itemShortName = bankTagLayoutsPlugin.itemName(indexItemId);
-            if (itemShortName.contains("(") && itemShortName.length() > 8) {
-                itemShortName = itemShortName.substring(0, Math.min(4, itemShortName.length())) + itemShortName.substring(itemShortName.length() - 4);
-            } else {
-                itemShortName = itemShortName.substring(0, Math.min(8, itemShortName.length()));
-            }
-            graphics.setColor((placeholder) ? Color.CYAN : Color.GRAY);
-            graphics.drawString(itemShortName, x, y + 36);
+        System.out.println(bankTagLayoutsPlugin.fakeItems.size());
 
-            graphics.setColor(Color.GRAY);
-            if (hasVariants) graphics.drawString(String.valueOf(variantBase), x, y + 12);
-            graphics.drawString(String.valueOf(indexItemId), x, y + 24);
+        Map<Integer, Integer> itemIdToIndexes = bankTagLayoutsPlugin.getBankOrder(activeTab.getTag());
+        Point mouseCanvasPosition = client.getMouseCanvasPosition();
+        tooltipManager.getTooltips().remove(tooltip);
+        tooltip = null;
+        Point canvasLocation = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).getCanvasLocation();
+        int scrollY = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).getScrollY();
+        for (BankTagLayoutsPlugin.FakeItem fakeItem : bankTagLayoutsPlugin.fakeItems) {
+            int fakeItemId = fakeItem.itemId;
+
+            int row = (mouseCanvasPosition.getY() + scrollY + 2) / 36;
+            int col = (mouseCanvasPosition.getX() - 51 + 6) / 48;
+            int index = row * 8 + col;
+            Integer integer = itemIdToIndexes.entrySet().stream().map(e -> e.getValue()).filter(e -> e == index).findAny().orElse(null);
+            if (fakeItem.contains(mouseCanvasPosition)) {
+                if (tooltip == null) {
+                    tooltip = new Tooltip("" + fakeItemId);
+                    tooltipManager.add(tooltip);
+                }
+
+                ItemComposition itemComposition = itemManager.getItemComposition(fakeItemId);
+                boolean placeholder = itemComposition.getPlaceholderTemplateId() == 14401;
+                int nonPlaceholderId = bankTagLayoutsPlugin.getNonPlaceholderId(fakeItemId);
+                boolean hasVariants = ItemVariationMapping.getVariations(ItemVariationMapping.map(fakeItemId)).size() > 1;
+                int variantBase = ItemVariationMapping.map(nonPlaceholderId);
+                String itemShortName = bankTagLayoutsPlugin.itemName(fakeItemId);
+                if (itemShortName.contains("(") && itemShortName.length() > 8) {
+                    itemShortName = itemShortName.substring(0, Math.min(4, itemShortName.length())) + itemShortName.substring(itemShortName.length() - 4);
+                } else {
+                    itemShortName = itemShortName.substring(0, Math.min(8, itemShortName.length()));
+                }
+
+            }
+
+            int x = fakeItem.originalX + canvasLocation.getX();
+            int y = fakeItem.originalY + canvasLocation.getY() - scrollY;
+            AsyncBufferedImage image = bankTagLayoutsPlugin.itemManager.getImage(fakeItemId);
+            graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
+            final BufferedImage outline = itemManager.getItemOutline(fakeItemId, 1, Color.GRAY);
+            graphics.drawImage(outline, x, y, null);
         }
     }
 
