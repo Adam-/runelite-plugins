@@ -23,8 +23,7 @@ import java.util.Map;
 public class HasItemOverlay extends WidgetItemOverlay {
     private static final Dimension IMAGE_SIZE = new Dimension(11, 11);
 
-    @Inject
-    private Client client;
+    private final Client client;
 
     @Inject
     private ItemManager itemManager;
@@ -35,11 +34,13 @@ public class HasItemOverlay extends WidgetItemOverlay {
     @Inject
     private TabInterface tabInterface;
 
-    @Inject
-    private BankTagLayoutsPlugin bankTagLayoutsPlugin;
+    private final BankTagLayoutsPlugin bankTagLayoutsPlugin;
 
-    HasItemOverlay()
+    @Inject
+    HasItemOverlay(BankTagLayoutsPlugin bankTagLayoutsPlugin, Client client)
     {
+        this.bankTagLayoutsPlugin = bankTagLayoutsPlugin;
+        this.client = client;
 		showOnBank();
     }
 
