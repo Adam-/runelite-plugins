@@ -116,7 +116,6 @@ public class BankTagLayoutsPlugin extends Plugin
 	public static final Color itemTooltipColor = new Color(0xFF9040);
 
 	public static final String CONFIG_GROUP = "banktaglayouts";
-	public static final String TAG_SEARCH = "tag:";
 	public static final String LAYOUT_CONFIG_KEY_PREFIX = "layout_";
 	public static final String ENABLE_LAYOUT = "Enable layout";
 	public static final String DISABLE_LAYOUT = "Delete layout";
@@ -168,13 +167,13 @@ public class BankTagLayoutsPlugin extends Plugin
 	private final Map<Integer, Widget> indexToWidget = new HashMap<>();
 
 	@Override
-	protected void startUp() throws Exception
+	protected void startUp()
 	{
 		overlayManager.add(fakeItemOverlay);
 	}
 
 	@Override
-	protected void shutDown() throws Exception
+	protected void shutDown()
 	{
 		overlayManager.remove(fakeItemOverlay);
 	}
@@ -343,9 +342,7 @@ public class BankTagLayoutsPlugin extends Plugin
 		Object tabManager = null;
 		try {
 			tabManager = getTabManager();
-		} catch (NoSuchFieldException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
+		} catch (NoSuchFieldException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
 		Method setIcon, loadTab, save, scrollTab, openTag;
@@ -455,7 +452,7 @@ public class BankTagLayoutsPlugin extends Plugin
 		cleanItemsNotInBankTag(itemPositionIndexes, bankTagName);
 		cleanDuplicateIndexes(itemPositionIndexes);
 
-		assignVariantItemPositions(itemPositionIndexes, bankItems);
+		assignVariantItemPositions(itemPositionIndexes);
 		assignNonVariantItemPositions(itemPositionIndexes, bankItems);
 
 		for (Widget bankItem : bankItems) {
@@ -475,9 +472,7 @@ public class BankTagLayoutsPlugin extends Plugin
 
 		// What the fuck? It appears that despite my priority setting on the @Subscribe, Bank Tags can still sometimes run after me and potentially run its remove tag separators code, messing up my layout.
         // invokeLater solves this issue though.
-		clientThread.invokeLater(() -> {
-			setItemPositions(indexToWidget);
-		});
+		clientThread.invokeLater(() -> setItemPositions(indexToWidget));
 		saveLayout(bankTagName, itemPositionIndexes);
 		log.debug("saved tag " + bankTagName);
 	}
@@ -669,7 +664,6 @@ public class BankTagLayoutsPlugin extends Plugin
 			boolean isOnFakeItem = event.getWidgetId() != WidgetInfo.BANK_ITEM_CONTAINER.getId();
 			boolean layoutOnly = menuOption.startsWith(REMOVE_FROM_LAYOUT_MENU_OPTION);
 			event.consume();
-			int index = event.getActionParam();
 
 			int itemId;
 			if (isOnFakeItem) {
@@ -753,7 +747,7 @@ public class BankTagLayoutsPlugin extends Plugin
 	}
 
 	// TODO this logic needs looking at re: barrows items.
-	private void assignVariantItemPositions(Map<Integer, Integer> itemPositionIndexes, List<Widget> bankItems) {
+	private void assignVariantItemPositions(Map<Integer, Integer> itemPositionIndexes) {
 		Map<Integer, List<Widget>> variantItemsInBank = new HashMap<>(); // key is the variant base id; the list contains the item widgets that go in this variant base id;
 		for (Widget bankItem : client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).getDynamicChildren()) {
 			if (bankItem.isHidden()) continue;
@@ -847,9 +841,6 @@ public class BankTagLayoutsPlugin extends Plugin
 
 	/**
 	 * Doesn't handle variation items.
-	 * @param itemId
-	 * @param itemPositionIndexes
-	 * @return
 	 */
 	private int getIndexForItem(int itemId, Map<Integer, Integer> itemPositionIndexes) {
 		Integer index = itemPositionIndexes.get(itemId);
@@ -874,7 +865,6 @@ public class BankTagLayoutsPlugin extends Plugin
 	}
 
 	/**
-	 * @param nonPlaceholderItemId
 	 */
 	private boolean itemHasVariants(int nonPlaceholderItemId) {
 		return ItemVariationMapping.getVariations(ItemVariationMapping.map(nonPlaceholderItemId)).size() > 1;
@@ -885,7 +875,6 @@ public class BankTagLayoutsPlugin extends Plugin
 	 * If true, this means that the item should occupy the next available position in the custom layout which matches either its own id or any of its variants.
 	 * This includes placeholders for the item.
 	 * This does mean that the order that items appear in in the normal bank has an impact on the custom layout. Not something you'd expect from this feature, lol.
-	 * @param nonPlaceholderItemId
 	 */
 	private boolean itemShouldBeTreatedAsHavingVariants(int nonPlaceholderItemId) {
 		return itemHasVariants(nonPlaceholderItemId);
