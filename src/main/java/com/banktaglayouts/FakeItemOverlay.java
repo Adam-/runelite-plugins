@@ -53,6 +53,8 @@ public class FakeItemOverlay extends Overlay {
         tooltip = null;
 
         Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+        if (bankItemContainer == null) return null;
+
         int scrollY = bankItemContainer.getScrollY();
 
         Point mouseCanvasPosition = client.getMouseCanvasPosition();
@@ -71,7 +73,7 @@ public class FakeItemOverlay extends Overlay {
 
                 if (tooltip == null) {
                     String tooltipString = ColorUtil.wrapWithColorTag(plugin.itemName(itemIdForTooltip), plugin.itemTooltipColor);
-                    if (plugin.debugOverlay)
+                    if (plugin.debug)
                         tooltipString += " (" + itemIdForTooltip + (plugin.isPlaceholder(itemIdForTooltip) ? ", ph" : "") + ")";
                     tooltip = new Tooltip(tooltipString);
                     tooltipManager.add(tooltip);
@@ -79,18 +81,18 @@ public class FakeItemOverlay extends Overlay {
             }
         }
 
-        graphics.setColor(Color.RED);
-        graphics.drawRect(bankItemArea.x, bankItemArea.y, bankItemArea.width, bankItemArea.height);
+        // TODO ??? why do I need to do -4 and -20? I didn't need to do this before.
+        graphics.translate(-4, -20);
+//        graphics.setColor(Color.RED);
+//        graphics.draw(bankItemArea);
         if (config.showLayoutPlaceholders()) {
             graphics.clip(bankItemArea);
             graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
             for (BankTagLayoutsPlugin.FakeItem fakeItem : plugin.fakeItems) {
                 int fakeItemId = fakeItem.getItemId();
 
-                // TODO ??? why do I need to do -4 and -20? I didn't need to do this before.
-                // Why the fuck is bankItemArea too low?
-                int x = fakeItem.originalX + canvasLocation.getX() - 4;
-                int y = fakeItem.originalY + canvasLocation.getY() - scrollY - 20;
+                int x = fakeItem.originalX + canvasLocation.getX();
+                int y = fakeItem.originalY + canvasLocation.getY() - scrollY;
                 BufferedImage image = itemManager.getImage(fakeItemId);
                 graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
                 BufferedImage outline = itemManager.getItemOutline(fakeItemId, 1, Color.GRAY);
