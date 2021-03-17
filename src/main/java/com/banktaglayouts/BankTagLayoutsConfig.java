@@ -18,16 +18,6 @@ public interface BankTagLayoutsConfig extends Config {
     }
 
     @ConfigItem(
-            keyName = "enableLayoutButton",
-            name = "Enable/Disable Layout button",
-            description = "Shows the enable/disable layout button when a tag tab is selected",
-            position = 3
-    )
-    default boolean enableLayoutButton() {
-        return true;
-    }
-
-    @ConfigItem(
             keyName = "tutorialMessage",
             name = "Layout enable tutorial message",
             description = "Lets you know how to enable layouts if you drag an item in a tag tab without layout enabled.",

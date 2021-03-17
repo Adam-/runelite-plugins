@@ -169,8 +169,6 @@ public class BankTagLayoutsPlugin extends Plugin
 
 	static final boolean debug = true;
 
-	private Widget button = null;
-
 	@Override
 	protected void startUp() throws Exception
 	{
@@ -183,59 +181,12 @@ public class BankTagLayoutsPlugin extends Plugin
 		overlayManager.remove(hasItemOverlay);
 	}
 
-	private void updateButton() {
-		if (!tabInterface.isActive() || !config.enableLayoutButton()) {
-			if (button != null) button.setHidden(true);
-			return;
-		}
-
-		if (button == null) {
-			Widget parent = client.getWidget(WidgetInfo.BANK_CONTENT_CONTAINER);
-			button = parent.createChild(-1, WidgetType.GRAPHIC);
-
-			button.setOriginalHeight(18);
-			button.setOriginalWidth(18);
-			button.setYPositionMode(WidgetPositionMode.ABSOLUTE_BOTTOM);
-			button.setOriginalX(434);
-			button.setOriginalY(45);
-
-			button.setOnOpListener((JavaScriptCallback) (e) -> {
-				String tagName = tabInterface.getActiveTab().getTag();
-				if (hasLayoutEnabled(tagName)) {
-					disableLayout(tagName);
-				} else {
-					enableLayout(tagName);
-					updateButton();
-				}
-			});
-			button.setHasListener(true);
-			button.revalidate();
-		}
-
-		button.setHidden(false);
-		String tagName = tabInterface.getActiveTab().getTag();
-		boolean layoutEnabled = hasLayoutEnabled(tagName);
-		button.setSpriteId(layoutEnabled ? 2848 : 2847);
-		button.setAction(0, layoutEnabled ? "Delete layout" : "Enable layout");
-	}
-
-	@Subscribe
-	public void onWidgetLoaded(WidgetLoaded event)
-	{
-		if (event.getGroupId() == WidgetID.BANK_GROUP_ID) button = null; // when the bank widget is unloaded or loaded (not sure which) the button is removed from it somehow. So, set it to null so that it will be regenerated.
-	}
-
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
 	    if (CONFIG_GROUP.equals(event.getGroup())) {
-			if ("enableLayoutButton".equals(event.getKey())) {
-				clientThread.invokeLater(this::updateButton);
-			} else if ("layoutEnabledByDefault".equals(event.getKey())) {
-				clientThread.invokeLater(() -> {
-				    applyCustomBankTagItemPositions();
-				    updateButton();
-				});
+			if ("layoutEnabledByDefault".equals(event.getKey())) {
+				clientThread.invokeLater(this::applyCustomBankTagItemPositions);
 			}
 		}
 	}
@@ -285,8 +236,6 @@ public class BankTagLayoutsPlugin extends Plugin
 		if (event.getScriptId() == ScriptID.BANKMAIN_BUILD) {
 			System.out.println("bank tag layouts bankmain " + client.getTickCount() + " " + System.currentTimeMillis());
 			applyCustomBankTagItemPositions();
-
-			updateButton();
 		}
 	}
 
@@ -315,7 +264,6 @@ public class BankTagLayoutsPlugin extends Plugin
 							String action = clicked.getActions()[e.getOp() - 1];
 							if (action.equals(ENABLE_LAYOUT)) {
 								enableLayout(widgetName);
-								updateButton();
 								return true;
 							} else if (action.equals(DISABLE_LAYOUT)) {
 								disableLayout(widgetName);
@@ -567,7 +515,6 @@ public class BankTagLayoutsPlugin extends Plugin
 							if (tabInterface.getActiveTab() != null && bankTagName.equals(tabInterface.getActiveTab().getTag())) {
 								bankSearch.layoutBank();
 							}
-							updateButton();
 						})
 				)
 				.option("No", Runnables::doNothing)
