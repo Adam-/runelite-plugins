@@ -23,13 +23,9 @@ import net.runelite.api.events.DraggingWidgetChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.ScriptPostFired;
-import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetID;
 import net.runelite.api.widgets.WidgetInfo;
-import net.runelite.api.widgets.WidgetPositionMode;
-import net.runelite.api.widgets.WidgetType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -156,7 +152,7 @@ public class BankTagLayoutsPlugin extends Plugin
 	private TagManager tagManager;
 
 	@Inject
-	private FakeItemOverlay hasItemOverlay;
+	private FakeItemOverlay fakeItemOverlay;
 
 	@Inject
 	private BankSearch bankSearch;
@@ -172,13 +168,13 @@ public class BankTagLayoutsPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		overlayManager.add(hasItemOverlay);
+		overlayManager.add(fakeItemOverlay);
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
-		overlayManager.remove(hasItemOverlay);
+		overlayManager.remove(fakeItemOverlay);
 	}
 
 	@Subscribe
@@ -234,7 +230,6 @@ public class BankTagLayoutsPlugin extends Plugin
 	@Subscribe(priority = -1) // I want to run after the Bank Tags plugin does, since it will interfere with the layout-ing if hiding tab separators is enabled.
 	public void onScriptPostFired(ScriptPostFired event) {
 		if (event.getScriptId() == ScriptID.BANKMAIN_BUILD) {
-			System.out.println("bank tag layouts bankmain " + client.getTickCount() + " " + System.currentTimeMillis());
 			applyCustomBankTagItemPositions();
 		}
 	}
@@ -245,7 +240,7 @@ public class BankTagLayoutsPlugin extends Plugin
 	// TODO rewrite to use onmenuentryadded.
 	@Subscribe
 	public void onClientTick(ClientTick t) {
-		Widget widget = client.getWidget(12, 9);
+		Widget widget = client.getWidget(WidgetInfo.BANK_CONTENT_CONTAINER);
 		if (widget == null) return;
 		for (Widget dynamicChild : widget.getDynamicChildren()) {
 		    if (dynamicChild.getActions() == null) continue;
@@ -421,7 +416,7 @@ public class BankTagLayoutsPlugin extends Plugin
 	}
 
 	private boolean importBankTag(String name, String tagString) {
-		System.out.println("importing tag data. " + tagString);
+		if (debug) System.out.println("importing tag data. " + tagString);
 		final Iterator<String> dataIter = Text.fromCSV(tagString).iterator();
 		dataIter.next(); // skip name.
 
@@ -493,7 +488,7 @@ public class BankTagLayoutsPlugin extends Plugin
 		});
 	}
 
-	private boolean hasLayoutEnabled(String bankTagName) {
+	public boolean hasLayoutEnabled(String bankTagName) {
 		String configuration = configManager.getConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + bankTagName);
 		if ("DISABLED".equals(configuration)) return false;
 		return config.layoutEnabledByDefault() || configuration != null;
@@ -527,7 +522,6 @@ public class BankTagLayoutsPlugin extends Plugin
         fakeItems.clear();
 
 		if (!tabInterface.isActive()) {
-			System.out.println("returning, not active.");
 			return;
 		}
 
@@ -551,7 +545,6 @@ public class BankTagLayoutsPlugin extends Plugin
 		indexToWidget.clear();
 		Map<Integer, Integer> itemPositionIndexes = getBankOrder(bankTagName);
 		if (itemPositionIndexes == null) {
-			System.out.println("returning here");
 			return; // layout not enabled.
 		}
 
@@ -581,7 +574,6 @@ public class BankTagLayoutsPlugin extends Plugin
 		clientThread.invokeLater(() -> {
 			setItemPositions(indexToWidget);
 		});
-		System.out.println("indexToWidget " + indexToWidget.size());
 		saveLayout(bankTagName, itemPositionIndexes);
 		if (debug) System.out.println("saved tag " + bankTagName);
 	}
@@ -710,11 +702,8 @@ public class BankTagLayoutsPlugin extends Plugin
 		) {
 			boolean isOnFakeItem = event.getWidgetId() != WidgetInfo.BANK_ITEM_CONTAINER.getId();
 			boolean layoutOnly = event.getMenuOption().startsWith(REMOVE_FROM_LAYOUT_MENU_OPTION);
-			System.out.println("clicked: " + event.getMenuOption());
 			event.consume();
 			int index = event.getActionParam();
-			System.out.println("action param: " + index);
-			System.out.println("action param: " + event.getId() + " " + event.getMenuAction() + " " + event.getWidgetId() + " " + event.getSelectedItemIndex());
 
 			int itemId;
 			if (isOnFakeItem) {
@@ -745,7 +734,6 @@ public class BankTagLayoutsPlugin extends Plugin
 					variationBaseId = itemShouldBeTreatedAsHavingVariants(nonPlaceholderId) ? ItemVariationMapping.map(nonPlaceholderId) : nonPlaceholderId;
 				}
 				if (menuEntryItemVariationBaseId == variationBaseId) {
-					System.out.println("removing from layout " + entryItemId);
 					iter.remove();
 				}
 			}
@@ -753,7 +741,6 @@ public class BankTagLayoutsPlugin extends Plugin
 
 			if (isOnFakeItem && !layoutOnly) {
 				ItemComposition itemComposition = itemManager.getItemComposition(itemId);
-				System.out.println("Removing from tag: " + itemId + " " + itemComposition.getId());
 				tagManager.removeTag(itemComposition.getId(), bankTagName);
 
 				// This will trigger applyCustomBankTagItemPositions via the bankmain_build script, in addition to removing the item from the tag.
@@ -975,23 +962,6 @@ public class BankTagLayoutsPlugin extends Plugin
 		return client.addChatMessage(ChatMessageType.GAMEMESSAGE, "bla", message, "bla");
 	}
 
-	private static String escapeCommas(String s) {
-		String escaped = s.replaceAll("\\\\", "\\\\\\\\").replaceAll(",", "\\,");
-		System.out.println("escaped: " + escaped);
-		return escaped;
-	}
-
-	public static void main(String[] args) {
-
-		String x = escapeCommas("hello, there\\");
-		System.out.println(x);
-		System.out.println(unescapeCommas(x));
-	}
-
-	private static String unescapeCommas(String s) {
-		return s.replaceAll("\\,", ",").replaceAll("\\\\", "\\");
-	}
-
 	private TagTab getTab(String tagName) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
 		Object tabManager = getTabManager();
 
@@ -1003,8 +973,7 @@ public class BankTagLayoutsPlugin extends Plugin
 	private Object getTabManager() throws NoSuchFieldException, IllegalAccessException {
 		Field tabManagerField = TabInterface.class.getDeclaredField("tabManager");
 		tabManagerField.setAccessible(true);
-		Object o = tabManagerField.get(tabInterface);
-		return o;
+		return tabManagerField.get(tabInterface);
 	}
 
 	private String bankTagOrderMapToString(Map<Integer, Integer> itemPositionMap) {

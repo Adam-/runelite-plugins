@@ -21,7 +21,7 @@ public interface BankTagLayoutsConfig extends Config {
             keyName = "tutorialMessage",
             name = "Layout enable tutorial message",
             description = "Lets you know how to enable layouts if you drag an item in a tag tab without layout enabled.",
-            position = 4
+            position = 3
     )
     default boolean tutorialMessage() {
         return true;

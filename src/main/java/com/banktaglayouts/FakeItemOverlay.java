@@ -10,10 +10,13 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.tooltip.Tooltip;
 import net.runelite.client.ui.overlay.tooltip.TooltipManager;
 import net.runelite.client.util.ColorUtil;
+import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 public class FakeItemOverlay extends Overlay {
@@ -102,5 +105,4 @@ public class FakeItemOverlay extends Overlay {
 
         return null;
     }
-
 }
