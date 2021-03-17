@@ -12,3 +12,4 @@ Right click a tag tab, click "Enable layout", then drag items anywhere while the
 * Prints tutorial message when you drag an item on a tab and you don't have any layout-ed tag tabs yet.
 * Prints warning message when you might have unintentionally reordered your actual bank instead of a layout.
 * Workaround for bug where the Bank Tags plugin's "Remove tab separators" option would rearrange items *after* Bank Tag Layouts' laid out the layout, causing any gaps in the layout to be collapsed.
+* Fixed bug where dragging an item above the bank caused it to disappear. Oops.

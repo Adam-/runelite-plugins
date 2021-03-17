@@ -1,5 +1,6 @@
 package com.banktaglayouts;
 
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.widgets.Widget;
@@ -16,6 +17,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.Map;
 
+@Slf4j
 public class FakeItemOverlay extends Overlay {
     @Inject
     private Client client;
@@ -42,47 +44,20 @@ public class FakeItemOverlay extends Overlay {
     @Override
     public Dimension render(Graphics2D graphics)
     {
-        if (!plugin.tabInterface.isActive()) {
-            return null;
-        }
+        if (!plugin.tabInterface.isActive()) return null;
+
         TagTab activeTab = plugin.tabInterface.getActiveTab();
         Map<Integer, Integer> itemIdToIndexes = plugin.getBankOrder(activeTab.getTag());
         if (itemIdToIndexes == null) return null;
 
-        tooltipManager.getTooltips().remove(tooltip);
-        tooltip = null;
+        updateTooltip(itemIdToIndexes);
 
         Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
         if (bankItemContainer == null) return null;
-
         int scrollY = bankItemContainer.getScrollY();
-
-        Point mouseCanvasPosition = client.getMouseCanvasPosition();
         Point canvasLocation = bankItemContainer.getCanvasLocation();
         Rectangle bankItemArea = new Rectangle(canvasLocation.getX() + 51 - 6, canvasLocation.getY(), bankItemContainer.getWidth() - 51 + 6, bankItemContainer.getHeight());
-        if (bankItemArea.contains(mouseCanvasPosition.getX(), mouseCanvasPosition.getY())) {
-            int row = (mouseCanvasPosition.getY() - canvasLocation.getY() + scrollY + 2) / 36;
-            int col = (mouseCanvasPosition.getX() - canvasLocation.getX() - 51 + 6) / 48;
-            int index = row * 8 + col;
-            Map.Entry<Integer, Integer> entry = itemIdToIndexes.entrySet().stream()
-                    .filter(e -> e.getValue() == index)
-                    .findAny().orElse(null);
-
-            if (entry != null) {
-                int itemIdForTooltip = entry.getKey();
-
-                if (tooltip == null) {
-                    String tooltipString = ColorUtil.wrapWithColorTag(plugin.itemName(itemIdForTooltip), plugin.itemTooltipColor);
-                    if (plugin.debug)
-                        tooltipString += " (" + itemIdForTooltip + (plugin.isPlaceholder(itemIdForTooltip) ? ", ph" : "") + ")";
-                    tooltip = new Tooltip(tooltipString);
-                    tooltipManager.add(tooltip);
-                }
-            }
-        }
-
-        // TODO ??? why do I need to do -4 and -20? I didn't need to do this before.
-        graphics.translate(-5, -21);
+        graphics.translate(-5, -21); // TODO ???
         if (config.showLayoutPlaceholders()) {
             graphics.clip(bankItemArea);
             graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
@@ -99,5 +74,29 @@ public class FakeItemOverlay extends Overlay {
         }
 
         return null;
+    }
+
+    private void updateTooltip(Map<Integer, Integer> itemIdToIndexes) {
+        tooltipManager.getTooltips().remove(tooltip);
+        tooltip = null;
+
+        int index = plugin.getIndexForMousePosition();
+        if (index != -1) {
+            Map.Entry<Integer, Integer> entry = itemIdToIndexes.entrySet().stream()
+                    .filter(e -> e.getValue() == index)
+                    .findAny().orElse(null);
+
+            if (entry != null) {
+                int itemIdForTooltip = entry.getKey();
+
+                if (tooltip == null) {
+                    String tooltipString = ColorUtil.wrapWithColorTag(plugin.itemName(itemIdForTooltip), plugin.itemTooltipColor);
+                    if (log.isDebugEnabled())
+                        tooltipString += " (" + itemIdForTooltip + (plugin.isPlaceholder(itemIdForTooltip) ? ", ph" : "") + ")";
+                    tooltip = new Tooltip(tooltipString);
+                    tooltipManager.add(tooltip);
+                }
+            }
+        }
     }
 }

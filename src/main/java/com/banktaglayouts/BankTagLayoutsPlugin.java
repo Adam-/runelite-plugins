@@ -68,6 +68,8 @@ import java.util.stream.Collectors;
 
 @Slf4j
 /* TODO
+	Tag import does not delete existing tags in the tab.
+
 	Drag fake items.
 	Option to show fake items for things that are in the tag but not in the layout. This would be nice for "cleaning out" a bank tag.
 	Give the fake items a way for people to know what they are. Like a name?
@@ -583,15 +585,8 @@ public class BankTagLayoutsPlugin extends Plugin
 		Map<Integer, Integer> itemIdToIndexes = getBankOrder(tabInterface.getActiveTab().getTag());
 		if (itemIdToIndexes == null) return;
 
-		Point mouseCanvasPosition = client.getMouseCanvasPosition();
-		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
-		if (bankItemContainer == null) return;
-		Point canvasLocation = bankItemContainer.getCanvasLocation();
-		int scrollY = bankItemContainer.getScrollY();
-
-		int row = (mouseCanvasPosition.getY() - canvasLocation.getY() + scrollY + 2) / 36;
-		int col = (mouseCanvasPosition.getX() - canvasLocation.getX() - 51 + 6) / 48;
-		int index = row * 8 + col;
+		int index = getIndexForMousePosition();
+		if (index == -1) return;
 		Map.Entry<Integer, Integer> entry = itemIdToIndexes.entrySet().stream()
 				.filter(e -> e.getValue() == index)
 				.findAny().orElse(null);
@@ -618,6 +613,27 @@ public class BankTagLayoutsPlugin extends Plugin
 			newEntry.setParam0(entry.getKey());
 			insertMenuEntry(newEntry, client.getMenuEntries(), true);
 		}
+	}
+
+	/**
+	 * @return -1 if the mouse is not over a location where a bank item can be.
+	 */
+	int getIndexForMousePosition() {
+		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		if (bankItemContainer == null) return -1;
+		Point mouseCanvasPosition = client.getMouseCanvasPosition();
+
+		if (!bankItemContainer.getBounds().contains(new java.awt.Point(mouseCanvasPosition.getX(), mouseCanvasPosition.getY()))) {
+			return -1;
+		}
+
+		Point canvasLocation = bankItemContainer.getCanvasLocation();
+		int scrollY = bankItemContainer.getScrollY();
+		int row = (mouseCanvasPosition.getY() - canvasLocation.getY() + scrollY + 2) / 36;
+		int col = (int) Math.floor((mouseCanvasPosition.getX() - canvasLocation.getX() - 51 + 6) / 48f);
+		int index = row * 8 + col;
+		if (row < 0 || col < 0 || col > 7 || index < 0) return -1;
+		return index;
 	}
 
 	private void insertMenuEntry(MenuEntry newEntry, MenuEntry[] entries, boolean after)
@@ -702,15 +718,12 @@ public class BankTagLayoutsPlugin extends Plugin
 			enableLayout(menuTarget);
 			event.consume();
 		} else if (DISABLE_LAYOUT.equals(menuOption)) {
-			enableLayout(menuTarget);
 			disableLayout(menuTarget);
 			event.consume();
 		} else if (EXPORT_LAYOUT.equals(menuOption)) {
-			enableLayout(menuTarget);
 			exportLayout(menuTarget);
 			event.consume();
 		} else if (IMPORT_LAYOUT.equals(menuOption)) {
-			enableLayout(menuTarget);
 			importLayout();
 			event.consume();
 		}
@@ -967,7 +980,13 @@ public class BankTagLayoutsPlugin extends Plugin
 		for (String s1 : s.split(",")) {
 			String[] split = s1.split(":");
 			try {
-				map.put(Integer.valueOf(split[0]), Integer.valueOf(split[1]));
+				Integer itemId = Integer.valueOf(split[0]);
+				Integer index = Integer.valueOf(split[1]);
+				if (index >= 0) {
+					map.put(itemId, index);
+				} else {
+					log.debug("Removed item " + itemName(itemId) + " (" + itemId + ") due to it having a negative index (" + index + ")");
+				}
 			} catch (NumberFormatException e) {
 				log.debug("input string \"" + s + "\"");
 			}
@@ -987,7 +1006,7 @@ public class BankTagLayoutsPlugin extends Plugin
 		Widget container = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
 		outer_loop:
 		for (Widget child : container.getDynamicChildren()) {
-			int itemId = getNonPlaceholderId(child.getItemId());
+		    if (child.isHidden()) continue;
 			for (Map.Entry<Integer, Widget> integerWidgetEntry : indexToWidget.entrySet()) {
 				if (integerWidgetEntry.getValue().equals(child)) {
 					continue outer_loop;
@@ -1042,24 +1061,17 @@ public class BankTagLayoutsPlugin extends Plugin
 	}
 
 	private void customBankTagOrderInsert(String bankTagName, Widget draggedItem) {
-		net.runelite.api.Point mouseCanvasPosition = client.getMouseCanvasPosition();
-		Widget container = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
-		net.runelite.api.Point point = new net.runelite.api.Point(mouseCanvasPosition.getX() - container.getCanvasLocation().getX(), mouseCanvasPosition.getY() - container.getCanvasLocation().getY());
+		int draggedOnItemIndex = getIndexForMousePosition();
+		if (draggedOnItemIndex == -1) return;
 
 		Map<Integer, Integer> itemIdToIndexes = getBankOrder(bankTagName);
 		if (itemIdToIndexes == null) return;
 
-		int row = (point.getY() + container.getScrollY() + 2) / 36;
-		int col = (point.getX() - 51 + 6) / 48;
-		int draggedOnItemIndex = row * 8 + col;
 		Integer draggedItemIndex = null;
 		for (Map.Entry<Integer, Widget> integerWidgetEntry : indexToWidget.entrySet()) {
 			if (integerWidgetEntry.getValue().equals(draggedItem)) {
 				draggedItemIndex = integerWidgetEntry.getKey();
 			}
-		}
-		if (draggedItemIndex == null) {
-//			log.debug("DRAGGED ITEM WAS NULL");
 		}
 
 		// TODO Save multimap due to having multiple items with the same ids in different slots, potentially? I think currently extras are hidden, which is ok with me.
