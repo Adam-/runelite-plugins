@@ -162,8 +162,6 @@ public class BankTagLayoutsPlugin extends Plugin
 	@Inject
 	private BankTagLayoutsConfig config;
 
-	static final boolean debug = true;
-
 	// The current indexes for where each widget should appear in the custom bank layout. Should be ignored if there is not tab active.
 	private final Map<Integer, Widget> indexToWidget = new HashMap<>();
 
@@ -197,7 +195,7 @@ public class BankTagLayoutsPlugin extends Plugin
 
 	@Subscribe
 	public void onCommandExecuted(CommandExecuted commandExecuted) {
-	    if (!debug) return;
+	    if (!log.isDebugEnabled()) return;
 
 		if ("itemname".equals(commandExecuted.getCommand())) {
 			String[] arguments = commandExecuted.getArguments();
@@ -263,8 +261,8 @@ public class BankTagLayoutsPlugin extends Plugin
 		}
 		String tagString = split[1];
 
-//		log.debug("import string: {}, {}, {}", name, layoutString, split[1]);
-//
+		log.debug("import string: {}, {}, {}", name, layoutString, split[1]);
+
 		// If the tag has no items in it, it will not trigger the overwrite warning. This is not intuitive, but I don't care enough to fix it.
 		if (!tagManager.getItemsForTag(name).isEmpty()) {
 			String finalName = name;
@@ -333,7 +331,7 @@ public class BankTagLayoutsPlugin extends Plugin
 	}
 
 	private boolean importBankTag(String name, String tagString) {
-		if (debug) System.out.println("importing tag data. " + tagString);
+		log.debug("importing tag data. " + tagString);
 		final Iterator<String> dataIter = Text.fromCSV(tagString).iterator();
 		dataIter.next(); // skip name.
 
@@ -444,7 +442,7 @@ public class BankTagLayoutsPlugin extends Plugin
 			return;
 		}
 
-		if (debug) System.out.println("applyCustomBankTagItemPositions " + bankTagName);
+		log.debug("applyCustomBankTagItemPositions " + bankTagName);
 
 		indexToWidget.clear();
 		Map<Integer, Integer> itemPositionIndexes = getBankOrder(bankTagName);
@@ -479,7 +477,7 @@ public class BankTagLayoutsPlugin extends Plugin
 			setItemPositions(indexToWidget);
 		});
 		saveLayout(bankTagName, itemPositionIndexes);
-		if (debug) System.out.println("saved tag " + bankTagName);
+		log.debug("saved tag " + bankTagName);
 	}
 
 	private void bankReorderWarning(ScriptEvent ev) {
@@ -523,15 +521,15 @@ public class BankTagLayoutsPlugin extends Plugin
 			int nonPlaceholderId = getNonPlaceholderId(itemId);
 
 			if (!itemShouldBeTreatedAsHavingVariants(nonPlaceholderId)) {
-//				if (debug) System.out.println("\tassigning position for " + itemName(itemId) + itemId + ": ");
+//				log.debug("\tassigning position for " + itemName(itemId) + itemId + ": ");
 				int indexForItem = getIndexForItem(itemId, itemPositionIndexes);
 				if (indexForItem != -1) {
-//					if (debug) System.out.println("\t\texisting position: " + indexForItem);
+//					log.debug("\t\texisting position: " + indexForItem);
 					indexToWidget.put(indexForItem, bankItem);
 				} else {
 					int newIndex = assignPosition(itemPositionIndexes);
 					itemPositionIndexes.put(itemId, newIndex);
-//					if (debug) System.out.println("\t\tnew position: " + newIndex);
+//					log.debug("\t\tnew position: " + newIndex);
 					indexToWidget.put(newIndex, bankItem);
 				}
 			}
@@ -612,8 +610,6 @@ public class BankTagLayoutsPlugin extends Plugin
 //			newEntry.setType(MenuAction.RUNELITE.getId());
 //			newEntry.setParam0(entry.getKey());
 //			insertMenuEntry(newEntry, client.getMenuEntries(), true);
-
-			addEntry(itemName(entry.getKey()), REMOVE_FROM_LAYOUT_MENU_OPTION + " (" + tabInterface.getActiveTab().getTag() + ")");
 
 			newEntry = new MenuEntry();
 			newEntry.setOption(REMOVE_FROM_LAYOUT_MENU_OPTION + " (" + tabInterface.getActiveTab().getTag() + ")");
@@ -728,11 +724,11 @@ public class BankTagLayoutsPlugin extends Plugin
 
 			try {
 				if (!findTag(itemId, bankTagName)) {
-					if (debug) System.out.println("removing " + itemName(itemId) + " (" + itemId + ") because it is no longer in the bank tag");
+					log.debug("removing " + itemName(itemId) + " (" + itemId + ") because it is no longer in the bank tag");
 					iter.remove();
 				}
 			} catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-				if (debug) e.printStackTrace();
+				if (log.isDebugEnabled()) e.printStackTrace();
 			}
 		}
 	}
@@ -763,7 +759,7 @@ public class BankTagLayoutsPlugin extends Plugin
 				variantItemsInBank.put(variationBaseId, l);
 			}
 		}
-//		if (debug) System.out.println("variant items in bank: " + variantItemsInBank);
+//		log.debug("variant items in bank: " + variantItemsInBank);
 
 		// TODO what if people remove the sidebar.
 
@@ -782,7 +778,7 @@ public class BankTagLayoutsPlugin extends Plugin
 				variantItemsInLayout.put(variationBaseId, l);
 			}
 		}
-//		if (debug) System.out.println("variant items in layout: " + variantItemsInLayout);
+//		log.debug("variant items in layout: " + variantItemsInLayout);
 
 		for (Map.Entry<Integer, List<Widget>> integerListEntry : variantItemsInBank.entrySet()) {
 			int variationBaseId = integerListEntry.getKey();
@@ -793,7 +789,7 @@ public class BankTagLayoutsPlugin extends Plugin
 				Widget widget = iter.next();
 				int itemId = widget.getItemId();
 
-//				if (debug) System.out.println("variationBaseId is " + variationBaseId);
+//				log.debug("variationBaseId is " + variationBaseId);
 				List<Integer> itemIds = variantItemsInLayout.get(variationBaseId);
 				if (itemIds == null) continue; // TODO do I need this line?
 
@@ -801,7 +797,7 @@ public class BankTagLayoutsPlugin extends Plugin
 				if (!itemIds.contains(itemId)) continue;
 
 				int index = itemPositionIndexes.get(itemId);
-//				if (debug) System.out.println("item " + itemName(itemId) + " (" + itemId + ") assigned on pass 1 to index " + index);
+//				log.debug("item " + itemName(itemId) + " (" + itemId + ") assigned on pass 1 to index " + index);
 				indexToWidget.put(index, widget);
 				iter.remove();
 			}
@@ -816,7 +812,7 @@ public class BankTagLayoutsPlugin extends Plugin
 				for (Integer id : itemIds) {
 					int index = itemPositionIndexes.get(id);
 					if (!indexToWidget.containsKey(index)) {
-//						if (debug) System.out.println("item " + itemName(switchPlaceholderId(widget.getItemId())) + switchPlaceholderId(widget.getItemId()) + " assigned on pass 3 to index " + index);
+//						log.debug("item " + itemName(switchPlaceholderId(widget.getItemId())) + switchPlaceholderId(widget.getItemId()) + " assigned on pass 3 to index " + index);
 						indexToWidget.put(index, widget);
 						iter.remove();
 						break;
@@ -829,7 +825,7 @@ public class BankTagLayoutsPlugin extends Plugin
 					int itemId = notYetPositionedWidget.getItemId();
 					int index = assignPosition(itemPositionIndexes);
 					itemPositionIndexes.put(itemId, index);
-//					if (debug) System.out.println("\t\tnew position: " + index + notYetPositionedWidget.getItemId());
+//					log.debug("\t\tnew position: " + index + notYetPositionedWidget.getItemId());
 					indexToWidget.put(index, notYetPositionedWidget);
 				}
 			}
@@ -902,7 +898,7 @@ public class BankTagLayoutsPlugin extends Plugin
 		try {
 			tagTab = getTab(tagName);
 		} catch (ReflectiveOperationException e) {
-			if (debug) e.printStackTrace();
+			if (log.isDebugEnabled()) e.printStackTrace();
 			chatErrorMessage("export failed: Couldn't get bank tag tab. This is probably a bug. sorry!");
 		}
 
@@ -973,7 +969,7 @@ public class BankTagLayoutsPlugin extends Plugin
 			try {
 				map.put(Integer.valueOf(split[0]), Integer.valueOf(split[1]));
 			} catch (NumberFormatException e) {
-				if (debug) System.out.println("input string \"" + s + "\"");
+				log.debug("input string \"" + s + "\"");
 			}
 		}
 		return map;
@@ -998,7 +994,6 @@ public class BankTagLayoutsPlugin extends Plugin
 				}
 			}
 
-//			System.out.println("hiding widget " + child.getItemId());
 			child.setHidden(true);
 			child.revalidate();
 		}
@@ -1008,7 +1003,6 @@ public class BankTagLayoutsPlugin extends Plugin
 			Widget widget = entry.getValue();
 			int index = entry.getKey();
 
-//			System.out.println("moving widget " + widget.getItemId() + " to " + ((index % 8) * 48 + 51) + ", " + (index / 8) * 36);
 			widget.setOriginalX(getXForIndex(index));
 			widget.setOriginalY(getYForIndex(index));
 			widget.revalidate();
@@ -1065,7 +1059,7 @@ public class BankTagLayoutsPlugin extends Plugin
 			}
 		}
 		if (draggedItemIndex == null) {
-//			if (debug) System.out.println("DRAGGED ITEM WAS NULL");
+//			log.debug("DRAGGED ITEM WAS NULL");
 		}
 
 		// TODO Save multimap due to having multiple items with the same ids in different slots, potentially? I think currently extras are hidden, which is ok with me.
@@ -1091,14 +1085,14 @@ public class BankTagLayoutsPlugin extends Plugin
 			}
 		}
 
-//		if (debug) System.out.println("drag complete: setting index " + draggedOnItemIndex + " from " + "?" + " to " + itemName(currentDraggedItemId));
-//		if (debug) System.out.println("               setting index " + draggedItemIndex + " from " + "?" + " to " + itemName(currentDraggedOnItemId));
+//		log.debug("drag complete: setting index " + draggedOnItemIndex + " from " + "?" + " to " + itemName(currentDraggedItemId));
+//		log.debug("               setting index " + draggedItemIndex + " from " + "?" + " to " + itemName(currentDraggedOnItemId));
 
 		Iterator<Map.Entry<Integer, Integer>> iterator = itemIdToIndexes.entrySet().iterator();
 		while (iterator.hasNext()) {
 			Map.Entry<Integer, Integer> next = iterator.next();
 			if (next.getValue() == draggedOnItemIndex || next.getValue() == draggedItemIndex) {
-//				if (debug) System.out.println("removing item " + itemName(next.getKey()) + " from " + next.getValue());
+//				log.debug("removing item " + itemName(next.getKey()) + " from " + next.getValue());
 				iterator.remove();
 			}
 		}
@@ -1107,9 +1101,9 @@ public class BankTagLayoutsPlugin extends Plugin
 //		if (savedDraggedItemId != null) itemIdToIndexes.remove(savedDraggedItemId);
 		if (currentDraggedOnItemId != null) itemIdToIndexes.put(currentDraggedOnItemId, draggedItemIndex);
 		saveLayout(bankTagName, itemIdToIndexes);
-//		if (debug) System.out.println("saved tag " + bankTagName);
+//		log.debug("saved tag " + bankTagName);
 
-//		if (debug) System.out.println("tag items: " + itemIdToIndexes.toString());
+//		log.debug("tag items: " + itemIdToIndexes.toString());
 
 		applyCustomBankTagItemPositions();
 	}
@@ -1122,14 +1116,14 @@ public class BankTagLayoutsPlugin extends Plugin
 		List<Integer> toRemove = new ArrayList<>();
 		for (Map.Entry<Integer, Integer> entry : itemIdToIndexes.entrySet()) {
 			if (itemIdsSeen.contains(entry.getValue())) {
-				if (debug) System.out.println("THIS CODE DID SOMETHING: cleaning " + itemName(entry.getKey()));
+				log.debug("THIS CODE DID SOMETHING: cleaning " + itemName(entry.getKey()));
 				toRemove.add(entry.getKey());
 			} else {
 				itemIdsSeen.add(entry.getValue());
 			}
 		}
 		toRemove.forEach(itemIdToIndexes::remove);
-//		if (debug) System.out.println("HEY LOOK THIS THING ACTUALLY DID SOMETHING: cleaned " + toRemove.size() + " indexes");
+//		log.debug("HEY LOOK THIS THING ACTUALLY DID SOMETHING: cleaned " + toRemove.size() + " indexes");
 	}
 
 	private Integer getIdForIndex(Integer index) {
