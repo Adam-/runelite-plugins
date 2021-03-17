@@ -651,7 +651,7 @@ public class BankTagLayoutsPlugin extends Plugin
 	{
 		if (!(event.getMenuAction() == MenuAction.RUNELITE)) return;
 
-		String menuTarget = Text.removeTags(event.getMenuTarget());
+		String menuTarget = Text.removeTags(event.getMenuTarget()).replace("\u00a0"," ");
 
 		// If this is on a real item, then the bank tags plugin will remove it from the tag, and this plugin only needs
 		// to remove it from the layout. If this is on a fake item, this plugin must do both (unless the "Remove-layout"
@@ -958,7 +958,11 @@ public class BankTagLayoutsPlugin extends Plugin
 		if (s.isEmpty()) return map;
 		for (String s1 : s.split(",")) {
 			String[] split = s1.split(":");
-			map.put(Integer.valueOf(split[0]), Integer.valueOf(split[1]));
+			Integer itemId = Integer.valueOf(split[0]);
+			Integer index = Integer.valueOf(split[1]);
+			if (index >= 0) {
+				map.put(itemId, index);
+			}
 		}
 		return map;
 	}
