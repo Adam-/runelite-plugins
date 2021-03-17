@@ -10,13 +10,10 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.tooltip.Tooltip;
 import net.runelite.client.ui.overlay.tooltip.TooltipManager;
 import net.runelite.client.util.ColorUtil;
-import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 public class FakeItemOverlay extends Overlay {
@@ -85,9 +82,7 @@ public class FakeItemOverlay extends Overlay {
         }
 
         // TODO ??? why do I need to do -4 and -20? I didn't need to do this before.
-        graphics.translate(-4, -20);
-//        graphics.setColor(Color.RED);
-//        graphics.draw(bankItemArea);
+        graphics.translate(-5, -21);
         if (config.showLayoutPlaceholders()) {
             graphics.clip(bankItemArea);
             graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));

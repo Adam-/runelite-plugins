@@ -20,8 +20,8 @@ public interface BankTagLayoutsConfig extends Config {
     @ConfigItem(
             keyName = "tutorialMessage",
             name = "Layout enable tutorial message",
-            description = "Lets you know how to enable layouts if you drag an item in a tag tab without layout enabled.",
-            position = 3
+            description = "Lets you know how to enable layouts if you drag an item in a tag tab without layout enabled, and do not currently have any layout-ed bank tag tabs.",
+            position = 4
     )
     default boolean tutorialMessage() {
         return true;
@@ -35,5 +35,15 @@ public interface BankTagLayoutsConfig extends Config {
     )
     default boolean layoutEnabledByDefault() {
         return false;
+    }
+
+    @ConfigItem(
+            keyName = "warnForAccidentalBankReorder",
+            name = "Bank reorder warning",
+            description = "Warns you know when you reorder items in your actual bank and not in a layout.",
+            position = 3
+    )
+    default boolean warnForAccidentalBankReorder() {
+        return true;
     }
 }

@@ -17,7 +17,6 @@ import net.runelite.api.MessageNode;
 import net.runelite.api.Point;
 import net.runelite.api.ScriptEvent;
 import net.runelite.api.ScriptID;
-import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.DraggingWidgetChanged;
 import net.runelite.api.events.MenuEntryAdded;
@@ -65,7 +64,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.IntPredicate;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -128,6 +126,7 @@ public class BankTagLayoutsPlugin extends Plugin
 //	public static final String REMOVE_FROM_TAG_MENU_OPTION = "Remove-tag";
 	public static final String REMOVE_FROM_LAYOUT_MENU_OPTION = "Remove-layout";
 	public static final String BANK_TAG_STRING_PREFIX = "banktaglayoutsplugin:";
+	public static final String LAYOUT_EXPLICITLY_DISABLED = "DISABLED";
 
 	@Inject
 	private Client client;
@@ -165,6 +164,9 @@ public class BankTagLayoutsPlugin extends Plugin
 
 	static final boolean debug = true;
 
+	// The current indexes for where each widget should appear in the custom bank layout. Should be ignored if there is not tab active.
+	private final Map<Integer, Widget> indexToWidget = new HashMap<>();
+
 	@Override
 	protected void startUp() throws Exception
 	{
@@ -197,33 +199,9 @@ public class BankTagLayoutsPlugin extends Plugin
 	public void onCommandExecuted(CommandExecuted commandExecuted) {
 	    if (!debug) return;
 
-		if ("debugoverlay".equals(commandExecuted.getCommand())) {
-			debugOverlay = !debugOverlay;
-		}
 		if ("itemname".equals(commandExecuted.getCommand())) {
 			String[] arguments = commandExecuted.getArguments();
-			client.addChatMessage(ChatMessageType.PUBLICCHAT, "bla", itemName(Integer.valueOf(arguments[0])) + " " + arguments[0], "bla");
-		}
-		if ("printplaceholders".equals(commandExecuted.getCommand())) {
-			Map<Integer, Integer> map = new HashMap<>();
-//			for (Integer i : Arrays.asList(15282, 19389, 19390, 19391, 12695, 12697, 12699, 12701)) {
-			for (int i = 0; i < 40000; i++) {
-				ItemComposition itemComposition = itemManager.getItemComposition(i);
-				if (itemComposition.getPlaceholderTemplateId() == 14401) { // is placeholder.
-					int map1 = ItemVariationMapping.map(getNonPlaceholderId(i));
-					System.out.println("is placeholder: " + i + " " + getNonPlaceholderId(i) + " " + ItemVariationMapping.getVariations(map1));
-					if (ItemVariationMapping.getVariations(map1).size() > 1) {
-						int j = map.getOrDefault(map1, 0);
-						map.put(map1, j + 1);
-						System.out.println("item " + itemName(i) + " " + i + " " + "found placeholder (total: " + map.getOrDefault(ItemVariationMapping.map(i), 0) + ")");
-					}
-				}
-			}
-			for (Map.Entry<Integer, Integer> integerIntegerEntry : map.entrySet()) {
-				if (integerIntegerEntry.getValue() > 1) {
-					System.out.println("item " + itemName(integerIntegerEntry.getKey()) + " has " + integerIntegerEntry.getValue() + " values.");
-				}
-			}
+			client.addChatMessage(ChatMessageType.PUBLICCHAT, "Item name of " + arguments[0], itemName(Integer.valueOf(arguments[0])), "bla");
 		}
 	}
 
@@ -231,67 +209,6 @@ public class BankTagLayoutsPlugin extends Plugin
 	public void onScriptPostFired(ScriptPostFired event) {
 		if (event.getScriptId() == ScriptID.BANKMAIN_BUILD) {
 			applyCustomBankTagItemPositions();
-		}
-	}
-
-	// The current indexes for where each widget should appear in the custom bank layout. Should be ignored if there is not tab active.
-	private final Map<Integer, Widget> indexToWidget = new HashMap<>();
-
-	// TODO rewrite to use onmenuentryadded.
-	@Subscribe
-	public void onClientTick(ClientTick t) {
-		Widget widget = client.getWidget(WidgetInfo.BANK_CONTENT_CONTAINER);
-		if (widget == null) return;
-		for (Widget dynamicChild : widget.getDynamicChildren()) {
-		    if (dynamicChild.getActions() == null) continue;
-			List<String> actions = Arrays.asList(dynamicChild.getActions());
-			if (actions.contains("View tag tab")) {
-				String bankTagName = Text.removeTags(dynamicChild.getName());
-				int index = actions.indexOf(ENABLE_LAYOUT);
-				if (index == -1) {
-					index = actions.indexOf(DISABLE_LAYOUT);
-					if (index == -1) {
-						index = actions.size() + 1;
-
-						hookOnOpListener(dynamicChild, (e) -> {
-							Widget clicked = e.getSource();
-							String widgetName = Text.removeTags(clicked.getName());
-							String action = clicked.getActions()[e.getOp() - 1];
-							if (action.equals(ENABLE_LAYOUT)) {
-								enableLayout(widgetName);
-								return true;
-							} else if (action.equals(DISABLE_LAYOUT)) {
-								disableLayout(widgetName);
-								return true;
-							} else if (action.equals(EXPORT_LAYOUT)) {
-								exportLayout(widgetName);
-								return true;
-							}
-							return false;
-						});
-					}
-				}
-
-				dynamicChild.setAction(index, hasLayoutEnabled(bankTagName) ? DISABLE_LAYOUT : ENABLE_LAYOUT);
-				if (hasLayoutEnabled(bankTagName)) dynamicChild.setAction(index + 1, EXPORT_LAYOUT);
-			} else if (actions.contains("New tag tab")) {
-				int index = actions.indexOf(IMPORT_LAYOUT);
-				if (index == -1) {
-					index = actions.size() + 1;
-
-					hookOnOpListener(dynamicChild, (e) -> {
-						Widget clicked = e.getSource();
-						String action = clicked.getActions()[e.getOp() - 1];
-						if (action.equals(IMPORT_LAYOUT)) {
-							importLayout();
-							return true;
-						}
-						return false;
-					});
-				}
-
-				dynamicChild.setAction(index, IMPORT_LAYOUT);
-			}
 		}
 	}
 
@@ -346,8 +263,8 @@ public class BankTagLayoutsPlugin extends Plugin
 		}
 		String tagString = split[1];
 
-		log.debug("import string: {}, {}, {}", name, layoutString, split[1]);
-
+//		log.debug("import string: {}, {}, {}", name, layoutString, split[1]);
+//
 		// If the tag has no items in it, it will not trigger the overwrite warning. This is not intuitive, but I don't care enough to fix it.
 		if (!tagManager.getItemsForTag(name).isEmpty()) {
 			String finalName = name;
@@ -474,23 +391,9 @@ public class BankTagLayoutsPlugin extends Plugin
 		return true;
 	}
 
-	/**
-	 * Hooks the widget's onOpListener.
-	 *
-	 * @param hook the hook. should return true if the click is to be consumed, false otherwise.
- 	 */
-	private void hookOnOpListener(Widget dynamicChild, Predicate<ScriptEvent> hook) {
-		JavaScriptCallback jsc = (JavaScriptCallback) dynamicChild.getOnOpListener()[0];
-		dynamicChild.setOnOpListener((JavaScriptCallback) (e) -> {
-		    if (!hook.test(e)) {
-		    	jsc.run(e);
-			}
-		});
-	}
-
 	public boolean hasLayoutEnabled(String bankTagName) {
 		String configuration = configManager.getConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + bankTagName);
-		if ("DISABLED".equals(configuration)) return false;
+		if (LAYOUT_EXPLICITLY_DISABLED.equals(configuration)) return false;
 		return config.layoutEnabledByDefault() || configuration != null;
 	}
 
@@ -506,7 +409,7 @@ public class BankTagLayoutsPlugin extends Plugin
 				.option("Yes", () ->
 						clientThread.invoke(() ->
 						{
-							configManager.setConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + bankTagName, "DISABLED");
+							configManager.setConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + bankTagName, LAYOUT_EXPLICITLY_DISABLED);
 							if (tabInterface.getActiveTab() != null && bankTagName.equals(tabInterface.getActiveTab().getTag())) {
 								bankSearch.layoutBank();
 							}
@@ -516,8 +419,7 @@ public class BankTagLayoutsPlugin extends Plugin
 				.build();
 	}
 
-	private boolean warnedDrag = false;
-
+	private boolean tutorialMessageShown = false;
 	private void applyCustomBankTagItemPositions() {
         fakeItems.clear();
 
@@ -531,10 +433,12 @@ public class BankTagLayoutsPlugin extends Plugin
 				.filter(bankItem -> !bankItem.isHidden() && bankItem.getItemId() >= 0)
 				.collect(Collectors.toList());
 
-		if (!hasLayoutEnabled(bankTagName) && config.tutorialMessage()) {
+		if (!hasLayoutEnabled(bankTagName)) {
 			for (Widget bankItem : bankItems) {
 				bankItem.setOnDragCompleteListener((JavaScriptCallback) (ev) -> {
-					tutorialMessage();
+					boolean tutorialShown = tutorialMessage();
+
+					if (!tutorialShown) bankReorderWarning(ev);
 				});
 			}
 			return;
@@ -578,15 +482,38 @@ public class BankTagLayoutsPlugin extends Plugin
 		if (debug) System.out.println("saved tag " + bankTagName);
 	}
 
-	private void tutorialMessage() {
-		boolean preventTagTabDragsEnabled = "true".equalsIgnoreCase(configManager.getConfiguration("banktags", "preventTagTabDrags"));
-
-		if (!warnedDrag && config.tutorialMessage()) {
-			warnedDrag = true;
-			chatErrorMessage("If you want to use Bank Tag Layouts, enable it for the tab by right clicking the tag tab and clicking \"Enable layout\".");
-			chatErrorMessage("To disable this message, to go the Bank Tag Layouts config and disable \"Layout enable tutorial message\".");
-			if (!preventTagTabDragsEnabled) chatErrorMessage("You should also consider enabling \"Prevent tag tab item dragging\" in the Bank Tags plugin to prevent accidentally reordering your bank.");
+	private void bankReorderWarning(ScriptEvent ev) {
+		if (
+				config.warnForAccidentalBankReorder()
+				&& ev.getSource().getId() == WidgetInfo.BANK_ITEM_CONTAINER.getId() && tabInterface.isActive()
+				&& client.getDraggedOnWidget() != null
+				&& client.getDraggedOnWidget().getId() == WidgetInfo.BANK_ITEM_CONTAINER.getId() && tabInterface.isActive()
+				&& !hasLayoutEnabled(tabInterface.getActiveTab().getTag())
+				&& !"true".equalsIgnoreCase(configManager.getConfiguration("banktags", "preventTagTabDrags"))
+		) {
+			chatErrorMessage("You just reordered your actual bank!");
+			chatMessage("If you wanted to use a bank tag layout, make sure you enable it for this tab first.");
+			chatMessage("You should consider enabling \"Prevent tag tab item dragging\" in the Bank Tags plugin.");
+			chatMessage("You can disable this warning in the Bank Tag Layouts config.");
 		}
+	}
+
+	private boolean tutorialMessage() {
+	    if (!config.tutorialMessage()) return false;
+
+		for (String key : configManager.getConfigurationKeys(CONFIG_GROUP)) {
+		    if (key.startsWith(CONFIG_GROUP + "." + LAYOUT_CONFIG_KEY_PREFIX)) { // They probably already know what to do if they have a key like this set.
+				return false;
+			}
+		}
+
+		if (!tutorialMessageShown) {
+			tutorialMessageShown = true;
+			chatMessage("If you want to use Bank Tag Layouts, enable it for the tab by right clicking the tag tab and clicking \"Enable layout\".");
+			chatMessage("To disable this message, to go the Bank Tag Layouts config and disable \"Layout enable tutorial message\".");
+			return true;
+		}
+		return false;
 	}
 
 	private void assignNonVariantItemPositions(Map<Integer, Integer> itemPositionIndexes, List<Widget> bankItems) {
@@ -618,15 +545,38 @@ public class BankTagLayoutsPlugin extends Plugin
 		public final int originalX;
 		public final int originalY;
 		public final int itemId;
-
-		public boolean contains(Point mouseCanvasPosition) {
-			return true;
-		}
 	}
 
 	@Subscribe
 	public void onMenuEntryAdded(MenuEntryAdded menuEntryAdded)
 	{
+	    if (WidgetInfo.TO_GROUP(menuEntryAdded.getActionParam1()) == WidgetInfo.BANK_CONTENT_CONTAINER.getGroupId()) {
+			String bankTagName = Text.removeTags(menuEntryAdded.getTarget());
+
+			if ("Rename tag tab".equals(menuEntryAdded.getOption())) {
+				if (hasLayoutEnabled(bankTagName)) {
+					addEntry(bankTagName, EXPORT_LAYOUT);
+				}
+
+				addEntry(bankTagName, hasLayoutEnabled(bankTagName) ? DISABLE_LAYOUT : ENABLE_LAYOUT);
+			} else if ("New tag tab".equals(menuEntryAdded.getOption())) {
+				addEntry(bankTagName, IMPORT_LAYOUT);
+			}
+		}
+
+		addFakeItemMenuEntries(menuEntryAdded);
+	}
+
+	private void addEntry(String menuTarget, String menuOption) {
+		MenuEntry newEntry;
+		newEntry = new MenuEntry();
+		newEntry.setOption(menuOption);
+		newEntry.setTarget(ColorUtil.wrapWithColorTag(menuTarget, itemTooltipColor));
+		newEntry.setType(MenuAction.RUNELITE.getId());
+		insertMenuEntry(newEntry, client.getMenuEntries(), true);
+	}
+
+	private void addFakeItemMenuEntries(MenuEntryAdded menuEntryAdded) {
 		if (!menuEntryAdded.getOption().equalsIgnoreCase("cancel")) return;
 
 		if (!tabInterface.isActive() || !config.showLayoutPlaceholders()) {
@@ -641,8 +591,8 @@ public class BankTagLayoutsPlugin extends Plugin
 		Point canvasLocation = bankItemContainer.getCanvasLocation();
 		int scrollY = bankItemContainer.getScrollY();
 
-		int row = (mouseCanvasPosition.getY() - bankItemContainer.getCanvasLocation().getY() + scrollY + 2) / 36;
-		int col = (mouseCanvasPosition.getX() - bankItemContainer.getCanvasLocation().getX() - 51 + 6) / 48;
+		int row = (mouseCanvasPosition.getY() - canvasLocation.getY() + scrollY + 2) / 36;
+		int col = (mouseCanvasPosition.getX() - canvasLocation.getX() - 51 + 6) / 48;
 		int index = row * 8 + col;
 		Map.Entry<Integer, Integer> entry = itemIdToIndexes.entrySet().stream()
 				.filter(e -> e.getValue() == index)
@@ -662,6 +612,8 @@ public class BankTagLayoutsPlugin extends Plugin
 //			newEntry.setType(MenuAction.RUNELITE.getId());
 //			newEntry.setParam0(entry.getKey());
 //			insertMenuEntry(newEntry, client.getMenuEntries(), true);
+
+			addEntry(itemName(entry.getKey()), REMOVE_FROM_LAYOUT_MENU_OPTION + " (" + tabInterface.getActiveTab().getTag() + ")");
 
 			newEntry = new MenuEntry();
 			newEntry.setOption(REMOVE_FROM_LAYOUT_MENU_OPTION + " (" + tabInterface.getActiveTab().getTag() + ")");
@@ -690,18 +642,20 @@ public class BankTagLayoutsPlugin extends Plugin
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
+		if (!(event.getMenuAction() == MenuAction.RUNELITE)) return;
+
+		String menuTarget = Text.removeTags(event.getMenuTarget());
+
 		// If this is on a real item, then the bank tags plugin will remove it from the tag, and this plugin only needs
 		// to remove it from the layout. If this is on a fake item, this plugin must do both (unless the "Remove-layout"
 		// option was clicked, then the tags are not touched).
+		String menuOption = event.getMenuOption();
 		if (
-				event.getMenuAction() == MenuAction.RUNELITE
-				&& (
-						event.getMenuOption().startsWith(REMOVE_FROM_LAYOUT_MENU_OPTION)
+				menuOption.startsWith(REMOVE_FROM_LAYOUT_MENU_OPTION)
 //						|| event.getMenuOption().startsWith(REMOVE_FROM_TAG_MENU_OPTION)
-				)
 		) {
 			boolean isOnFakeItem = event.getWidgetId() != WidgetInfo.BANK_ITEM_CONTAINER.getId();
-			boolean layoutOnly = event.getMenuOption().startsWith(REMOVE_FROM_LAYOUT_MENU_OPTION);
+			boolean layoutOnly = menuOption.startsWith(REMOVE_FROM_LAYOUT_MENU_OPTION);
 			event.consume();
 			int index = event.getActionParam();
 
@@ -748,6 +702,21 @@ public class BankTagLayoutsPlugin extends Plugin
 			} else if (layoutOnly) {
 				applyCustomBankTagItemPositions();
 			}
+		} else if (ENABLE_LAYOUT.equals(menuOption)) {
+			enableLayout(menuTarget);
+			event.consume();
+		} else if (DISABLE_LAYOUT.equals(menuOption)) {
+			enableLayout(menuTarget);
+			disableLayout(menuTarget);
+			event.consume();
+		} else if (EXPORT_LAYOUT.equals(menuOption)) {
+			enableLayout(menuTarget);
+			exportLayout(menuTarget);
+			event.consume();
+		} else if (IMPORT_LAYOUT.equals(menuOption)) {
+			enableLayout(menuTarget);
+			importLayout();
+			event.consume();
 		}
 	}
 
@@ -915,14 +884,13 @@ public class BankTagLayoutsPlugin extends Plugin
 
 	Map<Integer, Integer> getBankOrder(String bankTagName) {
 		String configuration = configManager.getConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + bankTagName);
-		if ("DISABLED".equals(configuration)) return null;
+		if (LAYOUT_EXPLICITLY_DISABLED.equals(configuration)) return null;
 		if (configuration == null && !config.layoutEnabledByDefault()) return null;
 		if (configuration == null) configuration = "";
 		return bankTagOrderStringToMapIgnoreNumberFormatException(configuration);
 	}
 
 	private void exportLayout(String tagName) {
-//		"banktaglayoutplugin:tagName,id:index,...,tag:tagstring";
 		String exportString = BANK_TAG_STRING_PREFIX + tagName;
 		String layout = bankTagOrderMapToString(getBankOrder(tagName));
 		if (!layout.isEmpty()) {
@@ -1059,8 +1027,6 @@ public class BankTagLayoutsPlugin extends Plugin
 		return (itemId == null) ? "null" : itemManager.getItemComposition(itemId).getName();
 	}
 
-	public boolean debugOverlay = true;
-
 	private int getPlaceholderId(int id) {
 		ItemComposition itemComposition = itemManager.getItemComposition(id);
 		return (itemComposition.getPlaceholderTemplateId() == 14401) ? id : itemComposition.getPlaceholderId();
@@ -1189,6 +1155,7 @@ public class BankTagLayoutsPlugin extends Plugin
 		return lastIndex;
 	}
 
+	private Widget lastDraggedOnWidget = null;
 	// Disable reordering your real bank while any tag tab is active, as if the Bank Tags Plugin's "Prevent tag tab item dragging" was enabled.
 	@Subscribe
 	public void onDraggingWidgetChanged(DraggingWidgetChanged event) {
@@ -1201,8 +1168,10 @@ public class BankTagLayoutsPlugin extends Plugin
 
 		// Returning early or nulling the drag release listener has no effect. Hence, we need to
 		// null the draggedOnWidget instead.
-		if (draggedWidget.getId() == WidgetInfo.BANK_ITEM_CONTAINER.getId() && tabInterface.isActive() && hasLayoutEnabled(tabInterface.getActiveTab().getTag())) {
-			client.setDraggedOnWidget(null);
+		if (draggedWidget.getId() == WidgetInfo.BANK_ITEM_CONTAINER.getId() && tabInterface.isActive()) {
+		    if (hasLayoutEnabled(tabInterface.getActiveTab().getTag())) {
+				client.setDraggedOnWidget(null);
+			}
 		}
 	}
 }
