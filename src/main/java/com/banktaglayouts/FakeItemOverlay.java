@@ -8,6 +8,7 @@ import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.banktags.tabs.TagTab;
 import net.runelite.client.ui.overlay.Overlay;
+import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.tooltip.Tooltip;
 import net.runelite.client.ui.overlay.tooltip.TooltipManager;
 import net.runelite.client.util.ColorUtil;
@@ -37,6 +38,7 @@ public class FakeItemOverlay extends Overlay {
     FakeItemOverlay()
     {
         drawAfterLayer(WidgetInfo.BANK_ITEM_CONTAINER);
+        setPosition(OverlayPosition.DYNAMIC);
     }
 
     private Tooltip tooltip = null;
@@ -57,15 +59,14 @@ public class FakeItemOverlay extends Overlay {
         int scrollY = bankItemContainer.getScrollY();
         Point canvasLocation = bankItemContainer.getCanvasLocation();
         Rectangle bankItemArea = new Rectangle(canvasLocation.getX() + 51 - 6, canvasLocation.getY(), bankItemContainer.getWidth() - 51 + 6, bankItemContainer.getHeight());
-        graphics.translate(-5, -21); // TODO ???
         if (config.showLayoutPlaceholders()) {
             graphics.clip(bankItemArea);
             graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
             for (BankTagLayoutsPlugin.FakeItem fakeItem : plugin.fakeItems) {
                 int fakeItemId = fakeItem.getItemId();
 
-                int x = fakeItem.originalX + canvasLocation.getX();
-                int y = fakeItem.originalY + canvasLocation.getY() - scrollY;
+                int x = plugin.getXForIndex(fakeItem.index) + canvasLocation.getX();
+                int y = plugin.getYForIndex(fakeItem.index) + canvasLocation.getY() - scrollY;
                 BufferedImage image = itemManager.getImage(fakeItemId);
                 graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
                 BufferedImage outline = itemManager.getItemOutline(fakeItemId, 1, Color.GRAY);

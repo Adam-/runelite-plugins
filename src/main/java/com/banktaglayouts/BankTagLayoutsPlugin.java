@@ -494,7 +494,7 @@ public class BankTagLayoutsPlugin extends Plugin
 				continue;
 			}
 
-			fakeItems.add(new FakeItem(getXForIndex(index), getYForIndex(index), getNonPlaceholderId(entry.getKey())));
+			fakeItems.add(new FakeItem(index, getNonPlaceholderId(entry.getKey())));
 		}
 
 		// What the fuck? It appears that despite my priority setting on the @Subscribe, Bank Tags can still sometimes run after me and potentially run its remove tag separators code, messing up my layout.
@@ -566,8 +566,7 @@ public class BankTagLayoutsPlugin extends Plugin
 
 	@Data
 	public static class FakeItem {
-		public final int originalX;
-		public final int originalY;
+	    public final int index;
 		public final int itemId;
 	}
 
@@ -631,7 +630,7 @@ public class BankTagLayoutsPlugin extends Plugin
 //			insertMenuEntry(newEntry, client.getMenuEntries(), true);
 
 			newEntry = new MenuEntry();
-			newEntry.setOption(REMOVE_FROM_LAYOUT_MENU_OPTION + " (" + tabInterface.getActiveTab().getTag() + ")");
+			newEntry.setOption(REMOVE_FROM_LAYOUT_MENU_OPTION);
 			newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(entry.getKey()), itemTooltipColor));
 			newEntry.setType(MenuAction.RUNELITE.getId());
 			newEntry.setParam0(entry.getKey());
@@ -1016,11 +1015,11 @@ public class BankTagLayoutsPlugin extends Plugin
 		return map;
 	}
 
-	int getXForIndex(int index) {
+	static int getXForIndex(int index) {
 		return (index % 8) * 48 + 51;
 	}
 
-	int getYForIndex(int index) {
+	static int getYForIndex(int index) {
 		return (index / 8) * 36;
 	}
 
