@@ -186,7 +186,6 @@ public class BankTagLayoutsPlugin extends Plugin
 				clientThread.invokeLater(this::applyCustomBankTagItemPositions);
 			}
 		} else if (BankTagsPlugin.CONFIG_GROUP.equals(event.getGroup()) && BankTagsPlugin.TAG_TABS_CONFIG.equals(event.getKey())) {
-			System.out.println("change of tabs: " + event.getKey() + " " + event.getOldValue() + " " + event.getNewValue());
 			handlePotentialTagChange(event);
 		}
 	}
@@ -501,7 +500,6 @@ public class BankTagLayoutsPlugin extends Plugin
 		// What the fuck? It appears that despite my priority setting on the @Subscribe, Bank Tags can still sometimes run after me and potentially run its remove tag separators code, messing up my layout.
         // invokeLater solves this issue though.
 		clientThread.invokeLater(() -> {
-			System.out.println("applylayoutlater");
 			setItemPositions(indexToWidget);
 		});
 		saveLayout(bankTagName, itemPositionIndexes);
@@ -584,7 +582,6 @@ public class BankTagLayoutsPlugin extends Plugin
 					addEntry(bankTagName, EXPORT_LAYOUT);
 				}
 
-				System.out.println("bank tag name is \"" + bankTagName + "\"");
 				addEntry(bankTagName, hasLayoutEnabled(bankTagName) ? DISABLE_LAYOUT : ENABLE_LAYOUT);
 			} else if ("New tag tab".equals(menuEntryAdded.getOption())) {
 				addEntry(bankTagName, IMPORT_LAYOUT);
