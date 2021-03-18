@@ -501,6 +501,7 @@ public class BankTagLayoutsPlugin extends Plugin
 		// What the fuck? It appears that despite my priority setting on the @Subscribe, Bank Tags can still sometimes run after me and potentially run its remove tag separators code, messing up my layout.
         // invokeLater solves this issue though.
 		clientThread.invokeLater(() -> {
+			System.out.println("applylayoutlater");
 			setItemPositions(indexToWidget);
 		});
 		saveLayout(bankTagName, itemPositionIndexes);
@@ -576,13 +577,14 @@ public class BankTagLayoutsPlugin extends Plugin
 	public void onMenuEntryAdded(MenuEntryAdded menuEntryAdded)
 	{
 	    if (WidgetInfo.TO_GROUP(menuEntryAdded.getActionParam1()) == WidgetInfo.BANK_CONTENT_CONTAINER.getGroupId()) {
-			String bankTagName = Text.removeTags(menuEntryAdded.getTarget());
+			String bankTagName = Text.removeTags(menuEntryAdded.getTarget()).replace("\u00a0"," ");
 
 			if ("Rename tag tab".equals(menuEntryAdded.getOption())) {
 				if (hasLayoutEnabled(bankTagName)) {
 					addEntry(bankTagName, EXPORT_LAYOUT);
 				}
 
+				System.out.println("bank tag name is \"" + bankTagName + "\"");
 				addEntry(bankTagName, hasLayoutEnabled(bankTagName) ? DISABLE_LAYOUT : ENABLE_LAYOUT);
 			} else if ("New tag tab".equals(menuEntryAdded.getOption())) {
 				addEntry(bankTagName, IMPORT_LAYOUT);
