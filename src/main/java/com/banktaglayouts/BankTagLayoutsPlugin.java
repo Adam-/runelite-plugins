@@ -185,6 +185,34 @@ public class BankTagLayoutsPlugin extends Plugin
 			if ("layoutEnabledByDefault".equals(event.getKey())) {
 				clientThread.invokeLater(this::applyCustomBankTagItemPositions);
 			}
+		} else if (BankTagsPlugin.CONFIG_GROUP.equals(event.getGroup()) && BankTagsPlugin.TAG_TABS_CONFIG.equals(event.getKey())) {
+			System.out.println("change of tabs: " + event.getKey() + " " + event.getOldValue() + " " + event.getNewValue());
+			handlePotentialTagChange(event);
+		}
+	}
+
+	private void handlePotentialTagChange(ConfigChanged event) {
+		Set<String> oldTags = new HashSet<>(Text.fromCSV(event.getOldValue()));
+		Set<String> newTags = new HashSet<>(Text.fromCSV(event.getNewValue()));
+		// Compute the diff between the two lists.
+		Iterator<String> iter = oldTags.iterator();
+		while (iter.hasNext()) {
+			String oldTag = iter.next();
+			if (newTags.remove(oldTag)) {
+				iter.remove();
+			}
+		}
+
+		// Check if it's a rename or something else.
+		if (oldTags.size() != 1 || newTags.size() != 1) return;
+
+		String oldName = oldTags.iterator().next();
+		String newName = newTags.iterator().next();
+
+		Map<Integer, Integer> oldLayout = getBankOrder(oldName);
+		if (oldLayout != null) {
+		    saveLayout(newName, oldLayout);
+			configManager.unsetConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + oldName);
 		}
 	}
 
@@ -472,7 +500,9 @@ public class BankTagLayoutsPlugin extends Plugin
 
 		// What the fuck? It appears that despite my priority setting on the @Subscribe, Bank Tags can still sometimes run after me and potentially run its remove tag separators code, messing up my layout.
         // invokeLater solves this issue though.
-		clientThread.invokeLater(() -> setItemPositions(indexToWidget));
+		clientThread.invokeLater(() -> {
+			setItemPositions(indexToWidget);
+		});
 		saveLayout(bankTagName, itemPositionIndexes);
 		log.debug("saved tag " + bankTagName);
 	}
