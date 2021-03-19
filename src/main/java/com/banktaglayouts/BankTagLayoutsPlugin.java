@@ -1,5 +1,6 @@
 package com.banktaglayouts;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ObjectArrays;
 import com.google.common.util.concurrent.Runnables;
 import com.google.inject.Provides;
@@ -11,6 +12,7 @@ import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
+import net.runelite.api.ItemID;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.MessageNode;
@@ -39,7 +41,6 @@ import net.runelite.client.plugins.bank.BankSearch;
 import net.runelite.client.plugins.banktags.BankTagsPlugin;
 import net.runelite.client.plugins.banktags.TagManager;
 import net.runelite.client.plugins.banktags.tabs.TabInterface;
-import net.runelite.client.plugins.banktags.tabs.TagTab;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.Text;
@@ -51,9 +52,6 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -66,12 +64,19 @@ import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 
+import static net.runelite.client.plugins.banktags.BankTagsPlugin.*;
+
 @Slf4j
 /* TODO
+	Why are bank tag tabs not using exact matches for tag names but instead checking with something like startsWith?
+	Weird ids added for scb, possibly all variant items.
+
 	Tag import does not delete existing tags in the tab.
 
 	Drag fake items.
+	Fake items should show higher quantity to be more easily identifiable.
 	Option to show fake items for things that are in the tag but not in the layout. This would be nice for "cleaning out" a bank tag.
+		Also allow people to remove the item from the actual tag.
 	Give the fake items a way for people to know what they are. Like a name?
 	Show fake item menu entry in top left like "Release" placeholder menu entry does.
 
@@ -136,10 +141,10 @@ public class BankTagLayoutsPlugin extends Plugin
 	private OverlayManager overlayManager;
 
 	@Inject
-	private ItemManager itemManager;
+	ItemManager itemManager;
 
 	@Inject
-	private ConfigManager configManager;
+	ConfigManager configManager;
 
 	@Inject
 	private ClientThread clientThread;
@@ -358,6 +363,8 @@ public class BankTagLayoutsPlugin extends Plugin
 		return sb.toString();
 	}
 
+	private UsedToBeReflection copyPaste = new UsedToBeReflection(this);
+
 	private boolean importBankTag(String name, String tagString) {
 		log.debug("importing tag data. " + tagString);
 		final Iterator<String> dataIter = Text.fromCSV(tagString).iterator();
@@ -365,53 +372,23 @@ public class BankTagLayoutsPlugin extends Plugin
 
 		final String icon = dataIter.next();
 
-		// precheck all reflective stuff to make sure it's all present before continuing.
-		Object tabManager = null;
-		try {
-			tabManager = getTabManager();
-		} catch (NoSuchFieldException | IllegalAccessException e) {
-			e.printStackTrace();
-		}
-		Method setIcon, loadTab, save, scrollTab, openTag;
-		try {
-			setIcon = tabManager.getClass().getDeclaredMethod("setIcon", String.class, String.class);
-			setIcon.setAccessible(true);
-			loadTab = tabInterface.getClass().getDeclaredMethod("loadTab", String.class);
-			loadTab.setAccessible(true);
-			save = tabManager.getClass().getDeclaredMethod("save");
-			save.setAccessible(true);
-			scrollTab = tabInterface.getClass().getDeclaredMethod("scrollTab", int.class);
-			scrollTab.setAccessible(true);
-			openTag = tabInterface.getClass().getDeclaredMethod("openTag", String.class);
-			openTag.setAccessible(true);
-		} catch (NoSuchMethodException e) {
-			chatErrorMessage("couldn't import layout-ed tag tab. This is definitely a bug. sorry!");
-			e.printStackTrace();
-			return false;
+		copyPaste.setIcon(name, icon);
+
+		while (dataIter.hasNext()) {
+			int itemId = Integer.parseInt(dataIter.next());
+			tagManager.addTag(itemId, name, itemId < 0);
 		}
 
-		try {
-			setIcon.invoke(tabManager, name, icon);
+		copyPaste.saveNewTab(name);
+		copyPaste.loadTab(name);
+//		copyPaste.scrollTab(0); // TODO what was this supposed to do?
 
-			while (dataIter.hasNext()) {
-				final int itemId = Integer.parseInt(dataIter.next());
-				tagManager.addTag(itemId, name, itemId < 0);
-			}
-
-			loadTab.invoke(tabInterface, name);
-			save.invoke(tabManager);
-			scrollTab.invoke(tabInterface, 0);
-
-			if (tabInterface.getActiveTab() != null && name.equals(tabInterface.getActiveTab().getTag())) {
-				openTag.invoke(tabInterface, tabInterface.getActiveTab().getTag());
-			} else if (tabInterface.isTagTabActive()) {
-				openTag.invoke(tabInterface, "tagtabs");
-			}
-		} catch (IllegalAccessException | InvocationTargetException e) {
-			chatErrorMessage("couldn't import layout-ed tag tab. This might be a bug. sorry!");
-			e.printStackTrace();
-			return false;
-		}
+//		if (tabInterface.getActiveTab() != null && name.equals(tabInterface.getActiveTab().getTag())) {
+//			copyPaste.openTag(tabInterface.getActiveTab().getTag());
+//		} else if (tabInterface.isTagTabActive()) {
+//			copyPaste.openTag("tagtabs");
+//		}
+		System.out.println("done");
 		return true;
 	}
 
@@ -757,21 +734,11 @@ public class BankTagLayoutsPlugin extends Plugin
 		while (iter.hasNext()) {
 			int itemId = iter.next().getKey();
 
-			try {
-				if (!findTag(itemId, bankTagName)) {
-					log.debug("removing " + itemName(itemId) + " (" + itemId + ") because it is no longer in the bank tag");
-					iter.remove();
-				}
-			} catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-				if (log.isDebugEnabled()) e.printStackTrace();
+			if (!copyPaste.findTag(itemId, bankTagName)) {
+				log.debug("removing " + itemName(itemId) + " (" + itemId + ") because it is no longer in the bank tag");
+				iter.remove();
 			}
 		}
-	}
-
-	private boolean findTag(int itemId, String search) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-		Method method = TagManager.class.getDeclaredMethod("findTag", int.class, String.class);
-		method.setAccessible(true);
-		return (boolean) method.invoke(tagManager, itemId, search);
 	}
 
 	// TODO this logic needs looking at re: barrows items.
@@ -924,25 +891,24 @@ public class BankTagLayoutsPlugin extends Plugin
 		}
 		exportString += layout;
 
-		TagTab tagTab = null;
-		try {
-			tagTab = getTab(tagName);
-		} catch (ReflectiveOperationException e) {
-			if (log.isDebugEnabled()) e.printStackTrace();
-			chatErrorMessage("export failed: Couldn't get bank tag tab. This is probably a bug. sorry!");
+		List<String> tabNames = Text.fromCSV(MoreObjects.firstNonNull(configManager.getConfiguration(BankTagsPlugin.CONFIG_GROUP, TAG_TABS_CONFIG), ""));
+		if (!tabNames.contains(tagName)) {
+			chatErrorMessage("Couldn't export layout-ed tag tab - tag tab doesn't see to exist?");
 		}
 
-		if (tagTab != null) {
-			List<String> data = new ArrayList<>();
-			data.add(tagTab.getTag());
-			data.add(String.valueOf(tagTab.getIconItemId()));
-
-			for (Integer item : tagManager.getItemsForTag(tagTab.getTag())) {
-				data.add(String.valueOf(item));
-			}
-
-			exportString += ",banktag:" + Text.toCSV(data);
+		List<String> data = new ArrayList<>();
+		data.add(tagName);
+		String tagTabIconItemId = configManager.getConfiguration(BankTagsPlugin.CONFIG_GROUP, ICON_SEARCH + tagName);
+		if (tagTabIconItemId == null) {
+			tagTabIconItemId = "" + ItemID.SPADE;
 		}
+		data.add(tagTabIconItemId);
+
+		for (Integer item : tagManager.getItemsForTag(tagName)) {
+			data.add(String.valueOf(item));
+		}
+
+		exportString += ",banktag:" + Text.toCSV(data);
 
 		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(exportString), null);
 		chatMessage("Copied layout-ed tag \"" + tagName + "\" to clipboard");
@@ -954,20 +920,6 @@ public class BankTagLayoutsPlugin extends Plugin
 
 	private MessageNode chatMessage(String message) {
 		return client.addChatMessage(ChatMessageType.GAMEMESSAGE, "bla", message, "bla");
-	}
-
-	private TagTab getTab(String tagName) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
-		Object tabManager = getTabManager();
-
-		Method find = tabManager.getClass().getDeclaredMethod("find", String.class);
-		find.setAccessible(true);
-		return (TagTab) find.invoke(tabManager, tagName);
-	}
-
-	private Object getTabManager() throws NoSuchFieldException, IllegalAccessException {
-		Field tabManagerField = TabInterface.class.getDeclaredField("tabManager");
-		tabManagerField.setAccessible(true);
-		return tabManagerField.get(tabInterface);
 	}
 
 	private String bankTagOrderMapToString(Map<Integer, Integer> itemPositionMap) {
