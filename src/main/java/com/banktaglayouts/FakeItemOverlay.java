@@ -52,7 +52,7 @@ public class FakeItemOverlay extends Overlay {
         Map<Integer, Integer> itemIdToIndexes = plugin.getBankOrder(activeTab.getTag());
         if (itemIdToIndexes == null) return null;
 
-        updateTooltip(itemIdToIndexes);
+        if (config.layoutPlaceholderTooltips()) updateTooltip(itemIdToIndexes);
 
         Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
         if (bankItemContainer == null) return null;
