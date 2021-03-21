@@ -46,6 +46,7 @@ import net.runelite.client.plugins.bank.BankSearch;
 import net.runelite.client.plugins.banktags.BankTagsPlugin;
 import net.runelite.client.plugins.banktags.TagManager;
 import net.runelite.client.plugins.banktags.tabs.TabInterface;
+import net.runelite.client.plugins.banktags.tabs.TagTab;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.Text;
@@ -66,6 +67,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
@@ -245,15 +247,108 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	public void onCommandExecuted(CommandExecuted commandExecuted) {
 	    if (!log.isDebugEnabled()) return;
 
+		if ("show".equals(commandExecuted.getCommand())) {
+			showLayoutPreview();
+		}
+		if ("cancel".equals(commandExecuted.getCommand())) {
+			cancelLayoutPreview();
+		}
+		if ("accept".equals(commandExecuted.getCommand())) {
+			useLayoutPreview();
+		}
+
 		if ("itemname".equals(commandExecuted.getCommand())) {
 			String[] arguments = commandExecuted.getArguments();
 			client.addChatMessage(ChatMessageType.PUBLICCHAT, "Item name of " + arguments[0], itemName(Integer.valueOf(arguments[0])), "bla");
 		}
 	}
 
+	private void useLayoutPreview() {
+		chatMessage("NYI");
+	}
+
+	private void cancelLayoutPreview() {
+		System.out.println("cancelling preview");
+		previewLayout = null;
+		previewLayoutTagName = null;
+		applyCustomBankTagItemPositions();
+	}
+
+	/** null indicates that there should not be a preview shown. */
+	private Map<Integer, Integer> previewLayout = null;
+	private String previewLayoutTagName = null;
+
+	private int toZigZagIndex(int inventoryIndex, int row, int col) {
+		if (inventoryIndex < 0 || row < 0 || col < 0) throw new IllegalArgumentException();
+
+		row += (inventoryIndex / 16) * 2; // Does this cover multiple pairs of rows?
+		inventoryIndex -= (inventoryIndex / 16) * 16;
+		int index = 0;
+		index += inventoryIndex % 2 == 0 ? 0 : 8; // top or bottom row?
+		index += inventoryIndex / 2; // column.
+		index += row * 8 + col; // offset.
+		return index;
+	}
+
+	private void showLayoutPreview() {
+		System.out.println("autolayout");
+		TagTab activeTab = tabInterface.getActiveTab();
+		if (activeTab == null) {
+			chatMessage("Select a tab tag before using this feature.");
+			return;
+		}
+
+		previewLayout = new HashMap<>();
+		previewLayoutTagName = activeTab.getTag();
+
+		for (int i = 0; i <100; i++) {
+			System.out.println(i + " " + toZigZagIndex(i, 0, 0));
+		}
+
+		List<Integer> equippedGear = getEquippedGear();
+		System.out.println("equipped gear is " + equippedGear);
+		int i = 0;
+		for (Integer itemId : equippedGear) {
+			if (itemId == -1) continue;
+			previewLayout.put(itemId, toZigZagIndex(i, 0, 0));
+			i++;
+		}
+
+		List<Integer> inventory = getInventory();
+		System.out.println("equipped gear is " + inventory);
+		i = 0;
+		for (Integer itemId : inventory) {
+			if (itemId == -1) continue;
+			previewLayout.put(itemId, toZigZagIndex(i, 2, 0));
+			i++;
+		}
+
+		applyCustomBankTagItemPositions();
+
+		// TODO items present in the tag but not in the gear or inventory.
+		List<Integer> displacedItems = new ArrayList<>(); // TODO.
+		// TODO add items to the tag if they're in the gear/invent but not in the tab.
+	}
+
+	private List<Integer> getEquippedGear() {
+		ItemContainer container = client.getItemContainer(InventoryID.EQUIPMENT);
+		return Arrays.stream(container.getItems()).map(w -> w.getId()).collect(Collectors.toList());
+	}
+
+	private List<Integer> getInventory() {
+		ItemContainer container = client.getItemContainer(InventoryID.INVENTORY);
+		return Arrays.stream(container.getItems()).map(w -> w.getId()).collect(Collectors.toList());
+	}
+
+	private boolean isShowingPreview() {
+		return previewLayout != null;
+	}
+
 	@Subscribe(priority = -1f) // I want to run after the Bank Tags plugin does, since it will interfere with the layout-ing if hiding tab separators is enabled.
 	public void onScriptPostFired(ScriptPostFired event) {
 		if (event.getScriptId() == ScriptID.BANKMAIN_BUILD) {
+			if (!tabInterface.isActive() || Objects.equals(previewLayoutTagName, tabInterface.getActiveTab().getTag())) cancelLayoutPreview();
+
 			applyCustomBankTagItemPositions();
 		}
 	}
@@ -359,6 +454,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	private void saveLayout(String name, Map<Integer, Integer> layout) {
+		if (isShowingPreview()) {
+			previewLayout = layout;
+			return;
+		}
+
 		configManager.setConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + name, bankTagOrderMapToString(layout));
 	}
 
@@ -407,6 +507,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	public boolean hasLayoutEnabled(String bankTagName) {
+		if (isShowingPreview()) return true;
+
 		String configuration = configManager.getConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + bankTagName);
 		if (LAYOUT_EXPLICITLY_DISABLED.equals(configuration)) return false;
 		return config.layoutEnabledByDefault() || configuration != null;
@@ -467,8 +569,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			return; // layout not enabled.
 		}
 
-		cleanItemsNotInBankTag(itemPositionIndexes, bankTagName);
-		cleanDuplicateIndexes(itemPositionIndexes);
+		if (!isShowingPreview()) { // I don't want to clean layout items when displaying a preview.
+			cleanItemsNotInBankTag(itemPositionIndexes, bankTagName);
+			cleanDuplicateIndexes(itemPositionIndexes);
+		}
 
 		assignVariantItemPositions(itemPositionIndexes);
 		assignNonVariantItemPositions(itemPositionIndexes, bankItems);
@@ -504,7 +608,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 				&& client.getDraggedOnWidget() != null
 				&& client.getDraggedOnWidget().getId() == WidgetInfo.BANK_ITEM_CONTAINER.getId() && tabInterface.isActive()
 				&& !hasLayoutEnabled(tabInterface.getActiveTab().getTag())
-				&& !"true".equalsIgnoreCase(configManager.getConfiguration("banktags", "preventTagTabDrags"))
+				&& !Boolean.parseBoolean(configManager.getConfiguration(BankTagsPlugin.CONFIG_GROUP, "preventTagTabDrags"))
 		) {
 			chatErrorMessage("You just reordered your actual bank!");
 			chatMessage("If you wanted to use a bank tag layout, make sure you enable it for this tab first.");
@@ -968,6 +1072,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	Map<Integer, Integer> getBankOrder(String bankTagName) {
+		if (isShowingPreview()) {
+			return previewLayout;
+        }
+
 		String configuration = configManager.getConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + bankTagName);
 		if (LAYOUT_EXPLICITLY_DISABLED.equals(configuration)) return null;
 		if (configuration == null && !config.layoutEnabledByDefault()) return null;
@@ -1242,7 +1350,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	private Widget lastDraggedOnWidget = null;
 	// Disable reordering your real bank while any tag tab is active, as if the Bank Tags Plugin's "Prevent tag tab item dragging" was enabled.
-	@Subscribe(priority = -1f)
+	@Subscribe(priority = -1f) // run after bank tags, otherwise you can't drag items into other tabs while a tab is open.
 	public void onDraggingWidgetChanged(DraggingWidgetChanged event) {
 		Widget widget = client.getWidget(WidgetInfo.BANK_CONTAINER);
 		if (widget == null || widget.isHidden()) {
