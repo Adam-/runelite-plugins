@@ -580,9 +580,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		if (config.showLayoutPlaceholders()) {
 			int draggedOnIndex = getIndexForMousePosition();
-			final int finalDraggedItemIndex = draggedItemIndex;
 			clientThread.invokeLater(() -> {
-				customBankTagOrderInsert(tabInterface.getActiveTab().getTag(), finalDraggedItemIndex, draggedOnIndex);
+				if (draggedOnIndex != -1) customBankTagOrderInsert(tabInterface.getActiveTab().getTag(), draggedItemIndex, draggedOnIndex);
 				draggedItemIndex = -1;
 			});
 		}
