@@ -21,6 +21,7 @@ import net.runelite.api.ScriptEvent;
 import net.runelite.api.ScriptID;
 import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.DraggingWidgetChanged;
+import net.runelite.api.events.FocusChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.MenuShouldLeftClick;
@@ -35,6 +36,7 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.ItemVariationMapping;
 import net.runelite.client.game.chatbox.ChatboxPanelManager;
+import net.runelite.client.input.KeyManager;
 import net.runelite.client.input.MouseListener;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
@@ -144,6 +146,9 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private MouseManager mouseManager;
 
 	@Inject
+	private KeyManager keyManager;
+
+	@Inject
 	ItemManager itemManager;
 
 	@Inject
@@ -174,11 +179,14 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	// The current indexes for where each widget should appear in the custom bank layout. Should be ignored if there is not tab active.
 	private final Map<Integer, Widget> indexToWidget = new HashMap<>();
 
+	AntiDragPluginUtil antiDrag = new AntiDragPluginUtil(this);
+
 	@Override
 	protected void startUp()
 	{
 		overlayManager.add(fakeItemOverlay);
 		mouseManager.registerMouseListener(this);
+		keyManager.registerKeyListener(antiDrag);
 	}
 
 	@Override
@@ -186,6 +194,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	{
 		overlayManager.remove(fakeItemOverlay);
 		mouseManager.unregisterMouseListener(this);
+		keyManager.unregisterKeyListener(antiDrag);
 		indexToWidget.clear();
 	}
 
@@ -564,6 +573,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			draggedItemIndex = fakeItem.index;
 			dragStartX = mouseEvent.getX();
 			dragStartY = mouseEvent.getY();
+			antiDrag.startDrag();
 			mouseEvent.consume();
 		}
 		return mouseEvent;
@@ -581,7 +591,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		if (config.showLayoutPlaceholders()) {
 			int draggedOnIndex = getIndexForMousePosition();
 			clientThread.invokeLater(() -> {
-				if (draggedOnIndex != -1) customBankTagOrderInsert(tabInterface.getActiveTab().getTag(), draggedItemIndex, draggedOnIndex);
+				if (draggedOnIndex != -1 && antiDrag.mayDrag()) {
+					customBankTagOrderInsert(tabInterface.getActiveTab().getTag(), draggedItemIndex, draggedOnIndex);
+				}
+				antiDrag.endDrag();
 				draggedItemIndex = -1;
 			});
 		}
@@ -654,7 +667,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		Map<Integer, Integer> itemIdToIndexes = getBankOrder(tabInterface.getActiveTab().getTag());
 		if (itemIdToIndexes == null) return;
 
-		int index = getIndexForMousePosition();
+		int index = getIndexForMousePosition(true);
 		if (index == -1) return;
 		Map.Entry<Integer, Integer> entry = itemIdToIndexes.entrySet().stream()
 				.filter(e -> e.getValue() == index)
@@ -686,6 +699,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		return getIndexForMousePosition(false);
     }
 
+	/**
+	 * @param dontEnlargeClickbox If this is false, the clickbox used to calculate the clickbox will be larger (2 larger up and down, 6 larger left to right), so that there are no gaps between clickboxes in the bank interface.
+	 * @return -1 if the mouse is not over a location where a bank item can be.
+	 */
 	int getIndexForMousePosition(boolean dontEnlargeClickbox) {
 		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
 		if (bankItemContainer == null) return -1;
@@ -1242,4 +1259,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			}
 		}
 	}
+
+	@Subscribe
+	public void onFocusChanged(FocusChanged focusChanged)
+	{
+	    antiDrag.focusChanged(focusChanged);
+	}
+
 }

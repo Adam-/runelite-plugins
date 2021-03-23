@@ -65,7 +65,7 @@ public class FakeItemOverlay extends Overlay {
             for (BankTagLayoutsPlugin.FakeItem fakeItem : plugin.fakeItems) {
                 int dragDeltaX = 0;
                 int dragDeltaY = 0;
-                if (fakeItem.index == plugin.draggedItemIndex) {
+                if (fakeItem.index == plugin.draggedItemIndex && plugin.antiDrag.mayDrag()) {
                     dragDeltaX = client.getMouseCanvasPosition().getX() - plugin.dragStartX;
                     dragDeltaY = client.getMouseCanvasPosition().getY() - plugin.dragStartY;
                 }
@@ -87,7 +87,7 @@ public class FakeItemOverlay extends Overlay {
         tooltipManager.getTooltips().remove(tooltip);
         tooltip = null;
 
-        int index = plugin.getIndexForMousePosition();
+        int index = plugin.getIndexForMousePosition(true);
         if (!log.isDebugEnabled() && !plugin.fakeItems.stream().filter(fakeItem -> fakeItem.index == index).findAny().isPresent()) return;
 
         if (index != -1) {
