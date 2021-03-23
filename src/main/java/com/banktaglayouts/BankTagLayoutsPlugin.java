@@ -23,6 +23,7 @@ import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.DraggingWidgetChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.events.MenuShouldLeftClick;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
@@ -68,16 +69,20 @@ import static net.runelite.client.plugins.banktags.BankTagsPlugin.*;
 
 @Slf4j
 /* TODO
-	Why are bank tag tabs not using exact matches for tag names but instead checking with something like startsWith?
-	Weird ids added for scb, possibly all variant items.
+	Bank tags bug:
+		Why are bank tag tabs not using exact matches for tag names but instead checking with something like startsWith?
+		Weird ids added for scb, possibly all variant items.
 
-	Tag import does not delete existing tags in the tab.
+	Bugs I don't care about:
+		Tag import does not delete existing tags in the tab.
 
-	Drag fake items.
-	Fake items should show higher quantity to be more easily identifiable.
-	Option to show fake items for things that are in the tag but not in the layout. This would be nice for "cleaning out" a bank tag.
-		Also allow people to remove the item from the actual tag.
+	Minor features:
+		Drag fake items.
+		Tag editing:
+			Option to show fake items for things that are in the tag but not in the layout. This would be nice for "cleaning out" a bank tag.
+				Also allow people to remove the item from the actual tag.
 	Give the fake items a way for people to know what they are. Like a name?
+		I think people can figure it out. like 2/2 people who mentioned this to me didn't have an issue figuring it out.
 	Show fake item menu entry in top left like "Release" placeholder menu entry does.
 
 	Handling of barrows items still questionable. What happens if you put in a degraded one where previously there was something of a different degradation in the tab?
@@ -388,7 +393,6 @@ public class BankTagLayoutsPlugin extends Plugin
 //		} else if (tabInterface.isTagTabActive()) {
 //			copyPaste.openTag("tagtabs");
 //		}
-		System.out.println("done");
 		return true;
 	}
 
@@ -601,6 +605,7 @@ public class BankTagLayoutsPlugin extends Plugin
 			MenuEntry newEntry;
 //			newEntry = new MenuEntry();
 //			newEntry.setOption(REMOVE_FROM_TAG_MENU_OPTION + " (" + tabInterface.getActiveTab().getTag() + ")");
+//			newEntry.setType(MenuAction.CC_OP_LOW_PRIORITY.getId());
 //			newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(entry.getKey()), itemTooltipColor));
 //			newEntry.setType(MenuAction.RUNELITE.getId());
 //			newEntry.setParam0(entry.getKey());
@@ -608,10 +613,34 @@ public class BankTagLayoutsPlugin extends Plugin
 
 			newEntry = new MenuEntry();
 			newEntry.setOption(REMOVE_FROM_LAYOUT_MENU_OPTION);
+			newEntry.setType(MenuAction.RUNELITE_OVERLAY.getId());
 			newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(entry.getKey()), itemTooltipColor));
-			newEntry.setType(MenuAction.RUNELITE.getId());
 			newEntry.setParam0(entry.getKey());
-			insertMenuEntry(newEntry, client.getMenuEntries(), true);
+			insertMenuEntry(newEntry, client.getMenuEntries(), false);
+
+			if (fakeItems.stream().filter(fakeItem -> fakeItem.index == index).findAny().isPresent()) forceRightClick = true;
+		}
+	}
+
+	private boolean forceRightClick = false;
+
+	@Subscribe
+	public void onMenuShouldLeftClick(MenuShouldLeftClick event)
+	{
+		if (!forceRightClick)
+		{
+			return;
+		}
+
+		forceRightClick = false;
+		MenuEntry[] menuEntries = client.getMenuEntries();
+		for (MenuEntry entry : menuEntries)
+		{
+			if (entry.getOption().startsWith(REMOVE_FROM_LAYOUT_MENU_OPTION))
+			{
+				event.setForceRightClick(true);
+				return;
+			}
 		}
 	}
 
@@ -654,7 +683,7 @@ public class BankTagLayoutsPlugin extends Plugin
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
-		if (!(event.getMenuAction() == MenuAction.RUNELITE)) return;
+		if (event.getMenuAction() != MenuAction.RUNELITE_OVERLAY) return;
 
 		String menuTarget = Text.removeTags(event.getMenuTarget()).replace("\u00a0"," ");
 
