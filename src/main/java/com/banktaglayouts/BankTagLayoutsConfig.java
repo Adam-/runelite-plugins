@@ -49,7 +49,7 @@ public interface BankTagLayoutsConfig extends Config {
 
     @ConfigItem(
             keyName = "layoutPlaceholderTooltips",
-            name = "Layout tooltips",
+            name = "Layout placeholder tooltips",
             description = "Whether tooltips should be shown for layout placeholders.",
             position = 4
     )

@@ -82,6 +82,8 @@ public class FakeItemOverlay extends Overlay {
         tooltip = null;
 
         int index = plugin.getIndexForMousePosition();
+        if (!log.isDebugEnabled() && !plugin.fakeItems.stream().filter(fakeItem -> fakeItem.index == index).findAny().isPresent()) return;
+
         if (index != -1) {
             Map.Entry<Integer, Integer> entry = itemIdToIndexes.entrySet().stream()
                     .filter(e -> e.getValue() == index)
