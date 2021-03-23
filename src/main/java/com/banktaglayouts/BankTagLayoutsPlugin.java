@@ -69,31 +69,26 @@ import static net.runelite.client.plugins.banktags.BankTagsPlugin.*;
 
 @Slf4j
 /* TODO
+    inventory setups.
+    autolayout.
+
 	Bank tags bug:
 		Why are bank tag tabs not using exact matches for tag names but instead checking with something like startsWith?
 		Weird ids added for scb, possibly all variant items.
+			Why did 1,2,3 dose scb and stamina potions suddenly appear in my cox tab?
 
-	Bugs I don't care about:
+	Issues I don't care about:
 		Tag import does not delete existing tags in the tab.
+		duplicate tab.
+			Can easily be done with an export then an import, but this would be nice for convenience I guess.
 
 	Minor features:
 		Drag fake items.
 		Tag editing:
 			Option to show fake items for things that are in the tag but not in the layout. This would be nice for "cleaning out" a bank tag.
 				Also allow people to remove the item from the actual tag.
-	Give the fake items a way for people to know what they are. Like a name?
-		I think people can figure it out. like 2/2 people who mentioned this to me didn't have an issue figuring it out.
-	Show fake item menu entry in top left like "Release" placeholder menu entry does.
 
 	Handling of barrows items still questionable. What happens if you put in a degraded one where previously there was something of a different degradation in the tab?
-
-	Why did 1,2,3 dose scb and stamina potions suddenly appear in my cox tab?
-	Enable/Delete layout does not show up in tag tab tab view.
-    duplicate tab.
-    	Can easily be done with an export then an import, but this would be nice for convenience I guess.
-
-    inventory setups.
-    autolayout.
 
     am i unable to drag an item from one tag to another? Not a huge deal but still.
     	This is also a use case for that pr I submitted on the view tags thing.
@@ -241,7 +236,7 @@ public class BankTagLayoutsPlugin extends Plugin
 		}
 	}
 
-	@Subscribe(priority = -1) // I want to run after the Bank Tags plugin does, since it will interfere with the layout-ing if hiding tab separators is enabled.
+	@Subscribe(priority = -1f) // I want to run after the Bank Tags plugin does, since it will interfere with the layout-ing if hiding tab separators is enabled.
 	public void onScriptPostFired(ScriptPostFired event) {
 		if (event.getScriptId() == ScriptID.BANKMAIN_BUILD) {
 			applyCustomBankTagItemPositions();
@@ -1165,7 +1160,7 @@ public class BankTagLayoutsPlugin extends Plugin
 
 	private Widget lastDraggedOnWidget = null;
 	// Disable reordering your real bank while any tag tab is active, as if the Bank Tags Plugin's "Prevent tag tab item dragging" was enabled.
-	@Subscribe
+	@Subscribe(priority = -1f)
 	public void onDraggingWidgetChanged(DraggingWidgetChanged event) {
 		Widget widget = client.getWidget(WidgetInfo.BANK_CONTAINER);
 		if (widget == null || widget.isHidden()) {
