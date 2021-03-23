@@ -67,9 +67,9 @@ public class FakeItemOverlay extends Overlay {
 
                 int x = plugin.getXForIndex(fakeItem.index) + canvasLocation.getX();
                 int y = plugin.getYForIndex(fakeItem.index) + canvasLocation.getY() - scrollY;
-                BufferedImage image = itemManager.getImage(fakeItemId);
+                BufferedImage image = itemManager.getImage(fakeItemId, 1000, false);
                 graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
-                BufferedImage outline = itemManager.getItemOutline(fakeItemId, 1, Color.GRAY);
+                BufferedImage outline = itemManager.getItemOutline(fakeItemId, 1000, Color.GRAY);
                 graphics.drawImage(outline, x, y, null);
             }
         }
