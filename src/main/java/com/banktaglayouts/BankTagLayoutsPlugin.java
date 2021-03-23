@@ -35,6 +35,8 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.ItemVariationMapping;
 import net.runelite.client.game.chatbox.ChatboxPanelManager;
+import net.runelite.client.input.MouseListener;
+import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -52,6 +54,7 @@ import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -90,9 +93,6 @@ import static net.runelite.client.plugins.banktags.BankTagsPlugin.*;
 
 	Handling of barrows items still questionable. What happens if you put in a degraded one where previously there was something of a different degradation in the tab?
 
-    am i unable to drag an item from one tag to another? Not a huge deal but still.
-    	This is also a use case for that pr I submitted on the view tags thing.
-
 	high:
 	// dragging an item doesn't seem to use its new itemId in the new position - instead it uses the old saved value.
 		// Apparently this doesn't even happen, lol. Problem solved before it even existed.
@@ -114,7 +114,7 @@ import static net.runelite.client.plugins.banktags.BankTagsPlugin.*;
 	tags = {"bank", "tag", "layout"}
 )
 @PluginDependency(BankTagsPlugin.class)
-public class BankTagLayoutsPlugin extends Plugin
+public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 {
 	public static final IntPredicate FILTERED_CHARS = c -> "</>:".indexOf(c) == -1;
 
@@ -139,6 +139,9 @@ public class BankTagLayoutsPlugin extends Plugin
 
 	@Inject
 	private OverlayManager overlayManager;
+
+	@Inject
+	private MouseManager mouseManager;
 
 	@Inject
 	ItemManager itemManager;
@@ -175,12 +178,15 @@ public class BankTagLayoutsPlugin extends Plugin
 	protected void startUp()
 	{
 		overlayManager.add(fakeItemOverlay);
+		mouseManager.registerMouseListener(this);
 	}
 
 	@Override
 	protected void shutDown()
 	{
 		overlayManager.remove(fakeItemOverlay);
+		mouseManager.unregisterMouseListener(this);
+		indexToWidget.clear();
 	}
 
 	@Subscribe
@@ -540,6 +546,71 @@ public class BankTagLayoutsPlugin extends Plugin
 
 	public final Set<FakeItem> fakeItems = new HashSet<>();
 
+	@Override
+	public MouseEvent mouseClicked(MouseEvent mouseEvent) {
+		return mouseEvent;
+	}
+
+	public volatile int draggedItemIndex = -1; // Used for fake items only, not real items.
+	public int dragStartX = 0;
+	public int dragStartY = 0;
+
+	@Override
+	public MouseEvent mousePressed(MouseEvent mouseEvent) {
+	    if (mouseEvent.getButton() != MouseEvent.BUTTON1 || isHidden() || !config.showLayoutPlaceholders()) return mouseEvent;
+		int index = getIndexForMousePosition(true);
+		FakeItem fakeItem = fakeItems.stream().filter(fake -> fake.index == index).findAny().orElse(null);
+		if (fakeItem != null) {
+			draggedItemIndex = fakeItem.index;
+			dragStartX = mouseEvent.getX();
+			dragStartY = mouseEvent.getY();
+			mouseEvent.consume();
+		}
+		return mouseEvent;
+	}
+
+	private boolean isHidden() {
+		return !tabInterface.isActive();
+	}
+
+	@Override
+	public MouseEvent mouseReleased(MouseEvent mouseEvent) {
+		if (mouseEvent.getButton() != MouseEvent.BUTTON1 || isHidden()) return mouseEvent;
+		if (draggedItemIndex == -1) return mouseEvent;
+
+		if (config.showLayoutPlaceholders()) {
+			int draggedOnIndex = getIndexForMousePosition();
+			final int finalDraggedItemIndex = draggedItemIndex;
+			clientThread.invokeLater(() -> {
+				customBankTagOrderInsert(tabInterface.getActiveTab().getTag(), finalDraggedItemIndex, draggedOnIndex);
+				draggedItemIndex = -1;
+			});
+		}
+
+		mouseEvent.consume();
+		return mouseEvent;
+	}
+
+	@Override
+	public MouseEvent mouseEntered(MouseEvent mouseEvent) {
+		return mouseEvent;
+	}
+
+	@Override
+	public MouseEvent mouseExited(MouseEvent mouseEvent) {
+		return mouseEvent;
+	}
+
+	@Override
+	public MouseEvent mouseDragged(MouseEvent mouseEvent) {
+		return mouseEvent;
+	}
+
+	@Override
+	public MouseEvent mouseMoved(MouseEvent mouseEvent) {
+		return mouseEvent;
+	}
+
 	@Data
 	public static class FakeItem {
 	    public final int index;
@@ -590,12 +661,6 @@ public class BankTagLayoutsPlugin extends Plugin
 				.filter(e -> e.getValue() == index)
 				.findAny().orElse(null);
 
-		for (MenuEntry menuEntry : client.getMenuEntries()) {
-			if (menuEntry.getOption().equalsIgnoreCase("cancel")) {
-				menuEntry.setForceLeftClick(true);
-			}
-		}
-
 		if (entry != null && !indexToWidget.containsKey(entry.getValue())) {
 			MenuEntry newEntry;
 //			newEntry = new MenuEntry();
@@ -612,30 +677,6 @@ public class BankTagLayoutsPlugin extends Plugin
 			newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(entry.getKey()), itemTooltipColor));
 			newEntry.setParam0(entry.getKey());
 			insertMenuEntry(newEntry, client.getMenuEntries(), false);
-
-			if (fakeItems.stream().filter(fakeItem -> fakeItem.index == index).findAny().isPresent()) forceRightClick = true;
-		}
-	}
-
-	private boolean forceRightClick = false;
-
-	@Subscribe
-	public void onMenuShouldLeftClick(MenuShouldLeftClick event)
-	{
-		if (!forceRightClick)
-		{
-			return;
-		}
-
-		forceRightClick = false;
-		MenuEntry[] menuEntries = client.getMenuEntries();
-		for (MenuEntry entry : menuEntries)
-		{
-			if (entry.getOption().startsWith(REMOVE_FROM_LAYOUT_MENU_OPTION))
-			{
-				event.setForceRightClick(true);
-				return;
-			}
 		}
 	}
 
@@ -643,6 +684,10 @@ public class BankTagLayoutsPlugin extends Plugin
 	 * @return -1 if the mouse is not over a location where a bank item can be.
 	 */
 	int getIndexForMousePosition() {
+		return getIndexForMousePosition(false);
+    }
+
+	int getIndexForMousePosition(boolean dontEnlargeClickbox) {
 		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
 		if (bankItemContainer == null) return -1;
 		Point mouseCanvasPosition = client.getMouseCanvasPosition();
@@ -657,6 +702,13 @@ public class BankTagLayoutsPlugin extends Plugin
 		int col = (int) Math.floor((mouseCanvasPosition.getX() - canvasLocation.getX() - 51 + 6) / 48f);
 		int index = row * 8 + col;
 		if (row < 0 || col < 0 || col > 7 || index < 0) return -1;
+		if (dontEnlargeClickbox) {
+			int xDistanceIntoItem = (mouseCanvasPosition.getX() - canvasLocation.getX() - 51 + 6) % 48;
+			int yDistanceIntoItem = (mouseCanvasPosition.getY() - canvasLocation.getY() + scrollY + 2) % 36;
+			if (xDistanceIntoItem < 6 || xDistanceIntoItem >= 42 || yDistanceIntoItem < 2 || yDistanceIntoItem >= 34) {
+				return -1;
+			}
+		}
 		return index;
 	}
 
@@ -678,7 +730,7 @@ public class BankTagLayoutsPlugin extends Plugin
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
-		if (event.getMenuAction() != MenuAction.RUNELITE_OVERLAY) return;
+		if (!(event.getMenuAction() == MenuAction.RUNELITE_OVERLAY || event.getMenuAction() == MenuAction.RUNELITE)) return;
 
 		String menuTarget = Text.removeTags(event.getMenuTarget()).replace("\u00a0"," ");
 
@@ -1071,16 +1123,25 @@ public class BankTagLayoutsPlugin extends Plugin
 			}
 		}
 
+		customBankTagOrderInsert(bankTagName, draggedItemIndex, draggedOnItemIndex);
+	}
+
+	private void customBankTagOrderInsert(String bankTagName, Integer draggedItemIndex, Integer draggedOnItemIndex) {
 		// TODO Save multimap due to having multiple items with the same ids in different slots, potentially? I think currently extras are hidden, which is ok with me.
+		Map<Integer, Integer> itemIdToIndexes = getBankOrder(bankTagName);
+		if (itemIdToIndexes == null) return;
+
+//		System.out.println(draggedItemIndex + " " + draggedOnItemIndex);
 		Integer currentDraggedItemId = getIdForIndex(draggedItemIndex); // TODO getIdForIndex does not factor in variations.
 		Integer currentDraggedOnItemId = getIdForIndex(draggedOnItemIndex);
 		// Currently I'm just spilling the variant items out in bank order, so I don't care exactly what item id was there - although if I ever decide to change this, this section will become much more complicated, since if I drag a (2) charge onto a regular item, but there was supposed to be a (3) charge there then I have to move the (2) but also deal with where the (2)'s saved position is... At least that's how it'll go if I decide to handle jewellery that way.
-		if (itemShouldBeTreatedAsHavingVariants(currentDraggedItemId)) {
+		if (currentDraggedItemId == null || itemShouldBeTreatedAsHavingVariants(currentDraggedItemId)) {
 			currentDraggedItemId = getItemForIndex(draggedItemIndex, itemIdToIndexes);
 		}
 		if (currentDraggedOnItemId != null && itemShouldBeTreatedAsHavingVariants(currentDraggedOnItemId)) {
 			currentDraggedOnItemId = getItemForIndex(draggedOnItemIndex, itemIdToIndexes);
 		}
+//		System.out.println(currentDraggedItemId + " " + currentDraggedOnItemId);
 //		Integer savedDraggedItemId = (itemHasVariants(draggedItemIndex)) ? getItemForIndex(draggedItemIndex, itemIdToIndexes) : ;
 //		Integer savedDraggedOnItemId = getItemForIndex(draggedOnItemIndex, itemIdToIndexes);
 		// If there is supposed to be an item in the dragged-on location, but that item isn't there, remove that item's custom position.
@@ -1139,6 +1200,11 @@ public class BankTagLayoutsPlugin extends Plugin
 		for (Map.Entry<Integer, Widget> indexToWidget : indexToWidget.entrySet()) {
 			if (indexToWidget.getKey().equals(index)) {
 				return indexToWidget.getValue().getItemId();
+			}
+		}
+		for (Map.Entry<Integer, Integer> indexToWidget : getBankOrder(tabInterface.getActiveTab().getTag()).entrySet()) {
+			if (indexToWidget.getKey().equals(index)) {
+				return indexToWidget.getValue();
 			}
 		}
 		return null;

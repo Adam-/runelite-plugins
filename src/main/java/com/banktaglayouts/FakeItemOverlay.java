@@ -63,10 +63,16 @@ public class FakeItemOverlay extends Overlay {
             graphics.clip(bankItemArea);
             graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
             for (BankTagLayoutsPlugin.FakeItem fakeItem : plugin.fakeItems) {
+                int dragDeltaX = 0;
+                int dragDeltaY = 0;
+                if (fakeItem.index == plugin.draggedItemIndex) {
+                    dragDeltaX = client.getMouseCanvasPosition().getX() - plugin.dragStartX;
+                    dragDeltaY = client.getMouseCanvasPosition().getY() - plugin.dragStartY;
+                }
                 int fakeItemId = fakeItem.getItemId();
 
-                int x = plugin.getXForIndex(fakeItem.index) + canvasLocation.getX();
-                int y = plugin.getYForIndex(fakeItem.index) + canvasLocation.getY() - scrollY;
+                int x = plugin.getXForIndex(fakeItem.index) + canvasLocation.getX() + dragDeltaX;
+                int y = plugin.getYForIndex(fakeItem.index) + canvasLocation.getY() - scrollY + dragDeltaY;
                 BufferedImage image = itemManager.getImage(fakeItemId, 1000, false);
                 graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
                 BufferedImage outline = itemManager.getItemOutline(fakeItemId, 1000, Color.GRAY);
