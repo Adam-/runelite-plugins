@@ -97,23 +97,15 @@ import static net.runelite.client.plugins.banktags.BankTagsPlugin.TAG_TABS_CONFI
 			Can easily be done with an export then an import, but this would be nice for convenience I guess.
 
 	Minor features:
-		Drag fake items.
 		Tag editing:
-			Option to show fake items for things that are in the tag but not in the layout. This would be nice for "cleaning out" a bank tag.
+			Option to show fake items for things that are in the tag but not in the layout. This would be nice for
+				"cleaning out" a bank tag, for example for publishing to other people.
 				Also allow people to remove the item from the actual tag.
 
 	Handling of barrows items still questionable. What happens if you put in a degraded one where previously there was something of a different degradation in the tab?
 
-	high:
-	// dragging an item doesn't seem to use its new itemId in the new position - instead it uses the old saved value.
-		// Apparently this doesn't even happen, lol. Problem solved before it even existed.
-
-    medium:
-    Make it work with "tag:" search. (EDIT: this is not nearly as useful if #13332 is accepted)
-    	// What if you have a tag named "tob" and a tag named "tob_somethingelse"?
-    	// I thing it would be nice if searching tags just selected the tag normally via the interface.
-    	// fix scrolling issue.
-	// TODO items with same id that do not stack in bank, e.g. bank placeholders. I thin currently only one of these is shown, which is fine for all use-cases I'm aware of.
+	// TODO items with same id that do not stack in bank, e.g. bank placeholders. I thin currently only one of these
+	    is shown, which is fine for all use-cases I'm aware of.
 
 	low:
 	// TODO treat variant items which have a placeholder for each variant (e.g. potions) as non-variant items. Probably need to build a list by iterating all items in the game.
@@ -196,6 +188,9 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
     private Widget cancelLayoutPreviewButton = null;
 	private Widget layoutPreviewText = null;
 
+	final AntiDragPluginUtil antiDrag = new AntiDragPluginUtil(this);
+	private final LayoutGenerator layoutGenerator = new LayoutGenerator(this);
+
 	private void updateButton() {
 		System.out.println("update button");
 		if (showLayoutPreviewButton == null) {
@@ -273,8 +268,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		if (event.getGroupId() == WidgetID.BANK_GROUP_ID) showLayoutPreviewButton = null; // when the bank widget is unloaded or loaded (not sure which) the button is removed from it somehow. So, set it to null so that it will be regenerated.
 	}
 
-	AntiDragPluginUtil antiDrag = new AntiDragPluginUtil(this);
-
 	@Override
 	protected void startUp()
 	{
@@ -341,16 +334,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	public void onCommandExecuted(CommandExecuted commandExecuted) {
 	    if (!log.isDebugEnabled()) return;
 
-		if ("show".equals(commandExecuted.getCommand())) {
-			showLayoutPreview();
-		}
-		if ("cancel".equals(commandExecuted.getCommand())) {
-			cancelLayoutPreview();
-		}
-		if ("accept".equals(commandExecuted.getCommand())) {
-			applyLayoutPreview();
-		}
-
 		if ("itemname".equals(commandExecuted.getCommand())) {
 			String[] arguments = commandExecuted.getArguments();
 			client.addChatMessage(ChatMessageType.PUBLICCHAT, "Item name of " + arguments[0], itemName(Integer.valueOf(arguments[0])), "bla");
@@ -393,18 +376,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private Map<Integer, Integer> previewLayout = null;
 	private String previewLayoutTagName = null;
 
-	private int toZigZagIndex(int inventoryIndex, int row, int col) {
-		if (inventoryIndex < 0 || row < 0 || col < 0) throw new IllegalArgumentException();
-
-		row += (inventoryIndex / 16) * 2; // Does this cover multiple pairs of rows?
-		inventoryIndex -= (inventoryIndex / 16) * 16;
-		int index = 0;
-		index += inventoryIndex % 2 == 0 ? 0 : 8; // top or bottom row?
-		index += inventoryIndex / 2; // column.
-		index += row * 8 + col; // offset.
-		return index;
-	}
-
 	private void showLayoutPreview() {
 		System.out.println("autolayout");
 
@@ -419,69 +390,13 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		hideLayoutPreviewButtons(false);
 
-		previewLayout = new HashMap<>();
-		previewLayoutTagName = activeTab.getTag();
-
 		List<Integer> equippedGear = getEquippedGear();
-		System.out.println("equipped gear is " + equippedGear);
-		int i = 0;
-		for (Integer itemId : equippedGear) {
-			if (itemId == -1) continue;
-			previewLayout.put(itemId, toZigZagIndex(i, 0, 0));
-			i++;
-		}
-
-		// TODO uh oh... weight reducing items.
-		// distinct leaves the first duplicate it encounters and removes only duplicates coming after the first.
-		List<Integer> inventory1 = getInventory();
-		System.out.println("inventory is " + inventory1);
-		List<Integer> inventory = inventory1.stream().distinct().collect(Collectors.toList());
-		System.out.println("de-duped inventory is " + inventory);
-		// Equipped items will never have >11 items in it so it will never spill over into the next row.
-		i = 16;
-		for (Integer itemId : inventory) {
-			if (itemId == -1) continue;
-			previewLayout.put(itemId, toZigZagIndex(i, 0, 0));
-			i++;
-		}
-
-		Optional<Integer> highestUsedIndex = previewLayout.values().stream().max(Integer::compare);
-		if (!highestUsedIndex.isPresent()) return; // no items in the layout were moved.
-		int displacedItemsStart = (highestUsedIndex.get() / 8 + 1) * 8;
-
-		System.out.println("starting at " + displacedItemsStart);
-		// TODO items present in the tag but not in the gear or inventory.
+		List<Integer> inventory = getInventory();
 		String bankTagName = tabInterface.getActiveTab().getTag();
-		Map<Integer, Integer> bankOrderNonPreview = getBankOrderNonPreview(bankTagName);
+		Map<Integer, Integer> currentLayout = getBankOrderNonPreview(bankTagName);
 
-		List<Integer> displacedItems = bankOrderNonPreview.entrySet().stream().filter(e -> {
-			System.out.println(e.getValue() + " " + displacedItemsStart + " " + !previewLayout.containsKey(e.getKey()) + " " + (e.getValue() <= displacedItemsStart && !previewLayout.containsKey(e.getKey())));
-			return e.getValue() < displacedItemsStart && !previewLayout.containsKey(e.getKey());
-		}).map(e -> e.getKey()).collect(Collectors.toList()); // TODO.
-
-        int j = displacedItemsStart;
-		while (displacedItems.size() > 0 && j < 2000 / 38 * 8) {
-			int finalJ = j;
-			if (!bankOrderNonPreview.values().stream().filter(v -> v == finalJ).findAny().isPresent()) {
-				Integer itemId = displacedItems.remove(0);
-				System.out.println(itemId + " goes to " + j);
-				previewLayout.put(itemId, j);
-			} else {
-				Map.Entry<Integer, Integer> existingLayoutItem = bankOrderNonPreview.entrySet().stream().filter(e -> e.getValue() == finalJ).findAny().orElseGet(null);
-				if (existingLayoutItem != null) {
-					if (previewLayout.containsKey(existingLayoutItem.getKey())) {
-						Integer itemId = displacedItems.remove(0);
-						System.out.println(itemId + " goes to " + j + " (item was moved)");
-						previewLayout.put(itemId, j);
-					}
-				}
-			}
-
-			j++;
-		}
-
-		// Add existing items not displaced by autolayout to the preview.
-		bankOrderNonPreview.entrySet().stream().filter(e -> e.getValue() >= displacedItemsStart && !previewLayout.containsKey(e.getKey())).forEach(e -> previewLayout.put(e.getKey(), e.getValue()));
+		previewLayout = layoutGenerator.basicLayout(equippedGear, inventory, currentLayout);
+		previewLayoutTagName = activeTab.getTag();
 
 		applyCustomBankTagItemPositions();
 	}
@@ -736,7 +651,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			return; // layout not enabled.
 		}
 
-		if (!isShowingPreview()) { // I don't want to clean layout items when displaying a preview.
+		if (!isShowingPreview()) { // I don't want to clean layout items when displaying a preview. This could result in some layout placeholders being auto-removed due to not being in the tab.
 			cleanItemsNotInBankTag(itemPositionIndexes, bankTagName);
 			cleanDuplicateIndexes(itemPositionIndexes);
 		}
@@ -1387,6 +1302,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		return (itemId == null) ? "null" : itemManager.getItemComposition(itemId).getName();
 	}
 
+	public String itemNameWithId(Integer itemId) {
+		return ((itemId == null) ? "null" : itemManager.getItemComposition(itemId).getName()) + " (" + itemId + ")";
+	}
+
 	private int getPlaceholderId(int id) {
 		ItemComposition itemComposition = itemManager.getItemComposition(id);
 		return (itemComposition.getPlaceholderTemplateId() == 14401) ? id : itemComposition.getPlaceholderId();
@@ -1522,7 +1441,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		return lastIndex;
 	}
 
-	private Widget lastDraggedOnWidget = null;
 	// Disable reordering your real bank while any tag tab is active, as if the Bank Tags Plugin's "Prevent tag tab item dragging" was enabled.
 	@Subscribe(priority = -1f) // run after bank tags, otherwise you can't drag items into other tabs while a tab is open.
 	public void onDraggingWidgetChanged(DraggingWidgetChanged event) {
