@@ -47,14 +47,4 @@ public interface BankTagLayoutsConfig extends Config {
         return true;
     }
 
-    @ConfigItem(
-            keyName = "layoutPlaceholderTooltips",
-            name = "Layout placeholder tooltips",
-            description = "Whether tooltips should be shown for layout placeholders.",
-            position = 4
-    )
-    default boolean layoutPlaceholderTooltips() {
-        return true;
-    }
-
 }
