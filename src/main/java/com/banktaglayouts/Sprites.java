@@ -9,6 +9,7 @@ public enum Sprites implements SpriteOverride
 {
     APPLY_PREVIEW(-3192, "confirm_icon.png"), // 3192 is definitely not my bank pin.
     CANCEL_PREVIEW(-3193, "delete.png"),
+    AUTO_LAYOUT(-3194, "auto_layout.png"),
     ;
 
     @Getter

@@ -66,6 +66,7 @@ import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -73,7 +74,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
@@ -125,17 +125,19 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	public static final String CONFIG_GROUP = "banktaglayouts";
 	public static final String LAYOUT_CONFIG_KEY_PREFIX = "layout_";
+	public static final String BANK_TAG_STRING_PREFIX = "banktaglayoutsplugin:";
+	public static final String LAYOUT_EXPLICITLY_DISABLED = "DISABLED";
+
 	public static final String ENABLE_LAYOUT = "Enable layout";
 	public static final String DISABLE_LAYOUT = "Delete layout";
 	public static final String IMPORT_LAYOUT = "Import tag tab with layout";
 	public static final String EXPORT_LAYOUT = "Export tag tab with layout";
+	public static final String REMOVE_FROM_LAYOUT_MENU_OPTION = "Remove-layout";
+	//	public static final String REMOVE_FROM_TAG_MENU_OPTION = "Remove-tag";
+	public static final String PREVIEW_AUTO_LAYOUT = "Preview auto layout";
 
 	private static final int BANK_ITEM_WIDTH = 36;
 	private static final int BANK_ITEM_HEIGHT = 32;
-//	public static final String REMOVE_FROM_TAG_MENU_OPTION = "Remove-tag";
-	public static final String REMOVE_FROM_LAYOUT_MENU_OPTION = "Remove-layout";
-	public static final String BANK_TAG_STRING_PREFIX = "banktaglayoutsplugin:";
-	public static final String LAYOUT_EXPLICITLY_DISABLED = "DISABLED";
 
 	@Inject
 	private Client client;
@@ -186,13 +188,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private Widget showLayoutPreviewButton = null;
 	private Widget applyLayoutPreviewButton = null;
     private Widget cancelLayoutPreviewButton = null;
-	private Widget layoutPreviewText = null;
 
 	final AntiDragPluginUtil antiDrag = new AntiDragPluginUtil(this);
 	private final LayoutGenerator layoutGenerator = new LayoutGenerator(this);
 
 	private void updateButton() {
-		System.out.println("update button");
 		if (showLayoutPreviewButton == null) {
 			Widget parent = client.getWidget(WidgetInfo.BANK_CONTENT_CONTAINER);
 			showLayoutPreviewButton = parent.createChild(-1, WidgetType.GRAPHIC);
@@ -202,14 +202,14 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			showLayoutPreviewButton.setYPositionMode(WidgetPositionMode.ABSOLUTE_BOTTOM);
 			showLayoutPreviewButton.setOriginalX(434);
 			showLayoutPreviewButton.setOriginalY(45);
-			showLayoutPreviewButton.setSpriteId(2848);
+			showLayoutPreviewButton.setSpriteId(Sprites.AUTO_LAYOUT.getSpriteId());
 
 			showLayoutPreviewButton.setOnOpListener((JavaScriptCallback) (e) -> {
 			    showLayoutPreview();
 			});
 			showLayoutPreviewButton.setHasListener(true);
 			showLayoutPreviewButton.revalidate();
-			showLayoutPreviewButton.setAction(0, "Preview auto layout");
+			showLayoutPreviewButton.setAction(0, PREVIEW_AUTO_LAYOUT);
 
 			applyLayoutPreviewButton = parent.createChild(-1, WidgetType.GRAPHIC);
 
@@ -222,7 +222,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			applyLayoutPreviewButton.setNoClickThrough(true);
 
 			applyLayoutPreviewButton.setOnOpListener((JavaScriptCallback) (e) -> {
-				System.out.println("apply layout preview");
 				applyLayoutPreview();
 			});
 			applyLayoutPreviewButton.setHasListener(true);
@@ -234,7 +233,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			cancelLayoutPreviewButton.setOriginalHeight(18);
 			cancelLayoutPreviewButton.setOriginalWidth(18);
 			cancelLayoutPreviewButton.setYPositionMode(WidgetPositionMode.ABSOLUTE_BOTTOM);
-			cancelLayoutPreviewButton.setOriginalX(434 - 60);
+			cancelLayoutPreviewButton.setOriginalX(434);
 			cancelLayoutPreviewButton.setOriginalY(45);
 			cancelLayoutPreviewButton.setSpriteId(Sprites.CANCEL_PREVIEW.getSpriteId());
 			cancelLayoutPreviewButton.setNoClickThrough(true);
@@ -245,21 +244,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			cancelLayoutPreviewButton.setHasListener(true);
 			cancelLayoutPreviewButton.revalidate();
 			cancelLayoutPreviewButton.setAction(0, "Cancel preview");
-
-			layoutPreviewText = parent.createChild(-1, WidgetType.TEXT);
-
-			layoutPreviewText.setOriginalHeight(18);
-			layoutPreviewText.setOriginalWidth(18);
-			layoutPreviewText.setYPositionMode(WidgetPositionMode.ABSOLUTE_BOTTOM);
-			layoutPreviewText.setText("Use this layout?");
-			layoutPreviewText.setOriginalX(434 - 120);
-			layoutPreviewText.setOriginalY(45);
-			layoutPreviewText.revalidate();
-			layoutPreviewText.setAction(0, "Cancel preview");
 		}
 
 		hideLayoutPreviewButtons(!isShowingPreview());
-		showLayoutPreviewButton.setHidden(false);
+		showLayoutPreviewButton.setHidden(!(config.showAutoLayoutButton() && tabInterface.isActive() && !isShowingPreview()));
 	}
 
 	@Subscribe
@@ -293,6 +281,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	    if (CONFIG_GROUP.equals(event.getGroup())) {
 			if ("layoutEnabledByDefault".equals(event.getKey())) {
 				clientThread.invokeLater(this::applyCustomBankTagItemPositions);
+			} else if ("showAutoLayoutButton".equals(event.getKey())) {
+				clientThread.invokeLater(this::updateButton);
 			}
 		} else if (BankTagsPlugin.CONFIG_GROUP.equals(event.getGroup()) && BankTagsPlugin.TAG_TABS_CONFIG.equals(event.getKey())) {
 			handlePotentialTagChange(event);
@@ -338,6 +328,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			String[] arguments = commandExecuted.getArguments();
 			client.addChatMessage(ChatMessageType.PUBLICCHAT, "Item name of " + arguments[0], itemName(Integer.valueOf(arguments[0])), "bla");
 		}
+		if ("placeholder".equals(commandExecuted.getCommand())) {
+			String[] arguments = commandExecuted.getArguments();
+			int itemId = Integer.parseInt(arguments[0]);
+			client.addChatMessage(ChatMessageType.PUBLICCHAT, "" + itemId, itemName(itemId) + " is a " + isPlaceholder(itemId) + " and it's reversed id is " + switchPlaceholderId(itemId) + " and again " + switchPlaceholderId(switchPlaceholderId(itemId)), "bla");
+		}
 	}
 
 	private void applyLayoutPreview() {
@@ -350,7 +345,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			}
 		}
 
-		System.out.println("saving layout \"" + previewLayoutTagName + "\": " + previewLayout.size() + " " + previewLayout);
 		saveLayoutNonPreview(previewLayoutTagName, previewLayout);
 
 		cancelLayoutPreview();
@@ -359,11 +353,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private void hideLayoutPreviewButtons(boolean hide) {
 		applyLayoutPreviewButton.setHidden(hide);
 		cancelLayoutPreviewButton.setHidden(hide);
-		layoutPreviewText.setHidden(hide);
+		showLayoutPreviewButton.setHidden(!hide);
 	}
 
 	private void cancelLayoutPreview() {
-		System.out.println("cancelling preview");
 		previewLayout = null;
 		previewLayoutTagName = null;
 
@@ -377,7 +370,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private String previewLayoutTagName = null;
 
 	private void showLayoutPreview() {
-		System.out.println("autolayout");
 
 	    if (isShowingPreview()) return;
 		TagTab activeTab = tabInterface.getActiveTab();
@@ -388,10 +380,15 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			// TODO allow creation of new tab.
 		}
 
-		hideLayoutPreviewButtons(false);
-
 		List<Integer> equippedGear = getEquippedGear();
 		List<Integer> inventory = getInventory();
+		if (equippedGear.stream().filter(id -> id > 0).count() == 0 && inventory.stream().filter(id -> id > 0).count() == 0) {
+			chatMessage("This feature uses your equipped items and inventory to automatically create a bank tag layout, but you don't have any items equipped or in your inventory.");
+			return;
+		}
+
+		hideLayoutPreviewButtons(false);
+
 		String bankTagName = tabInterface.getActiveTab().getTag();
 		Map<Integer, Integer> currentLayout = getBankOrderNonPreview(bankTagName);
 
@@ -403,11 +400,13 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	private List<Integer> getEquippedGear() {
 		ItemContainer container = client.getItemContainer(InventoryID.EQUIPMENT);
+		if (container == null) return Collections.emptyList();
 		return Arrays.stream(container.getItems()).map(w -> w.getId()).collect(Collectors.toList());
 	}
 
 	private List<Integer> getInventory() {
 		ItemContainer container = client.getItemContainer(InventoryID.INVENTORY);
+		if (container == null) return Collections.emptyList();
 		return Arrays.stream(container.getItems()).map(w -> w.getId()).collect(Collectors.toList());
 	}
 
@@ -424,9 +423,9 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 				cancelLayoutPreview();
 			} else {
 				applyCustomBankTagItemPositions();
-
-				updateButton();
 			}
+
+			updateButton();
 		}
 	}
 
@@ -828,6 +827,9 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 				addEntry(bankTagName, hasLayoutEnabled(bankTagName) ? DISABLE_LAYOUT : ENABLE_LAYOUT);
 			} else if ("New tag tab".equals(menuEntryAdded.getOption())) {
+				if (!config.showAutoLayoutButton()) {
+					addEntry(bankTagName, PREVIEW_AUTO_LAYOUT);
+				}
 				addEntry(bankTagName, IMPORT_LAYOUT);
 			}
 		}
@@ -1002,6 +1004,9 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			event.consume();
 		} else if (IMPORT_LAYOUT.equals(menuOption)) {
 			importLayout();
+			event.consume();
+		} else if (PREVIEW_AUTO_LAYOUT.equals(menuOption)) {
+			showLayoutPreview();
 			event.consume();
 		}
 	}
@@ -1348,7 +1353,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		Map<Integer, Integer> itemIdToIndexes = getBankOrder(bankTagName);
 		if (itemIdToIndexes == null) return;
 
-//		System.out.println(draggedItemIndex + " " + draggedOnItemIndex);
 		Integer currentDraggedItemId = getIdForIndex(draggedItemIndex); // TODO getIdForIndex does not factor in variations.
 		Integer currentDraggedOnItemId = getIdForIndex(draggedOnItemIndex);
 		// Currently I'm just spilling the variant items out in bank order, so I don't care exactly what item id was there - although if I ever decide to change this, this section will become much more complicated, since if I drag a (2) charge onto a regular item, but there was supposed to be a (3) charge there then I have to move the (2) but also deal with where the (2)'s saved position is... At least that's how it'll go if I decide to handle jewellery that way.
@@ -1358,7 +1362,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		if (currentDraggedOnItemId != null && itemShouldBeTreatedAsHavingVariants(currentDraggedOnItemId)) {
 			currentDraggedOnItemId = getItemForIndex(draggedOnItemIndex, itemIdToIndexes);
 		}
-//		System.out.println(currentDraggedItemId + " " + currentDraggedOnItemId);
 //		Integer savedDraggedItemId = (itemHasVariants(draggedItemIndex)) ? getItemForIndex(draggedItemIndex, itemIdToIndexes) : ;
 //		Integer savedDraggedOnItemId = getItemForIndex(draggedOnItemIndex, itemIdToIndexes);
 		// If there is supposed to be an item in the dragged-on location, but that item isn't there, remove that item's custom position.
@@ -1464,6 +1467,20 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	public void onFocusChanged(FocusChanged focusChanged)
 	{
 	    antiDrag.focusChanged(focusChanged);
+	}
+
+	@Subscribe
+	public void onMenuShouldLeftClick(MenuShouldLeftClick event)
+	{
+		MenuEntry[] menuEntries = client.getMenuEntries();
+		for (MenuEntry entry : menuEntries)
+		{
+			if (entry.getOption().equals(PREVIEW_AUTO_LAYOUT))
+			{
+				event.setForceRightClick(true);
+				return;
+			}
+		}
 	}
 
 }

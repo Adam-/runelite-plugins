@@ -47,4 +47,14 @@ public interface BankTagLayoutsConfig extends Config {
         return true;
     }
 
+    @ConfigItem(
+            keyName = "showAutoLayoutButton",
+            name = "Auto Layout button",
+            description = "Disabling this hides the auto layout button and adds auto layout to the menu where you import tags.",
+            position = 5
+    )
+    default boolean showAutoLayoutButton() {
+        return true;
+    }
+
 }
