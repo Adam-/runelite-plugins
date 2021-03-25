@@ -389,6 +389,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		String bankTagName = tabInterface.getActiveTab().getTag();
 		Map<Integer, Integer> currentLayout = getBankOrderNonPreview(bankTagName);
+		if (currentLayout == null) currentLayout = new HashMap<>();
 
 		previewLayout = layoutGenerator.basicLayout(equippedGear, inventory, currentLayout);
 		previewLayoutTagName = activeTab.getTag();
