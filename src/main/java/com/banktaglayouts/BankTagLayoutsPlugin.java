@@ -510,7 +510,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	private String generateUniqueName(String name) {
 		for (int i = 2; i < 100; i++) {
-			String newName = name + " (" + i + ")";
+			String newName = "(" + i + ") " + name;
 			if (tagManager.getItemsForTag(newName).isEmpty()) {
 				return newName;
 			}
