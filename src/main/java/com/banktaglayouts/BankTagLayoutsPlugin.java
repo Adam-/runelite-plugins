@@ -336,8 +336,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	private void applyLayoutPreview() {
-		// TODO add items to the tag if they're in the gear/invent but not in the tab.
-		String bankTagName = tabInterface.getActiveTab().getTag();
 		for (Integer itemId : previewLayout.keySet()) {
 			if (!copyPaste.findTag(itemId, previewLayoutTagName)) {
 			    log.debug("adding item " + itemName(itemId) + " (" + itemId + ") to tag");
@@ -353,7 +351,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private void hideLayoutPreviewButtons(boolean hide) {
 		applyLayoutPreviewButton.setHidden(hide);
 		cancelLayoutPreviewButton.setHidden(hide);
-		showLayoutPreviewButton.setHidden(!hide);
+		if (config.showAutoLayoutButton() && tabInterface.isActive()) showLayoutPreviewButton.setHidden(!hide);
 	}
 
 	private void cancelLayoutPreview() {
@@ -678,6 +676,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		clientThread.invokeLater(() -> {
 			setItemPositions(indexToWidget);
 		});
+		setContainerHeight();
 		saveLayout(bankTagName, itemPositionIndexes);
 		log.debug("saved tag " + bankTagName);
 	}
@@ -1293,7 +1292,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			widget.setOriginalY(getYForIndex(index));
 			widget.revalidate();
 		}
+	}
 
+	private void setContainerHeight() {
+		Widget container = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
 		container.setScrollHeight(2000);
 		final int itemContainerScroll = container.getScrollY();
 		clientThread.invokeLater(() ->
@@ -1301,6 +1303,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 						WidgetInfo.BANK_SCROLLBAR.getId(),
 						WidgetInfo.BANK_ITEM_CONTAINER.getId(),
 						itemContainerScroll));
+
 	}
 
 	public String itemName(Integer itemId) {
