@@ -347,6 +347,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		saveLayoutNonPreview(previewLayoutTagName, previewLayout);
 
 		cancelLayoutPreview();
+		bankSearch.layoutBank();
 	}
 
 	private void hideLayoutPreviewButtons(boolean hide) {
