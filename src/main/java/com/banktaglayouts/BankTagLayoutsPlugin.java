@@ -19,6 +19,7 @@ import net.runelite.api.MessageNode;
 import net.runelite.api.Point;
 import net.runelite.api.ScriptEvent;
 import net.runelite.api.ScriptID;
+import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.DraggingWidgetChanged;
 import net.runelite.api.events.FocusChanged;
@@ -413,6 +414,13 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	private boolean isShowingPreview() {
 		return previewLayout != null;
+	}
+
+	int lastScrollY = -1;
+	@Subscribe
+	public void onClientTick(ClientTick clientTick) {
+		Widget container = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		if (container != null) lastScrollY = container.getScrollY();
 	}
 
 	@Subscribe(priority = -1f) // I want to run after the Bank Tags plugin does, since it will interfere with the layout-ing if hiding tab separators is enabled.
@@ -1328,9 +1336,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		if (!max.isPresent()) return; // This will result in the minimum height.
 
 		int height = getYForIndex(max.get()) + BANK_ITEM_HEIGHT + 12;
-
 		container.setScrollHeight(height);
-		final int itemContainerScroll = (bankTagName == lastBankTagTab && height > lastHeight) ? container.getScrollHeight() : container.getScrollY();
+
+		int itemContainerScroll =
+				(bankTagName != lastBankTagTab) ? container.getScrollY() :
+				(height > lastHeight) ? container.getScrollHeight() : lastScrollY;
 		lastHeight = height;
 		lastBankTagTab = bankTagName;
 		clientThread.invokeLater(() ->
