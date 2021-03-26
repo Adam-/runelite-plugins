@@ -74,6 +74,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
@@ -349,8 +350,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	private void hideLayoutPreviewButtons(boolean hide) {
-		applyLayoutPreviewButton.setHidden(hide);
-		cancelLayoutPreviewButton.setHidden(hide);
+		if (applyLayoutPreviewButton != null) applyLayoutPreviewButton.setHidden(hide);
+		if (cancelLayoutPreviewButton != null) cancelLayoutPreviewButton.setHidden(hide);
 		if (config.showAutoLayoutButton() && tabInterface.isActive()) showLayoutPreviewButton.setHidden(!hide);
 	}
 
@@ -677,7 +678,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		clientThread.invokeLater(() -> {
 			setItemPositions(indexToWidget);
 		});
-		setContainerHeight();
+		setContainerHeight(itemPositionIndexes);
 		saveLayout(bankTagName, itemPositionIndexes);
 		log.debug("saved tag " + bankTagName);
 	}
@@ -774,7 +775,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		if (draggedItemIndex == -1) return mouseEvent;
 
 		if (config.showLayoutPlaceholders()) {
-			int draggedOnIndex = getIndexForMousePosition();
+			int draggedOnIndex = getIndexForMousePositionNoLowerLimit();
 			clientThread.invokeLater(() -> {
 				if (draggedOnIndex != -1 && antiDrag.mayDrag()) {
 					customBankTagOrderInsert(tabInterface.getActiveTab().getTag(), draggedItemIndex, draggedOnIndex);
@@ -883,6 +884,13 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	/**
 	 * @return -1 if the mouse is not over a location where a bank item can be.
 	 */
+	int getIndexForMousePositionNoLowerLimit() {
+		return getIndexForMousePosition(false, true);
+	}
+
+	/**
+	 * @return -1 if the mouse is not over a location where a bank item can be.
+	 */
 	int getIndexForMousePosition() {
 		return getIndexForMousePosition(false);
     }
@@ -892,23 +900,38 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	 * @return -1 if the mouse is not over a location where a bank item can be.
 	 */
 	int getIndexForMousePosition(boolean dontEnlargeClickbox) {
+		return getIndexForMousePosition(dontEnlargeClickbox, false);
+	}
+
+	/**
+	 * @param dontEnlargeClickbox If this is false, the clickbox used to calculate the clickbox will be larger (2 larger up and down, 6 larger left to right), so that there are no gaps between clickboxes in the bank interface.
+	 * @param noLowerLimit Still return indexes when the mouse is below the bank container.
+	 * @return -1 if the mouse is not over a location where a bank item can be.
+	 */
+	int getIndexForMousePosition(boolean dontEnlargeClickbox, boolean noLowerLimit) {
 		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
 		if (bankItemContainer == null) return -1;
 		Point mouseCanvasPosition = client.getMouseCanvasPosition();
 
-		if (!bankItemContainer.getBounds().contains(new java.awt.Point(mouseCanvasPosition.getX(), mouseCanvasPosition.getY()))) {
+		int mouseX = mouseCanvasPosition.getX();
+		int mouseY = mouseCanvasPosition.getY();
+		Rectangle bankBounds = bankItemContainer.getBounds();
+
+		if (
+				noLowerLimit && (mouseX < bankBounds.getMinX() || mouseX > bankBounds.getMaxX() || mouseY < bankBounds.getMinY())
+				|| !noLowerLimit && !bankBounds.contains(new java.awt.Point(mouseX, mouseY))) {
 			return -1;
 		}
 
 		Point canvasLocation = bankItemContainer.getCanvasLocation();
 		int scrollY = bankItemContainer.getScrollY();
-		int row = (mouseCanvasPosition.getY() - canvasLocation.getY() + scrollY + 2) / 36;
-		int col = (int) Math.floor((mouseCanvasPosition.getX() - canvasLocation.getX() - 51 + 6) / 48f);
+		int row = (mouseY - canvasLocation.getY() + scrollY + 2) / 36;
+		int col = (int) Math.floor((mouseX - canvasLocation.getX() - 51 + 6) / 48f);
 		int index = row * 8 + col;
 		if (row < 0 || col < 0 || col > 7 || index < 0) return -1;
 		if (dontEnlargeClickbox) {
-			int xDistanceIntoItem = (mouseCanvasPosition.getX() - canvasLocation.getX() - 51 + 6) % 48;
-			int yDistanceIntoItem = (mouseCanvasPosition.getY() - canvasLocation.getY() + scrollY + 2) % 36;
+			int xDistanceIntoItem = (mouseX - canvasLocation.getX() - 51 + 6) % 48;
+			int yDistanceIntoItem = (mouseY - canvasLocation.getY() + scrollY + 2) % 36;
 			if (xDistanceIntoItem < 6 || xDistanceIntoItem >= 42 || yDistanceIntoItem < 2 || yDistanceIntoItem >= 34) {
 				return -1;
 			}
@@ -1295,16 +1318,23 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 	}
 
-	private void setContainerHeight() {
+	private int lastHeight = -1;
+	private void setContainerHeight(Map<Integer, Integer> itemPositionIndexes) {
 		Widget container = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
-		container.setScrollHeight(2000);
-		final int itemContainerScroll = container.getScrollY();
+
+		Optional<Integer> max = itemPositionIndexes.values().stream().max(Integer::compare);
+		if (!max.isPresent()) return; // This will result in the minimum height.
+
+		int height = getYForIndex(max.get()) + BANK_ITEM_HEIGHT + 12;
+
+		container.setScrollHeight(height);
+		final int itemContainerScroll = (height > lastHeight) ? container.getScrollHeight() : container.getScrollY();
+		lastHeight = height;
 		clientThread.invokeLater(() ->
 				client.runScript(ScriptID.UPDATE_SCROLLBAR,
 						WidgetInfo.BANK_SCROLLBAR.getId(),
 						WidgetInfo.BANK_ITEM_CONTAINER.getId(),
 						itemContainerScroll));
-
 	}
 
 	public String itemName(Integer itemId) {
@@ -1336,7 +1366,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	private void customBankTagOrderInsert(String bankTagName, Widget draggedItem) {
-		int draggedOnItemIndex = getIndexForMousePosition();
+		int draggedOnItemIndex = getIndexForMousePositionNoLowerLimit();
 		if (draggedOnItemIndex == -1) return;
 
 		Map<Integer, Integer> itemIdToIndexes = getBankOrder(bankTagName);
