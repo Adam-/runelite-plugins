@@ -679,7 +679,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		clientThread.invokeLater(() -> {
 			setItemPositions(indexToWidget);
 		});
-		setContainerHeight(itemPositionIndexes);
+		setContainerHeight(bankTagName, itemPositionIndexes);
 		saveLayout(bankTagName, itemPositionIndexes);
 		log.debug("saved tag " + bankTagName);
 	}
@@ -1319,8 +1319,9 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 	}
 
-	private int lastHeight = -1;
-	private void setContainerHeight(Map<Integer, Integer> itemPositionIndexes) {
+	private String lastBankTagTab = null;
+	private int lastHeight = Integer.MAX_VALUE;
+	private void setContainerHeight(String bankTagName, Map<Integer, Integer> itemPositionIndexes) {
 		Widget container = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
 
 		Optional<Integer> max = itemPositionIndexes.values().stream().max(Integer::compare);
@@ -1329,8 +1330,9 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		int height = getYForIndex(max.get()) + BANK_ITEM_HEIGHT + 12;
 
 		container.setScrollHeight(height);
-		final int itemContainerScroll = (height > lastHeight) ? container.getScrollHeight() : container.getScrollY();
+		final int itemContainerScroll = (bankTagName == lastBankTagTab && height > lastHeight) ? container.getScrollHeight() : container.getScrollY();
 		lastHeight = height;
+		lastBankTagTab = bankTagName;
 		clientThread.invokeLater(() ->
 				client.runScript(ScriptID.UPDATE_SCROLLBAR,
 						WidgetInfo.BANK_SCROLLBAR.getId(),
