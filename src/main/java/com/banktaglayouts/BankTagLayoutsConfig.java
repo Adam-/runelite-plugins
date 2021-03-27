@@ -57,4 +57,14 @@ public interface BankTagLayoutsConfig extends Config {
         return true;
     }
 
+    @ConfigItem(
+            keyName = "useWithInventorySetups",
+            name = "Use with Inventory Setups",
+            description = "Allows laying out of bank filters created by the Inventory Setups plugin.",
+            position = 6
+    )
+    default boolean useWithInventorySetups() {
+        return true;
+    }
+
 }

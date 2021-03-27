@@ -49,7 +49,7 @@ public class FakeItemOverlay extends Overlay {
         if (!plugin.tabInterface.isActive()) return null;
 
         TagTab activeTab = plugin.tabInterface.getActiveTab();
-        Map<Integer, Integer> itemIdToIndexes = plugin.getBankOrder(activeTab.getTag());
+        Map<Integer, Integer> itemIdToIndexes = plugin.getBankOrder(plugin.getCurrentLayoutableThing());
         if (itemIdToIndexes == null) return null;
 
         if (config.showLayoutPlaceholders() && log.isDebugEnabled()) updateTooltip(itemIdToIndexes);

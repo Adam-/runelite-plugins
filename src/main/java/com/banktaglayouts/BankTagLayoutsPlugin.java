@@ -5,11 +5,12 @@ import com.google.common.collect.ObjectArrays;
 import com.google.common.util.concurrent.Runnables;
 import com.google.inject.Provides;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
-import net.runelite.api.Item;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
@@ -78,6 +79,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntPredicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static net.runelite.client.plugins.banktags.BankTagsPlugin.ICON_SEARCH;
@@ -127,6 +130,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	public static final String CONFIG_GROUP = "banktaglayouts";
 	public static final String LAYOUT_CONFIG_KEY_PREFIX = "layout_";
+	public static final String INVENTORY_SETUPS_LAYOUT_CONFIG_KEY_PREFIX = "inventory_setups_layout_";
 	public static final String BANK_TAG_STRING_PREFIX = "banktaglayoutsplugin:";
 	public static final String LAYOUT_EXPLICITLY_DISABLED = "DISABLED";
 
@@ -287,11 +291,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 				clientThread.invokeLater(this::updateButton);
 			}
 		} else if (BankTagsPlugin.CONFIG_GROUP.equals(event.getGroup()) && BankTagsPlugin.TAG_TABS_CONFIG.equals(event.getKey())) {
-			handlePotentialTagChange(event);
+			handlePotentialTagRename(event);
 		}
 	}
 
-	private void handlePotentialTagChange(ConfigChanged event) {
+	private void handlePotentialTagRename(ConfigChanged event) {
 		Set<String> oldTags = new HashSet<>(Text.fromCSV(event.getOldValue()));
 		Set<String> newTags = new HashSet<>(Text.fromCSV(event.getNewValue()));
 		// Compute the diff between the two lists.
@@ -309,9 +313,9 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		String oldName = oldTags.iterator().next();
 		String newName = newTags.iterator().next();
 
-		Map<Integer, Integer> oldLayout = getBankOrder(oldName);
+		Map<Integer, Integer> oldLayout = getBankOrder(LayoutableThing.bankTag(oldName));
 		if (oldLayout != null) {
-		    saveLayout(newName, oldLayout);
+		    saveLayout(LayoutableThing.bankTag(newName), oldLayout);
 			configManager.unsetConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + oldName);
 		}
 	}
@@ -338,10 +342,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	private void applyLayoutPreview() {
+	    // TODO inventory setups.
 		for (Integer itemId : previewLayout.keySet()) {
-			if (!copyPaste.findTag(itemId, previewLayoutTagName)) {
+			if (!copyPaste.findTag(itemId, previewLayoutTagName.name)) {
 			    log.debug("adding item " + itemName(itemId) + " (" + itemId + ") to tag");
-				tagManager.addTag(itemId, previewLayoutTagName, false);
+				tagManager.addTag(itemId, previewLayoutTagName.name, false);
 			}
 		}
 
@@ -368,7 +373,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	/** null indicates that there should not be a preview shown. */
 	private Map<Integer, Integer> previewLayout = null;
-	private String previewLayoutTagName = null;
+	private LayoutableThing previewLayoutTagName = null;
 
 	private void showLayoutPreview() {
 
@@ -390,12 +395,13 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		hideLayoutPreviewButtons(false);
 
-		String bankTagName = tabInterface.getActiveTab().getTag();
-		Map<Integer, Integer> currentLayout = getBankOrderNonPreview(bankTagName);
+		String name = tabInterface.getActiveTab().getTag();
+		LayoutableThing layoutable = LayoutableThing.bankTag(name);
+		Map<Integer, Integer> currentLayout = getBankOrderNonPreview(layoutable);
 		if (currentLayout == null) currentLayout = new HashMap<>();
 
 		previewLayout = layoutGenerator.basicLayout(equippedGear, inventory, currentLayout);
-		previewLayoutTagName = activeTab.getTag();
+		previewLayoutTagName = layoutable;
 
 		applyCustomBankTagItemPositions();
 	}
@@ -416,11 +422,36 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		return previewLayout != null;
 	}
 
-	int lastScrollY = -1;
+	private int lastScrollY = -1;
 	@Subscribe
 	public void onClientTick(ClientTick clientTick) {
 		Widget container = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
 		if (container != null) lastScrollY = container.getScrollY();
+	}
+
+	private String lastBankTitle = null;
+	private String inventorySetup = null;
+	private String updateInventorySetupShown() {
+		// TODO move to bankmain_build postscriptfired.
+		Widget bankTitleBar = client.getWidget(WidgetInfo.BANK_TITLE_BAR);
+		if (bankTitleBar != null) {
+			String bankTitle = bankTitleBar.getText();
+			if (!Objects.equals(lastBankTitle, bankTitle)) {
+				//			Inventory Setup <col=ff0000>tob - Equipment</col> (76.5M)
+				Matcher matcher = Pattern.compile("Inventory Setup <col=ff0000>(?<setup>.*) - (?<subfilter>.*)</col>.*").matcher(bankTitle);
+				if (matcher.matches()) {
+					inventorySetup = matcher.group("setup");
+//					System.out.println("setup: \"" + inventorySetup + "\"");
+//					System.out.println("subfilter: \"" + matcher.group("subfilter") + "\"");
+				} else {
+					inventorySetup = null;
+//					System.out.println("Does not match.");
+				}
+
+				lastBankTitle = bankTitle;
+			}
+		}
+		return inventorySetup;
 	}
 
 	@Subscribe(priority = -1f) // I want to run after the Bank Tags plugin does, since it will interfere with the layout-ing if hiding tab separators is enabled.
@@ -430,9 +461,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 					!tabInterface.isActive()
 					|| (isShowingPreview() && !Objects.equals(previewLayoutTagName, tabInterface.getActiveTab().getTag()))) {
 				cancelLayoutPreview();
-			} else {
-				applyCustomBankTagItemPositions();
 			}
+
+			updateInventorySetupShown();
+
+			applyCustomBankTagItemPositions();
 
 			updateButton();
 		}
@@ -531,24 +564,24 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		boolean successful = importBankTag(name, tagString);
 		if (!successful) return;
 
-		saveLayout(name, layout);
+		saveLayout(LayoutableThing.bankTag(name), layout);
 
 		chatMessage("Imported layout-ed tag tab \"" + name + "\"");
 
 		applyCustomBankTagItemPositions();
 	}
 
-	private void saveLayout(String name, Map<Integer, Integer> layout) {
+	private void saveLayout(LayoutableThing layoutable, Map<Integer, Integer> layout) {
 		if (isShowingPreview()) {
 			previewLayout = layout;
 			return;
 		}
 
-		saveLayoutNonPreview(name, layout);
+		saveLayoutNonPreview(layoutable, layout);
 	}
 
-	private void saveLayoutNonPreview(String name, Map<Integer, Integer> layout) {
-		configManager.setConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + name, bankTagOrderMapToString(layout));
+	private void saveLayoutNonPreview(LayoutableThing layoutable, Map<Integer, Integer> layout) {
+		configManager.setConfiguration(CONFIG_GROUP, layoutable.configKey(), bankTagOrderMapToString(layout));
 	}
 
 	private String validateTagName(String name) {
@@ -595,17 +628,17 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		return true;
 	}
 
-	public boolean hasLayoutEnabled(String bankTagName) {
+	public boolean hasLayoutEnabled(LayoutableThing layoutable) {
 		if (isShowingPreview()) return true;
 
-		String configuration = configManager.getConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + bankTagName);
+		String configuration = configManager.getConfiguration(CONFIG_GROUP, layoutable.configKey());
 		if (LAYOUT_EXPLICITLY_DISABLED.equals(configuration)) return false;
-		return config.layoutEnabledByDefault() || configuration != null;
+		return configuration != null || (layoutable.isBankTab && config.layoutEnabledByDefault()) || (!layoutable.isBankTab && config.useWithInventorySetups());
 	}
 
-	private void enableLayout(String bankTagName) {
-		saveLayout(bankTagName, new HashMap<>());
-		if (tabInterface.getActiveTab() != null && bankTagName.equals(tabInterface.getActiveTab().getTag())) {
+	private void enableLayout(LayoutableThing layoutable) {
+		saveLayout(layoutable, new HashMap<>());
+		if (layoutable.equals(getCurrentLayoutableThing())) {
 			applyCustomBankTagItemPositions();
 		}
 	}
@@ -627,20 +660,30 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	private boolean tutorialMessageShown = false;
 	private void applyCustomBankTagItemPositions() {
-		log.debug("applying layout");
         fakeItems.clear();
 
-		if (!tabInterface.isActive()) {
+		LayoutableThing layoutable = getCurrentLayoutableThing();
+		if (layoutable == null) {
 			return;
 		}
 
-		String bankTagName = tabInterface.getActiveTab().getTag();
+		// TODO lay out tab if it's an inventory setup.
+
+		log.debug("applyCustomBankTagItemPositions: " + layoutable);
+
+		indexToWidget.clear();
+
+		Map<Integer, Integer> itemPositionIndexes = getBankOrder(layoutable);
+//		System.out.println("bank order for " + layoutable + " is " + itemPositionIndexes);
+		if (itemPositionIndexes == null) {
+			return; // layout not enabled.
+		}
 
 		List<Widget> bankItems = Arrays.stream(client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).getDynamicChildren())
 				.filter(bankItem -> !bankItem.isHidden() && bankItem.getItemId() >= 0)
 				.collect(Collectors.toList());
 
-		if (!hasLayoutEnabled(bankTagName)) {
+		if (!hasLayoutEnabled(layoutable)) {
 			for (Widget bankItem : bankItems) {
 				bankItem.setOnDragCompleteListener((JavaScriptCallback) (ev) -> {
 					boolean tutorialShown = tutorialMessage();
@@ -651,16 +694,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			return;
 		}
 
-		log.debug("applyCustomBankTagItemPositions " + bankTagName);
-
-		indexToWidget.clear();
-		Map<Integer, Integer> itemPositionIndexes = getBankOrder(bankTagName);
-		if (itemPositionIndexes == null) {
-			return; // layout not enabled.
-		}
-
 		if (!isShowingPreview()) { // I don't want to clean layout items when displaying a preview. This could result in some layout placeholders being auto-removed due to not being in the tab.
-			cleanItemsNotInBankTag(itemPositionIndexes, bankTagName);
+			cleanItemsNotInBankTag(itemPositionIndexes, layoutable);
 			cleanDuplicateIndexes(itemPositionIndexes);
 		}
 
@@ -669,7 +704,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		for (Widget bankItem : bankItems) {
 			bankItem.setOnDragCompleteListener((JavaScriptCallback) (ev) -> {
-				customBankTagOrderInsert(bankTagName, ev.getSource());
+				customBankTagOrderInsert(layoutable, ev.getSource());
 			});
 		}
 
@@ -683,9 +718,18 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 
 		setItemPositions(indexToWidget);
-		setContainerHeight(bankTagName, itemPositionIndexes);
-		saveLayout(bankTagName, itemPositionIndexes);
-		log.debug("saved tag " + bankTagName);
+		setContainerHeight(layoutable, itemPositionIndexes);
+		saveLayout(layoutable, itemPositionIndexes);
+		log.debug("saved tag " + layoutable);
+	}
+
+	LayoutableThing getCurrentLayoutableThing() {
+		boolean isBankTag = tabInterface.isActive();
+		if (!isBankTag && !(config.useWithInventorySetups() && inventorySetup != null)) {
+			return null;
+		}
+		String name = isBankTag ? tabInterface.getActiveTab().getTag() : inventorySetup;
+		return new LayoutableThing(name, isBankTag);
 	}
 
 	private void bankReorderWarning(ScriptEvent ev) {
@@ -694,7 +738,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 				&& ev.getSource().getId() == WidgetInfo.BANK_ITEM_CONTAINER.getId() && tabInterface.isActive()
 				&& client.getDraggedOnWidget() != null
 				&& client.getDraggedOnWidget().getId() == WidgetInfo.BANK_ITEM_CONTAINER.getId() && tabInterface.isActive()
-				&& !hasLayoutEnabled(tabInterface.getActiveTab().getTag())
+				&& !hasLayoutEnabled(getCurrentLayoutableThing())
 				&& !Boolean.parseBoolean(configManager.getConfiguration(BankTagsPlugin.CONFIG_GROUP, "preventTagTabDrags"))
 		) {
 			chatErrorMessage("You just reordered your actual bank!");
@@ -783,7 +827,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			int draggedOnIndex = getIndexForMousePositionNoLowerLimit();
 			clientThread.invokeLater(() -> {
 				if (draggedOnIndex != -1 && antiDrag.mayDrag()) {
-					customBankTagOrderInsert(tabInterface.getActiveTab().getTag(), draggedItemIndex, draggedOnIndex);
+					customBankTagOrderInsert(getCurrentLayoutableThing(), draggedItemIndex, draggedOnIndex);
 				}
 				antiDrag.endDrag();
 				draggedItemIndex = -1;
@@ -827,11 +871,12 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			String bankTagName = Text.removeTags(menuEntryAdded.getTarget()).replace("\u00a0"," ");
 
 			if ("Rename tag tab".equals(menuEntryAdded.getOption())) {
-				if (hasLayoutEnabled(bankTagName)) {
+				LayoutableThing layoutable = LayoutableThing.bankTag(bankTagName);
+				if (hasLayoutEnabled(layoutable)) {
 					addEntry(bankTagName, EXPORT_LAYOUT);
 				}
 
-				addEntry(bankTagName, hasLayoutEnabled(bankTagName) ? DISABLE_LAYOUT : ENABLE_LAYOUT);
+				addEntry(bankTagName, hasLayoutEnabled(layoutable) ? DISABLE_LAYOUT : ENABLE_LAYOUT);
 			} else if ("New tag tab".equals(menuEntryAdded.getOption())) {
 				if (!config.showAutoLayoutButton()) {
 					addEntry(bankTagName, PREVIEW_AUTO_LAYOUT);
@@ -858,7 +903,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		if (!tabInterface.isActive() || !config.showLayoutPlaceholders()) {
 			return;
 		}
-		Map<Integer, Integer> itemIdToIndexes = getBankOrder(tabInterface.getActiveTab().getTag());
+		Map<Integer, Integer> itemIdToIndexes = getBankOrder(getCurrentLayoutableThing());
 		if (itemIdToIndexes == null) return;
 
 		int index = getIndexForMousePosition(true);
@@ -970,59 +1015,29 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		// to remove it from the layout. If this is on a fake item, this plugin must do both (unless the "Remove-layout"
 		// option was clicked, then the tags are not touched).
 		String menuOption = event.getMenuOption();
-		if (
-				menuOption.startsWith(REMOVE_FROM_LAYOUT_MENU_OPTION)
-//						|| event.getMenuOption().startsWith(REMOVE_FROM_TAG_MENU_OPTION)
-		) {
+		if (menuOption.startsWith(REMOVE_FROM_LAYOUT_MENU_OPTION)) {
 			boolean isOnFakeItem = event.getWidgetId() != WidgetInfo.BANK_ITEM_CONTAINER.getId();
-			boolean layoutOnly = menuOption.startsWith(REMOVE_FROM_LAYOUT_MENU_OPTION);
 			event.consume();
+			if (!isOnFakeItem) return;
 
-			int itemId;
-			if (isOnFakeItem) {
-				itemId = event.getActionParam();
-            } else {
-			    // TODO is all this actually necessary? I got it from the Bank Tags plugin.
-				ItemContainer bankContainer = client.getItemContainer(InventoryID.BANK);
-				Item item = bankContainer.getItem(event.getActionParam());
-				ItemComposition itemComposition = itemManager.getItemComposition(item.getId());
-				itemId = itemComposition.getId();
-			}
+			int itemId = event.getActionParam();
 
-			String bankTagName = tabInterface.getActiveTab().getTag();
+			LayoutableThing layoutable = getCurrentLayoutableThing();
 
-			int menuEntryItemVariationBaseId = itemId;
-			if (!layoutOnly) {
-				int menuEntryItemNonPlaceholderId = getNonPlaceholderId(itemId);
-				menuEntryItemVariationBaseId = itemShouldBeTreatedAsHavingVariants(menuEntryItemNonPlaceholderId) ? ItemVariationMapping.map(menuEntryItemNonPlaceholderId) : menuEntryItemNonPlaceholderId;
-			}
-
-			Map<Integer, Integer> bankOrder = getBankOrder(bankTagName);
+			Map<Integer, Integer> bankOrder = getBankOrder(layoutable);
 			Iterator<Map.Entry<Integer, Integer>> iter = bankOrder.entrySet().iterator();
 			while (iter.hasNext()) {
 				Integer entryItemId = iter.next().getKey();
 				int variationBaseId = entryItemId;
-				if (!layoutOnly) {
-					int nonPlaceholderId = getNonPlaceholderId(entryItemId);
-					variationBaseId = itemShouldBeTreatedAsHavingVariants(nonPlaceholderId) ? ItemVariationMapping.map(nonPlaceholderId) : nonPlaceholderId;
-				}
-				if (menuEntryItemVariationBaseId == variationBaseId) {
+				if (itemId == variationBaseId) {
 					iter.remove();
 				}
 			}
-			saveLayout(bankTagName, bankOrder);
+			saveLayout(layoutable, bankOrder);
 
-			if (isOnFakeItem && !layoutOnly) {
-				ItemComposition itemComposition = itemManager.getItemComposition(itemId);
-				tagManager.removeTag(itemComposition.getId(), bankTagName);
-
-				// This will trigger applyCustomBankTagItemPositions via the bankmain_build script, in addition to removing the item from the tag.
-				bankSearch.layoutBank();
-			} else if (layoutOnly) {
-				applyCustomBankTagItemPositions();
-			}
+			applyCustomBankTagItemPositions();
 		} else if (ENABLE_LAYOUT.equals(menuOption)) {
-			enableLayout(menuTarget);
+			enableLayout(LayoutableThing.bankTag(menuTarget));
 			event.consume();
 		} else if (DISABLE_LAYOUT.equals(menuOption)) {
 			disableLayout(menuTarget);
@@ -1039,13 +1054,15 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 	}
 
-	// TODO consider using tagManager.getItemsForTag(bankTagName) because unlike findTag it is api.
-	private void cleanItemsNotInBankTag(Map<Integer, Integer> itemPositionIndexes, String bankTagName) {
+	// TODO consider using tagManager.getItemsForTag(name) because unlike findTag it is api.
+	private void cleanItemsNotInBankTag(Map<Integer, Integer> itemPositionIndexes, LayoutableThing layoutable) {
+	    if (!layoutable.isBankTab) return; // TODO inventory setups.
+
 		Iterator<Map.Entry<Integer, Integer>> iter = itemPositionIndexes.entrySet().iterator();
 		while (iter.hasNext()) {
 			int itemId = iter.next().getKey();
 
-			if (!copyPaste.findTag(itemId, bankTagName)) {
+			if (!copyPaste.findTag(itemId, layoutable.name)) {
 				log.debug("removing " + itemName(itemId) + " (" + itemId + ") because it is no longer in the bank tag");
 				iter.remove();
 			}
@@ -1186,28 +1203,31 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		return itemHasVariants(nonPlaceholderItemId);
 	}
 
-	Map<Integer, Integer> getBankOrder(String bankTagName) {
+	Map<Integer, Integer> getBankOrder(LayoutableThing layoutable) {
 		if (isShowingPreview()) {
 			return previewLayout;
         }
 
-		return getBankOrderNonPreview(bankTagName);
+		return getBankOrderNonPreview(layoutable);
 	}
+
+	// TODO enable layout on inventory setups by default? Could produce invalid bug reports for dill.
 
 	/**
 	 * unlike getBankOrder, this will not return a preview layout when one is currently being show.
 	 */
-	private Map<Integer, Integer> getBankOrderNonPreview(String bankTagName) {
-		String configuration = configManager.getConfiguration(CONFIG_GROUP, LAYOUT_CONFIG_KEY_PREFIX + bankTagName);
+	private Map<Integer, Integer> getBankOrderNonPreview(LayoutableThing layoutable) {
+		String configuration = configManager.getConfiguration(CONFIG_GROUP, layoutable.configKey());
+//		System.out.println("config is " + configuration);
 		if (LAYOUT_EXPLICITLY_DISABLED.equals(configuration)) return null;
-		if (configuration == null && !config.layoutEnabledByDefault()) return null;
+		if (configuration == null && (layoutable.isBankTab && !config.layoutEnabledByDefault() || !layoutable.isBankTab && !config.useWithInventorySetups())) return null;
 		if (configuration == null) configuration = "";
 		return bankTagOrderStringToMapIgnoreNumberFormatException(configuration);
 	}
 
 	private void exportLayout(String tagName) {
 		String exportString = BANK_TAG_STRING_PREFIX + tagName;
-		String layout = bankTagOrderMapToString(getBankOrder(tagName));
+		String layout = bankTagOrderMapToString(getBankOrder(LayoutableThing.bankTag(tagName)));
 		if (!layout.isEmpty()) {
 			exportString += ",";
 		}
@@ -1323,9 +1343,34 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 	}
 
-	private String lastBankTagTab = null;
+	@RequiredArgsConstructor
+    @EqualsAndHashCode
+	private static final class LayoutableThing {
+		public final String name;
+		/** false means it's an inventory setup. */
+		public final boolean isBankTab;
+
+		public static LayoutableThing bankTag(String tagName) {
+			return new LayoutableThing(tagName, true);
+		}
+
+		public static LayoutableThing inventorySetup(String inventorySetupName) {
+			return new LayoutableThing(inventorySetupName, false);
+		}
+
+		@Override
+		public String toString() {
+		    return name + " " + (isBankTab ? "(bank tab)" : "(inventory setup)");
+		}
+
+		public String configKey() {
+			return (isBankTab ? LAYOUT_CONFIG_KEY_PREFIX : INVENTORY_SETUPS_LAYOUT_CONFIG_KEY_PREFIX) + name;
+		}
+	}
+
+	private LayoutableThing lastLayoutable = null;
 	private int lastHeight = Integer.MAX_VALUE;
-	private void setContainerHeight(String bankTagName, Map<Integer, Integer> itemPositionIndexes) {
+	private void setContainerHeight(LayoutableThing layoutable, Map<Integer, Integer> itemPositionIndexes) {
 		Widget container = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
 
 		Optional<Integer> max = itemPositionIndexes.values().stream().max(Integer::compare);
@@ -1335,10 +1380,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		container.setScrollHeight(height);
 
 		int itemContainerScroll =
-				(bankTagName != lastBankTagTab) ? container.getScrollY() :
+				(!layoutable.equals(lastLayoutable)) ? container.getScrollY() :
 				(height > lastHeight) ? container.getScrollHeight() : lastScrollY;
 		lastHeight = height;
-		lastBankTagTab = bankTagName;
+		lastLayoutable = layoutable;
 		clientThread.invokeLater(() ->
 				client.runScript(ScriptID.UPDATE_SCROLLBAR,
 						WidgetInfo.BANK_SCROLLBAR.getId(),
@@ -1374,11 +1419,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		return itemComposition.getPlaceholderTemplateId() == 14401;
 	}
 
-	private void customBankTagOrderInsert(String bankTagName, Widget draggedItem) {
+	private void customBankTagOrderInsert(LayoutableThing layoutable, Widget draggedItem) {
 		int draggedOnItemIndex = getIndexForMousePositionNoLowerLimit();
 		if (draggedOnItemIndex == -1) return;
 
-		Map<Integer, Integer> itemIdToIndexes = getBankOrder(bankTagName);
+		Map<Integer, Integer> itemIdToIndexes = getBankOrder(layoutable);
 		if (itemIdToIndexes == null) return;
 
 		Integer draggedItemIndex = null;
@@ -1388,12 +1433,12 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			}
 		}
 
-		customBankTagOrderInsert(bankTagName, draggedItemIndex, draggedOnItemIndex);
+		customBankTagOrderInsert(layoutable, draggedItemIndex, draggedOnItemIndex);
 	}
 
-	private void customBankTagOrderInsert(String bankTagName, Integer draggedItemIndex, Integer draggedOnItemIndex) {
+	private void customBankTagOrderInsert(LayoutableThing layoutable, Integer draggedItemIndex, Integer draggedOnItemIndex) {
 		// TODO Save multimap due to having multiple items with the same ids in different slots, potentially? I think currently extras are hidden, which is ok with me.
-		Map<Integer, Integer> itemIdToIndexes = getBankOrder(bankTagName);
+		Map<Integer, Integer> itemIdToIndexes = getBankOrder(layoutable);
 		if (itemIdToIndexes == null) return;
 
 		Integer currentDraggedItemId = getIdForIndex(draggedItemIndex); // TODO getIdForIndex does not factor in variations.
@@ -1433,8 +1478,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		if (currentDraggedItemId != null) itemIdToIndexes.put(currentDraggedItemId, draggedOnItemIndex);
 //		if (savedDraggedItemId != null) itemIdToIndexes.remove(savedDraggedItemId);
 		if (currentDraggedOnItemId != null) itemIdToIndexes.put(currentDraggedOnItemId, draggedItemIndex);
-		saveLayout(bankTagName, itemIdToIndexes);
-//		log.debug("saved tag " + bankTagName);
+		saveLayout(layoutable, itemIdToIndexes);
+//		log.debug("saved tag " + name);
 
 //		log.debug("tag items: " + itemIdToIndexes.toString());
 
@@ -1465,7 +1510,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 				return indexToWidget.getValue().getItemId();
 			}
 		}
-		for (Map.Entry<Integer, Integer> indexToWidget : getBankOrder(tabInterface.getActiveTab().getTag()).entrySet()) {
+		for (Map.Entry<Integer, Integer> indexToWidget : getBankOrder(getCurrentLayoutableThing()).entrySet()) {
 			if (indexToWidget.getKey().equals(index)) {
 				return indexToWidget.getValue();
 			}
@@ -1500,7 +1545,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		// Returning early or nulling the drag release listener has no effect. Hence, we need to
 		// null the draggedOnWidget instead.
 		if (draggedWidget.getId() == WidgetInfo.BANK_ITEM_CONTAINER.getId() && tabInterface.isActive()) {
-		    if (hasLayoutEnabled(tabInterface.getActiveTab().getTag())) {
+		    if (hasLayoutEnabled(getCurrentLayoutableThing())) {
 				client.setDraggedOnWidget(null);
 			}
 		}
