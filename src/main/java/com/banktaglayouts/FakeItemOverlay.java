@@ -46,10 +46,10 @@ public class FakeItemOverlay extends Overlay {
     @Override
     public Dimension render(Graphics2D graphics)
     {
-        if (!plugin.tabInterface.isActive()) return null;
+        BankTagLayoutsPlugin.LayoutableThing currentLayoutableThing = plugin.getCurrentLayoutableThing();
+        if (currentLayoutableThing == null) return null;
 
-        TagTab activeTab = plugin.tabInterface.getActiveTab();
-        Map<Integer, Integer> itemIdToIndexes = plugin.getBankOrder(plugin.getCurrentLayoutableThing());
+        Map<Integer, Integer> itemIdToIndexes = plugin.getBankOrder(currentLayoutableThing);
         if (itemIdToIndexes == null) return null;
 
         if (config.showLayoutPlaceholders() && log.isDebugEnabled()) updateTooltip(itemIdToIndexes);

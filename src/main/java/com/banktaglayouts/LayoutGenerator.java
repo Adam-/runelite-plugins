@@ -1,5 +1,6 @@
 package com.banktaglayouts;
 
+import inventorysetups.InventorySetup;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,7 +45,6 @@ public class LayoutGenerator {
         }
 
         // lay out the inventory items.
-        // TODO uh oh... weight reducing items.
         // distinct leaves the first duplicate it encounters and removes only duplicates coming after the first.
         inventory = inventory.stream().distinct().collect(Collectors.toList());
         // Equipped items will never have >11 items in it so it will never spill over into the next row.
@@ -68,10 +68,7 @@ public class LayoutGenerator {
                 int zigZag = toZigZagIndex(endOfEquippedItems, 0, 0);
                 int itemAtIndex = getItemAtIndex(zigZag, currentLayout);
                 if (itemAtIndex != -1 && !layoutContainsItem(itemAtIndex, previewLayout)) {
-//                    System.out.println("copying over" + " " + itemAtIndex + " " + zigZag);
                     previewLayout.put(itemAtIndex, zigZag);
-                } else {
-//                    System.out.println("not copying over" + " " + itemAtIndex + " " + zigZag);
                 }
             }
         }
@@ -82,7 +79,6 @@ public class LayoutGenerator {
                 int zigZag = toZigZagIndex(i, 0, 0);
                 int itemAtIndex = getItemAtIndex(zigZag, currentLayout);
                 if (itemAtIndex != -1 && !layoutContainsItem(itemAtIndex, previewLayout)) {
-//                    System.out.println("copying over" + " " + itemAtIndex + " " + zigZag);
                     previewLayout.put(itemAtIndex, zigZag);
                 }
             }
@@ -149,4 +145,14 @@ public class LayoutGenerator {
         return index;
     }
 
+    // TODO opening inventory setups panel closes auto-layout preview.
+
+    public Map<Integer, Integer> basicInventorySetupsLayout(InventorySetup inventorySetup, Map<Integer, Integer> currentLayout) {
+        List<Integer> equippedGear = inventorySetup.getEquipment().stream().map(isi -> isi.getId()).collect(Collectors.toList());
+        List<Integer> inventory = inventorySetup.getInventory().stream().map(isi -> isi.getId()).collect(Collectors.toList());
+        List<Integer> runePouchRunes = inventorySetup.getRune_pouch().stream().map(isi -> isi.getId()).collect(Collectors.toList());
+        List<Integer> additionalItems = inventorySetup.getAdditionalFilteredItems().entrySet().stream().map(isi -> isi.getValue().getId()).collect(Collectors.toList());
+
+        return basicLayout(equippedGear, inventory, currentLayout);
+    }
 }
