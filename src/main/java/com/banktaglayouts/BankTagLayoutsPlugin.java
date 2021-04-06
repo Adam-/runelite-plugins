@@ -761,7 +761,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	@Override
 	public MouseEvent mousePressed(MouseEvent mouseEvent) {
-	    if (mouseEvent.getButton() != MouseEvent.BUTTON1 || isHidden() || !config.showLayoutPlaceholders()) return mouseEvent;
+	    if (mouseEvent.getButton() != MouseEvent.BUTTON1 || isHidden() || !config.showLayoutPlaceholders() || client.isMenuOpen()) return mouseEvent;
 		int index = getIndexForMousePosition(true);
 		FakeItem fakeItem = fakeItems.stream().filter(fake -> fake.index == index).findAny().orElse(null);
 		if (fakeItem != null) {
