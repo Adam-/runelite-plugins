@@ -18,12 +18,12 @@ public class LayoutGenerator {
 
     private final BankTagLayoutsPlugin plugin;
 
-    public Map<Integer, Integer> basicLayout(List<Integer> equippedItems, List<Integer> inventory, Map<Integer, Integer> currentLayout) {
+    public Layout basicLayout(List<Integer> equippedItems, List<Integer> inventory, Layout currentLayout) {
         return basicLayout(equippedItems, inventory, Collections.emptyList(), Collections.emptyList(), currentLayout);
     }
 
-    public Map<Integer, Integer> basicLayout(List<Integer> equippedItems, List<Integer> inventory, List<Integer> runePouch, List<Integer> additionalItems, Map<Integer, Integer> currentLayout) {
-        Map<Integer, Integer> previewLayout = new HashMap<>();
+    public Layout basicLayout(List<Integer> equippedItems, List<Integer> inventory, List<Integer> runePouch, List<Integer> additionalItems, Layout currentLayout) {
+        Layout previewLayout = Layout.emptyLayout();
         List<Integer> displacedItems = new ArrayList<>();
 
         log.debug("generate layout");
@@ -51,13 +51,13 @@ public class LayoutGenerator {
         int displacedItemsStart = i;
 
         // copy items from current layout into the empty spots.
-        for (Map.Entry<Integer, Integer> itemPosition : currentLayout.entrySet()) {
+        for (Map.Entry<Integer, Integer> itemPosition : currentLayout.allPairs()) {
             int index = itemPosition.getValue();
             int currentItemAtIndex = itemPosition.getKey();
-            int previewItemAtIndex = getItemAtIndex(index, previewLayout);
+            int previewItemAtIndex = previewLayout.getItemAtIndex(index);
 
             if (currentItemAtIndex != -1 && previewItemAtIndex == -1 && !layoutContainsItem(currentItemAtIndex, previewLayout)) {
-                previewLayout.put(currentItemAtIndex, index);
+                previewLayout.putItem(currentItemAtIndex, index);
             }
         }
 
@@ -66,11 +66,11 @@ public class LayoutGenerator {
 
         int j = displacedItemsStart;
         while (displacedItems.size() > 0 && j < 2000 / 38 * 8) {
-            int currentItemAtIndex = getItemAtIndex(j, currentLayout);
+            int currentItemAtIndex = currentLayout.getItemAtIndex(j);
             if (currentItemAtIndex == -1 || listContainsItem(currentItemAtIndex, equippedItems) || listContainsItem(currentItemAtIndex, inventory)) {
                 Integer itemId = displacedItems.remove(0);
                 log.debug(itemId + " goes to " + j);
-                previewLayout.put(itemId, j);
+                previewLayout.putItem(itemId, j);
             }
 
             j++;
@@ -79,17 +79,17 @@ public class LayoutGenerator {
         return previewLayout;
     }
 
-    private int layoutItems(List<Integer> inventory, Map<Integer, Integer> currentLayout, Map<Integer, Integer> previewLayout, List<Integer> displacedItems, int i, boolean useZigZag) {
+    private int layoutItems(List<Integer> inventory, Layout currentLayout, Layout previewLayout, List<Integer> displacedItems, int i, boolean useZigZag) {
         for (Integer itemId : inventory) {
             if (itemId == -1) continue;
             int index = useZigZag ? toZigZagIndex(i, 0, 0) : i;
-            previewLayout.put(itemId, index);
-            int currentLayoutItem = getItemAtIndex(index, currentLayout);
+            previewLayout.putItem(itemId, index);
+            int currentLayoutItem = currentLayout.getItemAtIndex(index);
             if (currentLayoutItem != -1) displacedItems.add(currentLayoutItem);
             i++;
         }
         if (!inventory.isEmpty()) {
-            Optional<Integer> highestUsedIndex = previewLayout.values().stream().max(Integer::compare);
+            Optional<Integer> highestUsedIndex = previewLayout.getAllUsedIndexes().stream().max(Integer::compare);
             if (highestUsedIndex.isPresent()) {
                 if (useZigZag) {
                     i = (highestUsedIndex.get() / 16 * 2 + 2) * 8;
@@ -111,18 +111,14 @@ public class LayoutGenerator {
         return false;
     }
 
-    private boolean layoutContainsItem(int id, Map<Integer, Integer> previewLayout) {
+    private boolean layoutContainsItem(int id, Layout previewLayout) {
         int nonPlaceholderId = plugin.getNonPlaceholderId(id);
-        for (Integer item : previewLayout.keySet()) {
+        for (Integer item : previewLayout.getAllUsedItemIds()) {
             if (nonPlaceholderId == plugin.getNonPlaceholderId(item)) {
                 return true;
             }
         }
         return false;
-    }
-
-    public static int getItemAtIndex(int index, Map<Integer, Integer> layout) {
-        return layout.entrySet().stream().filter(e -> e.getValue() == index).map(e -> e.getKey()).findAny().orElse(-1);
     }
 
     private static int toZigZagIndex(int inventoryIndex, int row, int col) {
@@ -139,7 +135,7 @@ public class LayoutGenerator {
 
     // TODO opening inventory setups panel closes auto-layout preview.
 
-    public Map<Integer, Integer> basicInventorySetupsLayout(InventorySetup inventorySetup, Map<Integer, Integer> currentLayout) {
+    public Layout basicInventorySetupsLayout(InventorySetup inventorySetup, Layout currentLayout) {
         List<Integer> equippedGear = inventorySetup.getEquipment() == null ? Collections.emptyList() : inventorySetup.getEquipment().stream().map(isi -> isi.getId()).collect(Collectors.toList());
         List<Integer> inventory = inventorySetup.getInventory() == null ? Collections.emptyList() : inventorySetup.getInventory().stream().map(isi -> isi.getId()).collect(Collectors.toList());
         List<Integer> runePouchRunes = inventorySetup.getRune_pouch() == null ? Collections.emptyList() : inventorySetup.getRune_pouch().stream().map(isi -> isi.getId()).collect(Collectors.toList());
