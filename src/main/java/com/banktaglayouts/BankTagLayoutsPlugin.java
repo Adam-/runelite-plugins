@@ -1518,7 +1518,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		MenuEntry[] menuEntries = client.getMenuEntries();
 		for (MenuEntry entry : menuEntries)
 		{
-			if (entry.getOption().equals(PREVIEW_AUTO_LAYOUT))
+		    // checking the type is kinda hacky because really both preview auto layout entries should have the runelite id... but it works.
+			if (entry.getOption().equals(PREVIEW_AUTO_LAYOUT) && entry.getType() != MenuAction.RUNELITE.getId())
 			{
 				event.setForceRightClick(true);
 				return;
