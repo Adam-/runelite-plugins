@@ -682,11 +682,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			fakeItems.add(new FakeItem(index, getNonPlaceholderId(entry.getKey())));
 		}
 
-		// What the fuck? It appears that despite my priority setting on the @Subscribe, Bank Tags can still sometimes run after me and potentially run its remove tag separators code, messing up my layout.
-        // invokeLater solves this issue though.
-		clientThread.invokeLater(() -> {
-			setItemPositions(indexToWidget);
-		});
+		setItemPositions(indexToWidget);
 		setContainerHeight(bankTagName, itemPositionIndexes);
 		saveLayout(bankTagName, itemPositionIndexes);
 		log.debug("saved tag " + bankTagName);
