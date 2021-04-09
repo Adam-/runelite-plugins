@@ -695,7 +695,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		if (!isShowingPreview()) { // I don't want to clean layout items when displaying a preview. This could result in some layout placeholders being auto-removed due to not being in the tab.
 			if (layoutable.isBankTab) cleanItemsNotInBankTag(layout, layoutable); // TODO clean out stuff from inventory setups also.
-			cleanDuplicateIndexes(layout);
 		}
 
 		assignVariantItemPositions(layout);
@@ -1176,29 +1175,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 	}
 
-	/**
-	 * Doesn't handle variation items.
-	 */
-	private int getIndexForItem(int itemId, Layout layout) {
-		Integer index = layout.getIndexForItem(itemId);
-		if (index != null) return index;
-
-		// swap the item with its placeholder (or vice versa) and try again.
-		int otherItemId = switchPlaceholderId(itemId);
-		index = layout.getIndexForItem(otherItemId);
-		if (index != null) return index;
-
-		return -1;
-	}
-
-	private Integer getItemForIndex(int index, Layout layout) {
-		for (Map.Entry<Integer, Integer> entry : layout.allPairs()) {
-			if (entry.getValue() == index) {
-				return entry.getKey();
-			}
-		}
-		return null;
-	}
+	// TODO check placeholders in Layout's getIndexForItem?
 
 	/**
 	 */
@@ -1232,7 +1209,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		if (LAYOUT_EXPLICITLY_DISABLED.equals(configuration)) return null;
 		if (configuration == null && (layoutable.isBankTab && !config.layoutEnabledByDefault() || !layoutable.isBankTab && !config.useWithInventorySetups())) return null;
 		if (configuration == null) configuration = "";
-		return bankTagOrderStringToMapIgnoreNumberFormatException(configuration);
+		return Layout.fromString(configuration, true);
 	}
 
 	private void exportLayout(String tagName) {
@@ -1276,27 +1253,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	private MessageNode chatMessage(String message) {
 		return client.addChatMessage(ChatMessageType.GAMEMESSAGE, "bla", message, "bla");
-	}
-
-	// TODO remove.
-	private Layout bankTagOrderStringToMapIgnoreNumberFormatException(String s) {
-		Layout layout = Layout.emptyLayout();
-		if (s.isEmpty()) return layout;
-		for (String s1 : s.split(",")) {
-			String[] split = s1.split(":");
-			try {
-				Integer itemId = Integer.valueOf(split[0]);
-				Integer index = Integer.valueOf(split[1]);
-				if (index >= 0) {
-					layout.putItem(itemId, index);
-				} else {
-					log.debug("Removed item " + itemName(itemId) + " (" + itemId + ") due to it having a negative index (" + index + ")");
-				}
-			} catch (NumberFormatException e) {
-				log.debug("input string \"" + s + "\"");
-			}
-		}
-		return layout;
 	}
 
 	static int getXForIndex(int index) {
@@ -1430,67 +1386,23 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		Layout layout = getBankOrder(layoutable);
 		if (layout == null) return;
 
-		Integer currentDraggedItemId = getIdForIndex(draggedItemIndex); // TODO getIdForIndex does not factor in variations.
-		Integer currentDraggedOnItemId = getIdForIndex(draggedOnItemIndex);
 		// Currently I'm just spilling the variant items out in bank order, so I don't care exactly what item id was there - although if I ever decide to change this, this section will become much more complicated, since if I drag a (2) charge onto a regular item, but there was supposed to be a (3) charge there then I have to move the (2) but also deal with where the (2)'s saved position is... At least that's how it'll go if I decide to handle jewellery that way.
-		if (currentDraggedItemId == null || itemShouldBeTreatedAsHavingVariants(currentDraggedItemId)) {
-			currentDraggedItemId = getItemForIndex(draggedItemIndex, layout);
-		}
-		if (currentDraggedOnItemId != null && itemShouldBeTreatedAsHavingVariants(currentDraggedOnItemId)) {
-			currentDraggedOnItemId = getItemForIndex(draggedOnItemIndex, layout);
-		}
-//		Integer savedDraggedItemId = (itemHasVariants(draggedItemIndex)) ? getItemForIndex(draggedItemIndex, itemIdToIndexes) : ;
-//		Integer savedDraggedOnItemId = getItemForIndex(draggedOnItemIndex, itemIdToIndexes);
-		// If there is supposed to be an item in the dragged-on location, but that item isn't there, remove that item's custom position.
-		if (currentDraggedOnItemId == null) {
-			int itemId = layout.getItemAtIndex(draggedOnItemIndex);
-			if (itemId != -1) {
-				layout.removeItem(itemId);
-			}
-		}
 
-//		log.debug("drag complete: setting index " + draggedOnItemIndex + " from " + "?" + " to " + itemName(currentDraggedItemId));
-//		log.debug("               setting index " + draggedItemIndex + " from " + "?" + " to " + itemName(currentDraggedOnItemId));
+        // Get the item id of the item that is actually present if possible, otherwise use what's in the layout.
+		Integer currentDraggedItemId = getIdForIndexInRealBank(draggedItemIndex);
+		Integer currentDraggedOnItemId = getIdForIndexInRealBank(draggedOnItemIndex);
 
-		Iterator<Map.Entry<Integer, Integer>> iterator = layout.allPairsIterator();
-		while (iterator.hasNext()) {
-			Map.Entry<Integer, Integer> next = iterator.next();
-			if (next.getValue() == draggedOnItemIndex || next.getValue() == draggedItemIndex) {
-//				log.debug("removing item " + itemName(next.getKey()) + " from " + next.getValue());
-				iterator.remove();
-			}
-		}
+		layout.swapIndexes(draggedItemIndex, draggedOnItemIndex, currentDraggedItemId, currentDraggedOnItemId);
 
-		if (currentDraggedItemId != null) layout.putItem(currentDraggedItemId, draggedOnItemIndex);
-//		if (savedDraggedItemId != null) itemIdToIndexes.remove(savedDraggedItemId);
-		if (currentDraggedOnItemId != null) layout.putItem(currentDraggedOnItemId, draggedItemIndex);
 		saveLayout(layoutable, layout);
-
-//		log.debug("tag items: " + itemIdToIndexes.toString());
 
 		applyCustomBankTagItemPositions();
 	}
 
 	// TODO automatically items that are duplicates due to being placeholders.
+    // TODO check for 2 items at the same index?
 
-    // TODO can I remove this thing?
-    /* I don't know if this is necessary, but I used it in a more buggy version of this plugin to clean up some invalid data. */
-	private void cleanDuplicateIndexes(Layout layout) {
-		Set<Integer> itemIdsSeen = new HashSet<>();
-		List<Integer> toRemove = new ArrayList<>();
-		for (Map.Entry<Integer, Integer> entry : layout.allPairs()) {
-			if (itemIdsSeen.contains(entry.getValue())) {
-				log.debug("THIS CODE DID SOMETHING: cleaning " + itemName(entry.getKey()));
-				toRemove.add(entry.getKey());
-			} else {
-				itemIdsSeen.add(entry.getValue());
-			}
-		}
-		toRemove.forEach(layout::removeItem);
-//		log.debug("HEY LOOK THIS THING ACTUALLY DID SOMETHING: cleaned " + toRemove.size() + " indexes");
-	}
-
-	private Integer getIdForIndex(Integer index) {
+	private Integer getIdForIndexInRealBank(Integer index) {
 		for (Map.Entry<Integer, Widget> indexToWidget : indexToWidget.entrySet()) {
 			if (indexToWidget.getKey().equals(index)) {
 				return indexToWidget.getValue().getItemId();

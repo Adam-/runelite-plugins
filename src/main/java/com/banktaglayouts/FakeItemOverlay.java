@@ -48,10 +48,10 @@ public class FakeItemOverlay extends Overlay {
         BankTagLayoutsPlugin.LayoutableThing currentLayoutableThing = plugin.getCurrentLayoutableThing();
         if (currentLayoutableThing == null) return null;
 
-        Map<Integer, Integer> itemIdToIndexes = plugin.getBankOrder(currentLayoutableThing);
-        if (itemIdToIndexes == null) return null;
+        Layout layout = plugin.getBankOrder(currentLayoutableThing);
+        if (layout == null) return null;
 
-        if (config.showLayoutPlaceholders() && log.isDebugEnabled()) updateTooltip(itemIdToIndexes);
+        if (config.showLayoutPlaceholders() && log.isDebugEnabled()) updateTooltip(layout);
 
         Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
         if (bankItemContainer == null) return null;
@@ -86,7 +86,7 @@ public class FakeItemOverlay extends Overlay {
         return null;
     }
 
-    private void updateTooltip(Map<Integer, Integer> itemIdToIndexes) {
+    private void updateTooltip(Layout layout) {
         tooltipManager.getTooltips().remove(tooltip);
         tooltip = null;
 
@@ -94,7 +94,7 @@ public class FakeItemOverlay extends Overlay {
         if (!log.isDebugEnabled() && !plugin.fakeItems.stream().filter(fakeItem -> fakeItem.index == index).findAny().isPresent()) return;
 
         if (index != -1) {
-            Map.Entry<Integer, Integer> entry = itemIdToIndexes.entrySet().stream()
+            Map.Entry<Integer, Integer> entry = layout.allPairs().stream()
                     .filter(e -> e.getValue() == index)
                     .findAny().orElse(null);
 

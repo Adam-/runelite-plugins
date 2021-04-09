@@ -1,5 +1,7 @@
 package com.banktaglayouts;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -7,19 +9,32 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class Layout {
 
     private Map<Integer, Integer> layoutMap = new HashMap<>();
 
     public static Layout fromString(String layoutString) {
+        return fromString(layoutString, false);
+    }
+
+    public static Layout fromString(String layoutString, boolean ignoreNfe) {
         Layout layout = Layout.emptyLayout();
         if (layoutString.isEmpty()) return layout;
         for (String s1 : layoutString.split(",")) {
             String[] split = s1.split(":");
-            Integer itemId = Integer.valueOf(split[0]);
-            Integer index = Integer.valueOf(split[1]);
-            if (index >= 0) {
-                layout.putItem(itemId, index);
+            try {
+                Integer itemId = Integer.valueOf(split[0]);
+                Integer index = Integer.valueOf(split[1]);
+                if (index >= 0) {
+                    layout.putItem(itemId, index);
+                } else {
+//                    log.debug("Removed item " + itemName(itemId) + " (" + itemId + ") due to it having a negative index (" + index + ")");
+                    log.debug("Removed item " + itemId + " due to it having a negative index (" + index + ")");
+                }
+            } catch (NumberFormatException e) {
+                if (!ignoreNfe) throw e;
+                log.debug("input string \"" + layoutString + "\"");
             }
         }
         return layout;
@@ -96,4 +111,28 @@ public class Layout {
         return lastIndex + 1;
     }
 
+    public void clearIndex(int index) {
+        Iterator<Map.Entry<Integer, Integer>> iterator = allPairsIterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Integer, Integer> next = iterator.next();
+            if (next.getValue() == index) {
+                iterator.remove();
+                return;
+            }
+        }
+    }
+
+    public void swapIndexes(int index1, int index2, Integer index1PreferredId, Integer index2PreferredId) {
+        if (index1PreferredId == null) {
+            index1PreferredId = getItemAtIndex(index1);
+        }
+        if (index2PreferredId != null) {
+            index2PreferredId = getItemAtIndex(index2);
+        }
+
+        clearIndex(index2);
+        clearIndex(index1);
+        if (index1PreferredId != -1) putItem(index1PreferredId, index2);
+        if (index2PreferredId != -1) putItem(index2PreferredId, index1);
+    }
 }
