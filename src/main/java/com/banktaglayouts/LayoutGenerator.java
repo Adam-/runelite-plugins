@@ -19,6 +19,10 @@ public class LayoutGenerator {
     private final BankTagLayoutsPlugin plugin;
 
     public Map<Integer, Integer> basicLayout(List<Integer> equippedItems, List<Integer> inventory, Map<Integer, Integer> currentLayout) {
+        return basicLayout(equippedItems, inventory, Collections.emptyList(), Collections.emptyList(), currentLayout);
+    }
+
+    public Map<Integer, Integer> basicLayout(List<Integer> equippedItems, List<Integer> inventory, List<Integer> runePouch, List<Integer> additionalItems, Map<Integer, Integer> currentLayout) {
         Map<Integer, Integer> previewLayout = new HashMap<>();
         List<Integer> displacedItems = new ArrayList<>();
 
@@ -26,74 +30,43 @@ public class LayoutGenerator {
         log.debug("equipped gear is " + equippedItems);
         log.debug("inventory is " + inventory);
 
-        // lay out equipped items.
         int i = 0;
-        for (Integer itemId : equippedItems) {
-            if (itemId == -1) continue;
-            itemId = plugin.itemManager.canonicalize(itemId); // Weight reducing items have different ids when equipped; this fixes that.
-            int index = toZigZagIndex(i, 0, 0);
-            previewLayout.put(itemId, index);
-            int currentLayoutItem = getItemAtIndex(index, currentLayout);
-            if (currentLayoutItem != -1) displacedItems.add(currentLayoutItem);
-//            System.out.println("adding " + plugin.itemNameWithId(currentLayoutItem));
-            i++;
-        }
-        // If there are equipped items (and therefore the first 2 rows are in use now), copy over items from the current
-        // layout in the unused spaces.
-        int endOfEquippedItems = i;
-        if (i > 0) {
-            i = 16;
-        }
+
+        // lay out equipped items.
+        equippedItems = equippedItems.stream()
+                .distinct()
+                .map(itemId -> plugin.itemManager.canonicalize(itemId)) // Weight reducing items have different ids when equipped; this fixes that.
+                .collect(Collectors.toList());
+        i = layoutItems(equippedItems, currentLayout, previewLayout, displacedItems, i, true);
 
         // lay out the inventory items.
         // distinct leaves the first duplicate it encounters and removes only duplicates coming after the first.
         inventory = inventory.stream().distinct().collect(Collectors.toList());
-        // Equipped items will never have >11 items in it so it will never spill over into the next row.
-        int inventoryItemsStart = i;
-        for (Integer itemId : inventory) {
-            if (itemId == -1) continue;
-            int index = toZigZagIndex(i, 0, 0);
-            previewLayout.put(itemId, index);
-            int currentLayoutItem = getItemAtIndex(index, currentLayout);
-            if (currentLayoutItem != -1) displacedItems.add(currentLayoutItem);
-//            System.out.println("adding " + plugin.itemNameWithId(currentLayoutItem));
-            i++;
-        }
+        i = layoutItems(inventory, currentLayout, previewLayout, displacedItems, i, true);
 
-        Optional<Integer> highestUsedIndex = previewLayout.values().stream().max(Integer::compare);
-        if (!highestUsedIndex.isPresent()) return previewLayout; // no items in the layout were moved.
-        int displacedItemsStart = (highestUsedIndex.get() / 16 * 2 + 2) * 8;
+        i = layoutItems(runePouch, currentLayout, previewLayout, displacedItems, i, false);
 
-        if (endOfEquippedItems > 0) {
-            for (; endOfEquippedItems < 16; endOfEquippedItems++) {
-                int zigZag = toZigZagIndex(endOfEquippedItems, 0, 0);
-                int itemAtIndex = getItemAtIndex(zigZag, currentLayout);
-                if (itemAtIndex != -1 && !layoutContainsItem(itemAtIndex, previewLayout)) {
-                    previewLayout.put(itemAtIndex, zigZag);
-                }
+        i = layoutItems(additionalItems, currentLayout, previewLayout, displacedItems, i, false);
+
+        int displacedItemsStart = i;
+
+        // copy items from current layout into the empty spots.
+        for (Map.Entry<Integer, Integer> itemPosition : currentLayout.entrySet()) {
+            int index = itemPosition.getValue();
+            int currentItemAtIndex = itemPosition.getKey();
+            int previewItemAtIndex = getItemAtIndex(index, previewLayout);
+
+            if (currentItemAtIndex != -1 && previewItemAtIndex == -1 && !layoutContainsItem(currentItemAtIndex, previewLayout)) {
+                previewLayout.put(currentItemAtIndex, index);
             }
         }
 
-        // If there are inventory items, copy over items from the current layout in the unused spaces.
-        if (inventoryItemsStart < i) {
-            for (; i < displacedItemsStart; i++) {
-                int zigZag = toZigZagIndex(i, 0, 0);
-                int itemAtIndex = getItemAtIndex(zigZag, currentLayout);
-                if (itemAtIndex != -1 && !layoutContainsItem(itemAtIndex, previewLayout)) {
-                    previewLayout.put(itemAtIndex, zigZag);
-                }
-            }
-        }
-
-        log.debug("displaced items: " + displacedItems);
         // Remove items that were placed as part of the gear or inventory.
         displacedItems = displacedItems.stream().filter(id -> !layoutContainsItem(id, previewLayout)).collect(Collectors.toList());
-        log.debug("displaced items2: " + displacedItems);
 
         int j = displacedItemsStart;
         while (displacedItems.size() > 0 && j < 2000 / 38 * 8) {
             int currentItemAtIndex = getItemAtIndex(j, currentLayout);
-//            System.out.println((currentItemAtIndex == -1) + " " + (layoutContainsItem(currentItemAtIndex, previewLayout)));
             if (currentItemAtIndex == -1 || listContainsItem(currentItemAtIndex, equippedItems) || listContainsItem(currentItemAtIndex, inventory)) {
                 Integer itemId = displacedItems.remove(0);
                 log.debug(itemId + " goes to " + j);
@@ -102,16 +75,30 @@ public class LayoutGenerator {
 
             j++;
         }
-//        System.out.println(displacedItems.size());
-
-        // Add existing items not displaced by autolayout to the preview.
-        currentLayout.entrySet().stream().filter(e -> {
-            if (e.getValue() < displacedItemsStart) return false;
-
-            return plugin.itemShouldBeTreatedAsHavingVariants(e.getKey()) || (!previewLayout.containsKey(e.getKey()) && !previewLayout.containsKey(plugin.switchPlaceholderId(e.getKey())));
-        }).forEach(e -> previewLayout.put(e.getKey(), e.getValue()));
 
         return previewLayout;
+    }
+
+    private int layoutItems(List<Integer> inventory, Map<Integer, Integer> currentLayout, Map<Integer, Integer> previewLayout, List<Integer> displacedItems, int i, boolean useZigZag) {
+        for (Integer itemId : inventory) {
+            if (itemId == -1) continue;
+            int index = useZigZag ? toZigZagIndex(i, 0, 0) : i;
+            previewLayout.put(itemId, index);
+            int currentLayoutItem = getItemAtIndex(index, currentLayout);
+            if (currentLayoutItem != -1) displacedItems.add(currentLayoutItem);
+            i++;
+        }
+        if (!inventory.isEmpty()) {
+            Optional<Integer> highestUsedIndex = previewLayout.values().stream().max(Integer::compare);
+            if (highestUsedIndex.isPresent()) {
+                if (useZigZag) {
+                    i = (highestUsedIndex.get() / 16 * 2 + 2) * 8;
+                } else {
+                    i = (highestUsedIndex.get() / 8 + 1) * 8;
+                }
+            }
+        }
+        return i;
     }
 
     private boolean listContainsItem(int id, List<Integer> items) {
@@ -158,6 +145,6 @@ public class LayoutGenerator {
         List<Integer> runePouchRunes = inventorySetup.getRune_pouch() == null ? Collections.emptyList() : inventorySetup.getRune_pouch().stream().map(isi -> isi.getId()).collect(Collectors.toList());
         List<Integer> additionalItems = inventorySetup.getAdditionalFilteredItems() == null ? Collections.emptyList() : inventorySetup.getAdditionalFilteredItems().entrySet().stream().map(isi -> isi.getValue().getId()).collect(Collectors.toList());
 
-        return basicLayout(equippedGear, inventory, currentLayout);
+        return basicLayout(equippedGear, inventory, runePouchRunes, additionalItems, currentLayout);
     }
 }
