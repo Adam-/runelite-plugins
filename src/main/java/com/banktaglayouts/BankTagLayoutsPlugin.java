@@ -244,6 +244,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		clientThread.invokeLater(() -> {
 			if (client.getGameState() == GameState.LOGGED_IN) {
+			    showLayoutPreviewButton = null;
 				updateButton();
 				bankSearch.layoutBank();
 			}
