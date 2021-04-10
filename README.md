@@ -13,3 +13,13 @@ Right click a tag tab, click "Enable layout", then drag items anywhere while the
 * Prints warning message when you might have unintentionally reordered your actual bank instead of a layout.
 * Workaround for bug where the Bank Tags plugin's "Remove tab separators" option would rearrange items *after* Bank Tag Layouts' laid out the layout, causing any gaps in the layout to be collapsed.
 * Fixed bug where dragging an item above the bank caused it to disappear. Oops.
+
+### v1.2
+* Adds automatic laying-out of tabs based on current inventory and gear setup.
+* Layout placeholders are now draggable.
+
+### v1.2.1
+* No longer shows more height than necessary in the laid-out tabs.
+
+### v1.3
+* Support for Inventory Setups. Currently does not have import/export, but otherwise everything should work.
