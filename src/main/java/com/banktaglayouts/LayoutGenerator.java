@@ -1,6 +1,6 @@
 package com.banktaglayouts;
 
-import inventorysetups.InventorySetup;
+import com.banktaglayouts.invsetupsstuff.InventorySetup;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -104,7 +104,11 @@ public class LayoutGenerator {
 //        System.out.println(displacedItems.size());
 
         // Add existing items not displaced by autolayout to the preview.
-        currentLayout.entrySet().stream().filter(e -> e.getValue() >= displacedItemsStart && !previewLayout.containsKey(e.getKey())).forEach(e -> previewLayout.put(e.getKey(), e.getValue()));
+        currentLayout.entrySet().stream().filter(e -> {
+            if (e.getValue() < displacedItemsStart) return false;
+
+            return plugin.itemShouldBeTreatedAsHavingVariants(e.getKey()) || (!previewLayout.containsKey(e.getKey()) && !previewLayout.containsKey(plugin.switchPlaceholderId(e.getKey())));
+        }).forEach(e -> previewLayout.put(e.getKey(), e.getValue()));
 
         return previewLayout;
     }

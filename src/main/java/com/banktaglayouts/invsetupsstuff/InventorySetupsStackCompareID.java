@@ -22,36 +22,70 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.banktaglayouts;
+package com.banktaglayouts.invsetupsstuff;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import java.util.ArrayList;
+import java.util.Collections;
 
-@AllArgsConstructor
-public class InventorySetupsItem
+public enum InventorySetupsStackCompareID
 {
-	@Getter
-	private final int id;
-	@Getter
-	private final String name;
-	@Getter
-	private final int quantity;
-	@Getter
-	@Setter
-	private boolean fuzzy;
-	@Getter
-	@Setter
-	private InventorySetupsStackCompareID stackCompare;
+	// Don't highlight at all
+	None(0),
 
-	public void toggleIsFuzzy()
+	// Only highlight if stacks are equal
+	Standard(1),
+
+	// Only highlight if stack is less than what is in the setup
+	Less_Than(2),
+
+	// Only highlight if stack is greater than what is in the setup
+	Greater_Than(3);
+
+	private final int type;
+
+	private static final ArrayList<InventorySetupsStackCompareID> VALUES;
+
+	static
 	{
-		fuzzy = !fuzzy;
+		VALUES = new ArrayList<>();
+		Collections.addAll(VALUES, InventorySetupsStackCompareID.values());
 	}
 
-	public static InventorySetupsItem getDummyItem()
+	InventorySetupsStackCompareID(int type)
 	{
-		return new InventorySetupsItem(-1, "", 0, false, InventorySetupsStackCompareID.None);
+		this.type = type;
+	}
+
+	public int getType()
+	{
+		return type;
+	}
+
+	public static ArrayList<InventorySetupsStackCompareID> getValues()
+	{
+		return VALUES;
+	}
+
+	public static String getStringFromValue(final InventorySetupsStackCompareID stackCompare)
+	{
+		if (stackCompare == null)
+		{
+			return "";
+		}
+
+		switch (stackCompare)
+		{
+			case None:
+				return "";
+			case Standard:
+				return "!=";
+			case Less_Than:
+				return "<";
+			case Greater_Than:
+				return ">";
+		}
+
+		return "";
 	}
 
 }

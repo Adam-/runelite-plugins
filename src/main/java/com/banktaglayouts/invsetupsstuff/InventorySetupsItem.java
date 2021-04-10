@@ -22,96 +22,36 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.banktaglayouts;
+package com.banktaglayouts.invsetupsstuff;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-
 @AllArgsConstructor
-public class InventorySetup
+public class InventorySetupsItem
 {
 	@Getter
-	private ArrayList<InventorySetupsItem> inventory;
-
+	private final int id;
 	@Getter
-	private ArrayList<InventorySetupsItem> equipment;
-
+	private final String name;
 	@Getter
-	private ArrayList<InventorySetupsItem> rune_pouch;
-
-	@Getter
-	private HashMap<Integer, InventorySetupsItem> additionalFilteredItems;
-
+	private final int quantity;
 	@Getter
 	@Setter
-	private String name;
-
+	private boolean fuzzy;
 	@Getter
 	@Setter
-	private String notes;
+	private InventorySetupsStackCompareID stackCompare;
 
-	@Getter
-	@Setter
-	private Color highlightColor;
-
-	@Getter
-	@Setter
-	private boolean highlightDifference;
-
-	@Getter
-	@Setter
-	private boolean filterBank;
-
-	@Getter
-	@Setter
-	private boolean unorderedHighlight;
-
-	/*
-		0 = Standard
-		1 = Ancient
-		2 = Lunar
-		3 = Arceuus
-		4 = NONE
-
-		Avoiding Enum because won't work well with GSON (defaults to null)
-	*/
-	@Getter
-	@Setter
-	private int spellBook;
-
-	public void updateInventory(final ArrayList<InventorySetupsItem> inv)
+	public void toggleIsFuzzy()
 	{
-		inventory = inv;
+		fuzzy = !fuzzy;
 	}
 
-	public void updateEquipment(final ArrayList<InventorySetupsItem> eqp)
+	public static InventorySetupsItem getDummyItem()
 	{
-		equipment = eqp;
-	}
-
-	public void updateRunePouch(final ArrayList<InventorySetupsItem> rp)
-	{
-		rune_pouch = rp;
-	}
-
-	public void updateAdditionalItems(final HashMap<Integer, InventorySetupsItem> ai)
-	{
-		additionalFilteredItems = ai;
-	}
-
-	public void updateSpellbook(final int sb)
-	{
-		spellBook = sb;
-	}
-
-	public void updateNotes(final String text)
-	{
-		notes = text;
+		return new InventorySetupsItem(-1, "", 0, false, InventorySetupsStackCompareID.None);
 	}
 
 }

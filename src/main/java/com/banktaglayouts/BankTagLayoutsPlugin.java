@@ -1,5 +1,7 @@
 package com.banktaglayouts;
 
+import com.banktaglayouts.invsetupsstuff.InventorySetup;
+import com.banktaglayouts.invsetupsstuff.InventorySetupsAdapter;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ObjectArrays;
 import com.google.common.util.concurrent.Runnables;
@@ -14,7 +16,6 @@ import net.runelite.api.InventoryID;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
-import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.MessageNode;
@@ -38,7 +39,6 @@ import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.api.widgets.WidgetType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.config.RuneLiteConfig;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
@@ -55,7 +55,6 @@ import net.runelite.client.plugins.bank.BankSearch;
 import net.runelite.client.plugins.banktags.BankTagsPlugin;
 import net.runelite.client.plugins.banktags.TagManager;
 import net.runelite.client.plugins.banktags.tabs.TabInterface;
-import net.runelite.client.ui.JagexColors;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.Text;
@@ -89,39 +88,6 @@ import static net.runelite.client.plugins.banktags.BankTagsPlugin.ICON_SEARCH;
 import static net.runelite.client.plugins.banktags.BankTagsPlugin.TAG_TABS_CONFIG;
 
 @Slf4j
-/* TODO
-    inventory setups.
-    autolayout.
-
-    Use previews to show layout changes from imported layouts.
-
-    Previews should auto import all variant items, but only where it makes sense (not stuff like potions and clue scrolls).
-
-	Bank tags bug:
-		Why are bank tag tabs not using exact matches for tag names but instead checking with something like startsWith?
-		Weird ids added for scb, possibly all variant items.
-			Why did 1,2,3 dose scb and stamina potions suddenly appear in my cox tab?
-
-	Issues I don't care about:
-		Tag import does not delete existing tags in the tab.
-		duplicate tab.
-			Can easily be done with an export then an import, but this would be nice for convenience I guess.
-
-	Minor features:
-		Tag editing:
-			Option to show fake items for things that are in the tag but not in the layout. This would be nice for
-				"cleaning out" a bank tag, for example for publishing to other people.
-				Also allow people to remove the item from the actual tag.
-
-	Handling of barrows items still questionable. What happens if you put in a degraded one where previously there was something of a different degradation in the tab?
-
-	// TODO items with same id that do not stack in bank, e.g. bank placeholders. I thin currently only one of these
-	    is shown, which is fine for all use-cases I'm aware of.
-
-	low:
-	// TODO treat variant items which have a placeholder for each variant (e.g. potions) as non-variant items. Probably need to build a list by iterating all items in the game.
-		// What is the point of this???? What would it accomplish? Idk why i wrote this weeks ago.
- */
 @PluginDescriptor(
 	name = "Bank Tag Layouts",
 	description = "Right click a bank tag tabs and click \"Enable layout\", select the tag tab, then drag items in the tag to reposition them.",
@@ -145,13 +111,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	public static final String IMPORT_LAYOUT = "Import tag tab with layout";
 	public static final String EXPORT_LAYOUT = "Export tag tab with layout";
 	public static final String REMOVE_FROM_LAYOUT_MENU_OPTION = "Remove-layout";
-	//	public static final String REMOVE_FROM_TAG_MENU_OPTION = "Remove-tag";
 	public static final String PREVIEW_AUTO_LAYOUT = "Preview auto layout";
 
 	private static final int BANK_ITEM_WIDTH = 36;
 	private static final int BANK_ITEM_HEIGHT = 32;
-	private static final String EXPORT_LAYOUT_ONLY = "Export layout";
-	private static final String IMPORT_LAYOUT_ONLY = "Import layout";
 
 	@Inject
 	private Client client;
@@ -172,7 +135,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	ItemManager itemManager;
 
 	@Inject
-	ConfigManager configManager;
+	public ConfigManager configManager;
 
 	@Inject
 	private ClientThread clientThread;
@@ -350,15 +313,16 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	private void applyLayoutPreview() {
-	    // TODO inventory setups.
-		for (Integer itemId : previewLayout.keySet()) {
-			if (!copyPaste.findTag(itemId, previewLayoutTagName.name)) {
-			    log.debug("adding item " + itemName(itemId) + " (" + itemId + ") to tag");
-				tagManager.addTag(itemId, previewLayoutTagName.name, false);
+	    if (previewLayoutable.isBankTab) {
+			for (Integer itemId : previewLayout.keySet()) {
+				if (!copyPaste.findTag(itemId, previewLayoutable.name)) {
+					log.debug("adding item " + itemName(itemId) + " (" + itemId + ") to tag");
+					tagManager.addTag(itemId, previewLayoutable.name, false);
+				}
 			}
 		}
 
-		saveLayoutNonPreview(previewLayoutTagName, previewLayout);
+		saveLayoutNonPreview(previewLayoutable, previewLayout);
 
 		cancelLayoutPreview();
 		bankSearch.layoutBank();
@@ -372,7 +336,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	private void cancelLayoutPreview() {
 		previewLayout = null;
-		previewLayoutTagName = null;
+		previewLayoutable = null;
 
 		hideLayoutPreviewButtons(true);
 
@@ -381,7 +345,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	/** null indicates that there should not be a preview shown. */
 	private Map<Integer, Integer> previewLayout = null;
-	private LayoutableThing previewLayoutTagName = null;
+	private LayoutableThing previewLayoutable = null;
 
 	private InventorySetupsAdapter inventorySetupsAdapter = new InventorySetupsAdapter(this);
 
@@ -419,7 +383,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		hideLayoutPreviewButtons(false);
 
-		previewLayoutTagName = currentLayoutableThing;
+		previewLayoutable = currentLayoutableThing;
 
 		applyCustomBankTagItemPositions();
 	}
@@ -450,20 +414,17 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private String lastBankTitle = null;
 	private String inventorySetup = null;
 	private String updateInventorySetupShown() {
-		// TODO move to bankmain_build postscriptfired.
 		Widget bankTitleBar = client.getWidget(WidgetInfo.BANK_TITLE_BAR);
 		if (bankTitleBar != null) {
 			String bankTitle = bankTitleBar.getText();
 			if (!Objects.equals(lastBankTitle, bankTitle)) {
+			    // example:
 				//			Inventory Setup <col=ff0000>tob - Equipment</col> (76.5M)
 				Matcher matcher = Pattern.compile("Inventory Setup <col=ff0000>(?<setup>.*) - (?<subfilter>.*)</col>.*").matcher(bankTitle);
 				if (matcher.matches()) {
 					inventorySetup = matcher.group("setup");
-//					System.out.println("setup: \"" + inventorySetup + "\"");
-//					System.out.println("subfilter: \"" + matcher.group("subfilter") + "\"");
 				} else {
 					inventorySetup = null;
-//					System.out.println("Does not match.");
 				}
 
 				lastBankTitle = bankTitle;
@@ -477,13 +438,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		if (event.getScriptId() == ScriptID.BANKMAIN_BUILD) {
 			updateInventorySetupShown();
 
-//			Widget bankTitleBar = client.getWidget(WidgetInfo.BANK_TITLE_BAR);
-//			if (bankTitleBar != null) {
-//				String bankTitle = bankTitleBar.getText();
-//			}
-			if (
-					getCurrentLayoutableThing() == null || getCurrentLayoutableThing() != lastLayoutable
-					|| (isShowingPreview() && !Objects.equals(previewLayoutTagName, tabInterface.getActiveTab().getTag()))) {
+			if (getCurrentLayoutableThing() == null || getCurrentLayoutableThing() != lastLayoutable) {
 				cancelLayoutPreview();
 			}
 
@@ -514,12 +469,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 
 		String[] split = clipboardData.split(",banktag:");
-		String name = null;
-		String bankTag = null;
-		String layoutString = null;
-		if (split.length == 1) {
-		    layoutString = clipboardData;
-		} else if (split.length != 2) {
+		if (split.length != 2) {
 			chatErrorMessage("import failed: invalid format. layout string doesn't include regular bank tag data (It should say \"banktag:\" somewhere in the import string). Maybe you didn't copy the whole thing?");
 			return;
 		}
@@ -694,14 +644,13 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			return;
 		}
 
-		// TODO lay out tab if it's an inventory setup.
+		// TODO lay out tab if it's an inventory setup and doesn't currently have a layout.
 
 		log.debug("applyCustomBankTagItemPositions: " + layoutable);
 
 		indexToWidget.clear();
 
 		Map<Integer, Integer> itemPositionIndexes = getBankOrder(layoutable);
-//		System.out.println("bank order for " + layoutable + " is " + itemPositionIndexes);
 		if (itemPositionIndexes == null) {
 			return; // layout not enabled.
 		}
@@ -722,7 +671,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 
 		if (!isShowingPreview()) { // I don't want to clean layout items when displaying a preview. This could result in some layout placeholders being auto-removed due to not being in the tab.
-			cleanItemsNotInBankTag(itemPositionIndexes, layoutable);
+			if (layoutable.isBankTab) cleanItemsNotInBankTag(itemPositionIndexes, layoutable); // TODO clean out stuff from inventory setups also.
 			cleanDuplicateIndexes(itemPositionIndexes);
 		}
 
@@ -891,10 +840,9 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		public final int itemId;
 	}
 
-	@Subscribe(priority = -1) // I want to be sure I add my inventory setups related menu entries after Inventory Setups.
+	@Subscribe
 	public void onMenuEntryAdded(MenuEntryAdded menuEntryAdded)
 	{
-	    addEntriesToInventorySetups(menuEntryAdded);
 	    if (WidgetInfo.TO_GROUP(menuEntryAdded.getActionParam1()) == WidgetInfo.BANK_CONTENT_CONTAINER.getGroupId()) {
 			String bankTagName = Text.removeTags(menuEntryAdded.getTarget()).replace("\u00a0"," ");
 
@@ -914,28 +862,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 
 		addFakeItemMenuEntries(menuEntryAdded);
-	}
-
-	private void addEntriesToInventorySetups(MenuEntryAdded menuEntryAdded) {
-	    if (!inventorySetupsInstalledAndEnabled()) return;
-		LayoutableThing currentLayoutableThing = getCurrentLayoutableThing();
-		if (currentLayoutableThing == null || currentLayoutableThing.isBankTab) return;
-
-		Widget bankWidget = client.getWidget(WidgetInfo.BANK_TITLE_BAR);
-		if (bankWidget == null || bankWidget.isHidden())
-		{
-			return;
-		}
-
-		if (menuEntryAdded.getOption().equals("Show worn items"))
-		{
-			addEntry("", EXPORT_LAYOUT_ONLY);
-			addEntry("", IMPORT_LAYOUT_ONLY);
-		}
-	}
-
-	private boolean inventorySetupsInstalledAndEnabled() {
-		return Boolean.parseBoolean(configManager.getConfiguration(RuneLiteConfig.GROUP_NAME, "inventorysetupsplugin"));
 	}
 
 	private void addEntry(String menuTarget, String menuOption) {
@@ -1098,51 +1024,20 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		} else if (IMPORT_LAYOUT.equals(menuOption)) {
 			importLayout();
 			event.consume();
-		} else if (EXPORT_LAYOUT_ONLY.equals(menuOption)) {
-			exportLayoutOnly();
-			event.consume();
-		} else if (IMPORT_LAYOUT_ONLY.equals(menuOption)) {
-			importLayoutOnly();
-			event.consume();
 		} else if (PREVIEW_AUTO_LAYOUT.equals(menuOption)) {
 			showLayoutPreview();
 			event.consume();
 		}
 	}
 
-	private void importLayoutOnly() {
-		importLayout();
-	}
-
-	/**
-	 * Puts the currently selected layoutable thing into an export string and puts it in the system clipboard. Only includes the layout.
-	 */
-	private void exportLayoutOnly() {
-		LayoutableThing currentLayoutableThing = getCurrentLayoutableThing();
-		if (currentLayoutableThing == null) {
-			chatMessage("Nothing with a layout seems to be selected. You shouldn't really be seeing this message, weird.");
-			return;
-		}
-
-		String exportString = BANK_TAG_STRING_PREFIX + bankTagOrderMapToString(getBankOrder(currentLayoutableThing)) ;
-
-		putInClipboard(exportString);
-		chatMessage("Copied layout to clipboard");
-	}
-
-	private void putInClipboard(String exportString) {
-		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(exportString), null);
-	}
-
-	// TODO consider using tagManager.getItemsForTag(name) because unlike findTag it is api.
-	private void cleanItemsNotInBankTag(Map<Integer, Integer> itemPositionIndexes, LayoutableThing layoutable) {
-	    if (!layoutable.isBankTab) return; // TODO inventory setups.
-
+	// TODO consider using tagManager.getItemsForTag(bankTagName) because unlike findTag it is api.
+	private void cleanItemsNotInBankTag(Map<Integer, Integer> itemPositionIndexes, LayoutableThing bankTab) {
+	    if (!bankTab.isBankTab) throw new IllegalArgumentException("This only works on bank tags.");
 		Iterator<Map.Entry<Integer, Integer>> iter = itemPositionIndexes.entrySet().iterator();
 		while (iter.hasNext()) {
 			int itemId = iter.next().getKey();
 
-			if (!copyPaste.findTag(itemId, layoutable.name)) {
+			if (!copyPaste.findTag(itemId, bankTab.name)) {
 				log.debug("removing " + itemName(itemId) + " (" + itemId + ") because it is no longer in the bank tag");
 				iter.remove();
 			}
@@ -1258,7 +1153,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	private Integer getItemForIndex(int index, Map<Integer, Integer> itemPositionIndexes) {
-	    // TODO stop using a map if you're gonna use it both directions.
 		for (Map.Entry<Integer, Integer> entry : itemPositionIndexes.entrySet()) {
 			if (entry.getValue() == index) {
 				return entry.getKey();
@@ -1279,7 +1173,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	 * This includes placeholders for the item.
 	 * This does mean that the order that items appear in in the normal bank has an impact on the custom layout. Not something you'd expect from this feature, lol.
 	 */
-	private boolean itemShouldBeTreatedAsHavingVariants(int nonPlaceholderItemId) {
+	boolean itemShouldBeTreatedAsHavingVariants(int nonPlaceholderItemId) {
 		return itemHasVariants(nonPlaceholderItemId);
 	}
 
@@ -1291,14 +1185,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		return getBankOrderNonPreview(layoutable);
 	}
 
-	// TODO enable layout on inventory setups by default? Could produce invalid bug reports for dill.
-
 	/**
 	 * unlike getBankOrder, this will not return a preview layout when one is currently being show.
 	 */
 	private Map<Integer, Integer> getBankOrderNonPreview(LayoutableThing layoutable) {
 		String configuration = configManager.getConfiguration(CONFIG_GROUP, layoutable.configKey());
-//		System.out.println("config is " + configuration);
 		if (LAYOUT_EXPLICITLY_DISABLED.equals(configuration)) return null;
 		if (configuration == null && (layoutable.isBankTab && !config.layoutEnabledByDefault() || !layoutable.isBankTab && !config.useWithInventorySetups())) return null;
 		if (configuration == null) configuration = "";
@@ -1334,6 +1225,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		putInClipboard(exportString);
 		chatMessage("Copied layout-ed tag \"" + tagName + "\" to clipboard");
+	}
+
+	private void putInClipboard(String exportString) {
+		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(exportString), null);
 	}
 
 	private MessageNode chatErrorMessage(String message) {
@@ -1517,7 +1412,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	private void customBankTagOrderInsert(LayoutableThing layoutable, Integer draggedItemIndex, Integer draggedOnItemIndex) {
-		// TODO Save multimap due to having multiple items with the same ids in different slots, potentially? I think currently extras are hidden, which is ok with me.
 		Map<Integer, Integer> itemIdToIndexes = getBankOrder(layoutable);
 		if (itemIdToIndexes == null) return;
 
@@ -1559,7 +1453,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 //		if (savedDraggedItemId != null) itemIdToIndexes.remove(savedDraggedItemId);
 		if (currentDraggedOnItemId != null) itemIdToIndexes.put(currentDraggedOnItemId, draggedItemIndex);
 		saveLayout(layoutable, itemIdToIndexes);
-//		log.debug("saved tag " + name);
 
 //		log.debug("tag items: " + itemIdToIndexes.toString());
 

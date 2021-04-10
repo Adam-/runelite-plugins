@@ -1,19 +1,13 @@
-package com.banktaglayouts;
+package com.banktaglayouts.invsetupsstuff;
 
+import com.banktaglayouts.BankTagLayoutsPlugin;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import inventorysetups.InventorySetupsItem;
-import inventorysetups.InventorySetupsSlotID;
-import inventorysetups.InventorySetupsStackCompareID;
 import joptsimple.internal.Strings;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.ItemID;
-import net.runelite.client.game.ItemVariationMapping;
-import net.runelite.client.plugins.runepouch.Runes;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 @RequiredArgsConstructor

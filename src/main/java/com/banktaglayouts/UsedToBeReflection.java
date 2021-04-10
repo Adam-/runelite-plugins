@@ -11,6 +11,9 @@ import java.util.List;
 
 import static net.runelite.client.plugins.banktags.BankTagsPlugin.*;
 
+/**
+ * Class I made when I changed this plugin from using reflection to access private parts of Bank Tags.
+ */
 public class UsedToBeReflection {
 
     static final String ITEM_KEY_PREFIX = "item_";
