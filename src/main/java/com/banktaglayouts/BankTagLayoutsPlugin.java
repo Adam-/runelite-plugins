@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
 import net.runelite.api.InventoryID;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
@@ -240,6 +241,13 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		spriteManager.addSpriteOverrides(Sprites.values());
 		mouseManager.registerMouseListener(this);
 		keyManager.registerKeyListener(antiDrag);
+
+		clientThread.invokeLater(() -> {
+			if (client.getGameState() == GameState.LOGGED_IN) {
+				updateButton();
+				bankSearch.layoutBank();
+			}
+		});
 	}
 
 	@Override
@@ -249,7 +257,16 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		spriteManager.removeSpriteOverrides(Sprites.values());
 		mouseManager.unregisterMouseListener(this);
 		keyManager.unregisterKeyListener(antiDrag);
-		indexToWidget.clear();
+
+		clientThread.invokeLater(() -> {
+			if (client.getGameState() == GameState.LOGGED_IN) {
+				indexToWidget.clear();
+				cancelLayoutPreview();
+				showLayoutPreviewButton.setHidden(true);
+
+				bankSearch.layoutBank();
+			}
+		});
 	}
 
 	@Subscribe
