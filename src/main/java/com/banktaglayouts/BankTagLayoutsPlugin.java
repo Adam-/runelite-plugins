@@ -260,6 +260,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 				clientThread.invokeLater(this::applyCustomBankTagItemPositions);
 			} else if ("showAutoLayoutButton".equals(event.getKey())) {
 				clientThread.invokeLater(this::updateButton);
+			} else if ("useWithInventorySetups".equals(event.getKey())) {
+				clientThread.invokeLater(bankSearch::layoutBank);
 			}
 		} else if (BankTagsPlugin.CONFIG_GROUP.equals(event.getGroup()) && BankTagsPlugin.TAG_TABS_CONFIG.equals(event.getKey())) {
 			handlePotentialTagRename(event);
@@ -644,8 +646,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			return;
 		}
 
-		// TODO lay out tab if it's an inventory setup and doesn't currently have a layout.
-
 		log.debug("applyCustomBankTagItemPositions: " + layoutable);
 
 		indexToWidget.clear();
@@ -653,6 +653,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		Map<Integer, Integer> itemPositionIndexes = getBankOrder(layoutable);
 		if (itemPositionIndexes == null) {
 			return; // layout not enabled.
+		}
+		if (itemPositionIndexes.isEmpty() && !layoutable.isBankTab) {
+			// Inventory setups by default have an equipment and inventory order, so lay them out.
+			InventorySetup inventorySetup = inventorySetupsAdapter.getInventorySetup(layoutable.name);
+			itemPositionIndexes = layoutGenerator.basicInventorySetupsLayout(inventorySetup, Collections.emptyMap());
 		}
 
 		List<Widget> bankItems = Arrays.stream(client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).getDynamicChildren())

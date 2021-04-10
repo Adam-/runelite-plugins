@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -152,10 +153,10 @@ public class LayoutGenerator {
     // TODO opening inventory setups panel closes auto-layout preview.
 
     public Map<Integer, Integer> basicInventorySetupsLayout(InventorySetup inventorySetup, Map<Integer, Integer> currentLayout) {
-        List<Integer> equippedGear = inventorySetup.getEquipment().stream().map(isi -> isi.getId()).collect(Collectors.toList());
-        List<Integer> inventory = inventorySetup.getInventory().stream().map(isi -> isi.getId()).collect(Collectors.toList());
-        List<Integer> runePouchRunes = inventorySetup.getRune_pouch().stream().map(isi -> isi.getId()).collect(Collectors.toList());
-        List<Integer> additionalItems = inventorySetup.getAdditionalFilteredItems().entrySet().stream().map(isi -> isi.getValue().getId()).collect(Collectors.toList());
+        List<Integer> equippedGear = inventorySetup.getEquipment() == null ? Collections.emptyList() : inventorySetup.getEquipment().stream().map(isi -> isi.getId()).collect(Collectors.toList());
+        List<Integer> inventory = inventorySetup.getInventory() == null ? Collections.emptyList() : inventorySetup.getInventory().stream().map(isi -> isi.getId()).collect(Collectors.toList());
+        List<Integer> runePouchRunes = inventorySetup.getRune_pouch() == null ? Collections.emptyList() : inventorySetup.getRune_pouch().stream().map(isi -> isi.getId()).collect(Collectors.toList());
+        List<Integer> additionalItems = inventorySetup.getAdditionalFilteredItems() == null ? Collections.emptyList() : inventorySetup.getAdditionalFilteredItems().entrySet().stream().map(isi -> isi.getValue().getId()).collect(Collectors.toList());
 
         return basicLayout(equippedGear, inventory, currentLayout);
     }
