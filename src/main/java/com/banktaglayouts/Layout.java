@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.Map;
 @Slf4j
 public class Layout {
 
+    // Maps indexes to items.
     private Map<Integer, Integer> layoutMap = new HashMap<>();
 
     public static Layout fromString(String layoutString) {
@@ -48,7 +50,7 @@ public class Layout {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<Integer, Integer> integerIntegerEntry : allPairs()) {
-            sb.append(integerIntegerEntry.getKey() + ":" + integerIntegerEntry.getValue() + ",");
+            sb.append(integerIntegerEntry.getValue() + ":" + integerIntegerEntry.getKey() + ",");
         }
         if (sb.length() > 0) {
             sb.delete(sb.length() - 1, sb.length());
@@ -57,45 +59,41 @@ public class Layout {
     }
 
     public void putItem(int itemId, int index) {
-        layoutMap.put(itemId, index);
+        layoutMap.put(index, itemId);
     }
 
+    /** returns -1 if there is no item there. */
     public int getItemAtIndex(int index) {
-        return allPairs().stream()
-                .filter(e -> e.getValue() == index)
-                .map(e -> e.getKey())
-                .findAny().orElse(-1);
+        return layoutMap.getOrDefault(index, -1);
     }
 
     public Iterator<Map.Entry<Integer, Integer>> allPairsIterator() {
         return layoutMap.entrySet().iterator();
     }
 
+    /** finds the index for the EXACT itemId. Does not factor in placeholders or variation items. */
     public Integer getIndexForItem(int itemId) {
-        return layoutMap.get(itemId);
+        return allPairs().stream()
+                .filter(e -> e.getValue() == itemId)
+                .map(e -> e.getKey())
+                .findAny().orElse(-1);
     }
 
+    // TODO is this supposed to move the old position of the item?
     public void setIndexForItem(int itemId, int index) {
-        layoutMap.put(itemId, index);
+        layoutMap.put(index, itemId);
     }
 
     public Collection<Integer> getAllUsedItemIds() {
-        return layoutMap.keySet();
+        return new HashSet<>(layoutMap.values());
     }
 
     public Collection<Integer> getAllUsedIndexes() {
-        return layoutMap.values();
+        return layoutMap.keySet();
     }
 
     public Collection<Map.Entry<Integer, Integer>> allPairs() {
         return layoutMap.entrySet();
-    }
-
-    /**
-     * removes the item that's currently there if there is one.
-     */
-    public void removeItem(int itemId) {
-        layoutMap.remove(itemId);
     }
 
     public int getFirstEmptyIndex() {
@@ -112,14 +110,7 @@ public class Layout {
     }
 
     public void clearIndex(int index) {
-        Iterator<Map.Entry<Integer, Integer>> iterator = allPairsIterator();
-        while (iterator.hasNext()) {
-            Map.Entry<Integer, Integer> next = iterator.next();
-            if (next.getValue() == index) {
-                iterator.remove();
-                return;
-            }
-        }
+        layoutMap.remove(index);
     }
 
     public void swapIndexes(int index1, int index2, Integer index1PreferredId, Integer index2PreferredId) {
@@ -132,7 +123,12 @@ public class Layout {
 
         clearIndex(index2);
         clearIndex(index1);
-        if (index1PreferredId != -1) putItem(index1PreferredId, index2);
-        if (index2PreferredId != -1) putItem(index2PreferredId, index1);
+        if (index1PreferredId != null && index1PreferredId != -1) putItem(index1PreferredId, index2);
+        if (index2PreferredId != null && index2PreferredId != -1) putItem(index2PreferredId, index1);
+    }
+
+    public boolean isEmpty()
+    {
+        return layoutMap.isEmpty();
     }
 }

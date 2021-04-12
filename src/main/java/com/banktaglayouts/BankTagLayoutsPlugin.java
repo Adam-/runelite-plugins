@@ -115,8 +115,9 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	public static final String REMOVE_FROM_LAYOUT_MENU_OPTION = "Remove-layout";
 	public static final String PREVIEW_AUTO_LAYOUT = "Preview auto layout";
 
-	public static final int BANK_ITEM_WIDTH = 36;
-	public static final int BANK_ITEM_HEIGHT = 32;
+	private static final int BANK_ITEM_WIDTH = 36;
+	private static final int BANK_ITEM_HEIGHT = 32;
+	public static final String DUPLICATE_ITEM = "Duplicate-item";
 
 	@Inject
 	private Client client;
@@ -430,6 +431,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private int lastScrollY = -1;
 	@Subscribe
 	public void onClientTick(ClientTick clientTick) {
+		sawMenuEntryAddedThisClientTick = false;
+
 		Widget container = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
 		if (container != null) lastScrollY = container.getScrollY();
 	}
@@ -706,17 +709,27 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			});
 		}
 
-		for (Map.Entry<Integer, Integer> entry : layout.allPairs()) {
-			Integer index = entry.getValue();
-			if (!indexToWidget.containsKey(index)) {
-				fakeItems.add(new FakeItem(index, getNonPlaceholderId(entry.getKey())));
-			}
-		}
+		updateFakeItems(layout);
 
 		setItemPositions(indexToWidget);
 		setContainerHeight(layoutable, layout);
 		saveLayout(layoutable, layout);
 		log.debug("saved tag " + layoutable);
+	}
+
+	private void updateFakeItems(Layout layout)
+	{
+		fakeItems.clear();
+
+		for (Map.Entry<Integer, Integer> entry : layout.allPairs()) {
+			Integer index = entry.getKey();
+			Optional<Widget> any = indexToWidget.entrySet().stream().filter(e -> e.getValue().getItemId() == entry.getValue()).map(e -> e.getValue()).findAny();
+			boolean isLayoutPlaceholder = !any.isPresent();
+			int quantity = any.isPresent() ? any.get().getItemQuantity() : -1;
+			if (!indexToWidget.containsKey(index)) {
+				fakeItems.add(new FakeItem(index, getNonPlaceholderId(entry.getValue()), isLayoutPlaceholder, quantity));
+			}
+		}
 	}
 
 	LayoutableThing getCurrentLayoutableThing() {
@@ -870,11 +883,19 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	public static class FakeItem {
 	    public final int index;
 		public final int itemId;
+		public final boolean layoutPlaceholder;
+		public final int quantity;
 	}
 
+	boolean sawMenuEntryAddedThisClientTick = false;
 	@Subscribe
 	public void onMenuEntryAdded(MenuEntryAdded menuEntryAdded)
 	{
+		if (!sawMenuEntryAddedThisClientTick) {
+			moveDuplicateItem();
+
+			sawMenuEntryAddedThisClientTick = true;
+		}
 	    if (WidgetInfo.TO_GROUP(menuEntryAdded.getActionParam1()) == WidgetInfo.BANK_CONTENT_CONTAINER.getGroupId()) {
 			String bankTagName = Text.removeTags(menuEntryAdded.getTarget()).replace("\u00a0"," ");
 
@@ -894,6 +915,66 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 
 		addFakeItemMenuEntries(menuEntryAdded);
+
+	    addDuplicateItemMenuEntries(menuEntryAdded);
+	}
+
+	private void moveDuplicateItem()
+	{
+		if (getCurrentLayoutableThing() != null) {
+			int index = getIndexForMousePosition();
+			Layout layout = getBankOrder(getCurrentLayoutableThing());
+			int itemId = layout.getItemAtIndex(index);
+			if (itemId != -1) {
+				int count = 0;
+				List<Integer> indexes = new ArrayList<>();
+				for (Map.Entry<Integer, Integer> entry : layout.allPairs())
+				{
+					if (entry.getValue() == itemId) {
+						count++;
+						indexes.add(entry.getKey());
+					}
+				}
+				if (count > 1) {
+					for (Integer integer : indexes)
+					{
+						if (indexToWidget.containsKey(integer) && integer != index) {
+							System.out.println("found, moving widget from " + integer + " to " + index);
+							Widget widget = indexToWidget.get(integer);
+							indexToWidget.remove(integer);
+							indexToWidget.put(index, widget);
+							updateFakeItems(layout);
+							setItemPositions(indexToWidget);
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private void addDuplicateItemMenuEntries(MenuEntryAdded menuEntryAdded)
+	{
+		if (!menuEntryAdded.getOption().equals("Examine")) return;
+
+		LayoutableThing layoutable = getCurrentLayoutableThing();
+		if (layoutable == null) return;
+		Layout layout = getBankOrder(layoutable);
+		if (layout == null) return;
+
+		int index = getIndexForMousePosition(false);
+		if (index == -1) return;
+		int itemIdAtIndex = layout.getItemAtIndex(index);
+
+		if (itemIdAtIndex == -1) return;
+
+		MenuEntry newEntry;
+		newEntry = new MenuEntry();
+		newEntry.setOption(DUPLICATE_ITEM);
+		newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor));
+		newEntry.setType(MenuAction.RUNELITE.getId());
+		newEntry.setParam0(index);
+		insertMenuEntry(newEntry, client.getMenuEntries(), true);
 	}
 
 	private void addEntry(String menuTarget, String menuOption) {
@@ -932,7 +1013,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			newEntry.setOption(REMOVE_FROM_LAYOUT_MENU_OPTION);
 			newEntry.setType(MenuAction.RUNELITE_OVERLAY.getId());
 			newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor));
-			newEntry.setParam0(itemIdAtIndex);
+			newEntry.setParam0(index);
 			insertMenuEntry(newEntry, client.getMenuEntries(), false);
 		}
 	}
@@ -981,13 +1062,13 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		Point canvasLocation = bankItemContainer.getCanvasLocation();
 		int scrollY = bankItemContainer.getScrollY();
-		int row = (mouseY - canvasLocation.getY() + scrollY + 2) / 36;
+		int row = (mouseY - canvasLocation.getY() + scrollY + 2) / BANK_ITEM_WIDTH;
 		int col = (int) Math.floor((mouseX - canvasLocation.getX() - 51 + 6) / 48f);
 		int index = row * 8 + col;
 		if (row < 0 || col < 0 || col > 7 || index < 0) return -1;
 		if (dontEnlargeClickbox) {
 			int xDistanceIntoItem = (mouseX - canvasLocation.getX() - 51 + 6) % 48;
-			int yDistanceIntoItem = (mouseY - canvasLocation.getY() + scrollY + 2) % 36;
+			int yDistanceIntoItem = (mouseY - canvasLocation.getY() + scrollY + 2) % BANK_ITEM_WIDTH;
 			if (xDistanceIntoItem < 6 || xDistanceIntoItem >= 42 || yDistanceIntoItem < 2 || yDistanceIntoItem >= 34) {
 				return -1;
 			}
@@ -1009,7 +1090,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	// TODO do I actually want to remove variant items from the tag? What if I'm just removing one of the layout items, and do not actually want to remove it from the tag? That seems very reasonable.
-    // TODO remove code related to removing stuff from bank tags.
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
@@ -1021,43 +1101,45 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		// to remove it from the layout. If this is on a fake item, this plugin must do both (unless the "Remove-layout"
 		// option was clicked, then the tags are not touched).
 		String menuOption = event.getMenuOption();
+		boolean consume = true;
 		if (menuOption.startsWith(REMOVE_FROM_LAYOUT_MENU_OPTION)) {
-			boolean isOnFakeItem = event.getWidgetId() != WidgetInfo.BANK_ITEM_CONTAINER.getId();
-			event.consume();
-			if (!isOnFakeItem) return;
-
-			int itemId = event.getActionParam();
-
-			LayoutableThing layoutable = getCurrentLayoutableThing();
-
-			Layout layout = getBankOrder(layoutable);
-			Iterator<Map.Entry<Integer, Integer>> iter = layout.allPairsIterator();
-			while (iter.hasNext()) {
-				Integer entryItemId = iter.next().getKey();
-				int variationBaseId = entryItemId;
-				if (itemId == variationBaseId) {
-					iter.remove();
-				}
-			}
-			saveLayout(layoutable, layout);
-
-			applyCustomBankTagItemPositions();
+			removeFromLayout(event.getActionParam());
 		} else if (ENABLE_LAYOUT.equals(menuOption)) {
 			enableLayout(LayoutableThing.bankTag(menuTarget));
-			event.consume();
 		} else if (DISABLE_LAYOUT.equals(menuOption)) {
 			disableLayout(menuTarget);
-			event.consume();
 		} else if (EXPORT_LAYOUT.equals(menuOption)) {
 			exportLayout(menuTarget);
-			event.consume();
 		} else if (IMPORT_LAYOUT.equals(menuOption)) {
 			importLayout();
-			event.consume();
 		} else if (PREVIEW_AUTO_LAYOUT.equals(menuOption)) {
 			showLayoutPreview();
-			event.consume();
+		} else if (DUPLICATE_ITEM.equals(menuOption)) {
+		    duplicateItem(event.getActionParam());
+		} else {
+			consume = false;
 		}
+		if (consume) event.consume();
+	}
+
+	private void removeFromLayout(int index)
+	{
+		LayoutableThing layoutable = getCurrentLayoutableThing();
+		Layout layout = getBankOrder(layoutable);
+		layout.clearIndex(index);
+		saveLayout(layoutable, layout);
+
+		applyCustomBankTagItemPositions();
+	}
+
+	private void duplicateItem(int clickedItemIndex)
+	{
+		LayoutableThing layoutable = getCurrentLayoutableThing();
+		Layout layout = getBankOrder(layoutable);
+		int itemAtIndex = layout.getItemAtIndex(clickedItemIndex);
+		System.out.println("duplicate: putting " + itemAtIndex + " to index 10");
+		layout.putItem(itemAtIndex, 10);
+		saveLayout(layoutable, layout);
 	}
 
 	// TODO consider using tagManager.getItemsForTag(bankTagName) because unlike findTag it is api.
@@ -1074,7 +1156,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		Iterator<Map.Entry<Integer, Integer>> iter = layout.allPairsIterator();
 		while (iter.hasNext()) {
-			int itemId = iter.next().getKey();
+			int itemId = iter.next().getValue();
 
 			if (!containsId.test(itemId))
 			{
@@ -1108,16 +1190,16 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		Map<Integer, List<Integer>> variantItemsInLayout = new HashMap<>(); // key is the variant base id; the list contains the item id of the items.
 		ArrayList<Map.Entry<Integer, Integer>> entries = new ArrayList<>(layout.allPairs());
-		entries.sort(Comparator.comparingInt(Map.Entry::getValue));
+		entries.sort(Comparator.comparingInt(Map.Entry::getKey));
 		for (Map.Entry<Integer, Integer> integerIntegerEntry : entries) {
-			int itemId = integerIntegerEntry.getKey();
+			int itemId = integerIntegerEntry.getValue();
 
 			int nonPlaceholderId = getNonPlaceholderId(itemId);
 
 			if (itemShouldBeTreatedAsHavingVariants(nonPlaceholderId)) {
 				int variationBaseId = ItemVariationMapping.map(nonPlaceholderId);
 				List<Integer> l = variantItemsInLayout.getOrDefault(variationBaseId, new ArrayList<>());
-				l.add(integerIntegerEntry.getKey());
+				l.add(integerIntegerEntry.getValue());
 				variantItemsInLayout.put(variationBaseId, l);
 			}
 		}
@@ -1214,7 +1296,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	private void exportLayout(String tagName) {
 		String exportString = BANK_TAG_STRING_PREFIX + tagName;
-		String layout = bankTagOrderMapToString(getBankOrder(LayoutableThing.bankTag(tagName)));
+		String layout = getBankOrder(LayoutableThing.bankTag(tagName)).toString();
 		if (!layout.isEmpty()) {
 			exportString += ",";
 		}
@@ -1260,7 +1342,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	static int getYForIndex(int index) {
-		return (index / 8) * 36;
+		return (index / 8) * BANK_ITEM_WIDTH;
 	}
 
 	private void setItemPositions(Map<Integer, Widget> indexToWidget) {
@@ -1368,9 +1450,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private void customBankTagOrderInsert(LayoutableThing layoutable, Widget draggedItem) {
 		int draggedOnItemIndex = getIndexForMousePositionNoLowerLimit();
 		if (draggedOnItemIndex == -1) return;
-
-		Layout layout = getBankOrder(layoutable);
-		if (layout == null) return;
 
 		Integer draggedItemIndex = null;
 		for (Map.Entry<Integer, Widget> integerWidgetEntry : indexToWidget.entrySet()) {

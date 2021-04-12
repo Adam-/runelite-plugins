@@ -58,9 +58,22 @@ public class FakeItemOverlay extends Overlay {
         int scrollY = bankItemContainer.getScrollY();
         Point canvasLocation = bankItemContainer.getCanvasLocation();
         Rectangle bankItemArea = new Rectangle(canvasLocation.getX() + 51 - 6, canvasLocation.getY(), bankItemContainer.getWidth() - 51 + 6, bankItemContainer.getHeight());
+
+        graphics.clip(bankItemArea);
+
+//        for (BankTagLayoutsPlugin.FakeItem fakeItem : plugin.getDuplicateItemsToRender())
+//        {
+//            int fakeItemId = fakeItem.getItemId();
+//
+//            int x = plugin.getXForIndex(fakeItem.index) + canvasLocation.getX();
+//            int y = plugin.getYForIndex(fakeItem.index) + canvasLocation.getY();
+//            BufferedImage image = itemManager.getImage(fakeItemId, 1000, false);
+//            graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
+//            BufferedImage outline = itemManager.getItemOutline(fakeItemId, 1000, Color.GRAY);
+//            graphics.drawImage(outline, x, y, null);
+//        }
+
         if (config.showLayoutPlaceholders()) {
-            graphics.clip(bankItemArea);
-            graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
             for (BankTagLayoutsPlugin.FakeItem fakeItem : plugin.fakeItems) {
                 int dragDeltaX = 0;
                 int dragDeltaY = 0;
@@ -75,10 +88,18 @@ public class FakeItemOverlay extends Overlay {
                 int y = plugin.getYForIndex(fakeItem.index) + canvasLocation.getY() - scrollY + dragDeltaY;
                 if (y + BankTagLayoutsPlugin.BANK_ITEM_HEIGHT > bankItemArea.getMinY() && y < bankItemArea.getMaxY())
                 {
-                    BufferedImage image = itemManager.getImage(fakeItemId, 1000, false);
-                    graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
-                    BufferedImage outline = itemManager.getItemOutline(fakeItemId, 1000, Color.GRAY);
-                    graphics.drawImage(outline, x, y, null);
+                    if (fakeItem.layoutPlaceholder)
+                    {
+                        graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
+                        BufferedImage image = itemManager.getImage(fakeItemId, 1000, false);
+                        graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
+                        BufferedImage outline = itemManager.getItemOutline(fakeItemId, 1000, Color.GRAY);
+                        graphics.drawImage(outline, x, y, null);
+                    } else {
+                        graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+                        BufferedImage image = itemManager.getImage(fakeItemId, fakeItem.quantity, true);
+                        graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
+                    }
                 }
             }
         }
@@ -94,20 +115,13 @@ public class FakeItemOverlay extends Overlay {
         if (!log.isDebugEnabled() && !plugin.fakeItems.stream().filter(fakeItem -> fakeItem.index == index).findAny().isPresent()) return;
 
         if (index != -1) {
-            Map.Entry<Integer, Integer> entry = layout.allPairs().stream()
-                    .filter(e -> e.getValue() == index)
-                    .findAny().orElse(null);
-
-            if (entry != null) {
-                int itemIdForTooltip = entry.getKey();
-
-                if (tooltip == null) {
-                    String tooltipString = ColorUtil.wrapWithColorTag(plugin.itemName(itemIdForTooltip), plugin.itemTooltipColor);
-                    if (log.isDebugEnabled())
-                        tooltipString += " (" + itemIdForTooltip + (plugin.isPlaceholder(itemIdForTooltip) ? ", ph" : "") + ")";
-                    tooltip = new Tooltip(tooltipString);
-                    tooltipManager.add(tooltip);
-                }
+            int itemIdForTooltip = layout.getItemAtIndex(index);
+            if (itemIdForTooltip != -1 && tooltip == null) {
+                String tooltipString = ColorUtil.wrapWithColorTag(plugin.itemName(itemIdForTooltip), plugin.itemTooltipColor);
+                if (log.isDebugEnabled())
+                    tooltipString += " (" + itemIdForTooltip + (plugin.isPlaceholder(itemIdForTooltip) ? ", ph" : "") + ")";
+                tooltip = new Tooltip(tooltipString);
+                tooltipManager.add(tooltip);
             }
         }
     }

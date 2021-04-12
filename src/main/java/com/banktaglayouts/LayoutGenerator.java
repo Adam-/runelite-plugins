@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,8 +51,8 @@ public class LayoutGenerator {
 
         // copy items from current layout into the empty spots.
         for (Map.Entry<Integer, Integer> itemPosition : currentLayout.allPairs()) {
-            int index = itemPosition.getValue();
-            int currentItemAtIndex = itemPosition.getKey();
+            int index = itemPosition.getKey();
+            int currentItemAtIndex = itemPosition.getValue();
             int previewItemAtIndex = previewLayout.getItemAtIndex(index);
 
             if (currentItemAtIndex != -1 && previewItemAtIndex == -1 && !layoutContainsItem(currentItemAtIndex, previewLayout)) {
