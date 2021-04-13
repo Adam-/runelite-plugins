@@ -114,8 +114,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	public static final String REMOVE_FROM_LAYOUT_MENU_OPTION = "Remove-layout";
 	public static final String PREVIEW_AUTO_LAYOUT = "Preview auto layout";
 
-	private static final int BANK_ITEM_WIDTH = 36;
-	private static final int BANK_ITEM_HEIGHT = 32;
+	public static final int BANK_ITEM_WIDTH = 36;
+	public static final int BANK_ITEM_HEIGHT = 32;
 
 	@Inject
 	private Client client;
@@ -673,7 +673,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			return; // layout not enabled.
 		}
 		if (itemPositionIndexes.isEmpty() && !layoutable.isBankTab) {
-			// Inventory setups by default have an equipment and inventory order, so lay them out.
+			// Inventory setups by default have an equipment and inventory order, so lay it out automatically if this
+            // is the first time viewing the setup with bank tag layouts.
 			InventorySetup inventorySetup = inventorySetupsAdapter.getInventorySetup(layoutable.name);
 			itemPositionIndexes = layoutGenerator.basicInventorySetupsLayout(inventorySetup, Collections.emptyMap());
 		}
@@ -778,7 +779,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 //					log.debug("\t\texisting position: " + indexForItem);
 					indexToWidget.put(indexForItem, bankItem);
 				} else {
-					int newIndex = assignPosition(itemPositionIndexes);
+					int newIndex = getFirstEmptyIndex(itemPositionIndexes);
 					itemPositionIndexes.put(itemId, newIndex);
 //					log.debug("\t\tnew position: " + newIndex);
 					indexToWidget.put(newIndex, bankItem);
@@ -1151,7 +1152,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			if (!notYetPositionedWidgets.isEmpty()) {
 				for (Widget notYetPositionedWidget : notYetPositionedWidgets) {
 					int itemId = notYetPositionedWidget.getItemId();
-					int index = assignPosition(itemPositionIndexes);
+					int index = getFirstEmptyIndex(itemPositionIndexes);
 					itemPositionIndexes.put(itemId, index);
 //					log.debug("\t\tnew position: " + index + notYetPositionedWidget.getItemId());
 					indexToWidget.put(index, notYetPositionedWidget);
@@ -1514,7 +1515,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		return null;
 	}
 
-	private static int assignPosition(Map<Integer, Integer> itemPositionIndexes) {
+	private static int getFirstEmptyIndex(Map<Integer, Integer> itemPositionIndexes) {
 		List<Integer> indexes = new ArrayList<>(itemPositionIndexes.values());
 		indexes.sort(Integer::compare);
 		int lastIndex = -1;
