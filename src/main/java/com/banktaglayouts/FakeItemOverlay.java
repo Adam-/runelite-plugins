@@ -67,6 +67,7 @@ public class FakeItemOverlay extends Overlay {
                 if (fakeItem.index == plugin.draggedItemIndex && plugin.antiDrag.mayDrag()) {
                     dragDeltaX = client.getMouseCanvasPosition().getX() - plugin.dragStartX;
                     dragDeltaY = client.getMouseCanvasPosition().getY() - plugin.dragStartY;
+                    dragDeltaY += bankItemContainer.getScrollY() - plugin.dragStartScroll;
                 }
                 int fakeItemId = fakeItem.getItemId();
 

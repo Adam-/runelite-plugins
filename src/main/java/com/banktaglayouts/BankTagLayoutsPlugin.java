@@ -798,6 +798,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	public volatile int draggedItemIndex = -1; // Used for fake items only, not real items.
 	public int dragStartX = 0;
 	public int dragStartY = 0;
+	public int dragStartScroll = 0;
 
 	@Override
 	public MouseEvent mousePressed(MouseEvent mouseEvent) {
@@ -808,6 +809,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			draggedItemIndex = fakeItem.index;
 			dragStartX = mouseEvent.getX();
 			dragStartY = mouseEvent.getY();
+			dragStartScroll = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).getScrollY();
 			antiDrag.startDrag();
 			mouseEvent.consume();
 		}
