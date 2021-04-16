@@ -627,6 +627,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	public boolean hasLayoutEnabled(LayoutableThing layoutable) {
+		if (layoutable == null) return false;
 		if (isShowingPreview()) return true;
 
 		String configuration = configManager.getConfiguration(CONFIG_GROUP, layoutable.configKey());
@@ -1554,10 +1555,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		// Returning early or nulling the drag release listener has no effect. Hence, we need to
 		// null the draggedOnWidget instead.
-		if (draggedWidget.getId() == WidgetInfo.BANK_ITEM_CONTAINER.getId() && tabInterface.isActive()) {
-		    if (hasLayoutEnabled(getCurrentLayoutableThing())) {
-				client.setDraggedOnWidget(null);
-			}
+		if (draggedWidget.getId() == WidgetInfo.BANK_ITEM_CONTAINER.getId() && hasLayoutEnabled(getCurrentLayoutableThing())) {
+			client.setDraggedOnWidget(null);
 		}
 	}
 
