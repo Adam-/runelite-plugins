@@ -81,6 +81,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntPredicate;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -133,7 +134,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private SpriteManager spriteManager;
 
 	@Inject
-	ItemManager itemManager;
+	public ItemManager itemManager;
 
 	@Inject
 	public ConfigManager configManager;
@@ -695,8 +696,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 
 		if (!isShowingPreview()) { // I don't want to clean layout items when displaying a preview. This could result in some layout placeholders being auto-removed due to not being in the tab.
-			if (layoutable.isBankTab) cleanItemsNotInBankTag(itemPositionIndexes, layoutable); // TODO clean out stuff from inventory setups also.
-			cleanDuplicateIndexes(itemPositionIndexes);
+			cleanItemsNotInBankTag(itemPositionIndexes, layoutable);
 		}
 
 		assignVariantItemPositions(itemPositionIndexes);
@@ -1057,14 +1057,25 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	// TODO consider using tagManager.getItemsForTag(bankTagName) because unlike findTag it is api.
-	private void cleanItemsNotInBankTag(Map<Integer, Integer> itemPositionIndexes, LayoutableThing bankTab) {
-	    if (!bankTab.isBankTab) throw new IllegalArgumentException("This only works on bank tags.");
-		Iterator<Map.Entry<Integer, Integer>> iter = itemPositionIndexes.entrySet().iterator();
+	private void cleanItemsNotInBankTag(Map<Integer, Integer> layout, LayoutableThing layoutable) {
+//	    if (!layoutable.isBankTab) throw new IllegalArgumentException("This only works on bank tags.");
+		Predicate<Integer> containsId;
+		if (layoutable.isBankTab) {
+			containsId = id -> copyPaste.findTag(id, layoutable.name);
+		}
+		else
+		{
+			InventorySetup inventorySetup = inventorySetupsAdapter.getInventorySetup(layoutable.name);
+			containsId = id -> inventorySetupsAdapter.setupContainsItem(inventorySetup, id);
+		}
+
+		Iterator<Map.Entry<Integer, Integer>> iter = layout.entrySet().iterator();
 		while (iter.hasNext()) {
 			int itemId = iter.next().getKey();
 
-			if (!copyPaste.findTag(itemId, bankTab.name)) {
-				log.debug("removing " + itemName(itemId) + " (" + itemId + ") because it is no longer in the bank tag");
+			if (!containsId.test(itemId))
+			{
+				log.debug("removing " + itemName(itemId) + " (" + itemId + ") because it is no longer in the thing");
 				iter.remove();
 			}
 		}
