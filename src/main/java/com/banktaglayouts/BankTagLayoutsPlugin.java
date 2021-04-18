@@ -17,6 +17,7 @@ import net.runelite.api.InventoryID;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
+import net.runelite.api.KeyCode;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.MessageNode;
@@ -114,10 +115,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	public static final String EXPORT_LAYOUT = "Export tag tab with layout";
 	public static final String REMOVE_FROM_LAYOUT_MENU_OPTION = "Remove-layout";
 	public static final String PREVIEW_AUTO_LAYOUT = "Preview auto layout";
-
-	private static final int BANK_ITEM_WIDTH = 36;
-	private static final int BANK_ITEM_HEIGHT = 32;
 	public static final String DUPLICATE_ITEM = "Duplicate-item";
+	public static final String REMOVE_DUPLICATE_ITEM = "Remove-duplicate-item";
+
+	public static final int BANK_ITEM_WIDTH = 36;
+	public static final int BANK_ITEM_HEIGHT = 32;
 
 	@Inject
 	private Client client;
@@ -723,7 +725,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		for (Map.Entry<Integer, Integer> entry : layout.allPairs()) {
 			Integer index = entry.getKey();
-			Optional<Widget> any = indexToWidget.entrySet().stream().filter(e -> e.getValue().getItemId() == entry.getValue()).map(e -> e.getValue()).findAny();
+			int placeholderId = itemManager.getItemComposition(entry.getValue()).getPlaceholderId();
+			Optional<Widget> any = indexToWidget.entrySet().stream().filter(e -> e.getValue().getItemId() == entry.getValue() || e.getValue().getItemId() == placeholderId).map(e -> e.getValue()).findAny();
 			boolean isLayoutPlaceholder = !any.isPresent();
 			int quantity = any.isPresent() ? any.get().getItemQuantity() : -1;
 			if (!indexToWidget.containsKey(index)) {
@@ -821,6 +824,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	@Override
 	public MouseEvent mousePressed(MouseEvent mouseEvent) {
+		mouseIsPressed = true;
 	    if (mouseEvent.getButton() != MouseEvent.BUTTON1 || isHidden() || !config.showLayoutPlaceholders() || client.isMenuOpen()) return mouseEvent;
 		int index = getIndexForMousePosition(true);
 		FakeItem fakeItem = fakeItems.stream().filter(fake -> fake.index == index).findAny().orElse(null);
@@ -841,6 +845,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	@Override
 	public MouseEvent mouseReleased(MouseEvent mouseEvent) {
+		mouseIsPressed = false;
 		if (mouseEvent.getButton() != MouseEvent.BUTTON1 || isHidden()) return mouseEvent;
 		if (draggedItemIndex == -1) return mouseEvent;
 
@@ -919,8 +924,14 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	    addDuplicateItemMenuEntries(menuEntryAdded);
 	}
 
+	private volatile boolean mouseIsPressed = false;
+
 	private void moveDuplicateItem()
 	{
+	    if (mouseIsPressed) {
+	    	return;
+		}
+
 		if (getCurrentLayoutableThing() != null) {
 			int index = getIndexForMousePosition();
 			Layout layout = getBankOrder(getCurrentLayoutableThing());
@@ -939,7 +950,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 					for (Integer integer : indexes)
 					{
 						if (indexToWidget.containsKey(integer) && integer != index) {
-							System.out.println("found, moving widget from " + integer + " to " + index);
 							Widget widget = indexToWidget.get(integer);
 							indexToWidget.remove(integer);
 							indexToWidget.put(index, widget);
@@ -955,7 +965,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	private void addDuplicateItemMenuEntries(MenuEntryAdded menuEntryAdded)
 	{
-		if (!menuEntryAdded.getOption().equals("Examine")) return;
+		if (config.shiftModifierForExtraOptions() && !client.isKeyPressed(KeyCode.KC_SHIFT)) return;
 
 		LayoutableThing layoutable = getCurrentLayoutableThing();
 		if (layoutable == null) return;
@@ -968,13 +978,29 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		if (itemIdAtIndex == -1) return;
 
+		boolean isRealItem = indexToWidget.containsKey(index);
+		if (!menuEntryAdded.getOption().equals("Examine") && isRealItem) return;
+
 		MenuEntry newEntry;
 		newEntry = new MenuEntry();
 		newEntry.setOption(DUPLICATE_ITEM);
 		newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor));
 		newEntry.setType(MenuAction.RUNELITE.getId());
 		newEntry.setParam0(index);
-		insertMenuEntry(newEntry, client.getMenuEntries(), true);
+		insertMenuEntry(newEntry, client.getMenuEntries(), false);
+
+		if (!isRealItem) return; // layout placeholders already have "remove-layout" menu option which does the same thing as remove-duplicate-item.
+
+		int placeholderId = itemManager.getItemComposition(itemIdAtIndex).getPlaceholderId();
+		int itemCount = layout.countItemsWithId(itemIdAtIndex, placeholderId);
+		if (itemCount > 1) {
+			newEntry = new MenuEntry();
+			newEntry.setOption(REMOVE_DUPLICATE_ITEM);
+			newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor));
+			newEntry.setType(MenuAction.RUNELITE.getId());
+			newEntry.setParam0(index);
+			insertMenuEntry(newEntry, client.getMenuEntries(), false);
+		}
 	}
 
 	private void addEntry(String menuTarget, String menuOption) {
@@ -1116,6 +1142,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			showLayoutPreview();
 		} else if (DUPLICATE_ITEM.equals(menuOption)) {
 		    duplicateItem(event.getActionParam());
+		} else if (REMOVE_DUPLICATE_ITEM.equals(menuOption)) {
+			removeFromLayout(event.getActionParam());
 		} else {
 			consume = false;
 		}
@@ -1137,9 +1165,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		LayoutableThing layoutable = getCurrentLayoutableThing();
 		Layout layout = getBankOrder(layoutable);
 		int itemAtIndex = layout.getItemAtIndex(clickedItemIndex);
-		System.out.println("duplicate: putting " + itemAtIndex + " to index 10");
-		layout.putItem(itemAtIndex, 10);
+		int duplicatedItemIndex = layout.getFirstEmptyIndex(clickedItemIndex);
+		layout.putItem(itemAtIndex, duplicatedItemIndex);
 		saveLayout(layoutable, layout);
+
+		applyCustomBankTagItemPositions();
 	}
 
 	// TODO consider using tagManager.getItemsForTag(bankTagName) because unlike findTag it is api.

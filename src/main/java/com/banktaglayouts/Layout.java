@@ -97,16 +97,21 @@ public class Layout {
     }
 
     public int getFirstEmptyIndex() {
+        return getFirstEmptyIndex(-1);
+    }
+
+    public int getFirstEmptyIndex(int afterThisIndex) {
         List<Integer> indexes = new ArrayList<>(getAllUsedIndexes());
         indexes.sort(Integer::compare);
-        int lastIndex = -1;
         for (Integer integer : indexes) {
-            if (integer - lastIndex > 1) {
+            if (integer < afterThisIndex) continue;
+
+            if (integer - afterThisIndex > 1) {
                 break;
             }
-            lastIndex = integer;
+            afterThisIndex = integer;
         }
-        return lastIndex + 1;
+        return afterThisIndex + 1;
     }
 
     public void clearIndex(int index) {
@@ -117,7 +122,7 @@ public class Layout {
         if (index1PreferredId == null) {
             index1PreferredId = getItemAtIndex(index1);
         }
-        if (index2PreferredId != null) {
+        if (index2PreferredId == null) {
             index2PreferredId = getItemAtIndex(index2);
         }
 
@@ -130,5 +135,17 @@ public class Layout {
     public boolean isEmpty()
     {
         return layoutMap.isEmpty();
+    }
+
+    public int countItemsWithId(int idAtIndex, int placeholderIdAtIndex)
+    {
+        int count = 0;
+        for (Map.Entry<Integer, Integer> pair : allPairs())
+        {
+            if (pair.getValue() == idAtIndex || pair.getValue() == placeholderIdAtIndex) {
+                count++;
+            }
+        }
+        return count;
     }
 }

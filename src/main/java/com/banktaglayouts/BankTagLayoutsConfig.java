@@ -67,4 +67,14 @@ public interface BankTagLayoutsConfig extends Config {
         return true;
     }
 
+    @ConfigItem(
+            keyName = "shiftModifierForExtraOptions",
+            name = "Require Shift key for extra options",
+            description = "When enabled, the menu entries for adding duplicate items aren't shown unless shift is held when right-clicking",
+            position = 7
+    )
+    default boolean shiftModifierForExtraOptions() {
+        return false;
+    }
+
 }

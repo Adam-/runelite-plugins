@@ -15,7 +15,6 @@ import net.runelite.client.util.ColorUtil;
 import javax.inject.Inject;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.Map;
 
 @Slf4j
 public class FakeItemOverlay extends Overlay {
@@ -61,18 +60,6 @@ public class FakeItemOverlay extends Overlay {
 
         graphics.clip(bankItemArea);
 
-//        for (BankTagLayoutsPlugin.FakeItem fakeItem : plugin.getDuplicateItemsToRender())
-//        {
-//            int fakeItemId = fakeItem.getItemId();
-//
-//            int x = plugin.getXForIndex(fakeItem.index) + canvasLocation.getX();
-//            int y = plugin.getYForIndex(fakeItem.index) + canvasLocation.getY();
-//            BufferedImage image = itemManager.getImage(fakeItemId, 1000, false);
-//            graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
-//            BufferedImage outline = itemManager.getItemOutline(fakeItemId, 1000, Color.GRAY);
-//            graphics.drawImage(outline, x, y, null);
-//        }
-
         if (config.showLayoutPlaceholders()) {
             for (BankTagLayoutsPlugin.FakeItem fakeItem : plugin.fakeItems) {
                 int dragDeltaX = 0;
@@ -88,7 +75,7 @@ public class FakeItemOverlay extends Overlay {
                 int y = plugin.getYForIndex(fakeItem.index) + canvasLocation.getY() - scrollY + dragDeltaY;
                 if (y + BankTagLayoutsPlugin.BANK_ITEM_HEIGHT > bankItemArea.getMinY() && y < bankItemArea.getMaxY())
                 {
-                    if (fakeItem.layoutPlaceholder)
+                    if (fakeItem.isLayoutPlaceholder())
                     {
                         graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
                         BufferedImage image = itemManager.getImage(fakeItemId, 1000, false);
