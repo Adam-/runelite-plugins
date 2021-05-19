@@ -72,7 +72,7 @@ public class GoalTrackerOverlay extends Overlay
 	{
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(OverlayPriority.HIGHEST);
-		setLayer(OverlayLayer.ABOVE_MAP);
+		setLayer(OverlayLayer.ALWAYS_ON_TOP);
 	}
 
 	@Override
