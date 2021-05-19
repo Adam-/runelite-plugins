@@ -1,7 +1,7 @@
 package com.herblorerecipes;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.LoadingCache;
+import com.herblorerecipes.cache.HerbloreRecipesCacheLoader;
+import com.herblorerecipes.model.Potion;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
@@ -24,11 +24,12 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+
+import static com.herblorerecipes.util.Utils.KEY_PRIMARY_IDENTIFIER;
+import static com.herblorerecipes.util.Utils.KEY_SECONDARY_IDENTIFIER;
 
 public class HerbloreRecipesOverlay extends Overlay
 {
-
     private static final int INVENTORY_ITEM_WIDGETID = WidgetInfo.INVENTORY.getPackedId();
     private static final int BANK_ITEM_WIDGETID = WidgetInfo.BANK_ITEM_CONTAINER.getPackedId();
     private static final int BANKED_INVENTORY_ITEM_WIDGETID = WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER.getPackedId();
@@ -37,12 +38,12 @@ public class HerbloreRecipesOverlay extends Overlay
     private static final Color AQUA = new Color(0, 255, 255);
     private static final String TOOLTIP_PRIMARY_TEXT = ColorUtil.wrapWithColorTag("Primary", LIME) + ColorUtil.wrapWithColorTag(" for:", GREY_COLOR);
     private static final String TOOLTIP_SECONDARY_TEXT = ColorUtil.wrapWithColorTag("Secondary", AQUA) + ColorUtil.wrapWithColorTag(" for:", GREY_COLOR);
-    private static LoadingCache<String, String> tooltipTextCache;
 
     private final Client client;
     private final TooltipManager tooltipManager;
     private final ItemManager itemManager;
     private final HerbloreRecipesConfig config;
+    private final HerbloreRecipesCacheLoader tooltipTextCache;
 
     private final StringBuilder stringBuilder = new StringBuilder();
 
@@ -54,10 +55,7 @@ public class HerbloreRecipesOverlay extends Overlay
         this.tooltipManager = tooltipManager;
         this.itemManager = itemManager;
         this.config = config;
-        tooltipTextCache = CacheBuilder.newBuilder()
-                .maximumSize(Potion.getPrimaryIngredients().size() + Potion.getSecondaryIngredients().size())
-                .expireAfterAccess(30, TimeUnit.MINUTES)
-                .build(new HerbloreRecipesCacheLoader(config));
+        this.tooltipTextCache = new HerbloreRecipesCacheLoader(config);
     }
 
     @Override
@@ -117,13 +115,13 @@ public class HerbloreRecipesOverlay extends Overlay
                             Optional<Item> item = getContainerItem(container.get(), menuEntry.getParam0());
                             if (item.isPresent())
                             {
-                                String itemName = itemManager.getItemComposition(item.get().getId()).getName();
+                                String itemName = stripGrimy(itemManager.getItemComposition(item.get().getId()).getName());
 
                                 if (config.showPrimaryIngredients() && Potion.getPrimaryIngredients().contains(itemName))
                                 {
                                     stringBuilder.append(TOOLTIP_PRIMARY_TEXT);
                                     try {
-                                        stringBuilder.append(tooltipTextCache.get("1" + itemName));
+                                        stringBuilder.append(tooltipTextCache.get(KEY_PRIMARY_IDENTIFIER + itemName));
                                     } catch (ExecutionException e) {
                                         throw new RuntimeException(e.getMessage(), e.getCause());
                                     }
@@ -132,20 +130,16 @@ public class HerbloreRecipesOverlay extends Overlay
                                 {
                                     stringBuilder.append(TOOLTIP_SECONDARY_TEXT);
                                     try {
-                                        stringBuilder.append(tooltipTextCache.get("2" + itemName));
+                                        stringBuilder.append(tooltipTextCache.get(KEY_SECONDARY_IDENTIFIER + itemName));
                                     } catch (ExecutionException e) {
                                         throw new RuntimeException(e.getMessage(), e.getCause());
                                     }
                                 }
-                            } else
-                            {
-                                return null;
                             }
-                            addTooltip();
+                            if (stringBuilder.length() > 0) {
+                                addTooltip();
+                            }
                             break;
-                        } else
-                        {
-                            return null;
                         }
                 }
                 break;
@@ -174,5 +168,10 @@ public class HerbloreRecipesOverlay extends Overlay
     {
         tooltipManager.add(new Tooltip(stringBuilder.toString()));
         stringBuilder.setLength(0);
+    }
+
+    private String stripGrimy(String item) {
+        String stripped = item.replaceAll("Grimy ", "");
+        return stripped.substring(0, 1).toUpperCase() + stripped.substring(1);
     }
 }

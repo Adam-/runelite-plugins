@@ -1,9 +1,12 @@
 package com.herblorerecipes;
 
 import com.google.inject.Provides;
+import com.herblorerecipes.cache.HerbloreRecipesCacheLoader;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -46,5 +49,14 @@ public class HerbloreRecipesPlugin extends Plugin
     HerbloreRecipesConfig provideConfig(ConfigManager configManager)
     {
         return configManager.getConfig(HerbloreRecipesConfig.class);
+    }
+
+    @Subscribe
+    public void onConfigChanged(ConfigChanged event)
+    {
+        if ("showSecondaryIngredientsAlongsidePrimaries".equals(event.getKey()) || "showLevelReqs".equals(event.getKey()))
+        {
+            HerbloreRecipesCacheLoader.clearCache();
+        }
     }
 }

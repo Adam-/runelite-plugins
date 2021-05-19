@@ -1,2 +1,2 @@
 # Herblore Recipes
-Find out what potions herbs are an ingredient of.
+Display tooltips on primary and secondary ingredients for Herblore.
