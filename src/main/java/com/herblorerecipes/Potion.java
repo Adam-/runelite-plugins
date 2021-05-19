@@ -76,10 +76,10 @@ public enum Potion
 
     static
     {
-        Arrays.stream(values()).forEach(potion -> primaryIngredientToPotion.computeIfAbsent(potion.primaryIngredient, s -> new ArrayList<>()).add(potion));
+        Arrays.stream(values()).forEach(potion -> primaryIngredientToPotion.computeIfAbsent("1" + potion.primaryIngredient, s -> new ArrayList<>()).add(potion));
         Arrays.stream(values()).filter(potion -> potion.getSecondaryIngredient() != null).forEach(potion ->
                 stripSecondIngredientName(potion.getSecondaryIngredient()).forEach(secondIngredient ->
-                        secondaryIngredientToPotion.computeIfAbsent(secondIngredient, s -> new ArrayList<>()).add(potion))
+                        secondaryIngredientToPotion.computeIfAbsent("2" + secondIngredient, s -> new ArrayList<>()).add(potion))
         );
         Arrays.stream(values()).forEach(potion -> primaryIngredients.add(potion.primaryIngredient));
         Arrays.stream(values()).filter(potion -> potion.getSecondaryIngredient() != null).forEach(potion -> secondaryIngredients.add(potion.secondaryIngredient));

@@ -1,5 +1,7 @@
 package com.herblorerecipes;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.LoadingCache;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
@@ -17,9 +19,12 @@ import net.runelite.client.util.ColorUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class HerbloreRecipesOverlay extends Overlay
 {
@@ -32,6 +37,7 @@ public class HerbloreRecipesOverlay extends Overlay
     private static final Color AQUA = new Color(0, 255, 255);
     private static final String TOOLTIP_PRIMARY_TEXT = ColorUtil.wrapWithColorTag("Primary", LIME) + ColorUtil.wrapWithColorTag(" for:", GREY_COLOR);
     private static final String TOOLTIP_SECONDARY_TEXT = ColorUtil.wrapWithColorTag("Secondary", AQUA) + ColorUtil.wrapWithColorTag(" for:", GREY_COLOR);
+    private static LoadingCache<String, String> tooltipTextCache;
 
     private final Client client;
     private final TooltipManager tooltipManager;
@@ -48,6 +54,10 @@ public class HerbloreRecipesOverlay extends Overlay
         this.tooltipManager = tooltipManager;
         this.itemManager = itemManager;
         this.config = config;
+        tooltipTextCache = CacheBuilder.newBuilder()
+                .maximumSize(Potion.getPrimaryIngredients().size() + Potion.getSecondaryIngredients().size())
+                .expireAfterAccess(30, TimeUnit.MINUTES)
+                .build(new HerbloreRecipesCacheLoader(config));
     }
 
     @Override
@@ -112,17 +122,20 @@ public class HerbloreRecipesOverlay extends Overlay
                                 if (config.showPrimaryIngredients() && Potion.getPrimaryIngredients().contains(itemName))
                                 {
                                     stringBuilder.append(TOOLTIP_PRIMARY_TEXT);
-                                    stringBuilder.append(
-                                            Potion.getPotionsByPrimaryIngredient(itemName).stream()
-                                                    .map(this::makeTooltipText)
-                                                    .collect(Collectors.joining("</br>", "</br>", "</br>")));
+                                    try {
+                                        stringBuilder.append(tooltipTextCache.get("1" + itemName));
+                                    } catch (ExecutionException e) {
+                                        throw new RuntimeException(e.getMessage(), e.getCause());
+                                    }
                                 }
                                 if (config.showSecondaryIngredients() && Potion.getSecondaryIngredients().stream().anyMatch(s -> s.contains(itemName)))
                                 {
                                     stringBuilder.append(TOOLTIP_SECONDARY_TEXT);
-                                    stringBuilder.append(Potion.getPotionsBySecondaryIngredient(itemName).stream()
-                                            .map(this::makeTooltipText)
-                                            .collect(Collectors.joining("</br>", "</br>", "</br>")));
+                                    try {
+                                        stringBuilder.append(tooltipTextCache.get("2" + itemName));
+                                    } catch (ExecutionException e) {
+                                        throw new RuntimeException(e.getMessage(), e.getCause());
+                                    }
                                 }
                             } else
                             {
@@ -161,14 +174,5 @@ public class HerbloreRecipesOverlay extends Overlay
     {
         tooltipManager.add(new Tooltip(stringBuilder.toString()));
         stringBuilder.setLength(0);
-    }
-
-    private String makeTooltipText(Potion potion)
-    {
-        String text = config.showLevelReqs() ?
-                String.format("lvl %d: %s", potion.getLevel(), potion.getPotionName()) :
-                potion.getPotionName();
-        text += (config.showSecondaryIngredients() && potion.getSecondaryIngredient() != null) ? String.format(" (2nd: %s)", potion.getSecondaryIngredient()) : "";
-        return ColorUtil.wrapWithColorTag(text, GREY_COLOR);
     }
 }
