@@ -4,12 +4,9 @@ plugins {
 
 repositories {
 	maven {
-		url = 'https://repo.runelite.net'
+		url = 'http://repo.runelite.net'
 	}
-	maven { setUrl('https://jitpack.io') }
-	maven { setUrl("https://dl.bintray.com/kotlin/kotlin-dev") }
 	mavenCentral()
-	jcenter()
 }
 
 def runeLiteVersion = '1.7.8'
@@ -19,8 +16,6 @@ dependencies {
 
 	compileOnly 'org.projectlombok:lombok:1.18.4'
 	annotationProcessor 'org.projectlombok:lombok:1.18.4'
-
-	compile group: 'org.jocl', name: 'jocl', version: '2.0.4'
 
 	testImplementation 'junit:junit:4.12'
 	testImplementation 'org.slf4j:slf4j-simple:1.7.12'
