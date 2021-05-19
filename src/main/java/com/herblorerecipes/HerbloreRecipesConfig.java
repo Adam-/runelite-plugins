@@ -4,13 +4,14 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
-@ConfigGroup("recipes")
+@ConfigGroup("herblorerecipes")
 public interface HerbloreRecipesConfig extends Config
 {
     @ConfigItem(
+            position = 0,
             keyName = "showPrimaryIngredients",
-            name = "Show Primary Ingredients",
-            description = "Setting to see which potions an herb is a primary ingredient for."
+            name = "Show Tooltip on Primaries",
+            description = "Toggle recipe tooltip on primary ingredients."
     )
     default boolean showPrimaryIngredients()
     {
@@ -18,9 +19,10 @@ public interface HerbloreRecipesConfig extends Config
     }
 
     @ConfigItem(
+            position = 1,
             keyName = "showSecondaryIngredients",
-            name = "Show Secondary Ingredients",
-            description = "Setting to see which potions an item is a secondary ingredient for."
+            name = "Show Tooltip on Secondaries",
+            description = "Toggle recipe tooltip on secondary ingredients."
     )
     default boolean showSecondaryIngredients()
     {
@@ -28,9 +30,21 @@ public interface HerbloreRecipesConfig extends Config
     }
 
     @ConfigItem(
+            position = 2,
+            keyName = "showSecondaryIngredientsAlongsidePrimaries",
+            name = "Show Secondary Ingredients",
+            description = "Toggle secondary ingredients alongside primary ingredients in tooltip. This will invalidate the tooltip cache."
+    )
+    default boolean showSecondaryIngredientsAlongsidePrimaries()
+    {
+        return true;
+    }
+
+    @ConfigItem(
+            position = 3,
             keyName = "showLevelReqs",
             name = "Show Herblore level requirements",
-            description = "Setting to show or hide herblore level requirements on the tooltip."
+            description = "Setting to show or hide herblore level requirements on the tooltip. This will invalidate the tooltip cache"
     )
     default boolean showLevelReqs()
     {

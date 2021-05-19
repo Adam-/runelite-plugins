@@ -1,4 +1,4 @@
-package com.herblorerecipes;
+package com.herblorerecipes.model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,6 +7,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.herblorerecipes.util.Utils.KEY_PRIMARY_IDENTIFIER;
+import static com.herblorerecipes.util.Utils.KEY_SECONDARY_IDENTIFIER;
 
 public enum Potion
 {
@@ -76,10 +79,10 @@ public enum Potion
 
     static
     {
-        Arrays.stream(values()).forEach(potion -> primaryIngredientToPotion.computeIfAbsent(potion.primaryIngredient, s -> new ArrayList<>()).add(potion));
+        Arrays.stream(values()).forEach(potion -> primaryIngredientToPotion.computeIfAbsent(KEY_PRIMARY_IDENTIFIER + potion.primaryIngredient, s -> new ArrayList<>()).add(potion));
         Arrays.stream(values()).filter(potion -> potion.getSecondaryIngredient() != null).forEach(potion ->
                 stripSecondIngredientName(potion.getSecondaryIngredient()).forEach(secondIngredient ->
-                        secondaryIngredientToPotion.computeIfAbsent(secondIngredient, s -> new ArrayList<>()).add(potion))
+                        secondaryIngredientToPotion.computeIfAbsent(KEY_SECONDARY_IDENTIFIER + secondIngredient, s -> new ArrayList<>()).add(potion))
         );
         Arrays.stream(values()).forEach(potion -> primaryIngredients.add(potion.primaryIngredient));
         Arrays.stream(values()).filter(potion -> potion.getSecondaryIngredient() != null).forEach(potion -> secondaryIngredients.add(potion.secondaryIngredient));
@@ -120,8 +123,9 @@ public enum Potion
 
     private static List<String> stripSecondIngredientName(String name)
     {
-        name = name.replace(" x2", "");
-        return Arrays.asList(name.split(","));
+        // There can be multiple second ingredients (e.g. "Grimy guam leaf x2,Marrentill")
+        // This will return ["Grimy guam leaf", "Marrentill"] as List
+        return Arrays.asList(name.replaceAll(" x\\d", "").split(","));
     }
 
     public String getPotionName()
