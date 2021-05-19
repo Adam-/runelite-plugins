@@ -1,4 +1,4 @@
-package com.recipes;
+package com.herblorerecipes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public enum Potion {
+public enum Potion
+{
     IMP_REPELLENT("Anchovy oil", "Imp repellent", 3),
     ATTACK_POTION("Guam leaf", "Attack potion", 3),
     ANTIPOISON("Marrentill", "Antipoison", 5),
@@ -63,7 +64,7 @@ public enum Potion {
     ANTI_VENOM_PLUS("Torstol", "Anti-venom+", 94),
     DIVINE_SUPER_COMBAT("Crystal dust", "Divine super combat", 97),
     EXTENDED_SUPER_ANTIFIRE("Lava scale shard", "Extended super antifire", 98);
-    
+
     private final String primaryIngredient;
     private final String potionName;
     private final int level;
@@ -72,30 +73,36 @@ public enum Potion {
 
     private static final Map<String, List<Potion>> lookup = new HashMap<>();
 
-    static {
+    static
+    {
         Arrays.stream(values()).forEach(potion -> lookup.computeIfAbsent(potion.primaryIngredient, s -> new ArrayList<>()).add(potion));
         Arrays.stream(values()).forEach(potion -> primaryIngredients.add(potion.primaryIngredient));
     }
-    
-    Potion(String primaryIngredient, String potionName, int level) {
+
+    Potion(String primaryIngredient, String potionName, int level)
+    {
         this.primaryIngredient = primaryIngredient;
         this.potionName = potionName;
         this.level = level;
     }
 
-    public static Set<String> getPrimaryIngredients() {
+    public static Set<String> getPrimaryIngredients()
+    {
         return primaryIngredients;
     }
 
-    public static List<Potion> getPotionsByPrimaryIngredient(String primaryIngredient) {
+    public static List<Potion> getPotionsByPrimaryIngredient(String primaryIngredient)
+    {
         return lookup.get(primaryIngredient);
     }
 
-    public String getPotionName() {
+    public String getPotionName()
+    {
         return potionName;
     }
 
-    public int getLevel() {
+    public int getLevel()
+    {
         return level;
     }
 }

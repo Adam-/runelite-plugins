@@ -23,7 +23,7 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'com.recipes'
+group = 'com.herblorerecipes'
 version = '1.0-SNAPSHOT'
 sourceCompatibility = '1.8'
 

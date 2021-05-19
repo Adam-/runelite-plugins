@@ -1,2 +1,2 @@
-# Recipes
-Find out what recipes an item is an ingredient of.
+# Herblore Recipes
+Find out what potions herbs are an ingredient of.
