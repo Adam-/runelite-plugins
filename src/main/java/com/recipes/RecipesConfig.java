@@ -8,12 +8,21 @@ import net.runelite.client.config.ConfigItem;
 public interface RecipesConfig extends Config
 {
 	@ConfigItem(
-		keyName = "greeting",
-		name = "Welcome Greeting",
-		description = "The message to show to the user when they login"
+		keyName = "showPrimaryIngredients",
+		name = "Show Primary Ingredients",
+		description = "Setting to see which potions an herb is a primary ingredient for."
 	)
-	default String greeting()
+	default boolean showPrimaryIngredients()
 	{
-		return "Hello";
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "showSecondaryIngredients",
+			name = "Show Secondary Ingredients",
+			description = "Setting to see which potions an item is a secondary ingredient for."
+	)
+	default boolean showSecondaryIngredients() {
+		return true;
 	}
 }
