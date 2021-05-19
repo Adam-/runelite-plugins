@@ -17,7 +17,9 @@ import net.runelite.client.util.ColorUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
