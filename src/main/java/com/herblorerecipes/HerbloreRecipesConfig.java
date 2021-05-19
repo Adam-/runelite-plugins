@@ -31,6 +31,28 @@ public interface HerbloreRecipesConfig extends Config
 
     @ConfigItem(
             position = 2,
+            keyName = "showUnfinishedPotions",
+            name = "Show Tooltip on Unfinished Potions",
+            description = "Toggle recipe tooltip on unfinished potions."
+    )
+    default boolean showUnfinishedPotions()
+    {
+        return true;
+    }
+
+    @ConfigItem(
+            position = 2,
+            keyName = "showPrimaryIngredientsAlongsidePrimaries",
+            name = "Show Primary Ingredients",
+            description = "Toggle primary ingredients alongside secondary ingredients in tooltip. This will invalidate the tooltip cache."
+    )
+    default boolean showPrimaryIngredientsAlongsideSecondaries()
+    {
+        return true;
+    }
+
+    @ConfigItem(
+            position = 3,
             keyName = "showSecondaryIngredientsAlongsidePrimaries",
             name = "Show Secondary Ingredients",
             description = "Toggle secondary ingredients alongside primary ingredients in tooltip. This will invalidate the tooltip cache."
@@ -41,7 +63,7 @@ public interface HerbloreRecipesConfig extends Config
     }
 
     @ConfigItem(
-            position = 3,
+            position = 4,
             keyName = "showLevelReqs",
             name = "Show Herblore level requirements",
             description = "Setting to show or hide herblore level requirements on the tooltip. This will invalidate the tooltip cache"

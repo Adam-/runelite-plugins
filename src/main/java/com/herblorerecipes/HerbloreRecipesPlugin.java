@@ -54,7 +54,9 @@ public class HerbloreRecipesPlugin extends Plugin
     @Subscribe
     public void onConfigChanged(ConfigChanged event)
     {
-        if ("showSecondaryIngredientsAlongsidePrimaries".equals(event.getKey()) || "showLevelReqs".equals(event.getKey()))
+        if ("showSecondaryIngredientsAlongsidePrimaries".equals(event.getKey()) ||
+                "showLevelReqs".equals(event.getKey()) ||
+                "showPrimaryIngredientsAlongsidePrimaries".equals(event.getKey()))
         {
             HerbloreRecipesCacheLoader.clearCache();
         }

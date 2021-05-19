@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import static com.herblorerecipes.util.Utils.KEY_PRIMARY_IDENTIFIER;
 import static com.herblorerecipes.util.Utils.KEY_SECONDARY_IDENTIFIER;
+import static com.herblorerecipes.util.Utils.KEY_UNF_IDENTIFIER;
 
 public class HerbloreRecipesCacheLoader extends CacheLoader<String, String>
 {
@@ -26,7 +27,7 @@ public class HerbloreRecipesCacheLoader extends CacheLoader<String, String>
     {
         this.config = config;
         tooltipTextCache = CacheBuilder.newBuilder()
-                .maximumSize(Potion.getPrimaryIngredients().size() + Potion.getSecondaryIngredients().size())
+                .maximumSize(Potion.getPrimaryIngredients().size() + Potion.getSecondaryIngredients().size() + Potion.getUnfinishedPotions().size())
                 .expireAfterAccess(30, TimeUnit.MINUTES)
                 .build(this);
     }
@@ -34,29 +35,52 @@ public class HerbloreRecipesCacheLoader extends CacheLoader<String, String>
     @Override
     public String load(String key) throws Exception
     {
-        if (key.charAt(0) == KEY_PRIMARY_IDENTIFIER.charAt(0))
+        if (key.charAt(0) == KEY_PRIMARY_IDENTIFIER)
         {
             // Primary ingredients
             return Potion.getPotionsByPrimaryIngredient(key).stream()
-                    .map(this::makeTooltipText)
+                    .map(potion -> makeTooltipText(potion, true))
                     .collect(Collectors.joining("</br>", "</br>", "</br>"));
         }
-        if (key.charAt(0) == KEY_SECONDARY_IDENTIFIER.charAt(0))
+        if (key.charAt(0) == KEY_SECONDARY_IDENTIFIER)
         {
             return Potion.getPotionsBySecondaryIngredient(key).stream()
-                    .map(this::makeTooltipText)
+                    .map(potion -> makeTooltipText(potion, false))
+                    .collect(Collectors.joining("</br>", "</br>", "</br>"));
+        }
+        if (key.charAt(0) == KEY_UNF_IDENTIFIER)
+        {
+            return Potion.getPotionsByUnfinishedPotion(key).stream()
+                    .map(potion -> makeTooltipText(potion, true))
                     .collect(Collectors.joining("</br>", "</br>", "</br>"));
         }
         return null;
     }
 
-    private String makeTooltipText(Potion potion)
+    private String makeTooltipText(Potion potion, boolean isPrimaryOrUnfinished)
     {
-        String text = config.showLevelReqs() ?
+        StringBuilder tooltipBuilder = new StringBuilder();
+
+        tooltipBuilder.append(config.showLevelReqs() ?
                 String.format("lvl %d: %s", potion.getLevel(), potion.getPotionName()) :
-                potion.getPotionName();
-        text += (config.showSecondaryIngredientsAlongsidePrimaries() && potion.getSecondaryIngredient() != null) ? String.format(" (2nd: %s)", potion.getSecondaryIngredient()) : "";
-        return ColorUtil.wrapWithColorTag(text, GREY_COLOR);
+                potion.getPotionName());
+
+        boolean hasMultipleSecondaries = potion.getSecondaryIngredient() != null && potion.getSecondaryIngredient().split(",").length > 1;
+
+        if (config.showSecondaryIngredientsAlongsidePrimaries() && potion.getSecondaryIngredient() != null && isPrimaryOrUnfinished)
+        {
+            tooltipBuilder.append(String.format(" (2nd: %s)", potion.getSecondaryIngredient()));
+        }
+
+        if (config.showPrimaryIngredientsAlongsideSecondaries() && !isPrimaryOrUnfinished)
+        {
+            tooltipBuilder.append(String.format(" (1st: %s", potion.getPrimaryIngredient()));
+            tooltipBuilder.append(hasMultipleSecondaries  && config.showSecondaryIngredientsAlongsidePrimaries() ?
+                    String.format(", 2nd: %s)", potion.getSecondaryIngredient()) :
+                    ")");
+        }
+
+        return ColorUtil.wrapWithColorTag(tooltipBuilder.toString(), GREY_COLOR);
     }
 
     public String get(String item) throws ExecutionException
