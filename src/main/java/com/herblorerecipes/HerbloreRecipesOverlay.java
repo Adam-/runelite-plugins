@@ -17,9 +17,7 @@ import net.runelite.client.util.ColorUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -119,19 +117,20 @@ public class HerbloreRecipesOverlay extends Overlay
                                                     .map(this::makeTooltipText)
                                                     .collect(Collectors.joining("</br>", "</br>", "</br>")));
                                 }
-                                if (config.showSecondaryIngredients())
+                                if (config.showSecondaryIngredients() && Potion.getSecondaryIngredients().stream().anyMatch(s -> s.contains(itemName)))
                                 {
                                     stringBuilder.append(TOOLTIP_SECONDARY_TEXT);
+                                    stringBuilder.append(Potion.getPotionsBySecondaryIngredient(itemName).stream()
+                                            .map(this::makeTooltipText)
+                                            .collect(Collectors.joining("</br>", "</br>", "</br>")));
                                 }
-                            }
-                            else
+                            } else
                             {
                                 return null;
                             }
                             addTooltip();
                             break;
-                        }
-                        else
+                        } else
                         {
                             return null;
                         }
@@ -146,8 +145,7 @@ public class HerbloreRecipesOverlay extends Overlay
         if (widgetId == INVENTORY_ITEM_WIDGETID || widgetId == BANKED_INVENTORY_ITEM_WIDGETID)
         {
             return Optional.ofNullable(client.getItemContainer(InventoryID.INVENTORY));
-        }
-        else if (widgetId == BANK_ITEM_WIDGETID)
+        } else if (widgetId == BANK_ITEM_WIDGETID)
         {
             return Optional.ofNullable(client.getItemContainer(InventoryID.BANK));
         }
@@ -170,6 +168,7 @@ public class HerbloreRecipesOverlay extends Overlay
         String text = config.showLevelReqs() ?
                 String.format("lvl %d: %s", potion.getLevel(), potion.getPotionName()) :
                 potion.getPotionName();
+        text += (config.showSecondaryIngredients() && potion.getSecondaryIngredient() != null) ? String.format(" (2nd: %s)", potion.getSecondaryIngredient()) : "";
         return ColorUtil.wrapWithColorTag(text, GREY_COLOR);
     }
 }
