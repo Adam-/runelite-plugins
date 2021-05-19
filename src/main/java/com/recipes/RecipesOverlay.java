@@ -82,23 +82,34 @@ public class RecipesOverlay extends Overlay {
                     case WidgetID.INVENTORY_GROUP_ID:
                     case WidgetID.BANK_GROUP_ID:
                     case WidgetID.BANK_INVENTORY_GROUP_ID:
-                        ItemContainer container = getContainer(widgetId)
-                                .orElseThrow(() -> new RuntimeException("Could not retrieve item container."));
-                        Item item = getContainerItem(container, menuEntry.getParam0())
-                                .orElseThrow(() -> new RuntimeException("Could not retrieve item with id " + menuEntry.getParam0()));
-                        String itemName = itemManager.getItemComposition(item.getId()).getName();
+                        Optional<ItemContainer> container = getContainer(widgetId);
+                        if (container.isPresent()) {
+                            Optional<Item> item = getContainerItem(container.get(), menuEntry.getParam0());
+                            if (item.isPresent()) {
+                                String itemName = itemManager.getItemComposition(item.get().getId()).getName();
 
-                        if (config.showPrimaryIngredients() && Potion.getPrimaryIngredients().contains(itemName)) {
-                            stringBuilder.append("Primary ingredient for: ");
-                            stringBuilder.append(
-                                    Potion.getPotionsByPrimaryIngredient(itemName).stream()
-                                            .map(Potion::getPotionName)
-                                            .collect(Collectors.joining(",</br>")));
+                                if (config.showPrimaryIngredients()) {
+                                    if (Potion.getPrimaryIngredients().contains(itemName)) {
+                                        stringBuilder.append("Primary ingredient for:</br>");
+                                        stringBuilder.append(
+                                                Potion.getPotionsByPrimaryIngredient(itemName).stream()
+                                                        .map(this::makeTooltipText)
+                                                        .collect(Collectors.joining(",</br>")));
+                                    } else {
+                                        return null;
+                                    }
+                                }
+                                if (config.showSecondaryIngredients()) {
+                                    // TODO: write secondary ingredient code
+                                }
+                            } else {
+                                return null;
+                            }
+                            addTooltip();
+                            break;
                         } else {
                             return null;
                         }
-                        addTooltip();
-                        break;
                 }
                 break;
         }
@@ -121,5 +132,11 @@ public class RecipesOverlay extends Overlay {
     private void addTooltip() {
         tooltipManager.add(new Tooltip(ColorUtil.prependColorTag(stringBuilder.toString(), new Color(238, 238, 238))));
         stringBuilder.setLength(0);
+    }
+
+    private String makeTooltipText(Potion potion) {
+        return config.showLevelReqs() ?
+                String.format("lvl %d: %s", potion.getLevel(), potion.getPotionName()) :
+                potion.getPotionName();
     }
 }

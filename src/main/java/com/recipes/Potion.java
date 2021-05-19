@@ -9,63 +9,64 @@ import java.util.Map;
 import java.util.Set;
 
 public enum Potion {
-    IMP_REPELLENT("Anchovy oil", "Imp repellent"),
-    ATTACK_POTION("Guam leaf", "Attack potion"),
-    ANTIPOISON("Marrentill", "Antipoison"),
-    RELICYMS_BALM("Rogue's purse", "Relicym's balm"),
-    STRENGTH_POTION("Tarromin", "Strength potion"),
-    SERUM_207("Tarromin", "Serum 207"),
-    GUTHIX_REST_TEA("Harralander", "Guthix rest tea"),
-    COMPOST_POTION("Harralander", "Compost potion"),
-    RESTORE_POTION("Harralander", "Restore potion"),
-    GUTHIX_BALANCE("Garlic", "Guthix balance"),
-    BLAMISH_OIL("Harralander", "Blamish oil"),
-    ENERGY_POTION("Harralander", "Energy potion"),
-    DEFENCE_POTION("Ranarr weed", "Defence potion"),
-    AGILITY_POTION("Toadflax", "Agility potion"),
-    COMBAT_POTION("Harralander", "Combat potion"),
-    PRAYER_POTION("Ranarr weed", "Prayer potion"),
-    SUPER_ATTACK("Irit leaf", "Super attack"),
-    SUPERANTIPOISON("Irit leaf", "Super antipoison"),
-    FISHING_POTION("Avantoe", "Fishing potion"),
-    SUPER_ENERGY("Avantoe", "Super energy"),
-    SHRINK_ME_QUICK("Tarromin", "Shrink-me-quick"),
-    HUNTER_POTION("Avantoe", "Hunter potion"),
-    SUPER_STRENGTH("Kwuarm", "Super strength"),
-    MAGIC_ESSENCE("Star flower", "Magic essence"),
-    WEAPON_POISON("Kwuarm", "Weapon poison"),
-    SUPER_RESTORE("Snapdragon", "Super restore"),
-    SANFEW_SERUM("Unicorn horn dust", "Sanfew serum"),
-    SUPER_DEFENCE("Cadantine", "Super defence"),
-    ANTIDOTE_PLUS("Toadflax", "Antidote+"),
-    ANTIFIRE_POTION("Lantadyme", "Antifire potion"),
-    DIVINE_SUPER_ATTACK("Crystal dust", "Divine super attack"),
-    DIVINE_SUPER_DEFENCE("Crystal dust", "Divine super defence"),
-    DIVINE_SUPER_STRENGTH("Crystal dust", "Divine super strength"),
-    RANGING_POTION("Dwarf weed", "Ranging potion"),
-    WEAPON_POISON_PLUS("Cactus spine", "Weapon Poison+"),
-    DIVINE_RANGING_POTION("Crystal dust", "Divine ranging potion"),
-    MAGIC_POTION("Lantadyme", "Magic potion"),
-    STAMINA_POTION("Amylase crystal", "Stamina potion"),
-    ZAMORAK_BREW("Torstol", "Zamorak brew"),
-    DIVINE_MAGIC_POTION("Crystal dust", "Divine magic potion"),
-    ANTIDOTE_PLUS_PLUS("Irit leaf", "Antidote++"),
-    BASTION_POTION("Cadantine", "Bastion potion"),
-    BATTLEMAGE_POTION("Cadantine", "Battlemage potion"),
-    SARADOMIN_BREW("Toadflax", "Saradomin brew"),
-    WEAPON_POISON_PLUS_PLUS("Cave nightshade", "Weapon poison++"),
-    EXTENDED_ANTIFIRE("Lava scale shard", "Extended antifire"),
-    DIVINE_BASTION_POTION("Crystal dust", "Divine bastion potion"),
-    DIVINE_BATTLEMAGE_POTION("Crystal dust", "Divine battlemage potion"),
-    ANTI_VENOM("Zulrah's scales", "Anti-venom"),
-    SUPER_COMBAT_POTION("Torstol", "Super combat potion"),
-    SUPER_ANTIFIRE_POTION("Crushed superior dragon bones", "Super antifire potion"),
-    ANTI_VENOM_PLUS("Torstol", "Anti-venom+"),
-    DIVINE_SUPER_COMBAT("Crystal dust", "Divine super combat"),
-    EXTENDED_SUPER_ANTIFIRE("Lava scale shard", "Extended super antifire");
+    IMP_REPELLENT("Anchovy oil", "Imp repellent", 3),
+    ATTACK_POTION("Guam leaf", "Attack potion", 3),
+    ANTIPOISON("Marrentill", "Antipoison", 5),
+    RELICYMS_BALM("Rogue's purse", "Relicym's balm", 8),
+    STRENGTH_POTION("Tarromin", "Strength potion", 12),
+    SERUM_207("Tarromin", "Serum 207", 15),
+    GUTHIX_REST_TEA("Harralander", "Guthix rest tea", 18),
+    COMPOST_POTION("Harralander", "Compost potion", 22),
+    RESTORE_POTION("Harralander", "Restore potion", 22),
+    GUTHIX_BALANCE("Garlic", "Guthix balance", 22),
+    BLAMISH_OIL("Harralander", "Blamish oil", 25),
+    ENERGY_POTION("Harralander", "Energy potion", 26),
+    DEFENCE_POTION("Ranarr weed", "Defence potion", 30),
+    AGILITY_POTION("Toadflax", "Agility potion", 34),
+    COMBAT_POTION("Harralander", "Combat potion", 36),
+    PRAYER_POTION("Ranarr weed", "Prayer potion", 38),
+    SUPER_ATTACK("Irit leaf", "Super attack", 45),
+    SUPERANTIPOISON("Irit leaf", "Super antipoison", 48),
+    FISHING_POTION("Avantoe", "Fishing potion", 50),
+    SUPER_ENERGY("Avantoe", "Super energy", 52),
+    SHRINK_ME_QUICK("Tarromin", "Shrink-me-quick", 52),
+    HUNTER_POTION("Avantoe", "Hunter potion", 53),
+    SUPER_STRENGTH("Kwuarm", "Super strength", 55),
+    MAGIC_ESSENCE("Star flower", "Magic essence", 57),
+    WEAPON_POISON("Kwuarm", "Weapon poison", 60),
+    SUPER_RESTORE("Snapdragon", "Super restore", 63),
+    SANFEW_SERUM("Unicorn horn dust", "Sanfew serum", 65),
+    SUPER_DEFENCE("Cadantine", "Super defence", 66),
+    ANTIDOTE_PLUS("Toadflax", "Antidote+", 68),
+    ANTIFIRE_POTION("Lantadyme", "Antifire potion", 69),
+    DIVINE_SUPER_ATTACK("Crystal dust", "Divine super attack", 70),
+    DIVINE_SUPER_DEFENCE("Crystal dust", "Divine super defence", 70),
+    DIVINE_SUPER_STRENGTH("Crystal dust", "Divine super strength", 70),
+    RANGING_POTION("Dwarf weed", "Ranging potion", 72),
+    WEAPON_POISON_PLUS("Cactus spine", "Weapon Poison+", 73),
+    DIVINE_RANGING_POTION("Crystal dust", "Divine ranging potion", 74),
+    MAGIC_POTION("Lantadyme", "Magic potion", 76),
+    STAMINA_POTION("Amylase crystal", "Stamina potion", 77),
+    ZAMORAK_BREW("Torstol", "Zamorak brew", 78),
+    DIVINE_MAGIC_POTION("Crystal dust", "Divine magic potion", 78),
+    ANTIDOTE_PLUS_PLUS("Irit leaf", "Antidote++", 79),
+    BASTION_POTION("Cadantine", "Bastion potion", 80),
+    BATTLEMAGE_POTION("Cadantine", "Battlemage potion", 80),
+    SARADOMIN_BREW("Toadflax", "Saradomin brew", 81),
+    WEAPON_POISON_PLUS_PLUS("Cave nightshade", "Weapon poison++", 82),
+    EXTENDED_ANTIFIRE("Lava scale shard", "Extended antifire", 84),
+    DIVINE_BASTION_POTION("Crystal dust", "Divine bastion potion", 86),
+    DIVINE_BATTLEMAGE_POTION("Crystal dust", "Divine battlemage potion", 86),
+    ANTI_VENOM("Zulrah's scales", "Anti-venom", 87),
+    SUPER_COMBAT_POTION("Torstol", "Super combat potion", 90),
+    SUPER_ANTIFIRE_POTION("Crushed superior dragon bones", "Super antifire potion", 92),
+    ANTI_VENOM_PLUS("Torstol", "Anti-venom+", 94),
+    DIVINE_SUPER_COMBAT("Crystal dust", "Divine super combat", 97),
+    EXTENDED_SUPER_ANTIFIRE("Lava scale shard", "Extended super antifire", 98);
     
     private final String primaryIngredient;
     private final String potionName;
+    private final int level;
 
     private static final Set<String> primaryIngredients = new HashSet<>();
 
@@ -76,9 +77,10 @@ public enum Potion {
         Arrays.stream(values()).forEach(potion -> primaryIngredients.add(potion.primaryIngredient));
     }
     
-    Potion(String primaryIngredient, String potionName) {
+    Potion(String primaryIngredient, String potionName, int level) {
         this.primaryIngredient = primaryIngredient;
         this.potionName = potionName;
+        this.level = level;
     }
 
     public static Set<String> getPrimaryIngredients() {
@@ -91,5 +93,9 @@ public enum Potion {
 
     public String getPotionName() {
         return potionName;
+    }
+
+    public int getLevel() {
+        return level;
     }
 }

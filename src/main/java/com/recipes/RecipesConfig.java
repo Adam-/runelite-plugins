@@ -25,4 +25,13 @@ public interface RecipesConfig extends Config
 	default boolean showSecondaryIngredients() {
 		return true;
 	}
+
+	@ConfigItem(
+			keyName="showLevelReqs",
+			name = "Show Herblore level requirements",
+			description = "Setting to show or hide herblore level requirements on the tooltip."
+	)
+	default boolean showLevelReqs() {
+		return true;
+	}
 }
