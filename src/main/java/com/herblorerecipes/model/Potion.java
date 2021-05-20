@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.herblorerecipes.util.Utils.KEY_PRIMARY_IDENTIFIER;
 import static com.herblorerecipes.util.Utils.KEY_SECONDARY_IDENTIFIER;
@@ -14,13 +15,13 @@ import static com.herblorerecipes.util.Utils.KEY_UNF_IDENTIFIER;
 
 public enum Potion
 {
-    IMP_REPELLENT("Anchovy oil", "Marigolds,Rosemary,Nasturtiums,Woad leaf,Limpwurt root, White lily", null, "Imp repellent", 3),
+    IMP_REPELLENT("Anchovy oil", "Marigolds, Rosemary, Nasturtiums, Woad leaf, Limpwurt root, White lily", null, "Imp repellent", 3),
     ATTACK_POTION("Guam leaf", "Eye of newt", "Guam potion (unf)", "Attack potion", 3),
     ANTIPOISON("Marrentill", "Unicorn horn dust", "Marrentill potion (unf)", "Antipoison", 5),
     RELICYMS_BALM("Rogue's purse", "Snake weed", "Unfinished potion (Rogue's Purse)", "Relicym's balm", 8),
     STRENGTH_POTION("Tarromin", "Limpwurt root", "Tarromin potion (unf)", "Strength potion", 12),
     SERUM_207("Tarromin", "Ashes", "Tarromin potion (unf)", "Serum 207", 15),
-    GUTHIX_REST_TEA("Harralander", "Guam leaf x2,Marrentill", null, "Guthix rest tea", 18),
+    GUTHIX_REST_TEA("Harralander", "Guam leaf x2, Marrentill", null, "Guthix rest tea", 18),
     COMPOST_POTION("Harralander", "Volcanic ash", "Harralander potion (unf)", "Compost potion", 22),
     RESTORE_POTION("Harralander", "Red spider's eggs", "Harralander potion (unf)", "Restore potion", 22),
     GUTHIX_BALANCE("Garlic", "Silver dust", null, "Guthix balance", 22),
@@ -40,7 +41,7 @@ public enum Potion
     MAGIC_ESSENCE("Star flower", "Gorak claw powder", "Magic essence (unf)", "Magic essence", 57),
     WEAPON_POISON("Kwuarm", "Dragon scale dust", "Kwuarm potion (unf)", "Weapon poison", 60),
     SUPER_RESTORE("Snapdragon", "Red spider's eggs", "Snapdragon potion (unf)", "Super restore", 63),
-    SANFEW_SERUM("Unicorn horn dust", "Snake weed,Nail beast nails", "Mixture - step 2(4)", "Sanfew serum", 65),
+    SANFEW_SERUM("Unicorn horn dust", "Snake weed, Nail beast nails", "Mixture - step 2(4)", "Sanfew serum", 65),
     SUPER_DEFENCE("Cadantine", "White berries", "Cadantine potion (unf)", "Super defence", 66),
     ANTIDOTE_PLUS("Toadflax", "Yew roots", "Toadflax potion (unf)", "Antidote+", 68),
     ANTIFIRE_POTION("Lantadyme", "Dragon scale dust", "Lantadyme potion (unf)", "Antifire potion", 69),
@@ -63,7 +64,7 @@ public enum Potion
     DIVINE_BASTION_POTION("Bastion potion", "Crystal dust", null, "Divine bastion potion", 86),
     DIVINE_BATTLEMAGE_POTION("Battlemage potion", "Crystal dust", null, "Divine battlemage potion", 86),
     ANTI_VENOM("Antidote++", "Zulrah's scales", null, "Anti-venom", 87),
-    SUPER_COMBAT_POTION("Torstol", "Super attack,Super strength, Super defence", "Torstol potion (unf)", "Super combat potion", 90),
+    SUPER_COMBAT_POTION("Torstol", "Super attack, Super strength, Super defence", "Torstol potion (unf)", "Super combat potion", 90),
     SUPER_ANTIFIRE_POTION("Antifire potion", "Crushed superior dragon bones", null, "Super antifire potion", 92),
     ANTI_VENOM_PLUS("Anti-venom", "Torstol", null, "Anti-venom+", 94),
     DIVINE_SUPER_COMBAT("Super combat potion", "Crystal dust", null, "Divine super combat", 97),
@@ -169,6 +170,9 @@ public enum Potion
     {
         // There can be multiple second ingredients (e.g. "Grimy guam leaf x2,Marrentill")
         // This will return ["Grimy guam leaf", "Marrentill"] as List
-        return Arrays.asList(name.replaceAll(" x\\d", "").split(","));
+        return Arrays.stream(name.replaceAll("\\s?x\\d", "")
+                                 .split(","))
+                .map(String::trim)
+                .collect(Collectors.toList());
     }
 }
