@@ -5,12 +5,12 @@ plugins {
 repositories {
 	mavenLocal()
 	maven {
-		url = 'http://repo.runelite.net'
+		url = 'https://repo.runelite.net'
 	}
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.6.18.1'
+def runeLiteVersion = '1.7.8.1'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -19,16 +19,14 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok:1.18.4'
 
 	testImplementation 'junit:junit:4.12'
-	testImplementation 'org.slf4j:slf4j-simple:1.7.12'
-	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion, {
-		exclude group: 'ch.qos.logback', module: 'logback-classic'
-	}
+	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
+	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 	testImplementation 'org.mockito:mockito-all:1.10.19'
 	testImplementation 'com.google.inject.extensions:guice-testlib:4.1.0'
 }
 
 group = 'info.sigterm.plugins.esspouch'
-version = '1.3'
+version = '1.4'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {

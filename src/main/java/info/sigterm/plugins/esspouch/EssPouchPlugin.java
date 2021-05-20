@@ -38,11 +38,15 @@ import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemID;
 import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.widgets.Widget;
+
+import static net.runelite.api.widgets.WidgetInfo.BANK_CONTAINER;
 import static net.runelite.api.widgets.WidgetInfo.TO_CHILD;
 import static net.runelite.api.widgets.WidgetInfo.TO_GROUP;
+
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -57,6 +61,9 @@ import net.runelite.client.ui.overlay.OverlayManager;
 public class EssPouchPlugin extends Plugin
 {
 	private static final int INVENTORY_SIZE = 28;
+
+	// this varp controls whether "fill" or "empty" are shown in the right click options when the bank interface is open
+	private static final int BANK_FLAG_VARP = 261;
 
 	private static final Pattern POUCH_CHECK_MESSAGE = Pattern.compile("^There (?:is|are) ([a-z]+)(?: pure| daeyalt)? essences? in this pouch\\.$");
 	private static final ImmutableMap<String, Integer> TEXT_TO_NUMBER = ImmutableMap.<String, Integer>builder()
@@ -320,6 +327,35 @@ public class EssPouchPlugin extends Plugin
 				// Dropping pouches clears them, so clear when picked up
 				pouch.setHolding(0);
 				break;
+		}
+	}
+	
+	/* 
+	We can check whether a pouch is full if the varp controlling "empty/fill" is set while the bank interface is open.
+	Can only be used to tell if one is full, all other non-full values are same.
+	Since the varp is set multiple times per tick, 
+	and can be set before the bank interface is opened, 
+	GameTick is better than VarbitChanged. 
+	*/
+	@Subscribe
+	public void onGameTick(GameTick e)
+	{
+		int varpValue = client.getVarpValue(BANK_FLAG_VARP);
+		if (varpValue == 0)
+			return;
+		
+		// only trust varp if bank is open, otherwise can be stale
+		Widget bankWidget = client.getWidget(BANK_CONTAINER);
+		if (bankWidget == null || bankWidget.isHidden())
+			return;
+		
+		for (Pouch pouch : Pouch.values())
+		{
+			if ((varpValue & pouch.getBankVarpFlag()) == pouch.getBankVarpFlag())
+			{
+				pouch.setUnknown(false);
+				pouch.setHolding(pouch.getHoldAmount());
+			}
 		}
 	}
 }
