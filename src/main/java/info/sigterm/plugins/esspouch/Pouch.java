@@ -32,13 +32,16 @@ import net.runelite.api.ItemID;
 
 enum Pouch
 {
-	SMALL(3),
-	MEDIUM(6, 3),
-	LARGE(9, 7),
-	GIANT(12, 9);
+	SMALL(3, -1, 1),
+	MEDIUM(6, 3, 2),
+	LARGE(9, 7, 4),
+	GIANT(12, 9, 8);
 
 	private final int baseHoldAmount;
 	private final int degradedBaseHoldAmount;
+	
+	@Getter(AccessLevel.PACKAGE)
+	private final int bankVarpFlag;
 
 	@Getter(AccessLevel.PACKAGE)
 	@Setter(AccessLevel.PACKAGE)
@@ -49,15 +52,11 @@ enum Pouch
 	@Setter(AccessLevel.PACKAGE)
 	private boolean unknown = true;
 
-	Pouch(int holdAmount)
-	{
-		this(holdAmount, -1);
-	}
-
-	Pouch(int holdAmount, int degradedHoldAmount)
+	Pouch(int holdAmount, int degradedHoldAmount, int bankVarpFlag)
 	{
 		this.baseHoldAmount = holdAmount;
 		this.degradedBaseHoldAmount = degradedHoldAmount;
+		this.bankVarpFlag = bankVarpFlag;
 	}
 
 	int getHoldAmount()
