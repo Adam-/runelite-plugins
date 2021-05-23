@@ -133,4 +133,15 @@ public interface GpuPluginConfig extends Config
 	{
 		return ColorBlindMode.NONE;
 	}
+
+	@ConfigItem(
+		keyName = "brightTextures",
+		name = "Bright Textures",
+		description = "Use old texture lighting method which results in brighter game textures",
+		position = 9
+	)
+	default boolean brightTextures()
+	{
+		return false;
+	}
 }
