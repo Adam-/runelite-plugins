@@ -71,7 +71,8 @@ public class HerbloreRecipesOverlay extends Overlay
 			return null;
 		}
 
-		if (!config.showPrimaryIngredients() && !config.showSecondaryIngredients())
+		if (!config.showPrimaryIngredients() && !config.showSecondaryIngredients() &&
+			!config.showPotionRecipes() && !config.showUnfinishedPotions())
 		{
 			// plugin is effectively disabled
 			return null;
