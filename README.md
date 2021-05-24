@@ -6,25 +6,28 @@ precious inventory space.
 
 ## Plugin in action
 
+![Potion Recipe](https://i.imgur.com/jzJFAaX.png "Potion Recipe")  
+Tooltip on a finished potion, showing the ingredients.
+---
 ![Primary Ingredient](https://i.imgur.com/lwYsR9n.png "Primary Ingredient")  
 Tooltip on a primary ingredient.
-
+---
 ![Unfinished Potion](https://i.imgur.com/9wAE2gw.png "Unfinished Potion")  
 Tooltip on an unfinished potion.
-
+---
 ![Secondary Ingredient](https://i.imgur.com/hCDBhZn.png "Secondary Ingredient")  
 Tooltip on a secondary ingredient.
-
+---
 ![Higher Level Potion](https://i.imgur.com/uNr2S7f.png "Higher Level Potion")  
 If a potion is an ingredient for another potion, it will show that.  
 The tooltip will show no matter the dosage of the potion.
-
+---
 ![Primary And Secondary](https://i.imgur.com/9h6Fzur.png "Primary and Secondary")  
 If an ingredient is both a primary and a secondary for different potions, it will reflect that.
-
+---
 ![Grimy](https://i.imgur.com/6eT1r4o.png "Grimy")  
 Also shows up on Grimy herbs!
-
+---
 ## Things to know
 - As of now this plugin does not support barbarian mixes.
 - The ingredients for some combination potions  (e.g. super combat potion) will show up as  
