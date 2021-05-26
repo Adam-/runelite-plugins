@@ -75,7 +75,7 @@ public class HerbloreRecipesOverlay extends Overlay
 		}
 
 		if (!config.showTooltipOnPrimaries() && !config.showTooltipOnSecondaries() &&
-			!config.showPotionRecipes() && !config.showTooltipOnUnfinished() &&
+			!config.showTooltipOnPotions() && !config.showTooltipOnUnfinished() &&
 			!config.showTooltipOnSeeds())
 		{
 			// plugin is effectively disabled
@@ -139,7 +139,7 @@ public class HerbloreRecipesOverlay extends Overlay
 								{
 									getTooltip(TOOLTIP_UNF_TEXT, KEY_UNF_IDENTIFIER + itemName);
 								}
-								if (config.showPotionRecipes() && Potion.getPotionNames().contains(itemName))
+								if (config.showTooltipOnPotions() && Potion.getPotionNames().contains(itemName))
 								{
 									getTooltip(String.format(TOOLTIP_POTION_TEXT, ColorUtil.wrapWithColorTag(itemName, AQUA)), KEY_POTION_IDENTIFIER + itemName);
 								}

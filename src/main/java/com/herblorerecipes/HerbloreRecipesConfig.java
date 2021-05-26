@@ -10,11 +10,11 @@ public interface HerbloreRecipesConfig extends Config
 
 	@ConfigItem(
 		position = 0,
-		keyName = "showPotionRecipes",
-		name = "Show Potion Recipes",
+		keyName = "showTooltipOnPotions",
+		name = "Show Tooltip on Potions (Recipes)",
 		description = "Display the ingredients to make the potion on hover."
 	)
-	default boolean showPotionRecipes()
+	default boolean showTooltipOnPotions()
 	{
 		return true;
 	}
