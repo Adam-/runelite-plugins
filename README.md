@@ -29,7 +29,7 @@ Also shows up on Grimy herbs!
 
 And seeds!  
 ![Seeds](https://i.imgur.com/uz6xISY.png "Seeds")  
-(feature added thanks to this [raised issue](https://github.com/skiclimbcode/herblore-recipes/issues/3).
+Feature added thanks to this [raised issue](https://github.com/skiclimbcode/herblore-recipes/issues/3).
 
 ## Things to know
 - As of now this plugin does not support barbarian mixes.
