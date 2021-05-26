@@ -1,5 +1,13 @@
 package com.herblorerecipes;
 
+import static com.herblorerecipes.util.Utils.SHOW_LEVEL_REQS_IN_TOOLTIP;
+import static com.herblorerecipes.util.Utils.SHOW_PRIMARIES_IN_TOOLTIP;
+import static com.herblorerecipes.util.Utils.SHOW_SECONDARIES_IN_TOOLTIP;
+import static com.herblorerecipes.util.Utils.SHOW_TOOLTIP_ON_POTIONS;
+import static com.herblorerecipes.util.Utils.SHOW_TOOLTIP_ON_PRIMARIES;
+import static com.herblorerecipes.util.Utils.SHOW_TOOLTIP_ON_SECONDARIES;
+import static com.herblorerecipes.util.Utils.SHOW_TOOLTIP_ON_UNFINISHED;
+import static com.herblorerecipes.util.Utils.SHOW_TOOLTIP_ON_SEEDS;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
@@ -10,7 +18,7 @@ public interface HerbloreRecipesConfig extends Config
 
 	@ConfigItem(
 		position = 0,
-		keyName = "showTooltipOnPotions",
+		keyName = SHOW_TOOLTIP_ON_POTIONS,
 		name = "Show Tooltip on Potions (Recipes)",
 		description = "Display the ingredients to make the potion on hover."
 	)
@@ -21,7 +29,7 @@ public interface HerbloreRecipesConfig extends Config
 
 	@ConfigItem(
 		position = 1,
-		keyName = "showTooltipOnPrimaries",
+		keyName = SHOW_TOOLTIP_ON_PRIMARIES,
 		name = "Show Tooltip on Primaries",
 		description = "Toggle recipe tooltip on primary ingredients."
 	)
@@ -32,7 +40,7 @@ public interface HerbloreRecipesConfig extends Config
 
 	@ConfigItem(
 		position = 2,
-		keyName = "showTooltipOnSecondaries",
+		keyName = SHOW_TOOLTIP_ON_SECONDARIES,
 		name = "Show Tooltip on Secondaries",
 		description = "Toggle recipe tooltip on secondary ingredients."
 	)
@@ -43,7 +51,7 @@ public interface HerbloreRecipesConfig extends Config
 
 	@ConfigItem(
 		position = 3,
-		keyName = "showTooltipOnUnfinished",
+		keyName = SHOW_TOOLTIP_ON_UNFINISHED,
 		name = "Show Tooltip on Unfinished Potions",
 		description = "Toggle recipe tooltip on unfinished potions."
 	)
@@ -54,7 +62,7 @@ public interface HerbloreRecipesConfig extends Config
 
 	@ConfigItem(
 		position = 4,
-		keyName = "showTooltipOnSeeds",
+		keyName = SHOW_TOOLTIP_ON_SEEDS,
 		name = "Show Tooltip on Seeds",
 		description = "Toggle recipe tooltip on seeds."
 	)
@@ -65,7 +73,7 @@ public interface HerbloreRecipesConfig extends Config
 
 	@ConfigItem(
 		position = 5,
-		keyName = "showPrimariesInTooltip",
+		keyName = SHOW_PRIMARIES_IN_TOOLTIP,
 		name = "Show Primary Ingredients in Tooltip",
 		description = "Toggle primary ingredients alongside secondary ingredients in tooltip. This will clear the tooltip cache."
 	)
@@ -76,7 +84,7 @@ public interface HerbloreRecipesConfig extends Config
 
 	@ConfigItem(
 		position = 6,
-		keyName = "showSecondariesInTooltip",
+		keyName = SHOW_SECONDARIES_IN_TOOLTIP,
 		name = "Show Secondary Ingredients in Tooltip",
 		description = "Toggle secondary ingredients alongside primary ingredients in tooltip. This will clear the tooltip cache."
 	)
@@ -87,7 +95,7 @@ public interface HerbloreRecipesConfig extends Config
 
 	@ConfigItem(
 		position = 7,
-		keyName = "showLevelReqsInTooltip",
+		keyName = SHOW_LEVEL_REQS_IN_TOOLTIP,
 		name = "Show Herblore level requirements in Tooltip",
 		description = "Setting to show or hide herblore level requirements on the tooltip. This will clear the tooltip cache"
 	)
