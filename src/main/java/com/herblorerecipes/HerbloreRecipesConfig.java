@@ -21,66 +21,77 @@ public interface HerbloreRecipesConfig extends Config
 
 	@ConfigItem(
 		position = 1,
-		keyName = "showPrimaryIngredients",
+		keyName = "showTooltipOnPrimaries",
 		name = "Show Tooltip on Primaries",
 		description = "Toggle recipe tooltip on primary ingredients."
 	)
-	default boolean showPrimaryIngredients()
+	default boolean showTooltipOnPrimaries()
 	{
 		return true;
 	}
 
 	@ConfigItem(
 		position = 2,
-		keyName = "showSecondaryIngredients",
+		keyName = "showTooltipOnSecondaries",
 		name = "Show Tooltip on Secondaries",
 		description = "Toggle recipe tooltip on secondary ingredients."
 	)
-	default boolean showSecondaryIngredients()
+	default boolean showTooltipOnSecondaries()
 	{
 		return true;
 	}
 
 	@ConfigItem(
 		position = 3,
-		keyName = "showUnfinishedPotions",
+		keyName = "showTooltipOnUnfinished",
 		name = "Show Tooltip on Unfinished Potions",
 		description = "Toggle recipe tooltip on unfinished potions."
 	)
-	default boolean showUnfinishedPotions()
+	default boolean showTooltipOnUnfinished()
 	{
 		return true;
 	}
 
 	@ConfigItem(
 		position = 4,
-		keyName = "showPrimaryIngredientsAlongsidePrimaries",
-		name = "Show Primary Ingredients",
-		description = "Toggle primary ingredients alongside secondary ingredients in tooltip. This will clear the tooltip cache."
+		keyName = "showTooltipOnSeeds",
+		name = "Show Tooltip on Seeds",
+		description = "Toggle recipe tooltip on seeds."
 	)
-	default boolean showPrimaryIngredientsAlongsideSecondaries()
+	default boolean showTooltipOnSeeds()
 	{
 		return true;
 	}
 
 	@ConfigItem(
 		position = 5,
-		keyName = "showSecondaryIngredientsAlongsidePrimaries",
-		name = "Show Secondary Ingredients",
-		description = "Toggle secondary ingredients alongside primary ingredients in tooltip. This will clear the tooltip cache."
+		keyName = "showPrimariesInTooltip",
+		name = "Show Primary Ingredients in Tooltip",
+		description = "Toggle primary ingredients alongside secondary ingredients in tooltip. This will clear the tooltip cache."
 	)
-	default boolean showSecondaryIngredientsAlongsidePrimaries()
+	default boolean showPrimariesInTooltip()
 	{
 		return true;
 	}
 
 	@ConfigItem(
 		position = 6,
-		keyName = "showLevelReqs",
-		name = "Show Herblore level requirements",
+		keyName = "showSecondariesInTooltip",
+		name = "Show Secondary Ingredients in Tooltip",
+		description = "Toggle secondary ingredients alongside primary ingredients in tooltip. This will clear the tooltip cache."
+	)
+	default boolean showSecondariesInTooltip()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		position = 7,
+		keyName = "showLevelReqsInTooltip",
+		name = "Show Herblore level requirements in Tooltip",
 		description = "Setting to show or hide herblore level requirements on the tooltip. This will clear the tooltip cache"
 	)
-	default boolean showLevelReqs()
+	default boolean showLevelReqsInTooltip()
 	{
 		return true;
 	}
