@@ -5,6 +5,7 @@ import com.herblorerecipes.model.Potion;
 import static com.herblorerecipes.util.Utils.KEY_POTION_IDENTIFIER;
 import static com.herblorerecipes.util.Utils.KEY_PRIMARY_IDENTIFIER;
 import static com.herblorerecipes.util.Utils.KEY_SECONDARY_IDENTIFIER;
+import static com.herblorerecipes.util.Utils.KEY_SEED_IDENTIFIER;
 import static com.herblorerecipes.util.Utils.KEY_UNF_IDENTIFIER;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -33,15 +34,17 @@ public class HerbloreRecipesOverlay extends Overlay
 	private static final int INVENTORY_ITEM_WIDGETID = WidgetInfo.INVENTORY.getPackedId();
 	private static final int BANK_ITEM_WIDGETID = WidgetInfo.BANK_ITEM_CONTAINER.getPackedId();
 	private static final int BANKED_INVENTORY_ITEM_WIDGETID = WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER.getPackedId();
-	private static final Color GREY_COLOR = new Color(238, 238, 238);
+	private static final Color GREY = new Color(238, 238, 238);
 	private static final Color LIME = new Color(0, 255, 0);
 	private static final Color AQUA = new Color(0, 255, 255);
 	private static final Color GOLD = new Color(255, 215, 0);
-	private static final Color RED = new Color(236, 128, 255);
-	private static final String TOOLTIP_PRIMARY_TEXT = ColorUtil.wrapWithColorTag("Primary", LIME) + ColorUtil.wrapWithColorTag(" for:", GREY_COLOR);
-	private static final String TOOLTIP_SECONDARY_TEXT = ColorUtil.wrapWithColorTag("Secondary", AQUA) + ColorUtil.wrapWithColorTag(" for:", GREY_COLOR);
-	private static final String TOOLTIP_UNF_TEXT = ColorUtil.wrapWithColorTag("Unfinished", GOLD) + ColorUtil.wrapWithColorTag(" for:", GREY_COLOR);
-	private static final String TOOLTIP_POTION_TEXT = ColorUtil.wrapWithColorTag("Requirements", RED) + ColorUtil.wrapWithColorTag(" for %s:", GREY_COLOR);
+	private static final Color PINK = new Color(236, 128, 255);
+	private static final Color ORANGE = new Color(255, 85, 85);
+	private static final String TOOLTIP_PRIMARY_TEXT = ColorUtil.wrapWithColorTag("Primary", LIME) + ColorUtil.wrapWithColorTag(" for:", GREY);
+	private static final String TOOLTIP_SECONDARY_TEXT = ColorUtil.wrapWithColorTag("Secondary", AQUA) + ColorUtil.wrapWithColorTag(" for:", GREY);
+	private static final String TOOLTIP_UNF_TEXT = ColorUtil.wrapWithColorTag("Unfinished", GOLD) + ColorUtil.wrapWithColorTag(" for:", GREY);
+	private static final String TOOLTIP_POTION_TEXT = ColorUtil.wrapWithColorTag("Requirements", PINK) + ColorUtil.wrapWithColorTag(" for %s:", GREY);
+	private static final String TOOLTIP_SEED_TEXT = ColorUtil.wrapWithColorTag("Seed", ORANGE) + ColorUtil.wrapWithColorTag(" for:", GREY);
 
 
 	private final Client client;
@@ -71,8 +74,9 @@ public class HerbloreRecipesOverlay extends Overlay
 			return null;
 		}
 
-		if (!config.showPrimaryIngredients() && !config.showSecondaryIngredients() &&
-			!config.showPotionRecipes() && !config.showUnfinishedPotions())
+		if (!config.showTooltipOnPrimaries() && !config.showTooltipOnSecondaries() &&
+			!config.showTooltipOnPotions() && !config.showTooltipOnUnfinished() &&
+			!config.showTooltipOnSeeds())
 		{
 			// plugin is effectively disabled
 			return null;
@@ -123,21 +127,25 @@ public class HerbloreRecipesOverlay extends Overlay
 							{
 								String itemName = stripExtra(itemManager.getItemComposition(item.get().getId()).getName());
 
-								if (config.showPrimaryIngredients() && Potion.getPrimaryIngredients().contains(itemName))
+								if (config.showTooltipOnPrimaries() && Potion.getPrimaries().contains(itemName))
 								{
 									getTooltip(TOOLTIP_PRIMARY_TEXT, KEY_PRIMARY_IDENTIFIER + itemName);
 								}
-								if (config.showSecondaryIngredients() && Potion.getSecondaryIngredients().stream().anyMatch(s -> s.contains(itemName)))
+								if (config.showTooltipOnSecondaries() && Potion.getSecondariesSet().stream().anyMatch(s -> s.contains(itemName)))
 								{
 									getTooltip(TOOLTIP_SECONDARY_TEXT, KEY_SECONDARY_IDENTIFIER + itemName);
 								}
-								if (config.showUnfinishedPotions() && Potion.getUnfinishedPotions().contains(itemName))
+								if (config.showTooltipOnUnfinished() && Potion.getUnfinishedPotions().contains(itemName))
 								{
 									getTooltip(TOOLTIP_UNF_TEXT, KEY_UNF_IDENTIFIER + itemName);
 								}
-								if (config.showPotionRecipes() && Potion.getPotionNames().contains(itemName))
+								if (config.showTooltipOnPotions() && Potion.getPotionNames().contains(itemName))
 								{
 									getTooltip(String.format(TOOLTIP_POTION_TEXT, ColorUtil.wrapWithColorTag(itemName, AQUA)), KEY_POTION_IDENTIFIER + itemName);
+								}
+								if (config.showTooltipOnSeeds() && Potion.getSeeds().contains(itemName))
+								{
+									getTooltip(TOOLTIP_SEED_TEXT, KEY_SEED_IDENTIFIER + itemName);
 								}
 							}
 							if (stringBuilder.length() > 0)
