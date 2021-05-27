@@ -94,7 +94,7 @@ public class EmoteClueItemsPanel extends PluginPanel
 		this.difficultyFilterButton = this.createDifficultyFilterButton(emoteClueItemsPanelPalette);
 		this.sortFilterButton = this.createSortFilterButton(emoteClueItemsPanelPalette);
 
-		FooterPanel footerPanel = new FooterPanel(emoteClueItemsPanelPalette, "Emote Clue Items", "v2.0.0", "https://github.com/larsvansoest/emote-clue-items");
+		FooterPanel footerPanel = new FooterPanel(emoteClueItemsPanelPalette, "Emote Clue Items", "v2.0.1", "https://github.com/larsvansoest/emote-clue-items");
 
 		GridBagConstraints c = new GridBagConstraints();
 		c.fill = GridBagConstraints.BOTH;
