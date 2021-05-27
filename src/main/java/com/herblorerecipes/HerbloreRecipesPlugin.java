@@ -2,6 +2,9 @@ package com.herblorerecipes;
 
 import com.google.inject.Provides;
 import com.herblorerecipes.cache.HerbloreRecipesCacheLoader;
+import static com.herblorerecipes.util.Utils.SHOW_LEVEL_REQS_IN_TOOLTIP;
+import static com.herblorerecipes.util.Utils.SHOW_PRIMARIES_IN_TOOLTIP;
+import static com.herblorerecipes.util.Utils.SHOW_SECONDARIES_IN_TOOLTIP;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -53,9 +56,9 @@ public class HerbloreRecipesPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if ("showSecondariesInTooltip".equals(event.getKey()) ||
-			"showPrimariesInTooltip".equals(event.getKey()) ||
-			"showLevelReqsInTooltip".equals(event.getKey()))
+		if (SHOW_SECONDARIES_IN_TOOLTIP.equals(event.getKey()) ||
+			SHOW_PRIMARIES_IN_TOOLTIP.equals(event.getKey()) ||
+			SHOW_LEVEL_REQS_IN_TOOLTIP.equals(event.getKey()))
 		{
 			HerbloreRecipesCacheLoader.clearCache();
 		}
