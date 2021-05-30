@@ -71,7 +71,11 @@ public class Layout {
         return layoutMap.entrySet().iterator();
     }
 
-    /** finds the index for the EXACT itemId. Does not factor in placeholders or variation items. */
+    /**
+     * Finds the index for the EXACT itemId. Does not factor in placeholders or variation items. For duplicated items,
+     * it returns one of the indexes where the itemId can be found.
+     * If there's no index for this itemId, then it returns -1.
+     */
     public Integer getIndexForItem(int itemId) {
         return allPairs().stream()
                 .filter(e -> e.getValue() == itemId)

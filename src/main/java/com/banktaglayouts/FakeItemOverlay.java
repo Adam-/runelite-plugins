@@ -83,9 +83,20 @@ public class FakeItemOverlay extends Overlay {
                         BufferedImage outline = itemManager.getItemOutline(fakeItemId, 1000, Color.GRAY);
                         graphics.drawImage(outline, x, y, null);
                     } else {
-                        graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
-                        BufferedImage image = itemManager.getImage(fakeItemId, fakeItem.quantity, true);
+                        if (fakeItem.quantity == 0) {
+                            // placeholder.
+                            graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+                        } else {
+                            graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+                        }
+                        boolean showQuantity = itemManager.getItemComposition(fakeItemId).isStackable() ? true : fakeItem.quantity != 1;
+                        BufferedImage image = itemManager.getImage(fakeItemId, fakeItem.quantity, showQuantity);
                         graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
+
+                        if (log.isDebugEnabled()) {
+                            graphics.setColor(Color.PINK);
+                            graphics.drawString("Dup", x, y + 33);
+                        }
                     }
                 }
             }
