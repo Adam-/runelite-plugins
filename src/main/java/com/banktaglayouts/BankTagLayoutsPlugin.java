@@ -2,6 +2,7 @@ package com.banktaglayouts;
 
 import com.banktaglayouts.invsetupsstuff.InventorySetup;
 import com.banktaglayouts.invsetupsstuff.InventorySetupsAdapter;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
@@ -1025,17 +1026,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		if (!menuEntryAdded.getOption().equals("Examine") && isRealItem) return;
 
 		MenuEntry newEntry;
-		newEntry = new MenuEntry();
-		newEntry.setOption(DUPLICATE_ITEM);
-		newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor));
-		newEntry.setType(MenuAction.RUNELITE.getId());
-		newEntry.setParam0(index);
-		insertMenuEntry(newEntry, client.getMenuEntries(), false);
 
-		if (!isRealItem) return; // layout placeholders already have "remove-layout" menu option which does the same thing as remove-duplicate-item.
-
-		int placeholderId = itemManager.getItemComposition(itemIdAtIndex).getPlaceholderId();
-		int itemCount = layout.countItemsWithId(itemIdAtIndex, placeholderId);
+		int itemCount = layout.countItemsWithId(itemIdAtIndex);
 		if (itemCount > 1) {
 			newEntry = new MenuEntry();
 			newEntry.setOption(REMOVE_DUPLICATE_ITEM);
@@ -1044,6 +1036,15 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			newEntry.setParam0(index);
 			insertMenuEntry(newEntry, client.getMenuEntries(), false);
 		}
+
+		newEntry = new MenuEntry();
+		newEntry.setOption(DUPLICATE_ITEM);
+		newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor));
+		newEntry.setType(MenuAction.RUNELITE.getId());
+		newEntry.setParam0(index);
+		insertMenuEntry(newEntry, client.getMenuEntries(), false);
+
+		if (!isRealItem) return; // layout placeholders already have "remove-layout" menu option which does the same thing as remove-duplicate-item.
 	}
 
 	private void addEntry(String menuTarget, String menuOption) {
@@ -1203,13 +1204,13 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		applyCustomBankTagItemPositions();
 	}
 
-	private void duplicateItem(int clickedItemIndex)
+	@VisibleForTesting
+	void duplicateItem(int clickedItemIndex)
 	{
 		LayoutableThing layoutable = getCurrentLayoutableThing();
 		Layout layout = getBankOrder(layoutable);
-		int itemAtIndex = layout.getItemAtIndex(clickedItemIndex);
-		int duplicatedItemIndex = layout.getFirstEmptyIndex(clickedItemIndex);
-		layout.putItem(itemAtIndex, duplicatedItemIndex);
+
+		layout.duplicateItem(clickedItemIndex, getIdForIndexInRealBank(clickedItemIndex));
 		saveLayout(layoutable, layout);
 
 		applyCustomBankTagItemPositions();
@@ -1319,56 +1320,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			}
 		}
 	}
-
-	/**
-	 * Some items such as charged jewellery like games necklaces or items that store charges on the item without having
-	 * different item ids for different charges, like strange lockpicks, can have placeholders for the item in the bank
-	 * at the same time as the actual item.
-     *
-	 * Removing the placeholder seems like the best option. The 3 people who will ever run into bankspace issues they
-	 * can't alleviate because they can't see the placeholder in their bank tag will just have to deal with it >;).
-	 */
-	private void removePlaceholdersForItemsAlreadyInBank(Multimap<Integer, Widget> variantItemsInBank)
-	{
-		for (Integer baseId : variantItemsInBank.keySet())
-		{
-			List<Widget> widgets = variantItemsInBank.get(baseId).stream().sorted(Comparator.comparingInt(Widget::getItemId)).collect(Collectors.toList());
-			Widget lastWidget = widgets.get(0);
-			int size = widgets.size();
-			boolean removedAWidget = false;
-			for (int i = 1; i < size;)
-			{
-				Widget currentWidget = widgets.get(i);
-				if (currentWidget.getItemId() == lastWidget.getItemId()) {
-					if (isPlaceholder(currentWidget.getItemId())) {
-						widgets.remove(i);
-						System.out.println("removing " + i + " " + itemName(currentWidget.getItemId()));
-						removedAWidget = true;
-						size--;
-					} else if (isPlaceholder(lastWidget.getItemId())) {
-						widgets.remove(i - 1);
-						System.out.println("removing " + i + " " + itemName(lastWidget.getItemId()));
-						removedAWidget = true;
-						size--;
-					} else {
-						i++;
-					}
-				} else {
-					i++;
-				}
-
-				lastWidget = currentWidget;
-			}
-
-			if (removedAWidget)
-			{
-				variantItemsInBank.removeAll(baseId);
-				variantItemsInBank.putAll(baseId, widgets);
-			}
-		}
-	}
-
-	// TODO check placeholders in Layout's getIndexForItem?
 
 	/**
 	 */
@@ -1570,43 +1521,36 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		int draggedOnItemIndex = getIndexForMousePositionNoLowerLimit();
 		if (draggedOnItemIndex == -1) return;
 
-		Integer draggedItemIndex = null;
-		for (Map.Entry<Integer, Widget> integerWidgetEntry : indexToWidget.entrySet()) {
-			if (integerWidgetEntry.getValue().equals(draggedItem)) {
-				draggedItemIndex = integerWidgetEntry.getKey();
+		int draggedItemIndex = -1;
+		for (Map.Entry<Integer, Widget> entry : indexToWidget.entrySet()) {
+			if (entry.getValue().equals(draggedItem)) {
+				draggedItemIndex = entry.getKey();
 			}
 		}
 
 		customBankTagOrderInsert(layoutable, draggedItemIndex, draggedOnItemIndex);
 	}
 
-	private void customBankTagOrderInsert(LayoutableThing layoutable, Integer draggedItemIndex, Integer draggedOnItemIndex) {
+	private void customBankTagOrderInsert(LayoutableThing layoutable, int draggedItemIndex, int draggedOnItemIndex) {
 		Layout layout = getBankOrder(layoutable);
 		if (layout == null) return;
 
 		// Currently I'm just spilling the variant items out in bank order, so I don't care exactly what item id was there - although if I ever decide to change this, this section will become much more complicated, since if I drag a (2) charge onto a regular item, but there was supposed to be a (3) charge there then I have to move the (2) but also deal with where the (2)'s saved position is... At least that's how it'll go if I decide to handle jewellery that way.
 
-        // Get the item id of the item that is actually present if possible, otherwise use what's in the layout.
 		Integer currentDraggedItemId = getIdForIndexInRealBank(draggedItemIndex);
-		Integer currentDraggedOnItemId = getIdForIndexInRealBank(draggedOnItemIndex);
 
-		layout.swapIndexes(draggedItemIndex, draggedOnItemIndex, currentDraggedItemId, currentDraggedOnItemId);
+		layout.moveItem(draggedItemIndex, draggedOnItemIndex, currentDraggedItemId);
 
 		saveLayout(layoutable, layout);
 
 		applyCustomBankTagItemPositions();
 	}
 
-	// TODO automatically items that are duplicates due to being placeholders.
-    // TODO check for 2 items at the same index?
-
-	private Integer getIdForIndexInRealBank(Integer index) {
-		for (Map.Entry<Integer, Widget> indexToWidget : indexToWidget.entrySet()) {
-			if (indexToWidget.getKey().equals(index)) {
-				return indexToWidget.getValue().getItemId();
-			}
-		}
-		return null;
+	private Integer getIdForIndexInRealBank(int index) {
+		if (index == -1) return -1;
+		Widget widget = indexToWidget.get(index);
+		if (widget == null) return -1;
+		return widget.getItemId();
 	}
 
 	// Disable reordering your real bank while any tag tab is active, as if the Bank Tags Plugin's "Prevent tag tab item dragging" was enabled.

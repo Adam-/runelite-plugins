@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class Layout {
@@ -83,6 +84,18 @@ public class Layout {
                 .findAny().orElse(-1);
     }
 
+    /**
+     * Finds the indexes for the EXACT itemId. Does not factor in placeholders or variation items.
+     * If there're no indexes for this itemId, then it returns an empty list.
+     */
+    private List<Integer> getIndexesForItem(int itemId)
+    {
+        return allPairs().stream()
+                .filter(e -> e.getValue() == itemId)
+                .map(e -> e.getKey())
+                .collect(Collectors.toList());
+    }
+
     // TODO is this supposed to move the old position of the item?
     public void setIndexForItem(int itemId, int index) {
         layoutMap.put(index, itemId);
@@ -122,34 +135,98 @@ public class Layout {
         layoutMap.remove(index);
     }
 
-    public void swapIndexes(int index1, int index2, Integer index1PreferredId, Integer index2PreferredId) {
-        if (index1PreferredId == null) {
-            index1PreferredId = getItemAtIndex(index1);
-        }
-        if (index2PreferredId == null) {
-            index2PreferredId = getItemAtIndex(index2);
+    /**
+     * @param draggedItemIndex dragged item's original index.
+     * @param targetIndex target location's index.
+     * @param draggedItemId the dragged item widget's item id.
+     */
+    public void moveItem(int draggedItemIndex, int targetIndex, int draggedItemId) {
+        int layoutItemId = getItemAtIndex(draggedItemIndex);
+        if (draggedItemId == -1) { // dragging a layout placeholder, or bad input.
+            draggedItemId = layoutItemId;
+            assert draggedItemId != -1;
+        } else if (layoutItemId != draggedItemId) {
+            // Modifying a layout should use the real item there, NOT the item id stored in the layout (which can be
+            // different due to how variant items are assigned indexes), because the item the user sees themselves
+            // moving is the item id in the widget, not the item id in the layout. Therefore, the duplicates must be
+            // updated to use that id as well.
+            for (Integer index : getIndexesForItem(layoutItemId)) {
+                putItem(draggedItemId, index);
+            }
         }
 
-        clearIndex(index2);
-        clearIndex(index1);
-        if (index1PreferredId != null && index1PreferredId != -1) putItem(index1PreferredId, index2);
-        if (index2PreferredId != null && index2PreferredId != -1) putItem(index2PreferredId, index1);
+        int targetItemId = getItemAtIndex(targetIndex);
+
+        clearIndex(draggedItemIndex);
+        putItem(draggedItemId, targetIndex);
+        System.out.println("moving index " + draggedItemIndex + " to " + targetIndex + " (" + draggedItemId + ")");
+
+        if (targetItemId != -1) {
+            System.out.println("moving (2) index " + targetIndex + " to " + draggedItemIndex + " (" + targetItemId + ")");
+            clearIndex(targetIndex);
+            putItem(targetItemId, draggedItemIndex);
+        }
     }
 
+//    @Deprecated
+//    public void swapIndexes(int index1, int index2, Integer index1PreferredId, Integer index2PreferredId) {
+//        if (index1PreferredId == null) {
+//            index1PreferredId = getItemAtIndex(index1);
+//        }
+//        if (index2PreferredId == null) {
+//            index2PreferredId = getItemAtIndex(index2);
+//        }
+//
+//        int layoutItemId = getItemAtIndex(clickedItemIndex);
+//        if (layoutItemId != itemIdAtIndex) {
+//            // Modifying a layout should always use the real item there, NOT the item id stored in the layout (which can
+//            // be different due to how variant items are assigned indexes).
+//            // Therefore, the duplicates must be updated to use that id as well.
+//            List<Integer> indexesToChange = getIndexesForItem(layoutItemId);
+//            for (Integer index : indexesToChange) {
+//                putItem(itemIdAtIndex, index);
+//            }
+//        }
+//
+//        clearIndex(index2);
+//        clearIndex(index1);
+//        if (index1PreferredId != null && index1PreferredId != -1) putItem(index1PreferredId, index2);
+//        if (index2PreferredId != null && index2PreferredId != -1) putItem(index2PreferredId, index1);
+//    }
+//
     public boolean isEmpty()
     {
         return layoutMap.isEmpty();
     }
 
-    public int countItemsWithId(int idAtIndex, int placeholderIdAtIndex)
+    public int countItemsWithId(int idAtIndex)
     {
         int count = 0;
         for (Map.Entry<Integer, Integer> pair : allPairs())
         {
-            if (pair.getValue() == idAtIndex || pair.getValue() == placeholderIdAtIndex) {
+            if (pair.getValue() == idAtIndex) {
                 count++;
             }
         }
         return count;
+    }
+
+    // TODO create test.
+    public void duplicateItem(int clickedItemIndex, int itemIdAtIndex)
+    {
+        int duplicatedItemIndex = getFirstEmptyIndex(clickedItemIndex);
+
+        int layoutItemId = getItemAtIndex(clickedItemIndex);
+        if (layoutItemId != itemIdAtIndex) {
+            // Modifying a layout should always use the real item there, NOT the item id stored in the layout (which can
+            // be different due to how variant items are assigned indexes).
+            // Therefore, the duplicates must be updated to use that id as well.
+            List<Integer> indexesToChange = getIndexesForItem(layoutItemId);
+            for (Integer index : indexesToChange) {
+                putItem(itemIdAtIndex, index);
+            }
+        }
+
+        putItem(itemIdAtIndex, duplicatedItemIndex);
     }
 }
