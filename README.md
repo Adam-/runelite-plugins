@@ -23,3 +23,8 @@ Right click a tag tab, click "Enable layout", then drag items anywhere while the
 
 ### v1.3
 * Support for Inventory Setups. Currently does not have import/export, but otherwise everything should work.
+
+### v1.4
+* Adds the option to duplicate items in the layout by right-clicking the item and selecting "duplicate-item".
+* Fixed multiple issues with weird behavior surrounding placeholders.
+* Added unit tests, finally :D

@@ -76,7 +76,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -85,6 +84,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -401,14 +401,14 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		Layout currentLayout = getBankOrderNonPreview(currentLayoutableThing);
 		if (currentLayout == null) currentLayout = Layout.emptyLayout();
 
-			previewLayout = layoutGenerator.basicLayout(equippedGear, inventory, currentLayout);
+			previewLayout = layoutGenerator.basicLayout(equippedGear, inventory, currentLayout, config.autoLayoutDuplicateLimit());
 		} else {
 			InventorySetup inventorySetup = inventorySetupsAdapter.getInventorySetup(currentLayoutableThing.name);
 
 			Layout currentLayout = getBankOrderNonPreview(currentLayoutableThing);
 			if (currentLayout == null) currentLayout = Layout.emptyLayout();
 
-			previewLayout = layoutGenerator.basicInventorySetupsLayout(inventorySetup, currentLayout);
+			previewLayout = layoutGenerator.basicInventorySetupsLayout(inventorySetup, currentLayout, config.autoLayoutDuplicateLimit());
 		}
 
 		hideLayoutPreviewButtons(false);
@@ -580,7 +580,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		applyCustomBankTagItemPositions();
 	}
 
-	private void saveLayout(LayoutableThing layoutable, Layout layout) {
+	void saveLayout(LayoutableThing layoutable, Layout layout) {
 		if (isShowingPreview()) {
 			previewLayout = layout;
 			return;
@@ -683,7 +683,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			// Inventory setups by default have an equipment and inventory order, so lay it out automatically if this
 			// is the first time viewing the setup with bank tag layouts.
 			InventorySetup inventorySetup = inventorySetupsAdapter.getInventorySetup(layoutable.name);
-			layout = layoutGenerator.basicInventorySetupsLayout(inventorySetup, Layout.emptyLayout());
+			layout = layoutGenerator.basicInventorySetupsLayout(inventorySetup, Layout.emptyLayout(), config.autoLayoutDuplicateLimit());
 		}
 
 		List<Widget> bankItems = Arrays.stream(client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).getDynamicChildren())
@@ -728,6 +728,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	{
 		Map<Integer, Widget> indexToWidget = new HashMap<>();
 		assignVariantItemPositions(layout, bankItems, indexToWidget);
+		// TODO check if the existance of this method is just a performance boost.
 		assignNonVariantItemPositions(layout, bankItems, indexToWidget);
 		return indexToWidget;
 	}
@@ -755,7 +756,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			boolean isLayoutPlaceholder = !any.isPresent();
 			int quantity = any.isPresent() ? any.get().getItemQuantity() : -1;
 			int fakeItemItemId = any.isPresent() ? any.get().getItemId() : itemId;
-			fakeItems.add(new FakeItem(index, getNonPlaceholderId(fakeItemItemId), isLayoutPlaceholder, quantity));
+//			fakeItems.add(new FakeItem(index, getNonPlaceholderId(fakeItemItemId), isLayoutPlaceholder, quantity));
+			fakeItems.add(new FakeItem(index, fakeItemItemId, isLayoutPlaceholder, quantity));
 		}
 		return fakeItems;
 	}
@@ -1009,7 +1011,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	private void addDuplicateItemMenuEntries(MenuEntryAdded menuEntryAdded)
 	{
-		if (config.shiftModifierForExtraOptions() && !client.isKeyPressed(KeyCode.KC_SHIFT)) return;
+		if (config.shiftModifierForExtraBankItemOptions() && !client.isKeyPressed(KeyCode.KC_SHIFT)) return;
 
 		LayoutableThing layoutable = getCurrentLayoutableThing();
 		if (layoutable == null) return;
@@ -1242,6 +1244,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	// TODO this logic needs looking at re: barrows items.
 	private void assignVariantItemPositions(Layout layout, List<Widget> bankItems, Map<Integer, Widget> indexToWidget) {
+	    // Remove duplicate item id widgets.
+		Set<Object> seen = ConcurrentHashMap.newKeySet();
+		bankItems = new ArrayList<>(bankItems.stream().filter(widget -> seen.add(widget.getItemId())).collect(Collectors.toList()));
+
 		Multimap<Integer, Widget> variantItemsInBank = LinkedListMultimap.create(); // key is the variant base id; the list contains the item widgets that go in this variant base id;
 		for (Widget bankItem : bankItems) {
 			int nonPlaceholderId = getNonPlaceholderId(bankItem.getItemId());
@@ -1262,25 +1268,26 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		for (Integer variationBaseId : variantItemsInBank.keySet()) {
 			List<Widget> notYetPositionedWidgets = new ArrayList<>(variantItemsInBank.get(variationBaseId));
+
 			// first, figure out if there is a perfect match.
-			assignitemstrashname(indexToWidget, variantItemsInLayout, variationBaseId, notYetPositionedWidgets, (itemIdsInBankForVariant, itemId) -> itemIdsInBankForVariant.contains(itemId) ? layout.getIndexForItem(itemId) : -1);
+			assignitemstrashname(indexToWidget, variantItemsInLayout, variationBaseId, notYetPositionedWidgets, (itemIdsInLayoutForVariant, itemId) -> itemIdsInLayoutForVariant.contains(itemId) ? layout.getIndexForItem(itemId) : -1, "pass 1 (exact itemid match)");
 
 			// check matches of placeholders or placeholders matching items.
-			assignitemstrashname(indexToWidget, variantItemsInLayout, variationBaseId, notYetPositionedWidgets, (itemIdsInBankForVariant, itemId) -> {
+			assignitemstrashname(indexToWidget, variantItemsInLayout, variationBaseId, notYetPositionedWidgets, (itemIdsInLayoutForVariant, itemId) -> {
 				itemId = switchPlaceholderId(itemId);
-				return itemIdsInBankForVariant.contains(itemId) ? layout.getIndexForItem(itemId) : -1;
-			});
+				return itemIdsInLayoutForVariant.contains(itemId) ? layout.getIndexForItem(itemId) : -1;
+			}, "pass 2 (placeholder match)");
 
 			// match any variant item.
-			assignitemstrashname(indexToWidget, variantItemsInLayout, variationBaseId, notYetPositionedWidgets, (itemIdsInBankForVariant, itemId) -> {
-				for (Integer id : itemIdsInBankForVariant) {
+			assignitemstrashname(indexToWidget, variantItemsInLayout, variationBaseId, notYetPositionedWidgets, (itemIdsInLayoutForVariant, itemId) -> {
+				for (Integer id : itemIdsInLayoutForVariant) {
 					int index = layout.getIndexForItem(id);
 					if (!indexToWidget.containsKey(index)) {
 					    return index;
 					}
 				}
 				return -1;
-			});
+			}, "pass 3 (variant item match)");
 
 			if (!notYetPositionedWidgets.isEmpty()) {
 				for (Widget notYetPositionedWidget : notYetPositionedWidgets) {
@@ -1288,8 +1295,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 					int layoutIndex = layout.getIndexForItem(itemId);
 					if (layoutIndex != -1) continue; // Prevents an issue where items with the same id that take up multiple bank slots, e.g. items that have their charges stored on the item, can be added into two slots during this stage.
 					int index = layout.getFirstEmptyIndex();
-					layout.setIndexForItem(itemId, index);
-					log.debug("item " + itemNameWithId(itemId) + " assigned on pass 3 (assign to empty spot) to index " + index);
+					layout.putItem(itemId, index);
+					log.debug("item " + itemNameWithId(itemId) + " assigned on pass 4 (assign to empty spot) to index " + index);
 					indexToWidget.put(index, notYetPositionedWidget);
 				}
 			}
@@ -1301,7 +1308,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		int getIndex(Collection<Integer> itemIds, int itemId);
 	}
 
-	private void assignitemstrashname(Map<Integer, Widget> indexToWidget, Multimap<Integer, Integer> variantItemsInLayout, Integer variationBaseId, List<Widget> notYetPositionedWidgets, functionalinterfacetrashname getIndex)
+	private void assignitemstrashname(Map<Integer, Widget> indexToWidget, Multimap<Integer, Integer> variantItemsInLayout, Integer variationBaseId, List<Widget> notYetPositionedWidgets, functionalinterfacetrashname getIndex, String debugDescription)
 	{
 		Iterator<Widget> iter = notYetPositionedWidgets.iterator();
 		while (iter.hasNext()) {
@@ -1314,7 +1321,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			int index = getIndex.getIndex(itemIds, itemId);
 
 			if (index != -1 && !indexToWidget.containsKey(index)) {
-				log.debug("item " + itemNameWithId(itemId) + " assigned on pass 1 (exact itemId match) to index " + index);
+				log.debug("item " + itemNameWithId(itemId) + " assigned on " + debugDescription + " to index " + index);
 				indexToWidget.put(index, widget);
 				iter.remove();
 			}
@@ -1590,5 +1597,4 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			}
 		}
 	}
-
 }

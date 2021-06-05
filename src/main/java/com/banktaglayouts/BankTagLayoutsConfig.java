@@ -68,13 +68,23 @@ public interface BankTagLayoutsConfig extends Config {
     }
 
     @ConfigItem(
-            keyName = "shiftModifierForExtraOptions",
-            name = "Require Shift key for extra options",
+            keyName = "shiftModifierForExtraBankItemOptions",
+            name = "Require Shift key for extra bank item options",
             description = "When enabled, the menu entries for adding duplicate items aren't shown unless shift is held when right-clicking",
             position = 7
     )
-    default boolean shiftModifierForExtraOptions() {
+    default boolean shiftModifierForExtraBankItemOptions() {
         return false;
     }
+
+	@ConfigItem(
+		keyName = "autoLayoutDuplicateLimit",
+		name = "Auto-layout duplicate limit",
+		description = "The maximum number of items in a row to create duplicates for with auto-layout. Set to 1 to never create duplicates. Set to 28 to always create duplicates.",
+		position = 8
+	)
+	default int autoLayoutDuplicateLimit() {
+		return 4;
+	}
 
 }

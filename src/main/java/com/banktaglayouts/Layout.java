@@ -96,11 +96,6 @@ public class Layout {
                 .collect(Collectors.toList());
     }
 
-    // TODO is this supposed to move the old position of the item?
-    public void setIndexForItem(int itemId, int index) {
-        layoutMap.put(index, itemId);
-    }
-
     public Collection<Integer> getAllUsedItemIds() {
         return new HashSet<>(layoutMap.values());
     }
@@ -158,12 +153,9 @@ public class Layout {
         int targetItemId = getItemAtIndex(targetIndex);
 
         clearIndex(draggedItemIndex);
+        clearIndex(targetIndex);
         putItem(draggedItemId, targetIndex);
-        System.out.println("moving index " + draggedItemIndex + " to " + targetIndex + " (" + draggedItemId + ")");
-
         if (targetItemId != -1) {
-            System.out.println("moving (2) index " + targetIndex + " to " + draggedItemIndex + " (" + targetItemId + ")");
-            clearIndex(targetIndex);
             putItem(targetItemId, draggedItemIndex);
         }
     }
@@ -217,6 +209,7 @@ public class Layout {
         int duplicatedItemIndex = getFirstEmptyIndex(clickedItemIndex);
 
         int layoutItemId = getItemAtIndex(clickedItemIndex);
+        if (itemIdAtIndex == -1) itemIdAtIndex = layoutItemId;
         if (layoutItemId != itemIdAtIndex) {
             // Modifying a layout should always use the real item there, NOT the item id stored in the layout (which can
             // be different due to how variant items are assigned indexes).

@@ -17,11 +17,11 @@ public class LayoutGenerator {
 
     private final BankTagLayoutsPlugin plugin;
 
-    public Layout basicLayout(List<Integer> equippedItems, List<Integer> inventory, Layout currentLayout) {
-        return basicLayout(equippedItems, inventory, Collections.emptyList(), Collections.emptyList(), currentLayout);
+    public Layout basicLayout(List<Integer> equippedItems, List<Integer> inventory, Layout currentLayout, int duplicateLimit) {
+        return basicLayout(equippedItems, inventory, Collections.emptyList(), Collections.emptyList(), currentLayout, duplicateLimit);
     }
 
-    public Layout basicLayout(List<Integer> equippedItems, List<Integer> inventory, List<Integer> runePouch, List<Integer> additionalItems, Layout currentLayout) {
+    public Layout basicLayout(List<Integer> equippedItems, List<Integer> inventory, List<Integer> runePouch, List<Integer> additionalItems, Layout currentLayout, int duplicateLimit) {
         Layout previewLayout = Layout.emptyLayout();
         List<Integer> displacedItems = new ArrayList<>();
 
@@ -33,14 +33,37 @@ public class LayoutGenerator {
 
         // lay out equipped items.
         equippedItems = equippedItems.stream()
-                .distinct()
+//                .distinct()
                 .map(itemId -> plugin.itemManager.canonicalize(itemId)) // Weight reducing items have different ids when equipped; this fixes that.
                 .collect(Collectors.toList());
         i = layoutItems(equippedItems, currentLayout, previewLayout, displacedItems, i, true);
 
         // lay out the inventory items.
         // distinct leaves the first duplicate it encounters and removes only duplicates coming after the first.
-        inventory = inventory.stream().distinct().collect(Collectors.toList());
+		List<Integer> newInventory = new ArrayList<>();
+		int inARow = 0;
+		int lastItemId = -1;
+		for (Integer itemId : inventory) {
+			if (lastItemId != itemId) {
+				inARow = 0;
+			}
+			inARow++;
+			if (inARow <= duplicateLimit) {
+				newInventory.add(itemId);
+			} else if (inARow == duplicateLimit + 1) {
+				while (true) {
+					if (newInventory.get(newInventory.size() - 1) != (int) itemId) {
+						break;
+					}
+					newInventory.remove(newInventory.size() - 1);
+				}
+				newInventory.add(itemId);
+			}
+			lastItemId = itemId;
+		}
+        inventory = newInventory;//inventory.stream()
+//                .distinct()
+//                .collect(Collectors.toList());
         i = layoutItems(inventory, currentLayout, previewLayout, displacedItems, i, true);
 
         i = layoutItems(runePouch, currentLayout, previewLayout, displacedItems, i, false);
@@ -134,12 +157,12 @@ public class LayoutGenerator {
 
     // TODO opening inventory setups panel closes auto-layout preview.
 
-    public Layout basicInventorySetupsLayout(InventorySetup inventorySetup, Layout currentLayout) {
+    public Layout basicInventorySetupsLayout(InventorySetup inventorySetup, Layout currentLayout, int duplicateLimit) {
         List<Integer> equippedGear = inventorySetup.getEquipment() == null ? Collections.emptyList() : inventorySetup.getEquipment().stream().map(isi -> isi.getId()).collect(Collectors.toList());
         List<Integer> inventory = inventorySetup.getInventory() == null ? Collections.emptyList() : inventorySetup.getInventory().stream().map(isi -> isi.getId()).collect(Collectors.toList());
         List<Integer> runePouchRunes = inventorySetup.getRune_pouch() == null ? Collections.emptyList() : inventorySetup.getRune_pouch().stream().map(isi -> isi.getId()).collect(Collectors.toList());
         List<Integer> additionalItems = inventorySetup.getAdditionalFilteredItems() == null ? Collections.emptyList() : inventorySetup.getAdditionalFilteredItems().entrySet().stream().map(isi -> isi.getValue().getId()).collect(Collectors.toList());
 
-        return basicLayout(equippedGear, inventory, runePouchRunes, additionalItems, currentLayout);
+        return basicLayout(equippedGear, inventory, runePouchRunes, additionalItems, currentLayout, duplicateLimit);
     }
 }
