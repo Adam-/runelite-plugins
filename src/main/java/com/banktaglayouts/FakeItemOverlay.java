@@ -71,8 +71,8 @@ public class FakeItemOverlay extends Overlay {
                 }
                 int fakeItemId = fakeItem.getItemId();
 
-                int x = plugin.getXForIndex(fakeItem.index) + canvasLocation.getX() + dragDeltaX;
-                int y = plugin.getYForIndex(fakeItem.index) + canvasLocation.getY() - scrollY + dragDeltaY;
+                int x = BankTagLayoutsPlugin.getXForIndex(fakeItem.index) + canvasLocation.getX() + dragDeltaX;
+                int y = BankTagLayoutsPlugin.getYForIndex(fakeItem.index) + canvasLocation.getY() - scrollY + dragDeltaY;
                 if (y + BankTagLayoutsPlugin.BANK_ITEM_HEIGHT > bankItemArea.getMinY() && y < bankItemArea.getMaxY())
                 {
                     if (fakeItem.isLayoutPlaceholder())
@@ -89,7 +89,7 @@ public class FakeItemOverlay extends Overlay {
                         } else {
                             graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
                         }
-                        boolean showQuantity = itemManager.getItemComposition(fakeItemId).isStackable() ? true : fakeItem.quantity != 1;
+                        boolean showQuantity = itemManager.getItemComposition(fakeItemId).isStackable() || fakeItem.quantity != 1;
                         BufferedImage image = itemManager.getImage(fakeItemId, fakeItem.quantity, showQuantity);
                         graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
 
@@ -110,12 +110,12 @@ public class FakeItemOverlay extends Overlay {
         tooltip = null;
 
         int index = plugin.getIndexForMousePosition(true);
-        if (!log.isDebugEnabled() && !plugin.fakeItems.stream().filter(fakeItem -> fakeItem.index == index).findAny().isPresent()) return;
+        if (!log.isDebugEnabled() && plugin.fakeItems.stream().noneMatch(fakeItem -> fakeItem.index == index)) return;
 
         if (index != -1) {
             int itemIdForTooltip = layout.getItemAtIndex(index);
             if (itemIdForTooltip != -1 && tooltip == null) {
-                String tooltipString = ColorUtil.wrapWithColorTag(plugin.itemName(itemIdForTooltip), plugin.itemTooltipColor);
+                String tooltipString = ColorUtil.wrapWithColorTag(plugin.itemName(itemIdForTooltip), BankTagLayoutsPlugin.itemTooltipColor);
                 if (log.isDebugEnabled())
                     tooltipString += " (" + itemIdForTooltip + (plugin.isPlaceholder(itemIdForTooltip) ? ", ph" : "") + ")";
                 tooltip = new Tooltip(tooltipString);

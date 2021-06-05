@@ -190,9 +190,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			showLayoutPreviewButton.setOriginalY(45);
 			showLayoutPreviewButton.setSpriteId(Sprites.AUTO_LAYOUT.getSpriteId());
 
-			showLayoutPreviewButton.setOnOpListener((JavaScriptCallback) (e) -> {
-			    showLayoutPreview();
-			});
+			showLayoutPreviewButton.setOnOpListener((JavaScriptCallback) (e) -> showLayoutPreview());
 			showLayoutPreviewButton.setHasListener(true);
 			showLayoutPreviewButton.revalidate();
 			showLayoutPreviewButton.setAction(0, PREVIEW_AUTO_LAYOUT);
@@ -207,9 +205,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			applyLayoutPreviewButton.setSpriteId(Sprites.APPLY_PREVIEW.getSpriteId());
 			applyLayoutPreviewButton.setNoClickThrough(true);
 
-			applyLayoutPreviewButton.setOnOpListener((JavaScriptCallback) (e) -> {
-				applyLayoutPreview();
-			});
+			applyLayoutPreviewButton.setOnOpListener((JavaScriptCallback) (e) -> applyLayoutPreview());
 			applyLayoutPreviewButton.setHasListener(true);
 			applyLayoutPreviewButton.revalidate();
 			applyLayoutPreviewButton.setAction(0, "Use this layout");
@@ -224,9 +220,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			cancelLayoutPreviewButton.setSpriteId(Sprites.CANCEL_PREVIEW.getSpriteId());
 			cancelLayoutPreviewButton.setNoClickThrough(true);
 
-			cancelLayoutPreviewButton.setOnOpListener((JavaScriptCallback) (e) -> {
-				cancelLayoutPreview();
-			});
+			cancelLayoutPreviewButton.setOnOpListener((JavaScriptCallback) (e) -> cancelLayoutPreview());
 			cancelLayoutPreviewButton.setHasListener(true);
 			cancelLayoutPreviewButton.revalidate();
 			cancelLayoutPreviewButton.setAction(0, "Cancel preview");
@@ -375,7 +369,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private Layout previewLayout = null;
 	private LayoutableThing previewLayoutable = null;
 
-	private InventorySetupsAdapter inventorySetupsAdapter = new InventorySetupsAdapter(this);
+	private final InventorySetupsAdapter inventorySetupsAdapter = new InventorySetupsAdapter(this);
 
 	private void showLayoutPreview() {
 
@@ -391,7 +385,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		if (currentLayoutableThing.isBankTab()) {
 			List<Integer> equippedGear = getEquippedGear();
 			List<Integer> inventory = getInventory();
-			if (equippedGear.stream().filter(id -> id > 0).count() == 0 && inventory.stream().filter(id -> id > 0).count() == 0) {
+			if (equippedGear.stream().noneMatch(id -> id > 0) && inventory.stream().noneMatch(id -> id > 0)) {
 				chatMessage("This feature uses your equipped items and inventory to automatically create a bank tag layout, but you don't have any items equipped or in your inventory.");
 				return;
 			}
@@ -710,9 +704,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		updateFakeItems(layout);
 
 		for (Widget bankItem : bankItems) {
-			bankItem.setOnDragCompleteListener((JavaScriptCallback) (ev) -> {
-				customBankTagOrderInsert(layoutable, ev.getSource());
-			});
+			bankItem.setOnDragCompleteListener((JavaScriptCallback) (ev) -> customBankTagOrderInsert(layoutable, ev.getSource()));
 		}
 
 		setItemPositions(indexToWidget);

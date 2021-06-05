@@ -34,7 +34,6 @@ import static org.junit.Assert.assertFalse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -124,10 +123,6 @@ public class BankLayoutTest
 				itemComposition.getId();
 		});
 		Mockito.when(itemManager.getItemComposition(anyInt())).thenAnswer(invocation -> generateItemComposition(invocation.getArgument(0)));
-//        Mockito.doAnswer(invocation -> currentLayout).when(plugin).getBankOrder(any());
-//        Mockito.doNothing().when(plugin).saveLayout(any(), any());
-//        Mockito.when(plugin.getBankOrder(any())).thenAnswer(invocation -> currentLayout);
-//        plugin = Mockito.spy(plugin);
     }
 
     Layout currentLayout;
@@ -201,9 +196,9 @@ public class BankLayoutTest
 
     @Test
     public void testMoveItems() {
-        List<Item> layoutItems = Arrays.asList(new Item[]{GAMES_NECKLACE_8, GAMES_NECKLACE_8_PH, MAGIC_LOGS});
-        List<Item> realItems = Arrays.asList(new Item[]{GAMES_NECKLACE_8, GAMES_NECKLACE_8_PH, MAGIC_LOGS});
-		List<BankSlot.Type> targetTypes = Arrays.asList(new BankSlot.Type[]{BankSlot.Type.DUPLICATE_ITEM, BankSlot.Type.LAYOUT_PLACEHOLDER, BankSlot.Type.REAL_ITEM, null});
+        List<Item> layoutItems = Arrays.asList(GAMES_NECKLACE_8, GAMES_NECKLACE_8_PH, MAGIC_LOGS);
+        List<Item> realItems = Arrays.asList(GAMES_NECKLACE_8, GAMES_NECKLACE_8_PH, MAGIC_LOGS);
+		List<BankSlot.Type> targetTypes = Arrays.asList(BankSlot.Type.DUPLICATE_ITEM, BankSlot.Type.LAYOUT_PLACEHOLDER, BankSlot.Type.REAL_ITEM, null);
 		for (Item targetLayoutItem : realItems)
 		{
 			for (BankSlot.Type targetType : targetTypes)
@@ -244,7 +239,6 @@ public class BankLayoutTest
          */
         boolean isLayoutPlaceholder = realItem == null;
         int targetIndex = targetType == null ? 2 : targetType == BankSlot.Type.DUPLICATE_ITEM ? 4 : 6;
-        int otherIndex = targetType == null ? 2 : 1;
 
         currentLayout = generateLayout(
                 new LayoutItem(layoutItem, 1),
@@ -326,8 +320,8 @@ public class BankLayoutTest
     @Test
     public void testDuplicateItems()
 	{
-		List<Item> layoutItems = Arrays.asList(new Item[]{GAMES_NECKLACE_8, GAMES_NECKLACE_8_PH, MAGIC_LOGS});
-		List<Item> realItems = Arrays.asList(new Item[]{GAMES_NECKLACE_8, GAMES_NECKLACE_8_PH, MAGIC_LOGS});
+		List<Item> layoutItems = Arrays.asList(GAMES_NECKLACE_8, GAMES_NECKLACE_8_PH, MAGIC_LOGS);
+		List<Item> realItems = Arrays.asList(GAMES_NECKLACE_8, GAMES_NECKLACE_8_PH, MAGIC_LOGS);
 		for (Item targetLayoutItem : realItems)
 		{
 			for (int i = 0; i < layoutItems.size(); i++)
@@ -382,8 +376,8 @@ public class BankLayoutTest
 	@Test
 	public void testRemoveDuplicateItems()
 	{
-		List<Item> layoutItems = Arrays.asList(new Item[]{GAMES_NECKLACE_8, GAMES_NECKLACE_8_PH, MAGIC_LOGS});
-		List<Item> realItems = Arrays.asList(new Item[]{GAMES_NECKLACE_8, GAMES_NECKLACE_8_PH, MAGIC_LOGS});
+		List<Item> layoutItems = Arrays.asList(GAMES_NECKLACE_8, GAMES_NECKLACE_8_PH, MAGIC_LOGS);
+		List<Item> realItems = Arrays.asList(GAMES_NECKLACE_8, GAMES_NECKLACE_8_PH, MAGIC_LOGS);
 		for (Item targetLayoutItem : realItems)
 		{
 			for (int i = 0; i < layoutItems.size(); i++)
@@ -781,30 +775,6 @@ public class BankLayoutTest
             this.placeholder = placeholder;
             itemsById.put(this.id, this);
         }
-
-//        private static String calculatePlaceholder(String uniqueName)
-//        {
-//            if (uniqueName.endsWith(" (ph)")) {
-//                return uniqueName.substring(0, uniqueName.length() - " (ph)".length());
-//            } else {
-//                return uniqueName + " (ph)";
-//            }
-//        }
-//
-//        public Item(String uniqueName, String variantClass, String placeholder) {
-//            if (uniqueName.endsWith(" (ph)")) {
-//                this.placeholder = true;
-//            } else {
-//                this.placeholder = false;
-//            }
-//
-//            System.out.println("name is \"" + uniqueName + "\"");
-//            this.name = uniqueName;
-//            this.id = Math.abs(uniqueName.hashCode());
-//            this.variantClass = variantClass == null ? -1 : variantClass.hashCode();
-//            this.placeholderId = placeholder == null ? -1 : placeholder.hashCode();
-//            itemsById.put(id, this);
-//        }
     }
 
     private static class LayoutItem {
@@ -894,7 +864,7 @@ public class BankLayoutTest
     @Test
 	public void testLayoutGeneratorWithDuplicateItems() {
 		LayoutGenerator layoutGenerator = new LayoutGenerator(plugin);
-		Layout layout = layoutGenerator.basicLayout(Arrays.asList(new Integer[]{GAMES_NECKLACE_8.id, RUNE_PLATEBODY.id}), Arrays.asList(new Integer[]{GAMES_NECKLACE_8.id, MAGIC_LOGS.id, MAGIC_LOGS.id}), Layout.emptyLayout(), 28);
+		Layout layout = layoutGenerator.basicLayout(Arrays.asList(GAMES_NECKLACE_8.id, RUNE_PLATEBODY.id), Arrays.asList(GAMES_NECKLACE_8.id, MAGIC_LOGS.id, MAGIC_LOGS.id), Layout.emptyLayout(), 28);
 		checkLayout(layout, 0, GAMES_NECKLACE_8);
 		checkLayout(layout, 8, RUNE_PLATEBODY);
 		checkLayout(layout, 16, GAMES_NECKLACE_8);
@@ -905,7 +875,7 @@ public class BankLayoutTest
 	@Test
 	public void testLayoutGeneratorWithDuplicateLimit() {
 		LayoutGenerator layoutGenerator = new LayoutGenerator(plugin);
-		Layout layout = layoutGenerator.basicLayout(Collections.emptyList(), Arrays.asList(new Integer[]{
+		Layout layout = layoutGenerator.basicLayout(Collections.emptyList(), Arrays.asList(
 			GAMES_NECKLACE_8.id,
 			MAGIC_LOGS.id,
 			MAGIC_LOGS.id,
@@ -916,8 +886,7 @@ public class BankLayoutTest
 			MAGIC_LOGS.id,
 			MAGIC_LOGS.id,
 			MAGIC_LOGS.id,
-			GAMES_NECKLACE_8.id,
-		}), Layout.emptyLayout(), 3);
+			GAMES_NECKLACE_8.id), Layout.emptyLayout(), 3);
 		checkLayout(layout, 0, GAMES_NECKLACE_8);
 		checkLayout(layout, 8, MAGIC_LOGS);
 		checkLayout(layout, 1, MAGIC_LOGS);

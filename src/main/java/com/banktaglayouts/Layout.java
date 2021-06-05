@@ -27,8 +27,8 @@ public class Layout {
         for (String s1 : layoutString.split(",")) {
             String[] split = s1.split(":");
             try {
-                Integer itemId = Integer.valueOf(split[0]);
-                Integer index = Integer.valueOf(split[1]);
+                int itemId = Integer.parseInt(split[0]);
+                int index = Integer.parseInt(split[1]);
                 if (index >= 0) {
                     layout.putItem(itemId, index);
                 } else {
@@ -160,32 +160,6 @@ public class Layout {
         }
     }
 
-//    @Deprecated
-//    public void swapIndexes(int index1, int index2, Integer index1PreferredId, Integer index2PreferredId) {
-//        if (index1PreferredId == null) {
-//            index1PreferredId = getItemAtIndex(index1);
-//        }
-//        if (index2PreferredId == null) {
-//            index2PreferredId = getItemAtIndex(index2);
-//        }
-//
-//        int layoutItemId = getItemAtIndex(clickedItemIndex);
-//        if (layoutItemId != itemIdAtIndex) {
-//            // Modifying a layout should always use the real item there, NOT the item id stored in the layout (which can
-//            // be different due to how variant items are assigned indexes).
-//            // Therefore, the duplicates must be updated to use that id as well.
-//            List<Integer> indexesToChange = getIndexesForItem(layoutItemId);
-//            for (Integer index : indexesToChange) {
-//                putItem(itemIdAtIndex, index);
-//            }
-//        }
-//
-//        clearIndex(index2);
-//        clearIndex(index1);
-//        if (index1PreferredId != null && index1PreferredId != -1) putItem(index1PreferredId, index2);
-//        if (index2PreferredId != null && index2PreferredId != -1) putItem(index2PreferredId, index1);
-//    }
-//
     public boolean isEmpty()
     {
         return layoutMap.isEmpty();
