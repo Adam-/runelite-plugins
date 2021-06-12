@@ -12,6 +12,7 @@ import java.util.List;
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.NPC;
 import net.runelite.client.config.ConfigManager;
@@ -68,6 +69,9 @@ public class DiscordLootLoggerPlugin extends Plugin
 	{
 		return "https://static.runelite.net/cache/item/icon/" + itemId + ".png";
 	}
+
+	@Inject
+	private Client client;
 
 	@Override
 	protected void startUp()
@@ -137,6 +141,11 @@ public class DiscordLootLoggerPlugin extends Plugin
 		processLoot(lootReceived.getName(), lootReceived.getItems());
 	}
 
+	private String getPlayerName()
+	{
+		return client.getLocalPlayer().getName();
+	}
+
 	private void processLoot(String name, Collection<ItemStack> items)
 	{
 		WebhookBody webhookBody = new WebhookBody();
@@ -144,7 +153,11 @@ public class DiscordLootLoggerPlugin extends Plugin
 		boolean sendMessage = false;
 		long totalValue = 0;
 		StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append("**").append(name).append("**").append(":\n");
+		if (config.includeUsername())
+		{
+			stringBuilder.append("\n**").append(getPlayerName()).append("**").append(":\n\n");
+		}
+		stringBuilder.append("***").append(name).append("***").append(":\n");
 		final int targetValue = config.lootValue();
 		for (ItemStack item : stack(items))
 		{
@@ -160,7 +173,7 @@ public class DiscordLootLoggerPlugin extends Plugin
 			{
 				sendMessage = true;
 				ItemComposition itemComposition = itemManager.getItemComposition(itemId);
-				stringBuilder.append(qty).append(" x ").append(itemComposition.getName());
+				stringBuilder.append("*").append(qty).append(" x ").append(itemComposition.getName()).append("*");
 				if (config.stackValue())
 				{
 					stringBuilder.append(" (").append(QuantityFormatter.quantityToStackSize(total)).append(")");
