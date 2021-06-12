@@ -62,4 +62,15 @@ public interface DiscordLootLoggerConfig extends Config
 	{
 		return false;
 	}
+
+	@ConfigItem(
+		keyName = "includeusername",
+		name = "Include Username",
+		description = "Include your RSN in the post."
+	)
+	default boolean includeUsername()
+	{
+		return false;
+	}
+
 }
