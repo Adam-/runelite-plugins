@@ -4,10 +4,7 @@ import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.events.ActorDeath;
-import net.runelite.api.events.GameStateChanged;
-import net.runelite.api.events.GameTick;
-import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.events.*;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -19,6 +16,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
 
 @Slf4j
 @PluginDescriptor(
@@ -44,11 +42,13 @@ public class TobMistakeTrackerPlugin extends Plugin
 	@Inject
 	private TobMistakeTrackerConfig config;
 
+	@Inject
+	private MistakeManager mistakeManager;
+
 	private int raidState;
 	private boolean inTob;
 	private boolean isRaider;
 
-	private Map<String, Integer> mistakes;
 	private Set<String> raiders;
 
 	@Override
@@ -56,7 +56,6 @@ public class TobMistakeTrackerPlugin extends Plugin
 	{
 		log.info("@@@@@@@@@@@@@ started! @@@@@@@@@@");
 		log.info("new test");
-		mistakes = new HashMap<>();
 		raiders = new HashSet<>(MAX_RAIDERS);
 		resetRaidState();
 	}
@@ -91,10 +90,47 @@ public class TobMistakeTrackerPlugin extends Plugin
 				// A Raider has died
 				log.info("Death: " + name);
 				client.getLocalPlayer().setOverheadText("Death: " + name);
+				mistakeManager.addMistakeForPlayer(name, TobMistake.DEATH);
 			}
 		}
 
 		event.getActor().setOverheadText("Whoopsies I died!");
+	}
+
+	@Subscribe
+	public void onHitsplatApplied(HitsplatApplied event) {
+		log.info(String.format("onHitsplatApplied: %s", client.getTickCount()));
+		if (!inTob) return;
+
+		if (event.getHitsplat().getHitsplatType() == Hitsplat.HitsplatType.HEAL) {
+			if (event.getActor().getName() == null) {
+				return;
+			}
+
+			int amount = event.getHitsplat().getAmount();
+			switch (event.getActor().getName()) {
+				case TobBossNames.MAIDEN:
+					// Healing Maiden:
+					// If maiden has a heal hitsplat
+					// And player is on a blood
+
+
+					for (Player player : client.getPlayers()) {
+						if (raiders.contains(player.getName())) {
+
+						}
+					}
+					break;
+				default:
+					// Hitsplat not applied to a boss
+					break;
+			}
+		}
+
+		log.info("hitsplat actor: " + event.getActor().getName());
+		log.info("hitsplat actor interacting: " + event.getActor().getInteracting());
+		log.info("hitsplat type: " + event.getHitsplat().getHitsplatType().name());
+		log.info("hitsplat amount: " + event.getHitsplat().getAmount());
 	}
 
 	@Subscribe
@@ -116,6 +152,7 @@ public class TobMistakeTrackerPlugin extends Plugin
 
 	@Subscribe
 	public void onGameTick(GameTick event) {
+		log.info(String.format("onGameTick: %s", client.getTickCount()));
 		if (inTob && raiders.isEmpty()) {
 			loadRaiders();
 			logState();
@@ -125,7 +162,7 @@ public class TobMistakeTrackerPlugin extends Plugin
 	private void loadRaiders() {
 		for (int i = 0; i < MAX_RAIDERS; i++) {
 			String name = Text.sanitize(client.getVarcStrValue(THEATRE_RAIDERS_VARC + i));
-			if (name != null && !name.equals("")) {
+			if (name != null && !name.isEmpty()) {
 				raiders.add(name);
 			}
 		}
@@ -146,8 +183,18 @@ public class TobMistakeTrackerPlugin extends Plugin
 		}
 
 		logState();
+	}
 
-		client.getLocalPlayer().setOverheadText(String.valueOf(config.spectatingEnabled()));
+	@Subscribe
+	public void onOverheadTextChanged(OverheadTextChanged event) {
+		// For Testing
+		if (event.getActor().equals(client.getLocalPlayer())) {
+			if (event.getOverheadText().startsWith("Blood")) {
+				char id = event.getOverheadText().charAt(event.getOverheadText().length()-1);
+				mistakeManager.addMistakeForPlayer("TestPlayer" + id, TobMistake.MAIDEN_BLOOD);
+				logState();
+			}
+		}
 	}
 
 	private boolean isNewRaiderInRaid(int newRaidState) {
@@ -164,6 +211,7 @@ public class TobMistakeTrackerPlugin extends Plugin
 		log.info("isRaider: " + isRaider);
 
 		log.info("raiders: " + raiders);
+		log.info("mistakes: " + mistakeManager.mistakesForPlayers);
 	}
 
 	@Provides
