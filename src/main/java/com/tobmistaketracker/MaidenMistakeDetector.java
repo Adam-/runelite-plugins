@@ -1,9 +1,8 @@
 package com.tobmistaketracker;
 
-import net.runelite.api.Client;
-import net.runelite.api.GameObject;
-import net.runelite.api.GraphicsObject;
-import net.runelite.api.Projectile;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.eventbus.Subscribe;
@@ -11,49 +10,50 @@ import net.runelite.client.eventbus.Subscribe;
 import javax.inject.Inject;
 import java.util.*;
 
+@Slf4j
 public class MaidenMistakeDetector {
 
-    private static int BLOOD_SPAWN_BLOOD_GAME_OBJECT_ID = 32984;
-    private static int MAIDEN_BLOOD_PROJECTILE_ID = 1578;
-    private static int MAIDEN_BLOOD_GRAPHICS_OBJECT_ID = 1579;
+    private static final int BLOOD_SPAWN_BLOOD_GAME_OBJECT_ID = 32984;
+    private static final int MAIDEN_BLOOD_GRAPHICS_OBJECT_ID = 1579;
 
     // It's easier to track these separately and check if player is in either of them, since they can overlap and
     // we don't need to worry about removing one accidentally when the other despawns.
     Set<LocalPoint> bloodSpawnBloodTiles;
-    Set<LocalPoint> maidenBloodTiles;
+    Map<LocalPoint, GraphicsObject> maidenBloodTiles;
 
-    // This is a map of end positions to Projectile objects for fast lookups
-    Map<LocalPoint, Projectile> maidenBloodProjectiles;
     List<GraphicsObject> maidenBloodGraphicsObjects;
 
     @Inject
     private Client client;
 
+    MaidenMistakeDetector() {
+        init();
+    }
+
     public void init() {
         bloodSpawnBloodTiles = new HashSet<>();
-        maidenBloodTiles = new HashSet<>();
-
-        maidenBloodProjectiles = new HashMap<>();
+        maidenBloodTiles = new HashMap<>();
         maidenBloodGraphicsObjects = new ArrayList<>();
     }
 
     public void cleanup() {
         bloodSpawnBloodTiles.clear();
         maidenBloodTiles.clear();
-
-        maidenBloodProjectiles.clear();
         maidenBloodGraphicsObjects.clear();
     }
 
-    @Subscribe
-    public void onProjectileMoved(ProjectileMoved event) {
-        Projectile projectile = event.getProjectile();
-        if (projectile.getId() == MAIDEN_BLOOD_PROJECTILE_ID) {
-            maidenBloodProjectiles.put(event.getPosition(), projectile);
+    public List<TobMistake> detectMistakes(@NonNull Player player) {
+        if (isOnBloodTile(player.getLocalLocation())) {
+            return Collections.singletonList(TobMistake.MAIDEN_BLOOD);
         }
+
+        return Collections.emptyList();
     }
 
-    @Subscribe
+    private boolean isOnBloodTile(LocalPoint localPoint) {
+        return bloodSpawnBloodTiles.contains(localPoint) || maidenBloodTiles.containsKey(localPoint);
+    }
+
     public void onGraphicsObjectCreated(GraphicsObjectCreated event) {
         GraphicsObject go = event.getGraphicsObject();
         if (go.getId() == MAIDEN_BLOOD_GRAPHICS_OBJECT_ID) {
@@ -61,7 +61,6 @@ public class MaidenMistakeDetector {
         }
     }
 
-    @Subscribe
     public void onGameObjectSpawned(GameObjectSpawned event) {
         GameObject go = event.getGameObject();
         if (go.getId() == BLOOD_SPAWN_BLOOD_GAME_OBJECT_ID) {
@@ -69,7 +68,6 @@ public class MaidenMistakeDetector {
         }
     }
 
-    @Subscribe
     public void onGameObjectDespawned(GameObjectDespawned event) {
         GameObject go = event.getGameObject();
         if (go.getId() == BLOOD_SPAWN_BLOOD_GAME_OBJECT_ID) {
@@ -77,27 +75,35 @@ public class MaidenMistakeDetector {
         }
     }
 
-    @Subscribe
     public void onGameTick(GameTick event) {
-        if (maidenBloodProjectiles.isEmpty() || maidenBloodGraphicsObjects.isEmpty()) {
+        log.info(String.format("Maiden - onGameTick: %s", client.getTickCount()));
+
+        if (maidenBloodGraphicsObjects.isEmpty()) {
             return;
         }
 
-        // We need to calculate when the blood tile actually "activates" and heals maiden
+        // Compute when a blood tile actually "activates"
         int currentCycle = client.getGameCycle();
         for (GraphicsObject graphicsObject : new ArrayList<>(maidenBloodGraphicsObjects)) {
-            if (currentCycle > graphicsObject.getStartCycle()) {
+            if (isInactive(graphicsObject)) {
+                maidenBloodGraphicsObjects.remove(graphicsObject);
+            } else if (currentCycle >= graphicsObject.getStartCycle()) {
                 // This is now an active blood tile
                 LocalPoint bloodLocation = graphicsObject.getLocation();
+                maidenBloodTiles.put(bloodLocation, graphicsObject);
                 maidenBloodGraphicsObjects.remove(graphicsObject);
-            }
-
-            if (maidenBloodProjectiles.containsKey(bloodLocation)) {
-                Projectile matchedProjectile = maidenBloodProjectiles.get(bloodLocation);
-                matchedProjectile.getEndCycle();
             }
         }
 
+        // Remove "inactive" blood tiles
+        for (Map.Entry<LocalPoint, GraphicsObject> bloodTileEntry : new HashSet<>(maidenBloodTiles.entrySet())) {
+            if (isInactive(bloodTileEntry.getValue())) {
+                maidenBloodTiles.remove(bloodTileEntry.getKey());
+            }
+        }
+    }
 
+    private boolean isInactive(GraphicsObject graphicsObject) {
+        return graphicsObject == null || graphicsObject.finished();
     }
 }
