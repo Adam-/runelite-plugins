@@ -31,12 +31,16 @@ public class MaidenBloodTilesOverlay extends Overlay {
     private Set<WorldPoint> tiles;
 
     @Setter
+    private Set<WorldPoint> tiles2;
+
+    @Setter
     private List<WorldPoint> raiderTiles;
 
 
     MaidenBloodTilesOverlay(Client client) {
         this.client = client;
         this.tiles = new HashSet<>();
+        this.tiles2 = new HashSet<>();
         this.raiderTiles = new ArrayList<>();
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_SCENE);
@@ -50,6 +54,10 @@ public class MaidenBloodTilesOverlay extends Overlay {
         }
 
         for (WorldPoint worldPoint : tiles) {
+            renderTile(graphics, LocalPoint.fromWorld(client, worldPoint), Color.CYAN);
+        }
+
+        for (WorldPoint worldPoint : tiles2) {
             renderTile(graphics, LocalPoint.fromWorld(client, worldPoint), Color.CYAN);
         }
 

@@ -2,6 +2,7 @@ package com.tobmistaketracker;
 
 import com.google.inject.Provides;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
@@ -73,6 +74,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
 		mistakeDetectorManager = new MistakeDetectorManager(this);
 		installMistakeDetectors();
+		mistakeDetectorManager.startup();
 	}
 
 	@Override
@@ -80,7 +82,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
 	{
 		log.info("@@@@@@@@@@@@ stopped! @@@@@@@@@");
 		raiders.clear();
-		mistakeDetectorManager.cleanup();
+		mistakeDetectorManager.shutdown();
 		mistakeDetectorManager = null;
 	}
 
@@ -91,10 +93,10 @@ public class TobMistakeTrackerPlugin extends Plugin {
 		allRaidersLoaded = false;
 
 		raiders = new HashSet<>(MAX_RAIDERS);
+		mistakeDetectorManager.shutdown();
 	}
 
 	private void installMistakeDetectors() throws Exception {
-		// TODO: We don't need certain detectors installed all the time (e.g. Bloat detector during Maiden)
 		mistakeDetectorManager.installMistakeDetector(MaidenMistakeDetector.class);
 	}
 
@@ -103,21 +105,23 @@ public class TobMistakeTrackerPlugin extends Plugin {
 		if (notReadyToDetectMistakes()) return;
 
 		Actor actor = event.getActor();
-		if (actor instanceof TobRaider) {
-			TobRaider raider = (TobRaider) actor;
-			if (raider.getName() == null) {
+		if (actor instanceof Player) {
+			Player player = (Player) actor;
+			if (player.getName() == null) {
 				return;
 			}
 
-			String name = Text.sanitize(raider.getName());
+			String name = Text.sanitize(player.getName());
 
-			if (raiders.contains(raider)) {
+			if (raiders.contains(player)) { // TODO: Fix
 				// A Raider has died
 				log.info("Death: " + name);
 				client.getLocalPlayer().setOverheadText("Death: " + name);
                 addMistakeForPlayer(name, TobMistake.DEATH);
 			}
 		}
+
+		mistakeDetectorManager.onEvent("onActorDeath", event);
 
 		event.getActor().setOverheadText("Whoopsies I died!");
 	}
@@ -180,25 +184,46 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
 		if (notReadyToDetectMistakes()) return;
 
+		// Let all detectors handle the GameTick
 		mistakeDetectorManager.onEvent("onGameTick", event);
 
+		detectAll();
+
+		afterDetectAll();
+    }
+
+    private void detectAll() {
 		for (TobRaider raider : raiders) {
 			if (raider != null) {
-				List<TobMistake> mistakes = mistakeDetectorManager.detectMistakes(raider);
-				if (!mistakes.isEmpty()) {
-					log.info("FOUND MISTAKES FOR " + raider.getName() + " - " + mistakes);
-
-					for (TobMistake mistake : mistakes) {
-						int mistakeCount = addMistakeForPlayer(raider.getName(), mistake);
-						raider.setOverheadText("" + client.getTickCount() + " - BLOOD " + mistakeCount);
-					}
-					logState();
-				}
-
-				raider.setPreviousWorldLocation(raider.getCurrentWorldLocation());
+				detect(raider);
 			}
 		}
-    }
+	}
+
+	private void detect(@NonNull TobRaider raider) {
+		List<TobMistake> mistakes = mistakeDetectorManager.detectMistakes(raider);
+		if (!mistakes.isEmpty()) {
+			log.info("" + client.getTickCount() + " Found mistakes for " + raider.getName() + " - " + mistakes);
+
+			for (TobMistake mistake : mistakes) {
+				int mistakeCount = addMistakeForPlayer(raider.getName(), mistake);
+				raider.setOverheadText("" + client.getTickCount() + " - BLOOD " + mistakeCount);
+			}
+
+			logState();
+		}
+
+		afterDetect(raider);
+	}
+
+	private void afterDetect(TobRaider raider) {
+		raider.setPreviousWorldLocation(raider.getCurrentWorldLocation());
+		raider.setPreviousIsDead(raider.isDead());
+	}
+
+    private void afterDetectAll() {
+		mistakeDetectorManager.afterDetect();
+	}
 
 	private void loadRaiders() {
 		Set<String> raiderNames = new HashSet<>(MAX_RAIDERS);
@@ -218,8 +243,13 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
 		if (!raiderNames.isEmpty() && raiderNames.size() == raidersTemp.size()) {
 			raiders = raidersTemp;
-			allRaidersLoaded = true;
+			allRaidersLoaded();
 		}
+	}
+
+	private void allRaidersLoaded() {
+		allRaidersLoaded = true;
+		mistakeDetectorManager.startup();
 	}
 
 	private boolean notReadyToDetectMistakes() {

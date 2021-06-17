@@ -19,6 +19,10 @@ public class TobRaider {
     @Setter
     private WorldPoint previousWorldLocation;
 
+    @Getter
+    @Setter
+    private boolean previousIsDead;
+
     TobRaider(@NonNull Player player) {
         this.player = player;
     }
@@ -33,5 +37,9 @@ public class TobRaider {
 
     public void setOverheadText(String overheadText) {
         player.setOverheadText(overheadText);
+    }
+
+    public boolean isDead() {
+        return player.isDead();
     }
 }
