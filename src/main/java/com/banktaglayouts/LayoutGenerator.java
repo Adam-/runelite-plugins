@@ -33,37 +33,49 @@ public class LayoutGenerator {
 
         // lay out equipped items.
         equippedItems = equippedItems.stream()
-//                .distinct()
                 .map(itemId -> plugin.itemManager.canonicalize(itemId)) // Weight reducing items have different ids when equipped; this fixes that.
                 .collect(Collectors.toList());
         i = layoutItems(equippedItems, currentLayout, previewLayout, displacedItems, i, true);
 
         // lay out the inventory items.
         // distinct leaves the first duplicate it encounters and removes only duplicates coming after the first.
-		List<Integer> newInventory = new ArrayList<>();
-		int inARow = 0;
-		int lastItemId = -1;
-		for (Integer itemId : inventory) {
-			if (lastItemId != itemId) {
-				inARow = 0;
-			}
-			inARow++;
-			if (inARow <= duplicateLimit) {
-				newInventory.add(itemId);
-			} else if (inARow == duplicateLimit + 1) {
-				while (true) {
-					if (newInventory.get(newInventory.size() - 1) != (int) itemId) {
-						break;
-					}
-					newInventory.remove(newInventory.size() - 1);
-				}
-				newInventory.add(itemId);
-			}
-			lastItemId = itemId;
+		if (duplicateLimit <= 0)
+		{
+			inventory = inventory.stream().distinct().collect(Collectors.toList());
 		}
-        inventory = newInventory;//inventory.stream()
-//                .distinct()
-//                .collect(Collectors.toList());
+		else
+		{
+			List<Integer> newInventory = new ArrayList<>();
+			int inARow = 0;
+			int lastItemId = -1;
+			for (Integer itemId : inventory)
+			{
+				if (lastItemId != itemId)
+				{
+					inARow = 0;
+				}
+				inARow++;
+				if (inARow <= duplicateLimit)
+				{
+					newInventory.add(itemId);
+				}
+				else if (inARow == duplicateLimit + 1)
+				{
+					while (true)
+					{
+						if (newInventory.get(newInventory.size() - 1) != (int) itemId)
+						{
+							break;
+						}
+						newInventory.remove(newInventory.size() - 1);
+					}
+					newInventory.add(itemId);
+				}
+				lastItemId = itemId;
+			}
+			inventory = newInventory;
+		}
+
         i = layoutItems(inventory, currentLayout, previewLayout, displacedItems, i, true);
 
         i = layoutItems(runePouch, currentLayout, previewLayout, displacedItems, i, false);

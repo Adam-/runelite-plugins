@@ -395,14 +395,14 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		Layout currentLayout = getBankOrderNonPreview(currentLayoutableThing);
 		if (currentLayout == null) currentLayout = Layout.emptyLayout();
 
-			previewLayout = layoutGenerator.basicLayout(equippedGear, inventory, currentLayout, config.autoLayoutDuplicateLimit());
+			previewLayout = layoutGenerator.basicLayout(equippedGear, inventory, currentLayout, getAutoLayoutDuplicateLimit());
 		} else {
 			InventorySetup inventorySetup = inventorySetupsAdapter.getInventorySetup(currentLayoutableThing.name);
 
 			Layout currentLayout = getBankOrderNonPreview(currentLayoutableThing);
 			if (currentLayout == null) currentLayout = Layout.emptyLayout();
 
-			previewLayout = layoutGenerator.basicInventorySetupsLayout(inventorySetup, currentLayout, config.autoLayoutDuplicateLimit());
+			previewLayout = layoutGenerator.basicInventorySetupsLayout(inventorySetup, currentLayout, getAutoLayoutDuplicateLimit());
 		}
 
 		hideLayoutPreviewButtons(false);
@@ -410,6 +410,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		previewLayoutable = currentLayoutableThing;
 
 		applyCustomBankTagItemPositions();
+	}
+
+	private int getAutoLayoutDuplicateLimit() {
+		return !config.autoLayoutDuplicatesEnabled() ? 0 : config.autoLayoutDuplicateLimit();
 	}
 
 	private List<Integer> getEquippedGear() {
@@ -677,7 +681,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			// Inventory setups by default have an equipment and inventory order, so lay it out automatically if this
 			// is the first time viewing the setup with bank tag layouts.
 			InventorySetup inventorySetup = inventorySetupsAdapter.getInventorySetup(layoutable.name);
-			layout = layoutGenerator.basicInventorySetupsLayout(inventorySetup, Layout.emptyLayout(), config.autoLayoutDuplicateLimit());
+			layout = layoutGenerator.basicInventorySetupsLayout(inventorySetup, Layout.emptyLayout(), getAutoLayoutDuplicateLimit());
 		}
 
 		List<Widget> bankItems = Arrays.stream(client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER).getDynamicChildren())

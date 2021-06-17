@@ -78,10 +78,20 @@ public interface BankTagLayoutsConfig extends Config {
     }
 
 	@ConfigItem(
-		keyName = "autoLayoutDuplicateLimit",
-		name = "Auto-layout duplicate limit",
-		description = "The maximum number of items in a row to create duplicates for with auto-layout. Set to 1 to never create duplicates. Set to 28 to always create duplicates.",
+		keyName = "autoLayoutDuplicatesEnabled",
+		name = "Auto-layout: Create duplicates",
+		description = "Whether or not to create duplicates when there are multiple of the same item when using auto-layout.",
 		position = 8
+	)
+	default boolean autoLayoutDuplicatesEnabled() {
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "autoLayoutDuplicateLimit",
+		name = "Auto-layout: Duplicate limit",
+		description = "The maximum number of items in a row to create duplicates for with auto-layout. Set to 1 to never create duplicates. Set to 28 to always create duplicates.",
+		position = 9
 	)
 	default int autoLayoutDuplicateLimit() {
 		return 4;
