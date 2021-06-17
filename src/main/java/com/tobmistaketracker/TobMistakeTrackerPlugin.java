@@ -7,22 +7,18 @@ import net.runelite.api.Client;
 import net.runelite.api.Hitsplat;
 import net.runelite.api.Player;
 import net.runelite.api.Varbits;
-import net.runelite.api.events.ActorDeath;
-import net.runelite.api.events.GameObjectDespawned;
-import net.runelite.api.events.GameObjectSpawned;
-import net.runelite.api.events.GameTick;
-import net.runelite.api.events.GraphicsObjectCreated;
-import net.runelite.api.events.HitsplatApplied;
-import net.runelite.api.events.OverheadTextChanged;
-import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.*;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -38,6 +34,7 @@ public class TobMistakeTrackerPlugin extends Plugin
 {
 
 	static final String CONFIG_GROUP = "tobMistakeTracker";
+	static final String CLEAR_MISTAKES_KEY = "clearMistakes";
 
 	private static final int TOB_STATE_NO_PARTY = 0;
 	private static final int TOB_STATE_IN_PARTY = 1;
@@ -52,26 +49,29 @@ public class TobMistakeTrackerPlugin extends Plugin
 	private Client client;
 
 	@Inject
+	private OverlayManager overlayManager;
+
+	@Inject
 	private TobMistakeTrackerConfig config;
 
 	@Inject
 	private MistakeManager mistakeManager;
 
-	@Inject
 	MaidenMistakeDetector maidenMistakeDetector;
 
 	private int raidState;
 	private boolean inTob;
 	private boolean isRaider;
+	private boolean allRaidersLoaded;
 
 	private Set<Player> raiders;
+	private HashMap<String, WorldPoint> oldRaiderLocations;
 
 	@Override
 	protected void startUp() throws Exception
 	{
 		log.info("@@@@@@@@@@@@@ started! @@@@@@@@@@");
 		log.info("new test");
-		raiders = new HashSet<>(MAX_RAIDERS);
 		resetRaidState();
 	}
 
@@ -79,19 +79,24 @@ public class TobMistakeTrackerPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		log.info("@@@@@@@@@@@@ stopped! @@@@@@@@@");
+		maidenMistakeDetector.cleanup();
 	}
 
 	private void resetRaidState() {
 		raidState = 0;
 		inTob = false;
 		isRaider = false;
-		raiders.clear();
-        maidenMistakeDetector.init();
+		allRaidersLoaded = false;
+
+		raiders = new HashSet<>(MAX_RAIDERS);
+		oldRaiderLocations = new HashMap<>(MAX_RAIDERS);
+
+        maidenMistakeDetector = new MaidenMistakeDetector(client, overlayManager);
 	}
 
 	@Subscribe
 	public void onActorDeath(ActorDeath event) {
-		if (!inTob) return;
+		if (notReadyToDetectMistakes()) return;
 
 		Actor actor = event.getActor();
 		if (actor instanceof Player) {
@@ -106,7 +111,7 @@ public class TobMistakeTrackerPlugin extends Plugin
 				// A Raider has died
 				log.info("Death: " + name);
 				client.getLocalPlayer().setOverheadText("Death: " + name);
-				mistakeManager.addMistakeForPlayer(name, TobMistake.DEATH);
+                addMistakeForPlayer(name, TobMistake.DEATH);
 			}
 		}
 
@@ -115,8 +120,7 @@ public class TobMistakeTrackerPlugin extends Plugin
 
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event) {
-		log.info(String.format("onHitsplatApplied: %s", client.getTickCount()));
-		if (!inTob) return;
+		if (notReadyToDetectMistakes()) return;
 
 		if (event.getHitsplat().getHitsplatType() == Hitsplat.HitsplatType.HEAL) {
 			if (event.getActor().getName() == null) {
@@ -135,11 +139,11 @@ public class TobMistakeTrackerPlugin extends Plugin
 					break;
 			}
 		}
-
-		log.info("hitsplat actor: " + event.getActor().getName());
-		log.info("hitsplat actor interacting: " + event.getActor().getInteracting());
-		log.info("hitsplat type: " + event.getHitsplat().getHitsplatType().name());
-		log.info("hitsplat amount: " + event.getHitsplat().getAmount());
+//
+//		log.info("hitsplat actor: " + event.getActor().getName());
+//		log.info("hitsplat actor interacting: " + event.getActor().getInteracting());
+//		log.info("hitsplat type: " + event.getHitsplat().getHitsplatType().name());
+//		log.info("hitsplat amount: " + event.getHitsplat().getAmount());
 	}
 
 	@Subscribe
@@ -161,25 +165,36 @@ public class TobMistakeTrackerPlugin extends Plugin
 
 	@Subscribe
 	public void onGameTick(GameTick event) {
-		log.info(String.format("onGameTick: %s", client.getTickCount()));
+//		log.info(String.format("onGameTick: %s", client.getTickCount()));
+		client.getLocalPlayer().setOverheadText("" + client.getTickCount());
 
 		if (!inTob) return;
 
-		if (raiders.isEmpty()) {
+		if (!allRaidersLoaded) {
 			loadRaiders();
 		}
 
+		if (notReadyToDetectMistakes()) return;
+
 		maidenMistakeDetector.onGameTick(event);
+
 		for (Player player : raiders) {
 			if (player != null) {
-			    List<TobMistake> mistakes = maidenMistakeDetector.detectMistakes(player);
-			    for (TobMistake mistake : mistakes) {
-                    mistakeManager.addMistakeForPlayer(player.getName(), mistake);
-                }
+				WorldPoint worldPoint = oldRaiderLocations.get(player.getName());
+				if (worldPoint != null) {
+					List<TobMistake> mistakes = maidenMistakeDetector.detectMistakes(worldPoint);
+					if (!mistakes.isEmpty()) {
+						log.info("FOUND MISTAKES FOR " + player.getName() + " - " + mistakes);
+						for (TobMistake mistake : mistakes) {
+							addMistakeForPlayer(player.getName(), mistake);
+						}
+						logState();
+					}
+				}
             }
-		}
 
-        logState();
+			oldRaiderLocations.put(player.getName(), player.getWorldLocation());
+		}
     }
 
 	private void loadRaiders() {
@@ -191,12 +206,33 @@ public class TobMistakeTrackerPlugin extends Plugin
 			}
 		}
 
+		Set<Player> raidersTemp = new HashSet<>(MAX_RAIDERS);
 		for (Player player : client.getPlayers()) {
 			if (raiderNames.contains(player.getName())) {
-				raiders.add(player);
+				raidersTemp.add(player);
 			}
 		}
+
+		if (!raiderNames.isEmpty() && raiderNames.size() == raidersTemp.size()) {
+			raiders = raidersTemp;
+			allRaidersLoaded = true;
+		}
 	}
+
+	private boolean notReadyToDetectMistakes() {
+		return !inTob || !allRaidersLoaded;
+	}
+
+	private boolean shouldTrackMistakes() {
+	    // Currently the only reason not to track a mistake is if spectating is turned off
+        return isRaider || config.spectatingEnabled();
+    }
+
+    private void addMistakeForPlayer(String playerName, TobMistake mistake) {
+	    if (shouldTrackMistakes()) {
+            mistakeManager.addMistakeForPlayer(playerName, mistake);
+        }
+    }
 
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event) {
@@ -204,12 +240,17 @@ public class TobMistakeTrackerPlugin extends Plugin
 			return;
 		}
 
-		if (raidState == TOB_STATE_IN_TOB) {
-			if (config.spectatingEnabled()) {
-				inTob = true;
-			} else if (inTob && !isRaider) {
-				inTob = false;
-			}
+		// I think this is handled by shouldTrackMistakes()
+//		if (raidState == TOB_STATE_IN_TOB) {
+//			if (config.spectatingEnabled()) {
+//				inTob = true;
+//			} else if (inTob && !isRaider) {
+//				inTob = false;
+//			}
+//		}
+
+		if (CLEAR_MISTAKES_KEY.equals(event.getKey())) {
+			mistakeManager.clearAllMistakes();
 		}
 
 		logState();
@@ -221,7 +262,7 @@ public class TobMistakeTrackerPlugin extends Plugin
 		if (event.getActor().equals(client.getLocalPlayer())) {
 			if (event.getOverheadText().startsWith("Blood")) {
 				char id = event.getOverheadText().charAt(event.getOverheadText().length()-1);
-				mistakeManager.addMistakeForPlayer("TestPlayer" + id, TobMistake.MAIDEN_BLOOD);
+                addMistakeForPlayer("TestPlayer" + id, TobMistake.MAIDEN_BLOOD);
 				logState();
 			}
 		}
@@ -229,16 +270,22 @@ public class TobMistakeTrackerPlugin extends Plugin
 
 	@Subscribe
 	public void onGraphicsObjectCreated(GraphicsObjectCreated event) {
+		if (notReadyToDetectMistakes()) return;
+
 		maidenMistakeDetector.onGraphicsObjectCreated(event);
 	}
 
 	@Subscribe
 	public void onGameObjectSpawned(GameObjectSpawned event) {
+		if (notReadyToDetectMistakes()) return;
+
 		maidenMistakeDetector.onGameObjectSpawned(event);
 	}
 
 	@Subscribe
 	public void onGameObjectDespawned(GameObjectDespawned event) {
+		if (notReadyToDetectMistakes()) return;
+
 		maidenMistakeDetector.onGameObjectDespawned(event);
 	}
 
@@ -251,12 +298,12 @@ public class TobMistakeTrackerPlugin extends Plugin
 	}
 
 	private void logState() {
-		log.info("raidState: " + raidState);
-		log.info("inTob: " + inTob);
-		log.info("isRaider: " + isRaider);
+//		log.info("raidState: " + raidState);
+//		log.info("inTob: " + inTob);
+//		log.info("isRaider: " + isRaider);
 
-		log.info("raiders: " + getRaiderNames());
-		log.info("mistakes: " + mistakeManager.mistakesForPlayers);
+//		log.info("raiders: " + getRaiderNames());
+		log.info("mistakes: " + mistakeManager.mistakesForPlayers + " - " + client.getTickCount());
 	}
 
     private String getRaiderNames() {

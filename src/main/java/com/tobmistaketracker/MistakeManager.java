@@ -15,6 +15,10 @@ public class MistakeManager {
         mistakesForPlayers = new HashMap<>();
     }
 
+    public void clearAllMistakes() {
+        mistakesForPlayers.clear();
+    }
+
     public int addMistakeForPlayer(String playerName, TobMistake mistake) {
         Map<TobMistake, Integer> playerMistakes = getPlayerMistakes(playerName);
         return playerMistakes.compute(mistake, MistakeManager::increment);
