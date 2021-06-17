@@ -77,7 +77,7 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
 
     @Override
     public void startup() {
-        this.overlayManager.add(overlay);
+        overlayManager.add(overlay);
 
         detectingMistakes = true;
     }

@@ -70,11 +70,10 @@ public class TobMistakeTrackerPlugin extends Plugin {
 	protected void startUp() throws Exception
 	{
 		log.info("@@@@@@@@@@@@@ started! @@@@@@@@@@");
-		resetRaidState();
-
 		mistakeDetectorManager = new MistakeDetectorManager(this);
 		installMistakeDetectors();
-		mistakeDetectorManager.startup();
+
+		resetRaidState();
 	}
 
 	@Override
@@ -93,7 +92,8 @@ public class TobMistakeTrackerPlugin extends Plugin {
 		allRaidersLoaded = false;
 
 		raiders = new HashSet<>(MAX_RAIDERS);
-		mistakeDetectorManager.shutdown();
+		mistakeDetectorManager.reset();
+		mistakeDetectorManager.logRunningDetectors();
 	}
 
 	private void installMistakeDetectors() throws Exception {
@@ -101,79 +101,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
 	}
 
 	@Subscribe
-	public void onActorDeath(ActorDeath event) {
-		if (notReadyToDetectMistakes()) return;
-
-		Actor actor = event.getActor();
-		if (actor instanceof Player) {
-			Player player = (Player) actor;
-			if (player.getName() == null) {
-				return;
-			}
-
-			String name = Text.sanitize(player.getName());
-
-			if (raiders.contains(player)) { // TODO: Fix
-				// A Raider has died
-				log.info("Death: " + name);
-				client.getLocalPlayer().setOverheadText("Death: " + name);
-                addMistakeForPlayer(name, TobMistake.DEATH);
-			}
-		}
-
-		mistakeDetectorManager.onEvent("onActorDeath", event);
-
-		event.getActor().setOverheadText("Whoopsies I died!");
-	}
-
-	@Subscribe
-	public void onHitsplatApplied(HitsplatApplied event) {
-		if (notReadyToDetectMistakes()) return;
-
-		if (event.getHitsplat().getHitsplatType() == Hitsplat.HitsplatType.HEAL) {
-			if (event.getActor().getName() == null) {
-				return;
-			}
-
-			int amount = event.getHitsplat().getAmount();
-			switch (event.getActor().getName()) {
-				case TobBossNames.MAIDEN:
-					// Healing Maiden:
-					// If maiden has a heal hitsplat
-					// And player is on a blood
-					break;
-				default:
-					// Hitsplat not applied to a boss
-					break;
-			}
-		}
-//
-//		log.info("hitsplat actor: " + event.getActor().getName());
-//		log.info("hitsplat actor interacting: " + event.getActor().getInteracting());
-//		log.info("hitsplat type: " + event.getHitsplat().getHitsplatType().name());
-//		log.info("hitsplat amount: " + event.getHitsplat().getAmount());
-	}
-
-	@Subscribe
-	public void onVarbitChanged(VarbitChanged event) {
-		int newRaidState = client.getVar(Varbits.THEATRE_OF_BLOOD);
-		if (raidState != newRaidState) {
-			if (newRaidState == TOB_STATE_NO_PARTY || newRaidState == TOB_STATE_IN_PARTY) {
-				// We're not in a raid
-				resetRaidState();
-			} else if (isNewRaiderInRaid(newRaidState) || isNewAllowedSpectator(newRaidState)) {
-				inTob = true;
-				isRaider = isNewRaiderInRaid(newRaidState);
-			}
-			raidState = newRaidState;
-
-			logState();
-		}
-	}
-
-	@Subscribe
 	public void onGameTick(GameTick event) {
-//		log.info(String.format("onGameTick: %s", client.getTickCount()));
 		client.getLocalPlayer().setOverheadText("" + client.getTickCount());
 
 		if (!inTob) return;
@@ -182,13 +110,13 @@ public class TobMistakeTrackerPlugin extends Plugin {
 			loadRaiders();
 		}
 
-		if (notReadyToDetectMistakes()) return;
-
 		// Let all detectors handle the GameTick
 		mistakeDetectorManager.onEvent("onGameTick", event);
 
+		// Try detecting all possible mistakes for this GameTick
 		detectAll();
 
+		// Invoke post-processing method for detectors to get ready for the next GameTick
 		afterDetectAll();
     }
 
@@ -270,19 +198,56 @@ public class TobMistakeTrackerPlugin extends Plugin {
     }
 
 	@Subscribe
+	public void onActorDeath(ActorDeath event) {
+		Actor actor = event.getActor();
+		if (actor instanceof Player) {
+			Player player = (Player) actor;
+			if (player.getName() == null) {
+				return;
+			}
+
+			String name = Text.sanitize(player.getName());
+
+			if (raiders.contains(player)) { // TODO: Fix
+				// A Raider has died
+				log.info("Death: " + name);
+				client.getLocalPlayer().setOverheadText("Death: " + name);
+				addMistakeForPlayer(name, TobMistake.DEATH);
+			}
+		}
+
+		mistakeDetectorManager.onEvent("onActorDeath", event);
+
+		event.getActor().setOverheadText("Whoopsies I died!");
+	}
+
+	@Subscribe
+	public void onHitsplatApplied(HitsplatApplied event) {
+		mistakeDetectorManager.onEvent("onHitsplatApplied", event);
+	}
+
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event) {
+		int newRaidState = client.getVar(Varbits.THEATRE_OF_BLOOD);
+		if (raidState != newRaidState) {
+			if (newRaidState == TOB_STATE_NO_PARTY || newRaidState == TOB_STATE_IN_PARTY) {
+				// We're not in a raid
+				resetRaidState();
+			} else if (isNewRaiderInRaid(newRaidState) || isNewAllowedSpectator(newRaidState)) {
+				inTob = true;
+				isRaider = isNewRaiderInRaid(newRaidState);
+			}
+			raidState = newRaidState;
+
+			logState();
+		}
+	}
+
+	@Subscribe
 	public void onConfigChanged(ConfigChanged event) {
 		if (!CONFIG_GROUP.equals(event.getGroup())) {
 			return;
 		}
-
-		// I think this is handled by shouldTrackMistakes()
-//		if (raidState == TOB_STATE_IN_TOB) {
-//			if (config.spectatingEnabled()) {
-//				inTob = true;
-//			} else if (inTob && !isRaider) {
-//				inTob = false;
-//			}
-//		}
 
 		if (CLEAR_MISTAKES_KEY.equals(event.getKey())) {
 			mistakeManager.clearAllMistakes();
@@ -305,22 +270,16 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
 	@Subscribe
 	public void onGraphicsObjectCreated(GraphicsObjectCreated event) {
-		if (notReadyToDetectMistakes()) return;
-
 		mistakeDetectorManager.onEvent("onGraphicsObjectCreated", event);
 	}
 
 	@Subscribe
 	public void onGameObjectSpawned(GameObjectSpawned event) {
-		if (notReadyToDetectMistakes()) return;
-
 		mistakeDetectorManager.onEvent("onGameObjectSpawned", event);
 	}
 
 	@Subscribe
 	public void onGameObjectDespawned(GameObjectDespawned event) {
-		if (notReadyToDetectMistakes()) return;
-
 		mistakeDetectorManager.onEvent("onGameObjectDespawned", event);
 	}
 
@@ -339,6 +298,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
 //		log.info("raiders: " + getRaiderNames());
 		log.info("mistakes: " + mistakeManager.mistakesForPlayers + " - " + client.getTickCount());
+		mistakeDetectorManager.logRunningDetectors();
 	}
 
     private String getRaiderNames() {
