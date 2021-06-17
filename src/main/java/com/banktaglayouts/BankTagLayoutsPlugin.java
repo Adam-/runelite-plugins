@@ -1057,7 +1057,9 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private void addFakeItemMenuEntries(MenuEntryAdded menuEntryAdded) {
 		if (!menuEntryAdded.getOption().equalsIgnoreCase("cancel")) return;
 
-		Layout layout = getBankOrder(getCurrentLayoutableThing());
+		LayoutableThing currentLayoutableThing = getCurrentLayoutableThing();
+		if (currentLayoutableThing == null) return;
+		Layout layout = getBankOrder(currentLayoutableThing);
 		if (layout == null || !config.showLayoutPlaceholders()) {
 			return;
 		}
