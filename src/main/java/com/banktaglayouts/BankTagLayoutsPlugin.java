@@ -843,7 +843,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	@Override
 	public MouseEvent mousePressed(MouseEvent mouseEvent) {
 		mouseIsPressed = true;
-	    if (mouseEvent.getButton() != MouseEvent.BUTTON1 || isHidden() || !config.showLayoutPlaceholders() || client.isMenuOpen()) return mouseEvent;
+	    if (mouseEvent.getButton() != MouseEvent.BUTTON1 || !hasLayoutEnabled(getCurrentLayoutableThing()) || !config.showLayoutPlaceholders() || client.isMenuOpen()) return mouseEvent;
 		int index = getIndexForMousePosition(true);
 		FakeItem fakeItem = fakeItems.stream().filter(fake -> fake.index == index).findAny().orElse(null);
 		if (fakeItem != null) {
@@ -857,14 +857,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		return mouseEvent;
 	}
 
-	private boolean isHidden() {
-		return !tabInterface.isActive();
-	}
-
 	@Override
 	public MouseEvent mouseReleased(MouseEvent mouseEvent) {
 		mouseIsPressed = false;
-		if (mouseEvent.getButton() != MouseEvent.BUTTON1 || isHidden()) return mouseEvent;
+		if (mouseEvent.getButton() != MouseEvent.BUTTON1 || !hasLayoutEnabled(getCurrentLayoutableThing())) return mouseEvent;
 		if (draggedItemIndex == -1) return mouseEvent;
 
 		if (config.showLayoutPlaceholders()) {
@@ -1058,11 +1054,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		if (!menuEntryAdded.getOption().equalsIgnoreCase("cancel")) return;
 
 		LayoutableThing currentLayoutableThing = getCurrentLayoutableThing();
-		if (currentLayoutableThing == null) return;
-		Layout layout = getBankOrder(currentLayoutableThing);
-		if (layout == null || !config.showLayoutPlaceholders()) {
+		if (!config.showLayoutPlaceholders() || !hasLayoutEnabled(currentLayoutableThing)) {
 			return;
 		}
+		Layout layout = getBankOrder(currentLayoutableThing);
 
 		int index = getIndexForMousePosition(true);
 		if (index == -1) return;
