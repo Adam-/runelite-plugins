@@ -11,12 +11,13 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
 import net.runelite.client.ui.overlay.OverlayUtil;
 
-import javax.inject.Inject;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -30,12 +31,13 @@ public class MaidenBloodTilesOverlay extends Overlay {
     private Set<WorldPoint> tiles;
 
     @Setter
-    private Set<LocalPoint> raiderTiles;
+    private List<WorldPoint> raiderTiles;
+
 
     MaidenBloodTilesOverlay(Client client) {
         this.client = client;
         this.tiles = new HashSet<>();
-        this.raiderTiles = new HashSet<>();
+        this.raiderTiles = new ArrayList<>();
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_SCENE);
         setPriority(OverlayPriority.MED);
@@ -43,18 +45,13 @@ public class MaidenBloodTilesOverlay extends Overlay {
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        for (WorldPoint localPoint : tiles) {
-            renderTile(graphics, LocalPoint.fromWorld(client, localPoint), Color.CYAN);
+        for (WorldPoint worldPoint : raiderTiles) {
+            renderTile(graphics, LocalPoint.fromWorld(client, worldPoint), Color.MAGENTA);
         }
 
-        for (LocalPoint localPoint : raiderTiles) {
-            renderTile(graphics, localPoint, Color.MAGENTA);
+        for (WorldPoint worldPoint : tiles) {
+            renderTile(graphics, LocalPoint.fromWorld(client, worldPoint), Color.CYAN);
         }
-
-        WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
-        LocalPoint playerPosLocal = LocalPoint.fromWorld(client, playerPos);
-
-//        renderTile(graphics, playerPosLocal, Color.MAGENTA);
 
         return null;
     }

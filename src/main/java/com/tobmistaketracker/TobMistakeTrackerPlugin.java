@@ -1,6 +1,7 @@
 package com.tobmistaketracker;
 
 import com.google.inject.Provides;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 
 @Slf4j
@@ -64,8 +66,8 @@ public class TobMistakeTrackerPlugin extends Plugin
 	private boolean isRaider;
 	private boolean allRaidersLoaded;
 
-	private Set<Player> raiders;
-	private HashMap<String, WorldPoint> oldRaiderLocations;
+	@Getter
+	private Set<TobRaider> raiders;
 
 	@Override
 	protected void startUp() throws Exception
@@ -89,9 +91,8 @@ public class TobMistakeTrackerPlugin extends Plugin
 		allRaidersLoaded = false;
 
 		raiders = new HashSet<>(MAX_RAIDERS);
-		oldRaiderLocations = new HashMap<>(MAX_RAIDERS);
 
-        maidenMistakeDetector = new MaidenMistakeDetector(client, overlayManager);
+        maidenMistakeDetector = new MaidenMistakeDetector(client, this, overlayManager);
 	}
 
 	@Subscribe
@@ -99,15 +100,15 @@ public class TobMistakeTrackerPlugin extends Plugin
 		if (notReadyToDetectMistakes()) return;
 
 		Actor actor = event.getActor();
-		if (actor instanceof Player) {
-			Player player = (Player) actor;
-			if (player.getName() == null) {
+		if (actor instanceof TobRaider) {
+			TobRaider raider = (TobRaider) actor;
+			if (raider.getName() == null) {
 				return;
 			}
 
-			String name = Text.sanitize(player.getName());
+			String name = Text.sanitize(raider.getName());
 
-			if (raiders.contains(player)) {
+			if (raiders.contains(raider)) {
 				// A Raider has died
 				log.info("Death: " + name);
 				client.getLocalPlayer().setOverheadText("Death: " + name);
@@ -178,22 +179,21 @@ public class TobMistakeTrackerPlugin extends Plugin
 
 		maidenMistakeDetector.onGameTick(event);
 
-		for (Player player : raiders) {
-			if (player != null) {
-				WorldPoint worldPoint = oldRaiderLocations.get(player.getName());
-				if (worldPoint != null) {
-					List<TobMistake> mistakes = maidenMistakeDetector.detectMistakes(worldPoint);
-					if (!mistakes.isEmpty()) {
-						log.info("FOUND MISTAKES FOR " + player.getName() + " - " + mistakes);
-						for (TobMistake mistake : mistakes) {
-							addMistakeForPlayer(player.getName(), mistake);
-						}
-						logState();
-					}
-				}
-            }
+		for (TobRaider raider : raiders) {
+			if (raider != null) {
+				List<TobMistake> mistakes = maidenMistakeDetector.detectMistakes(raider);
+				if (!mistakes.isEmpty()) {
+					log.info("FOUND MISTAKES FOR " + raider.getName() + " - " + mistakes);
 
-			oldRaiderLocations.put(player.getName(), player.getWorldLocation());
+					for (TobMistake mistake : mistakes) {
+						int mistakeCount = addMistakeForPlayer(raider.getName(), mistake);
+						raider.setOverheadText("" + client.getTickCount() + " - BLOOD " + mistakeCount);
+					}
+					logState();
+				}
+
+				raider.setPreviousWorldLocation(raider.getCurrentWorldLocation());
+			}
 		}
     }
 
@@ -206,10 +206,10 @@ public class TobMistakeTrackerPlugin extends Plugin
 			}
 		}
 
-		Set<Player> raidersTemp = new HashSet<>(MAX_RAIDERS);
+		Set<TobRaider> raidersTemp = new HashSet<>(MAX_RAIDERS);
 		for (Player player : client.getPlayers()) {
 			if (raiderNames.contains(player.getName())) {
-				raidersTemp.add(player);
+				raidersTemp.add(new TobRaider(player));
 			}
 		}
 
@@ -228,10 +228,12 @@ public class TobMistakeTrackerPlugin extends Plugin
         return isRaider || config.spectatingEnabled();
     }
 
-    private void addMistakeForPlayer(String playerName, TobMistake mistake) {
+    private int addMistakeForPlayer(String playerName, TobMistake mistake) {
 	    if (shouldTrackMistakes()) {
-            mistakeManager.addMistakeForPlayer(playerName, mistake);
+            return mistakeManager.addMistakeForPlayer(playerName, mistake);
         }
+
+	    return 0;
     }
 
 	@Subscribe
@@ -307,7 +309,7 @@ public class TobMistakeTrackerPlugin extends Plugin
 	}
 
     private String getRaiderNames() {
-        return "[" + raiders.stream().filter(Objects::nonNull).map(Player::getName).collect(Collectors.joining(", ")) + "]";
+        return "[" + raiders.stream().filter(Objects::nonNull).map(TobRaider::getName).collect(Collectors.joining(", ")) + "]";
     }
 
 	@Provides

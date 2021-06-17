@@ -1,14 +1,11 @@
 package com.tobmistaketracker;
 
-import com.google.common.annotations.VisibleForTesting;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
 import net.runelite.api.GameObject;
 import net.runelite.api.GraphicsObject;
-import net.runelite.api.Player;
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
@@ -22,8 +19,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+/**
+ * Listen, I know this is jank, but I think it works... I'm open to suggestions for better ways of detecting this.
+ */
 @Slf4j
 public class MaidenMistakeDetector {
 
@@ -32,18 +34,23 @@ public class MaidenMistakeDetector {
 
     private static final int CYCLES_PER_GAME_TICK = Constants.GAME_TICK_LENGTH / Constants.CLIENT_TICK_LENGTH;
 
+    // Sometimes the activation calculation is actually off by a few cycles. We'll account for that with an offset.
+    private static final int BLOOD_SPAWN_ACTIVATION_CYCLE_OFFSET = 5;
+
     // It's easier to track these separately and check if player is in either of them, since they can overlap and
-    // we don't need to worry about removing one accidentally when the other despawns.
+    // we don't need to worry about removing one accidentally when the other despawns. They're also different objects.
     private final Set<WorldPoint> bloodSpawnBloodTiles;
     private final Map<WorldPoint, GraphicsObject> maidenBloodTiles;
     private final List<GraphicsObject> maidenBloodGraphicsObjects;
 
     private final Client client;
+    private final TobMistakeTrackerPlugin plugin;
     private final OverlayManager overlayManager;
     private final MaidenBloodTilesOverlay overlay;
 
-    MaidenMistakeDetector(Client client, OverlayManager overlayManager) {
+    MaidenMistakeDetector(Client client, TobMistakeTrackerPlugin plugin, OverlayManager overlayManager) {
         this.client = client;
+        this.plugin = plugin;
         this.overlayManager = overlayManager;
         this.overlay = new MaidenBloodTilesOverlay(client);
         this.overlayManager.add(overlay);
@@ -61,19 +68,9 @@ public class MaidenMistakeDetector {
         overlayManager.remove(overlay);
     }
 
-    public List<TobMistake> detectMistakes(@NonNull Player player) {
-        if (isOnBloodTile(player.getWorldLocation())) {
-            return Collections.singletonList(TobMistake.MAIDEN_BLOOD);
-        }
-
-        return Collections.emptyList();
-    }
-
-    public List<TobMistake> detectMistakes(@NonNull WorldPoint worldPoint) {
-        // Ideally we would detect mistakes for the raiders, not just world points.
-        // These are technically where the raider was standing on the previous tick's handling invocation, which is
-        // when the server handled it (I think).
-        if (isOnBloodTile(worldPoint)) {
+    public List<TobMistake> detectMistakes(@NonNull TobRaider raider) {
+        // TODO: stop when maiden dies
+        if (isOnBloodTile(raider.getPreviousWorldLocation())) {
             return Collections.singletonList(TobMistake.MAIDEN_BLOOD);
         }
 
@@ -81,6 +78,7 @@ public class MaidenMistakeDetector {
     }
 
     private boolean isOnBloodTile(WorldPoint worldPoint) {
+        // TODO: bloodSpawnBloodTiles might be 1 tick off -- will need to do more testing.
         return bloodSpawnBloodTiles.contains(worldPoint) || maidenBloodTiles.containsKey(worldPoint);
     }
 
@@ -113,13 +111,19 @@ public class MaidenMistakeDetector {
         for (GraphicsObject graphicsObject : new ArrayList<>(maidenBloodGraphicsObjects)) {
             if (isInactive(graphicsObject)) {
                 maidenBloodGraphicsObjects.remove(graphicsObject);
-            } else if (currentCycle >= graphicsObject.getStartCycle() - CYCLES_PER_GAME_TICK) {
-                // This is now an active blood tile (technically it was on the tick before this handle invocation, so
-                // we account for that in the condition)
-                WorldPoint bloodLocation = WorldPoint.fromLocal(client, graphicsObject.getLocation());
+            } else {
+                int activationCycle = graphicsObject.getStartCycle() - CYCLES_PER_GAME_TICK + BLOOD_SPAWN_ACTIVATION_CYCLE_OFFSET;
+                if (currentCycle >= activationCycle) {
+                    // This is now an active blood tile (technically it was on the tick before this handle invocation,
+                    // so we account for that in the condition)
+                    WorldPoint bloodLocation = WorldPoint.fromLocal(client, graphicsObject.getLocation());
+                    log.info("" + client.getTickCount() + " - Activated blood on " + bloodLocation + "\n" +
+                            "Current Cycle: " + currentCycle + " Activation Cycle: " + activationCycle + " - diff: " +
+                            (currentCycle - activationCycle));
 
-                maidenBloodTiles.put(bloodLocation, graphicsObject);
-                maidenBloodGraphicsObjects.remove(graphicsObject);
+                    maidenBloodTiles.put(bloodLocation, graphicsObject);
+                    maidenBloodGraphicsObjects.remove(graphicsObject);
+                }
             }
         }
 
@@ -131,6 +135,10 @@ public class MaidenMistakeDetector {
         }
 
         overlay.setTiles(maidenBloodTiles.keySet());
+        overlay.setRaiderTiles(plugin.getRaiders().stream()
+                .map(TobRaider::getPreviousWorldLocation)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList()));
     }
 
     private boolean isInactive(GraphicsObject graphicsObject) {
