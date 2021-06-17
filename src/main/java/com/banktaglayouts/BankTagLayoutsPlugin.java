@@ -700,7 +700,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 
 		if (!isShowingPreview()) { // I don't want to clean layout items when displaying a preview. This could result in some layout placeholders being auto-removed due to not being in the tab.
-			if (layoutable.isBankTab()) cleanItemsNotInBankTag(layout, layoutable); // TODO clean out stuff from inventory setups also.
+			cleanItemsNotInBankTag(layout, layoutable);
 		}
 
 		indexToWidget.putAll(assignItemPositions(layout, bankItems));
