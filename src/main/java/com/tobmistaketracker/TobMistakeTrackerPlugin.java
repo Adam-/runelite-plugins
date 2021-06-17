@@ -8,7 +8,6 @@ import net.runelite.api.Client;
 import net.runelite.api.Hitsplat;
 import net.runelite.api.Player;
 import net.runelite.api.Varbits;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -19,21 +18,18 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 
 @Slf4j
 @PluginDescriptor(
 	name = "Tob Mistake Tracker"
 )
-public class TobMistakeTrackerPlugin extends Plugin
-{
+public class TobMistakeTrackerPlugin extends Plugin {
 
 	static final String CONFIG_GROUP = "tobMistakeTracker";
 	static final String CLEAR_MISTAKES_KEY = "clearMistakes";
@@ -48,18 +44,18 @@ public class TobMistakeTrackerPlugin extends Plugin
 	private static final int MAX_RAIDERS = 5;
 
 	@Inject
-	private Client client;
+	Client client;
 
 	@Inject
-	private OverlayManager overlayManager;
+	OverlayManager overlayManager;
 
 	@Inject
-	private TobMistakeTrackerConfig config;
+	TobMistakeTrackerConfig config;
 
 	@Inject
-	private MistakeManager mistakeManager;
+	MistakeManager mistakeManager;
 
-	MaidenMistakeDetector maidenMistakeDetector;
+	private MistakeDetectorManager mistakeDetectorManager;
 
 	private int raidState;
 	private boolean inTob;
@@ -73,15 +69,19 @@ public class TobMistakeTrackerPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		log.info("@@@@@@@@@@@@@ started! @@@@@@@@@@");
-		log.info("new test");
 		resetRaidState();
+
+		mistakeDetectorManager = new MistakeDetectorManager(this);
+		installMistakeDetectors();
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
 		log.info("@@@@@@@@@@@@ stopped! @@@@@@@@@");
-		maidenMistakeDetector.cleanup();
+		raiders.clear();
+		mistakeDetectorManager.cleanup();
+		mistakeDetectorManager = null;
 	}
 
 	private void resetRaidState() {
@@ -91,8 +91,11 @@ public class TobMistakeTrackerPlugin extends Plugin
 		allRaidersLoaded = false;
 
 		raiders = new HashSet<>(MAX_RAIDERS);
+	}
 
-        maidenMistakeDetector = new MaidenMistakeDetector(client, this, overlayManager);
+	private void installMistakeDetectors() throws Exception {
+		// TODO: We don't need certain detectors installed all the time (e.g. Bloat detector during Maiden)
+		mistakeDetectorManager.installMistakeDetector(MaidenMistakeDetector.class);
 	}
 
 	@Subscribe
@@ -177,11 +180,11 @@ public class TobMistakeTrackerPlugin extends Plugin
 
 		if (notReadyToDetectMistakes()) return;
 
-		maidenMistakeDetector.onGameTick(event);
+		mistakeDetectorManager.onEvent("onGameTick", event);
 
 		for (TobRaider raider : raiders) {
 			if (raider != null) {
-				List<TobMistake> mistakes = maidenMistakeDetector.detectMistakes(raider);
+				List<TobMistake> mistakes = mistakeDetectorManager.detectMistakes(raider);
 				if (!mistakes.isEmpty()) {
 					log.info("FOUND MISTAKES FOR " + raider.getName() + " - " + mistakes);
 
@@ -274,21 +277,21 @@ public class TobMistakeTrackerPlugin extends Plugin
 	public void onGraphicsObjectCreated(GraphicsObjectCreated event) {
 		if (notReadyToDetectMistakes()) return;
 
-		maidenMistakeDetector.onGraphicsObjectCreated(event);
+		mistakeDetectorManager.onEvent("onGraphicsObjectCreated", event);
 	}
 
 	@Subscribe
 	public void onGameObjectSpawned(GameObjectSpawned event) {
 		if (notReadyToDetectMistakes()) return;
 
-		maidenMistakeDetector.onGameObjectSpawned(event);
+		mistakeDetectorManager.onEvent("onGameObjectSpawned", event);
 	}
 
 	@Subscribe
 	public void onGameObjectDespawned(GameObjectDespawned event) {
 		if (notReadyToDetectMistakes()) return;
 
-		maidenMistakeDetector.onGameObjectDespawned(event);
+		mistakeDetectorManager.onEvent("onGameObjectDespawned", event);
 	}
 
 	private boolean isNewRaiderInRaid(int newRaidState) {

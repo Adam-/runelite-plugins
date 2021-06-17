@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  * Listen, I know this is jank, but I think it works... I'm open to suggestions for better ways of detecting this.
  */
 @Slf4j
-public class MaidenMistakeDetector {
+public class MaidenMistakeDetector implements TobMistakeDetector {
 
     private static final int BLOOD_SPAWN_BLOOD_GAME_OBJECT_ID = 32984;
     private static final int MAIDEN_BLOOD_GRAPHICS_OBJECT_ID = 1579;
@@ -43,15 +43,15 @@ public class MaidenMistakeDetector {
     private final Map<WorldPoint, GraphicsObject> maidenBloodTiles;
     private final List<GraphicsObject> maidenBloodGraphicsObjects;
 
-    private final Client client;
     private final TobMistakeTrackerPlugin plugin;
+    private final Client client;
     private final OverlayManager overlayManager;
     private final MaidenBloodTilesOverlay overlay;
 
-    MaidenMistakeDetector(Client client, TobMistakeTrackerPlugin plugin, OverlayManager overlayManager) {
-        this.client = client;
+    public MaidenMistakeDetector(TobMistakeTrackerPlugin plugin) {
         this.plugin = plugin;
-        this.overlayManager = overlayManager;
+        this.client = plugin.client;
+        this.overlayManager = plugin.overlayManager;
         this.overlay = new MaidenBloodTilesOverlay(client);
         this.overlayManager.add(overlay);
 
@@ -60,6 +60,7 @@ public class MaidenMistakeDetector {
         maidenBloodGraphicsObjects = new ArrayList<>();
     }
 
+    @Override
     public void cleanup() {
         bloodSpawnBloodTiles.clear();
         maidenBloodTiles.clear();
@@ -68,6 +69,7 @@ public class MaidenMistakeDetector {
         overlayManager.remove(overlay);
     }
 
+    @Override
     public List<TobMistake> detectMistakes(@NonNull TobRaider raider) {
         // TODO: stop when maiden dies
         if (isOnBloodTile(raider.getPreviousWorldLocation())) {
