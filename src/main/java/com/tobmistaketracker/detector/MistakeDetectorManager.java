@@ -32,6 +32,7 @@ public class MistakeDetectorManager implements TobMistakeDetector {
     @Override
     public void startup() {
         // TODO: We don't need certain detectors running all the time (e.g. Bloat detector during Maiden)
+        // TODO: Maybe use NpcSpawned and NpcDespawned
         for (TobMistakeDetector mistakeDetector : mistakeDetectors) {
             mistakeDetector.startup();
         }

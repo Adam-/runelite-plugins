@@ -218,12 +218,10 @@ public class TobMistakeTrackerPlugin extends Plugin {
                 return;
             }
 
-            String name = Text.sanitize(player.getName());
-
-            if (raiders.contains(player)) { // TODO: Fix
+            if (isPlayerInRaid(player)) {
                 // A Raider has died
+                String name = Text.sanitize(player.getName());
                 log.info("Death: " + name);
-                client.getLocalPlayer().setOverheadText("Death: " + name);
                 addMistakeForPlayer(name, TobMistake.DEATH);
             }
         }
@@ -323,6 +321,16 @@ public class TobMistakeTrackerPlugin extends Plugin {
                 .map(TobRaider::getPreviousWorldLocation)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    private boolean isPlayerInRaid(Player player) {
+        for (TobRaider raider : raiders) {
+            if (raider.getPlayer().equals(player)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Provides

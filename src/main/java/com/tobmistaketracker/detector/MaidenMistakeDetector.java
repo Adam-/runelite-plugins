@@ -146,6 +146,7 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
     }
 
     public void onGameTick(GameTick event) {
+        // TODO: Maybe check when projectile despawns? Are bloods always last constant tick?
 //        log.info(String.format("Maiden - onGameTick: %s", client.getTickCount()));
 
         // Compute when a blood tile actually "activates"
