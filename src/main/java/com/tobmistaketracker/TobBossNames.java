@@ -2,11 +2,11 @@ package com.tobmistaketracker;
 
 public class TobBossNames {
 
-    static final String MAIDEN = "The Maiden of Sugadinti";
-    static final String BLOAT = "Pestilent Bloat";
-    static final String NYLO_DEMI_BOSS = "Nylocas Prinkipas";
-    static final String NYLO_BOSS = "Nylocas Vasilias";
-    static final String SOTETSEG = "Sotetseg";
-    static final String XARPUS = "Xarpus";
-    static final String VERZIK = "Verzik Vitur";
+    public static final String MAIDEN = "The Maiden of Sugadinti";
+    public static final String BLOAT = "Pestilent Bloat";
+    public static final String NYLO_DEMI_BOSS = "Nylocas Prinkipas";
+    public static final String NYLO_BOSS = "Nylocas Vasilias";
+    public static final String SOTETSEG = "Sotetseg";
+    public static final String XARPUS = "Xarpus";
+    public static final String VERZIK = "Verzik Vitur";
 }

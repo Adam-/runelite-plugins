@@ -7,9 +7,11 @@ public enum TobMistake {
     DEATH("Death", "death"),
     MAIDEN_BLOOD("Maiden Blood", "blood");
 
-    @Getter @NonNull
+    @Getter
+    @NonNull
     private final String mistakeName;
-    @Getter @NonNull
+    @Getter
+    @NonNull
     private final String mistakeIcon;
 
     TobMistake(@NonNull String mistakeName, @NonNull String mistakeIcon) {

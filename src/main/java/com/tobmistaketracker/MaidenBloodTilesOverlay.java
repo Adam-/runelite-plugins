@@ -37,7 +37,7 @@ public class MaidenBloodTilesOverlay extends Overlay {
     private List<WorldPoint> raiderTiles;
 
 
-    MaidenBloodTilesOverlay(Client client) {
+    public MaidenBloodTilesOverlay(Client client) {
         this.client = client;
         this.tiles = new HashSet<>();
         this.tiles2 = new HashSet<>();

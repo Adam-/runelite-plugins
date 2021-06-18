@@ -1,5 +1,10 @@
-package com.tobmistaketracker;
+package com.tobmistaketracker.detector;
 
+import com.tobmistaketracker.MaidenBloodTilesOverlay;
+import com.tobmistaketracker.TobBossNames;
+import com.tobmistaketracker.TobMistake;
+import com.tobmistaketracker.TobMistakeTrackerPlugin;
+import com.tobmistaketracker.TobRaider;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -29,10 +34,10 @@ import java.util.stream.Collectors;
 
 /**
  * Listen, I know this is jank, but I think it works... I'm open to suggestions for better ways of detecting this.
- *
+ * <p>
  * Another option would be to try more to mock the actual server logic, and perform certain calculations on the
  * tick before the damage/mistake gets sent to the client, but I think this is easier/simpler.
- *
+ * <p>
  * I might get annoyed enough of having to track "previous tick" metadata that I'll re-write all this anyway though.
  */
 @Slf4j
@@ -65,8 +70,8 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
 
     public MaidenMistakeDetector(TobMistakeTrackerPlugin plugin) {
         this.plugin = plugin;
-        this.client = plugin.client;
-        this.overlayManager = plugin.overlayManager;
+        this.client = plugin.getClient();
+        this.overlayManager = plugin.getOverlayManager();
         this.overlay = new MaidenBloodTilesOverlay(client);
 
         bloodSpawnBloodTiles = new HashSet<>();

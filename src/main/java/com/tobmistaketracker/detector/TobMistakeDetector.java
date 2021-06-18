@@ -1,5 +1,7 @@
-package com.tobmistaketracker;
+package com.tobmistaketracker.detector;
 
+import com.tobmistaketracker.TobMistake;
+import com.tobmistaketracker.TobRaider;
 import lombok.NonNull;
 
 import java.util.List;
@@ -34,6 +36,7 @@ public interface TobMistakeDetector {
 
     /**
      * Whether or not the detector is actively detecting mistakes
+     *
      * @return true if detecting mistakes, false otherwise.
      */
     boolean isDetectingMistakes();

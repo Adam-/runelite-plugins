@@ -1,6 +1,9 @@
-package com.tobmistaketracker;
+package com.tobmistaketracker.detector;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.tobmistaketracker.TobMistake;
+import com.tobmistaketracker.TobMistakeTrackerPlugin;
+import com.tobmistaketracker.TobRaider;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +12,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -91,7 +93,7 @@ public class MistakeDetectorManager implements TobMistakeDetector {
         }
     }
 
-    public  <T> void onEvent(String methodName, T event) {
+    public <T> void onEvent(String methodName, T event) {
         if (!isDetectingMistakes()) return;
 
         for (TobMistakeDetector mistakeDetector : mistakeDetectors) {
