@@ -19,6 +19,7 @@ import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GraphicsObjectCreated;
+import net.runelite.client.eventbus.Subscribe;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -114,6 +115,7 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
         return bloodSpawnBloodTiles.contains(worldPoint) || maidenBloodTiles.containsKey(worldPoint);
     }
 
+    @Subscribe
     public void onGraphicsObjectCreated(GraphicsObjectCreated event) {
         GraphicsObject go = event.getGraphicsObject();
         if (go.getId() == MAIDEN_BLOOD_GRAPHICS_OBJECT_ID) {
@@ -121,6 +123,7 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
         }
     }
 
+    @Subscribe
     public void onGameObjectSpawned(GameObjectSpawned event) {
         GameObject go = event.getGameObject();
         if (go.getId() == BLOOD_SPAWN_BLOOD_GAME_OBJECT_ID) {
@@ -128,6 +131,7 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
         }
     }
 
+    @Subscribe
     public void onGameObjectDespawned(GameObjectDespawned event) {
         GameObject go = event.getGameObject();
         if (go.getId() == BLOOD_SPAWN_BLOOD_GAME_OBJECT_ID) {
@@ -136,6 +140,7 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
         }
     }
 
+    @Subscribe
     public void onActorDeath(ActorDeath event) {
         Actor actor = event.getActor();
         if (actor instanceof NPC) {
@@ -145,10 +150,9 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
         }
     }
 
+    @Subscribe
     public void onGameTick(GameTick event) {
         // TODO: Maybe check when projectile despawns? Are bloods always last constant tick?
-//        log.info(String.format("Maiden - onGameTick: %s", client.getTickCount()));
-
         // Compute when a blood tile actually "activates"
         int currentCycle = client.getGameCycle();
         for (GraphicsObject graphicsObject : new ArrayList<>(maidenBloodGraphicsObjects)) {

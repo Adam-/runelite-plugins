@@ -29,6 +29,7 @@ public interface TobMistakeTrackerConfig extends Config {
         return false;
     }
 
+    // DO NOT PUSH TO PROD WITH THIS FEATURE
     @ConfigItem(
             keyName = "enableDebug",
             name = "Enable Debug",

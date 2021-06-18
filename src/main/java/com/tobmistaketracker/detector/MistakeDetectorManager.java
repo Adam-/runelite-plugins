@@ -6,11 +6,10 @@ import com.tobmistaketracker.TobRaider;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.client.eventbus.EventBus;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,6 +57,28 @@ public class MistakeDetectorManager implements TobMistakeDetector {
         detectingMistakes = false;
     }
 
+    /**
+     * Called when the plugin is started
+     */
+    public void registerToEventBus(EventBus eventBus) {
+        for (TobMistakeDetector mistakeDetector : mistakeDetectors) {
+            eventBus.register(mistakeDetector);
+        }
+
+        eventBus.register(this);
+    }
+
+    /**
+     * Called when the plugin is shutdown
+     */
+    public void unregisterFromEventBus(EventBus eventBus) {
+        for (TobMistakeDetector mistakeDetector : mistakeDetectors) {
+            eventBus.unregister(mistakeDetector);
+        }
+
+        eventBus.unregister(this);
+    }
+
     @Override
     public List<TobMistake> detectMistakes(@NonNull TobRaider raider) {
         List<TobMistake> mistakes = new ArrayList<>();
@@ -82,31 +103,6 @@ public class MistakeDetectorManager implements TobMistakeDetector {
         for (TobMistakeDetector mistakeDetector : mistakeDetectors) {
             if (mistakeDetector.isDetectingMistakes()) {
                 mistakeDetector.afterDetect();
-            }
-        }
-    }
-
-    public <T> void onEvent(String methodName, T event) {
-        // TODO: Use eventBus.register instead and remove all this reflection code.
-        if (!isDetectingMistakes()) return;
-
-        for (TobMistakeDetector mistakeDetector : mistakeDetectors) {
-            if (!mistakeDetector.isDetectingMistakes()) {
-                continue;
-            }
-
-            final Method method;
-            try {
-                method = mistakeDetector.getClass().getMethod(methodName, event.getClass());
-            } catch (NoSuchMethodException e) {
-                // The mistake detector doesn't have an implementation for receiving these events -- Skip over...
-                continue;
-            }
-
-            try {
-                method.invoke(mistakeDetector, event);
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                throw new RuntimeException(String.format("Error while calling %s.%s", mistakeDetector.getClass(), methodName), e);
             }
         }
     }

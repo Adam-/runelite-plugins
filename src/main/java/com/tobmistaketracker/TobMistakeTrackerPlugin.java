@@ -14,14 +14,12 @@ import net.runelite.api.Player;
 import net.runelite.api.Varbits;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
-import net.runelite.api.events.GameObjectDespawned;
-import net.runelite.api.events.GameObjectSpawned;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
-import net.runelite.api.events.GraphicsObjectCreated;
-import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.OverheadTextChanged;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
@@ -36,7 +34,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 
 @Slf4j
 @PluginDescriptor(
@@ -69,12 +66,14 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private DebugOverlay debugOverlay;
 
     @Inject
+    private EventBus eventBus;
+
+    @Inject
     private MistakeManager mistakeManager;
 
     @Inject
     private MistakeDetectorManager mistakeDetectorManager;
 
-    /* Game state attributes */
     private int raidState;
     private boolean inTob;
     private boolean isRaider;
@@ -90,6 +89,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
         resetRaidState();
 
         overlayManager.add(debugOverlay);
+        mistakeDetectorManager.registerToEventBus(eventBus);
     }
 
     @Override
@@ -99,6 +99,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
         mistakeDetectorManager.shutdown();
 
         overlayManager.remove(debugOverlay);
+        mistakeDetectorManager.unregisterFromEventBus(eventBus);
     }
 
     private void resetRaidState() {
@@ -112,7 +113,8 @@ public class TobMistakeTrackerPlugin extends Plugin {
         mistakeDetectorManager.logRunningDetectors();
     }
 
-    @Subscribe
+    // This should run *after* all detectors have handled the GameTick.
+    @Subscribe(priority = -1)
     public void onGameTick(GameTick event) {
         client.getLocalPlayer().setOverheadText("" + client.getTickCount());
 
@@ -121,9 +123,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
         if (!allRaidersLoaded) {
             loadRaiders();
         }
-
-        // Let all detectors handle the GameTick
-        mistakeDetectorManager.onEvent("onGameTick", event);
 
         // Try detecting all possible mistakes for this GameTick
         detectAll();
@@ -226,14 +225,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
             }
         }
 
-        mistakeDetectorManager.onEvent("onActorDeath", event);
-
         event.getActor().setOverheadText("Whoopsies I died!");
-    }
-
-    @Subscribe
-    public void onHitsplatApplied(HitsplatApplied event) {
-        mistakeDetectorManager.onEvent("onHitsplatApplied", event);
     }
 
     @Subscribe
@@ -279,20 +271,9 @@ public class TobMistakeTrackerPlugin extends Plugin {
     }
 
     @Subscribe
-    public void onGraphicsObjectCreated(GraphicsObjectCreated event) {
-        mistakeDetectorManager.onEvent("onGraphicsObjectCreated", event);
+    public void onGameStateChanged(GameStateChanged event) {
+        // TODO
     }
-
-    @Subscribe
-    public void onGameObjectSpawned(GameObjectSpawned event) {
-        mistakeDetectorManager.onEvent("onGameObjectSpawned", event);
-    }
-
-    @Subscribe
-    public void onGameObjectDespawned(GameObjectDespawned event) {
-        mistakeDetectorManager.onEvent("onGameObjectDespawned", event);
-    }
-
 
     private boolean isNewRaiderInRaid(int newRaidState) {
         return raidState == TOB_STATE_IN_PARTY && newRaidState == TOB_STATE_IN_TOB;

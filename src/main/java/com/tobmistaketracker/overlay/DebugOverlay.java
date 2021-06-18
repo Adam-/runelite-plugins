@@ -17,7 +17,7 @@ import java.awt.Graphics2D;
  */
 public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
 
-    private MaidenMistakeDetector maidenMistakeDetector;
+    private final MaidenMistakeDetector maidenMistakeDetector;
 
     @Inject
     public DebugOverlay(MaidenMistakeDetector maidenMistakeDetector) {
