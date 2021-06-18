@@ -2,10 +2,12 @@ package com.tobmistaketracker;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import javax.inject.Singleton;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+@Singleton
 public class MistakeManager {
 
     @VisibleForTesting

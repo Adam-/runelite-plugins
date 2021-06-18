@@ -295,6 +295,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
         mistakeDetectorManager.onEvent("onGameObjectDespawned", event);
     }
 
+
     private boolean isNewRaiderInRaid(int newRaidState) {
         return raidState == TOB_STATE_IN_PARTY && newRaidState == TOB_STATE_IN_TOB;
     }

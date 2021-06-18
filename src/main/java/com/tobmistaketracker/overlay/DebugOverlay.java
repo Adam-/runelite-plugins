@@ -1,11 +1,13 @@
 package com.tobmistaketracker.overlay;
 
+import com.tobmistaketracker.detector.MaidenMistakeDetector;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
 
+import javax.inject.Inject;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -15,10 +17,15 @@ import java.awt.Graphics2D;
  */
 public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
 
-    public DebugOverlay() {
+    private MaidenMistakeDetector maidenMistakeDetector;
+
+    @Inject
+    public DebugOverlay(MaidenMistakeDetector maidenMistakeDetector) {
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_SCENE);
         setPriority(OverlayPriority.MED);
+
+        this.maidenMistakeDetector = maidenMistakeDetector;
     }
 
     @Override
@@ -26,11 +33,21 @@ public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
         if (!config.enableDebug()) return null;
 
         for (WorldPoint worldPoint : plugin.getRaiderPreviousWorldLocations()) {
-            renderTile(graphics, LocalPoint.fromWorld(client, worldPoint), Color.MAGENTA);
+            renderTile(graphics, toLocalPoint(worldPoint), Color.MAGENTA);
         }
 
-        // TODO: Add maiden CYAN and blood spawn GREEN (new class for maiden?)
+        for (WorldPoint worldPoint : maidenMistakeDetector.getMaidenBloodTiles().keySet()) {
+            renderTile(graphics, toLocalPoint(worldPoint), Color.CYAN);
+        }
+
+        for (WorldPoint worldPoint : maidenMistakeDetector.getBloodSpawnBloodTiles()) {
+            renderTile(graphics, toLocalPoint(worldPoint), Color.GREEN);
+        }
 
         return null;
+    }
+
+    private LocalPoint toLocalPoint(WorldPoint worldPoint) {
+        return LocalPoint.fromWorld(client, worldPoint);
     }
 }

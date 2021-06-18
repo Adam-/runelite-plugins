@@ -21,6 +21,7 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GraphicsObjectCreated;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ import java.util.Set;
  * I might get annoyed enough of having to track "previous tick" metadata that I'll re-write all this anyway though.
  */
 @Slf4j
+@Singleton
 public class MaidenMistakeDetector implements TobMistakeDetector {
 
     private static final int BLOOD_SPAWN_BLOOD_GAME_OBJECT_ID = 32984;
@@ -50,7 +52,9 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
 
     // It's easier to track these separately and check if player is in either of them, since they can overlap and
     // we don't need to worry about removing one accidentally when the other despawns. They're also different objects.
+    @Getter
     private final Set<WorldPoint> bloodSpawnBloodTiles;
+    @Getter
     private final Map<WorldPoint, GraphicsObject> maidenBloodTiles;
     private final List<GraphicsObject> maidenBloodGraphicsObjects;
 

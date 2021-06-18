@@ -8,12 +8,14 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
+@Singleton
 public class MistakeDetectorManager implements TobMistakeDetector {
 
     private final List<TobMistakeDetector> mistakeDetectors;
