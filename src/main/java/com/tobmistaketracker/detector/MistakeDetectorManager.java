@@ -2,13 +2,12 @@ package com.tobmistaketracker.detector;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.tobmistaketracker.TobMistake;
-import com.tobmistaketracker.TobMistakeTrackerPlugin;
 import com.tobmistaketracker.TobRaider;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
-import java.lang.reflect.Constructor;
+import javax.inject.Inject;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -17,24 +16,15 @@ import java.util.List;
 @Slf4j
 public class MistakeDetectorManager implements TobMistakeDetector {
 
-    @NonNull
     private final List<TobMistakeDetector> mistakeDetectors;
-
-    @NonNull
-    private final TobMistakeTrackerPlugin plugin;
 
     @Getter
     private boolean detectingMistakes;
 
-    public MistakeDetectorManager(@NonNull TobMistakeTrackerPlugin plugin) {
-        this.mistakeDetectors = new ArrayList<>();
-        this.plugin = plugin;
+    @Inject
+    public MistakeDetectorManager(List<TobMistakeDetector> mistakeDetectors) {
+        this.mistakeDetectors = mistakeDetectors;
         this.detectingMistakes = false;
-    }
-
-    public <T extends TobMistakeDetector> void installMistakeDetector(Class<T> mistakeDetectorClass) throws Exception {
-        Constructor<T> constructor = mistakeDetectorClass.getConstructor(TobMistakeTrackerPlugin.class);
-        mistakeDetectors.add(constructor.newInstance(plugin));
     }
 
     @Override
@@ -94,6 +84,7 @@ public class MistakeDetectorManager implements TobMistakeDetector {
     }
 
     public <T> void onEvent(String methodName, T event) {
+        // TODO: Use eventBus.register instead and remove all this reflection code.
         if (!isDetectingMistakes()) return;
 
         for (TobMistakeDetector mistakeDetector : mistakeDetectors) {

@@ -8,6 +8,7 @@ import static com.tobmistaketracker.TobMistakeTrackerPlugin.CLEAR_MISTAKES_KEY;
 
 @ConfigGroup(TobMistakeTrackerPlugin.CONFIG_GROUP)
 public interface TobMistakeTrackerConfig extends Config {
+
     @ConfigItem(
             keyName = "spectatingEnabled",
             name = "Enable Spectacting",
@@ -26,5 +27,15 @@ public interface TobMistakeTrackerConfig extends Config {
     )
     default boolean clearMistakes() {
         return false;
+    }
+
+    @ConfigItem(
+            keyName = "enableDebug",
+            name = "Enable Debug",
+            description = "Toggle Debug Mode",
+            position = 99
+    )
+    default boolean enableDebug() {
+        return true;
     }
 }

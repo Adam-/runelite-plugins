@@ -1,6 +1,5 @@
 package com.tobmistaketracker.detector;
 
-import com.tobmistaketracker.MaidenBloodTilesOverlay;
 import com.tobmistaketracker.TobBossNames;
 import com.tobmistaketracker.TobMistake;
 import com.tobmistaketracker.TobMistakeTrackerPlugin;
@@ -20,17 +19,15 @@ import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GraphicsObjectCreated;
-import net.runelite.client.ui.overlay.OverlayManager;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Listen, I know this is jank, but I think it works... I'm open to suggestions for better ways of detecting this.
@@ -61,18 +58,16 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
     private final Set<WorldPoint> bloodSpawnBloodTilesToRemove;
 
     private final TobMistakeTrackerPlugin plugin;
+
     private final Client client;
-    private final OverlayManager overlayManager;
-    private final MaidenBloodTilesOverlay overlay;
 
     @Getter
     private boolean detectingMistakes;
 
-    public MaidenMistakeDetector(TobMistakeTrackerPlugin plugin) {
+    @Inject
+    public MaidenMistakeDetector(TobMistakeTrackerPlugin plugin, Client client) {
         this.plugin = plugin;
-        this.client = plugin.getClient();
-        this.overlayManager = plugin.getOverlayManager();
-        this.overlay = new MaidenBloodTilesOverlay(client);
+        this.client = client;
 
         bloodSpawnBloodTiles = new HashSet<>();
         bloodSpawnBloodTilesToRemove = new HashSet<>();
@@ -82,8 +77,6 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
 
     @Override
     public void startup() {
-        overlayManager.add(overlay);
-
         detectingMistakes = true;
     }
 
@@ -93,8 +86,6 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
         bloodSpawnBloodTilesToRemove.clear();
         maidenBloodTiles.clear();
         maidenBloodGraphicsObjects.clear();
-
-        overlayManager.remove(overlay);
 
         detectingMistakes = false;
     }
@@ -180,13 +171,6 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
                 maidenBloodTiles.remove(bloodTileEntry.getKey());
             }
         }
-
-        overlay.setTiles(maidenBloodTiles.keySet());
-        overlay.setTiles2(bloodSpawnBloodTiles);
-        overlay.setRaiderTiles(plugin.getRaiders().stream()
-                .map(TobRaider::getPreviousWorldLocation)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList()));
     }
 
     private boolean isInactive(GraphicsObject graphicsObject) {

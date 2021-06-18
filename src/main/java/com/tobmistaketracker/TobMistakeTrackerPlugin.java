@@ -3,6 +3,8 @@ package com.tobmistaketracker;
 import com.google.inject.Provides;
 import com.tobmistaketracker.detector.MaidenMistakeDetector;
 import com.tobmistaketracker.detector.MistakeDetectorManager;
+import com.tobmistaketracker.detector.TobMistakeDetector;
+import com.tobmistaketracker.overlay.DebugOverlay;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +12,7 @@ import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.Varbits;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
@@ -27,6 +30,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -53,21 +57,24 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private static final int MAX_RAIDERS = 5;
 
     @Inject
-    @Getter
     private Client client;
-
-    @Inject
-    @Getter
-    private OverlayManager overlayManager;
 
     @Inject
     private TobMistakeTrackerConfig config;
 
     @Inject
+    private OverlayManager overlayManager;
+
+    @Inject
+    private DebugOverlay debugOverlay;
+
+    @Inject
     private MistakeManager mistakeManager;
 
+    @Inject
     private MistakeDetectorManager mistakeDetectorManager;
 
+    /* Game state attributes */
     private int raidState;
     private boolean inTob;
     private boolean isRaider;
@@ -79,10 +86,10 @@ public class TobMistakeTrackerPlugin extends Plugin {
     @Override
     protected void startUp() throws Exception {
         log.info("@@@@@@@@@@@@@ started! @@@@@@@@@@");
-        mistakeDetectorManager = new MistakeDetectorManager(this);
-        installMistakeDetectors();
 
         resetRaidState();
+
+        overlayManager.add(debugOverlay);
     }
 
     @Override
@@ -90,7 +97,8 @@ public class TobMistakeTrackerPlugin extends Plugin {
         log.info("@@@@@@@@@@@@ stopped! @@@@@@@@@");
         raiders.clear();
         mistakeDetectorManager.shutdown();
-        mistakeDetectorManager = null;
+
+        overlayManager.remove(debugOverlay);
     }
 
     private void resetRaidState() {
@@ -102,10 +110,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
         raiders = new HashSet<>(MAX_RAIDERS);
         mistakeDetectorManager.reset();
         mistakeDetectorManager.logRunningDetectors();
-    }
-
-    private void installMistakeDetectors() throws Exception {
-        mistakeDetectorManager.installMistakeDetector(MaidenMistakeDetector.class);
     }
 
     @Subscribe
@@ -304,7 +308,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
 //		log.info("inTob: " + inTob);
 //		log.info("isRaider: " + isRaider);
 
-		log.info("raiders: " + getRaiderNames());
+        log.info("raiders: " + getRaiderNames());
         log.info("mistakes: " + mistakeManager.mistakesForPlayers + " - " + client.getTickCount());
         mistakeDetectorManager.logRunningDetectors();
     }
@@ -313,8 +317,24 @@ public class TobMistakeTrackerPlugin extends Plugin {
         return "[" + raiders.stream().filter(Objects::nonNull).map(TobRaider::getName).collect(Collectors.joining(", ")) + "]";
     }
 
+    public List<WorldPoint> getRaiderPreviousWorldLocations() {
+        return raiders.stream()
+                .map(TobRaider::getPreviousWorldLocation)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
     @Provides
     TobMistakeTrackerConfig provideConfig(ConfigManager configManager) {
         return configManager.getConfig(TobMistakeTrackerConfig.class);
+    }
+
+    @Provides
+    List<TobMistakeDetector> provideMistakeDetectors(MaidenMistakeDetector maidenMistakeDetector) {
+        List<TobMistakeDetector> mistakeDetectors = new ArrayList<>();
+
+        mistakeDetectors.add(maidenMistakeDetector);
+
+        return mistakeDetectors;
     }
 }
