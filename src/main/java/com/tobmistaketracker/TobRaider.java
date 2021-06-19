@@ -1,5 +1,6 @@
 package com.tobmistaketracker;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -16,15 +17,19 @@ public class TobRaider {
     private final Player player;
 
     @Getter
-    @Setter
+    @Setter(AccessLevel.PACKAGE)
     private WorldPoint previousWorldLocation;
 
     @Getter
-    @Setter
+    @Setter(AccessLevel.PACKAGE)
+    private WorldPoint previousWorldLocationForOverlay;
+
+    @Getter
+    @Setter(AccessLevel.PACKAGE)
     private boolean previousIsDead;
 
     @Getter
-    @Setter
+    @Setter(AccessLevel.PACKAGE)
     private boolean isDead;
 
     TobRaider(@NonNull Player player) {

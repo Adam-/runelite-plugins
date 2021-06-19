@@ -34,8 +34,10 @@ import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -93,7 +95,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private boolean isRaider;
     private boolean allRaidersLoaded;
 
-    @Getter
     private Map<String, TobRaider> raiders; // name -> raider
 
     @Override
@@ -169,6 +170,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
     }
 
     private void afterDetect(TobRaider raider) {
+        raider.setPreviousWorldLocationForOverlay(raider.getPreviousWorldLocation());
         raider.setPreviousWorldLocation(raider.getCurrentWorldLocation());
         raider.setPreviousIsDead(raider.isDead());
     }
@@ -320,15 +322,16 @@ public class TobMistakeTrackerPlugin extends Plugin {
         mistakeDetectorManager.logRunningDetectors();
     }
 
-    public List<WorldPoint> getRaiderPreviousWorldLocations() {
-        return raiders.values().stream()
-                .map(TobRaider::getPreviousWorldLocation)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+    private boolean isPlayerInRaid(Player player) {
+        return isPlayerInRaid(player.getName());
     }
 
-    private boolean isPlayerInRaid(Player player) {
-        return raiders.containsKey(player.getName());
+    public boolean isPlayerInRaid(String playerName) {
+        return raiders.containsKey(playerName);
+    }
+
+    public Iterable<TobRaider> getRaiders() {
+        return Collections.unmodifiableCollection(raiders.values());
     }
 
     @Provides

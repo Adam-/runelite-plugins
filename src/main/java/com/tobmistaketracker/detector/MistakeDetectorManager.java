@@ -11,14 +11,14 @@ import net.runelite.client.eventbus.EventBus;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 @Slf4j
 @Singleton
 public class MistakeDetectorManager implements TobMistakeDetector {
 
-    @VisibleForTesting
-    @Getter
     private final List<TobMistakeDetector> mistakeDetectors;
 
     @Getter
@@ -116,5 +116,9 @@ public class MistakeDetectorManager implements TobMistakeDetector {
         for (TobMistakeDetector mistakeDetector : mistakeDetectors) {
             log.info(mistakeDetector.getClass() + " running: " + mistakeDetector.isDetectingMistakes());
         }
+    }
+
+    public List<TobMistakeDetector> getMistakeDetectors() {
+        return Collections.unmodifiableList(mistakeDetectors);
     }
 }

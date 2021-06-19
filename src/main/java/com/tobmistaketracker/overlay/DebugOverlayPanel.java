@@ -49,7 +49,7 @@ public class DebugOverlayPanel extends OverlayPanel {
                              MaidenMistakeDetector maidenMistakeDetector,
                              MistakeDetectorManager mistakeDetectorManager) {
         super(plugin);
-        setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
+        setPosition(OverlayPosition.TOP_RIGHT);
         setPriority(OverlayPriority.MED);
 
         this.client = client;
@@ -79,14 +79,18 @@ public class DebugOverlayPanel extends OverlayPanel {
                     .build());
         }
 
+        panelComponent.getChildren().add(TitleComponent.builder()
+                .text("Game Tick: " + client.getTickCount())
+                .build());
+
         // Add all raiders
-        for (TobRaider raider : plugin.getRaiders().values()) {
+        for (TobRaider raider : plugin.getRaiders()) {
             renderPlayerComponents(raider.getName(), Color.CYAN);
         }
 
         // Add all non-raiders we've tracked with mistakes
         for (String playerName : mistakeManager.getPlayersWithMistakes()) {
-            if (!plugin.getRaiders().containsKey(playerName)) {
+            if (!plugin.isPlayerInRaid(playerName)) {
                 renderPlayerComponents(playerName, Color.WHITE);
             }
         }

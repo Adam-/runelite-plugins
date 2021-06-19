@@ -1,5 +1,6 @@
 package com.tobmistaketracker.overlay;
 
+import com.tobmistaketracker.TobRaider;
 import com.tobmistaketracker.detector.MaidenMistakeDetector;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
@@ -32,8 +33,10 @@ public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
     public Dimension render(Graphics2D graphics) {
         if (!config.enableDebug()) return null;
 
-        for (WorldPoint worldPoint : plugin.getRaiderPreviousWorldLocations()) {
-            renderTile(graphics, toLocalPoint(worldPoint), Color.MAGENTA);
+        for (TobRaider raider : plugin.getRaiders()) {
+            if (raider.getPreviousWorldLocationForOverlay() != null) {
+                renderTile(graphics, toLocalPoint(raider.getPreviousWorldLocationForOverlay()), Color.MAGENTA);
+            }
         }
 
         for (WorldPoint worldPoint : maidenMistakeDetector.getMaidenBloodTiles().keySet()) {

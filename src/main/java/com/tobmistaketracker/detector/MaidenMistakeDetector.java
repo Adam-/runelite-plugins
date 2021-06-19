@@ -33,18 +33,36 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * [6/17/21]
  * Listen, I know this is jank, but I think it works... I'm open to suggestions for better ways of detecting this.
- * <p>
+ *
  * Another option would be to try more to mock the actual server logic, and perform certain calculations on the
  * tick before the damage/mistake gets sent to the client, but I think this is easier/simpler.
- * <p>
+ *
  * I might get annoyed enough of having to track "previous tick" metadata that I'll re-write all this anyway though.
- */
-
-/**
+ *
+ *
+ * [6/18/21]
  * Okay I studied a lot of videos and learned how it works. Will type it up tomorrow. Gist of it is below:
  * 1->2->3->4->etc. --> 65->80->95->110->etc. (Increment 15 cycles per tile away from maiden).
  * Closest person always gets 3, with the other 2 *always* being +25 cycles, which guarantees they spawn 1 tick later.
+ *
+ *
+ * [6/19/21]
+ * Full Explanation:
+ *
+ * When Maiden throws her blood at players, she always throws 1 to where the player is currently standing, and 2 extra
+ * to the furthest player. The remainingCycles on the blood Projectile depends on how far the player is from her
+ * actual hitbox (not what's shown in-game, NE is closer). 1 tile away takes 65 cycles, incrementing by 15 for every
+ * extra tile away from her hitbox (80, 95, 110, etc.). The extra two bloods thrown at the furthest player are *always*
+ * +25 cycles from that player's blood spot (65 -> 90, 80 -> 105, 95 -> 120, etc.), which guarantees that they will
+ * activate one tick later than the main blood spot.
+ *
+ * Since there are 30 cycles per GameTick (a cycle happens once every 20ms), we can do some basic math to figure out
+ * when the projectile is supposed to land on the tile and start becoming an active blood spot.
+ * The math is: gameTicksToActivate = floor(remainingCycles / CYCLES_PER_GAME_TICK).
+ *
+ * Once the blood spot is active, it *always* last for exactly 11 GameTicks.
  */
 @Slf4j
 @Singleton
@@ -104,6 +122,7 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
 
     @Override
     public List<TobMistake> detectMistakes(@NonNull TobRaider raider) {
+        // TODO: Detect splashing on a nylo
         if (!raider.isPreviousIsDead() && isOnBloodTile(raider.getPreviousWorldLocation())) {
             return Collections.singletonList(TobMistake.MAIDEN_BLOOD);
         }
@@ -166,8 +185,6 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
 
     @Subscribe
     public void onGameTick(GameTick event) {
-        // TODO: Maybe check when projectile despawns? Are bloods always last constant tick? Yes! 11 ticks it seems!
-        // Compute when a blood tile actually "activates"
         int currentCycle = client.getGameCycle();
         for (GraphicsObject graphicsObject : new ArrayList<>(maidenBloodGraphicsObjects)) {
             if (isInactive(graphicsObject)) {
