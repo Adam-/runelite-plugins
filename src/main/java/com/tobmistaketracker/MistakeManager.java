@@ -1,7 +1,5 @@
 package com.tobmistaketracker;
 
-import com.google.common.annotations.VisibleForTesting;
-
 import javax.inject.Singleton;
 import java.util.HashMap;
 import java.util.List;
@@ -12,8 +10,7 @@ import java.util.stream.Collectors;
 // TODO: Instead of a singleton, have one for all-time and one for the current raid.
 public class MistakeManager {
 
-    @VisibleForTesting
-    final Map<String, Map<TobMistake, Integer>> mistakesForPlayers;
+    private final Map<String, Map<TobMistake, Integer>> mistakesForPlayers;
 
     MistakeManager() {
         mistakesForPlayers = new HashMap<>();

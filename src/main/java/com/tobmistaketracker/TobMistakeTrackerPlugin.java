@@ -16,7 +16,6 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.Varbits;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
@@ -37,13 +36,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Slf4j
 @PluginDescriptor(
@@ -124,7 +120,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
         raiders = new HashMap<>(MAX_RAIDERS);
         mistakeDetectorManager.reset();
-        mistakeDetectorManager.logRunningDetectors();
     }
 
     // This should run *after* all detectors have handled the GameTick.
@@ -162,8 +157,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
                 int mistakeCount = addMistakeForPlayer(raider.getName(), mistake);
                 raider.setOverheadText("" + client.getTickCount() + " - BLOOD " + mistakeCount);
             }
-
-            logState();
         }
 
         afterDetect(raider);
@@ -252,8 +245,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
                 isRaider = isNewRaiderInRaid(newRaidState);
             }
             raidState = newRaidState;
-
-            logState();
         }
     }
 
@@ -266,18 +257,15 @@ public class TobMistakeTrackerPlugin extends Plugin {
         if (CLEAR_MISTAKES_KEY.equals(event.getKey())) {
             mistakeManager.clearAllMistakes();
         }
-
-        logState();
     }
 
     @Subscribe
     public void onOverheadTextChanged(OverheadTextChanged event) {
         // For Testing
         if (event.getActor().equals(client.getLocalPlayer())) {
-            if (event.getOverheadText().startsWith("Blood")) {
+            if (event.getOverheadText().startsWith("Test blood")) {
                 char id = event.getOverheadText().charAt(event.getOverheadText().length() - 1);
                 addMistakeForPlayer("TestPlayer" + id, TobMistake.MAIDEN_BLOOD);
-                logState();
             }
         }
     }
@@ -310,16 +298,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
     private boolean isNewAllowedSpectator(int newRaidState) {
         return newRaidState == TOB_STATE_IN_TOB && config.spectatingEnabled();
-    }
-
-    private void logState() {
-//		log.info("raidState: " + raidState);
-//		log.info("inTob: " + inTob);
-//		log.info("isRaider: " + isRaider);
-
-        log.info("raiders: " + raiders.keySet());
-        log.info("mistakes: " + mistakeManager.mistakesForPlayers + " - " + client.getTickCount());
-        mistakeDetectorManager.logRunningDetectors();
     }
 
     private boolean isPlayerInRaid(Player player) {

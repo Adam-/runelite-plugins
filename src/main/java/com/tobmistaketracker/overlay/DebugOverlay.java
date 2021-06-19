@@ -39,7 +39,7 @@ public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
             }
         }
 
-        for (WorldPoint worldPoint : maidenMistakeDetector.getMaidenBloodTiles().keySet()) {
+        for (WorldPoint worldPoint : maidenMistakeDetector.getMaidenBloodTiles()) {
             renderTile(graphics, toLocalPoint(worldPoint), Color.CYAN);
         }
 

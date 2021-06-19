@@ -1,6 +1,5 @@
 package com.tobmistaketracker.detector;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.tobmistaketracker.TobMistake;
 import com.tobmistaketracker.TobRaider;
 import lombok.Getter;
@@ -12,7 +11,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 @Slf4j
@@ -106,15 +104,6 @@ public class MistakeDetectorManager implements TobMistakeDetector {
             if (mistakeDetector.isDetectingMistakes()) {
                 mistakeDetector.afterDetect();
             }
-        }
-    }
-
-    @VisibleForTesting
-    public void logRunningDetectors() {
-        log.info("MistakeDetectorManager running: " + isDetectingMistakes());
-
-        for (TobMistakeDetector mistakeDetector : mistakeDetectors) {
-            log.info(mistakeDetector.getClass() + " running: " + mistakeDetector.isDetectingMistakes());
         }
     }
 

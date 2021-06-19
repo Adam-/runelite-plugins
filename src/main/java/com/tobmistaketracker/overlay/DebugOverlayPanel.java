@@ -5,17 +5,13 @@ import com.tobmistaketracker.TobMistake;
 import com.tobmistaketracker.TobMistakeTrackerConfig;
 import com.tobmistaketracker.TobMistakeTrackerPlugin;
 import com.tobmistaketracker.TobRaider;
-import com.tobmistaketracker.detector.MaidenMistakeDetector;
 import com.tobmistaketracker.detector.MistakeDetectorManager;
 import com.tobmistaketracker.detector.TobMistakeDetector;
 import net.runelite.api.Client;
-import net.runelite.api.ItemID;
-import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
-import net.runelite.client.ui.overlay.components.ImageComponent;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 
@@ -41,12 +37,10 @@ public class DebugOverlayPanel extends OverlayPanel {
 
     private final MistakeManager mistakeManager;
     private final MistakeDetectorManager mistakeDetectorManager;
-    private final MaidenMistakeDetector maidenMistakeDetector;
 
     @Inject
     public DebugOverlayPanel(Client client, TobMistakeTrackerPlugin plugin, TobMistakeTrackerConfig config,
                              MistakeManager mistakeManager,
-                             MaidenMistakeDetector maidenMistakeDetector,
                              MistakeDetectorManager mistakeDetectorManager) {
         super(plugin);
         setPosition(OverlayPosition.TOP_RIGHT);
@@ -56,7 +50,6 @@ public class DebugOverlayPanel extends OverlayPanel {
         this.plugin = plugin;
         this.config = config;
         this.mistakeManager = mistakeManager;
-        this.maidenMistakeDetector = maidenMistakeDetector;
         this.mistakeDetectorManager = mistakeDetectorManager;
 
         getMenuEntries().add(new OverlayMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, OVERLAY_NAME));
@@ -96,7 +89,8 @@ public class DebugOverlayPanel extends OverlayPanel {
         }
 
         // Add all mistake detectors
-        renderMistakeDetector(mistakeDetectorManager.getClass().getSimpleName(), mistakeDetectorManager.isDetectingMistakes());
+        renderMistakeDetector(mistakeDetectorManager.getClass().getSimpleName(),
+                mistakeDetectorManager.isDetectingMistakes());
         for (TobMistakeDetector mistakeDetector : mistakeDetectorManager.getMistakeDetectors()) {
             renderMistakeDetector(mistakeDetector.getClass().getSimpleName(), mistakeDetector.isDetectingMistakes());
         }
