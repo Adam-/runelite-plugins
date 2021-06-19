@@ -19,6 +19,7 @@ import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GraphicsObjectCreated;
+import net.runelite.api.events.ProjectileMoved;
 import net.runelite.client.eventbus.Subscribe;
 
 import javax.inject.Inject;
@@ -38,6 +39,12 @@ import java.util.Set;
  * tick before the damage/mistake gets sent to the client, but I think this is easier/simpler.
  * <p>
  * I might get annoyed enough of having to track "previous tick" metadata that I'll re-write all this anyway though.
+ */
+
+/**
+ * Okay I studied a lot of videos and learned how it works. Will type it up tomorrow. Gist of it is below:
+ * 1->2->3->4->etc. --> 65->80->95->110->etc. (Increment 15 cycles per tile away from maiden).
+ * Closest person always gets 3, with the other 2 *always* being +25 cycles, which guarantees they spawn 1 tick later.
  */
 @Slf4j
 @Singleton
@@ -116,6 +123,13 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
     }
 
     @Subscribe
+    public void onProjectileMoved(ProjectileMoved event) {
+        if (event.getProjectile().getId() == 1578) {
+            log.info("" + client.getTickCount() + " - blood projectile remaining cycles " + event.getProjectile().getRemainingCycles());
+        }
+    }
+
+    @Subscribe
     public void onGraphicsObjectCreated(GraphicsObjectCreated event) {
         GraphicsObject go = event.getGraphicsObject();
         if (go.getId() == MAIDEN_BLOOD_GRAPHICS_OBJECT_ID) {
@@ -152,7 +166,7 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
 
     @Subscribe
     public void onGameTick(GameTick event) {
-        // TODO: Maybe check when projectile despawns? Are bloods always last constant tick?
+        // TODO: Maybe check when projectile despawns? Are bloods always last constant tick? Yes! 11 ticks it seems!
         // Compute when a blood tile actually "activates"
         int currentCycle = client.getGameCycle();
         for (GraphicsObject graphicsObject : new ArrayList<>(maidenBloodGraphicsObjects)) {

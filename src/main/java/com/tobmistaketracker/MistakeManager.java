@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Singleton
+// TODO: Instead of a singleton, have one for all-time and one for the current raid.
 public class MistakeManager {
 
     @VisibleForTesting
