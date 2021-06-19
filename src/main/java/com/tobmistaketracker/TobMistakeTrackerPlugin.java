@@ -11,11 +11,14 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.Varbits;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.OverheadTextChanged;
@@ -37,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -52,10 +56,11 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private static final int TOB_STATE_IN_PARTY = 1;
     private static final int TOB_STATE_IN_TOB = 2;
 
-    // Not totally sure where this comes from, but this is the start of the raiders
     private static final int THEATRE_RAIDERS_VARC = 330;
 
     private static final int MAX_RAIDERS = 5;
+
+    private static final Pattern STORY_MODE_FAILED_PATTERN = Pattern.compile("You have failed.");
 
     @Inject
     private Client client;
@@ -226,8 +231,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
                 TobRaider raider = raiders.get(player.getName());
                 log.info("Death: " + raider.getName());
                 addMistakeForPlayer(raider.getName(), TobMistake.DEATH);
-                raider.setDead(true); // TODO: Set this to false during next wave/room, when I get to that logic.
-                // TODO: Probably on next room start actually, since Story mode is a thing...
+                raider.setDead(true);
             }
         }
 
@@ -278,7 +282,24 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
     @Subscribe
     public void onGameStateChanged(GameStateChanged event) {
-        // TODO
+        if (event.getGameState() == GameState.LOADING) {
+            // If there are still raiders, they can't be dead anymore after loading.
+            for (TobRaider raider : raiders.values()) {
+                raider.setDead(false);
+            }
+        }
+    }
+
+    @Subscribe
+    public void onChatMessage(ChatMessage event) {
+        if (event.getMessageNode().getType() == ChatMessageType.GAMEMESSAGE) {
+            if (STORY_MODE_FAILED_PATTERN.matcher(event.getMessage()).find()) {
+                // Failed a story mode attempt, all raiders are no longer dead.
+                for (TobRaider raider : raiders.values()) {
+                    raider.setDead(false);
+                }
+            }
+        }
     }
 
     private boolean isNewRaiderInRaid(int newRaidState) {
