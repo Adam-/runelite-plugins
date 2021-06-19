@@ -29,8 +29,10 @@ import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -80,12 +82,10 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private boolean allRaidersLoaded;
 
     @Getter
-    private Set<TobRaider> raiders;
+    private Map<String, TobRaider> raiders; // name -> raider
 
     @Override
     protected void startUp() throws Exception {
-        log.info("@@@@@@@@@@@@@ started! @@@@@@@@@@");
-
         resetRaidState();
 
         overlayManager.add(debugOverlay);
@@ -94,7 +94,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
     @Override
     protected void shutDown() throws Exception {
-        log.info("@@@@@@@@@@@@ stopped! @@@@@@@@@");
         raiders.clear();
         mistakeDetectorManager.shutdown();
 
@@ -108,7 +107,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
         isRaider = false;
         allRaidersLoaded = false;
 
-        raiders = new HashSet<>(MAX_RAIDERS);
+        raiders = new HashMap<>(MAX_RAIDERS);
         mistakeDetectorManager.reset();
         mistakeDetectorManager.logRunningDetectors();
     }
@@ -132,7 +131,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
     }
 
     private void detectAll() {
-        for (TobRaider raider : raiders) {
+        for (TobRaider raider : raiders.values()) {
             if (raider != null) {
                 detect(raider);
             }
@@ -173,10 +172,10 @@ public class TobMistakeTrackerPlugin extends Plugin {
             }
         }
 
-        Set<TobRaider> raidersTemp = new HashSet<>(MAX_RAIDERS);
+        Map<String, TobRaider> raidersTemp = new HashMap<>(MAX_RAIDERS);
         for (Player player : client.getPlayers()) {
             if (raiderNames.contains(player.getName())) {
-                raidersTemp.add(new TobRaider(player));
+                raidersTemp.put(player.getName(), new TobRaider(player));
             }
         }
 
@@ -189,10 +188,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private void allRaidersLoaded() {
         allRaidersLoaded = true;
         mistakeDetectorManager.startup();
-    }
-
-    private boolean notReadyToDetectMistakes() {
-        return !inTob || !allRaidersLoaded;
     }
 
     private boolean shouldTrackMistakes() {
@@ -219,9 +214,11 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
             if (isPlayerInRaid(player)) {
                 // A Raider has died
-                String name = Text.sanitize(player.getName());
-                log.info("Death: " + name);
-                addMistakeForPlayer(name, TobMistake.DEATH);
+                TobRaider raider = raiders.get(player.getName());
+                log.info("Death: " + raider.getName());
+                addMistakeForPlayer(raider.getName(), TobMistake.DEATH);
+                raider.setDead(true); // TODO: Set this to false during next wave/room, when I get to that logic.
+                // TODO: Probably on next room start actually, since Story mode is a thing...
             }
         }
 
@@ -288,30 +285,20 @@ public class TobMistakeTrackerPlugin extends Plugin {
 //		log.info("inTob: " + inTob);
 //		log.info("isRaider: " + isRaider);
 
-        log.info("raiders: " + getRaiderNames());
+        log.info("raiders: " + raiders.keySet());
         log.info("mistakes: " + mistakeManager.mistakesForPlayers + " - " + client.getTickCount());
         mistakeDetectorManager.logRunningDetectors();
     }
 
-    private String getRaiderNames() {
-        return "[" + raiders.stream().filter(Objects::nonNull).map(TobRaider::getName).collect(Collectors.joining(", ")) + "]";
-    }
-
     public List<WorldPoint> getRaiderPreviousWorldLocations() {
-        return raiders.stream()
+        return raiders.values().stream()
                 .map(TobRaider::getPreviousWorldLocation)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
     private boolean isPlayerInRaid(Player player) {
-        for (TobRaider raider : raiders) {
-            if (raider.getPlayer().equals(player)) {
-                return true;
-            }
-        }
-
-        return false;
+        return raiders.containsKey(player.getName());
     }
 
     @Provides

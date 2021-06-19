@@ -23,6 +23,10 @@ public class TobRaider {
     @Setter
     private boolean previousIsDead;
 
+    @Getter
+    @Setter
+    private boolean isDead;
+
     TobRaider(@NonNull Player player) {
         this.player = player;
     }
@@ -37,9 +41,5 @@ public class TobRaider {
 
     public void setOverheadText(String overheadText) {
         player.setOverheadText(overheadText);
-    }
-
-    public boolean isDead() {
-        return player.isDead();
     }
 }
