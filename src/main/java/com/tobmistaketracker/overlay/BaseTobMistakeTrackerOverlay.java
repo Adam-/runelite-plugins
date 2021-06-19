@@ -18,9 +18,9 @@ public abstract class BaseTobMistakeTrackerOverlay extends Overlay {
     @Inject
     protected Client client;
     @Inject
-    protected TobMistakeTrackerConfig config;
-    @Inject
     protected TobMistakeTrackerPlugin plugin;
+    @Inject
+    protected TobMistakeTrackerConfig config;
 
     protected BaseTobMistakeTrackerOverlay() {
     }

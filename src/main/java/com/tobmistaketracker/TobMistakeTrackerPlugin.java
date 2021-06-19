@@ -1,10 +1,12 @@
 package com.tobmistaketracker;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Provides;
 import com.tobmistaketracker.detector.MaidenMistakeDetector;
 import com.tobmistaketracker.detector.MistakeDetectorManager;
 import com.tobmistaketracker.detector.TobMistakeDetector;
 import com.tobmistaketracker.overlay.DebugOverlay;
+import com.tobmistaketracker.overlay.DebugOverlayPanel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -68,6 +70,9 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private DebugOverlay debugOverlay;
 
     @Inject
+    private DebugOverlayPanel debugOverlayPanel;
+
+    @Inject
     private EventBus eventBus;
 
     @Inject
@@ -77,6 +82,8 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private MistakeDetectorManager mistakeDetectorManager;
 
     private int raidState;
+    @Getter
+    @VisibleForTesting
     private boolean inTob;
     private boolean isRaider;
     private boolean allRaidersLoaded;
@@ -89,6 +96,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
         resetRaidState();
 
         overlayManager.add(debugOverlay);
+        overlayManager.add(debugOverlayPanel);
         mistakeDetectorManager.registerToEventBus(eventBus);
     }
 
@@ -98,6 +106,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
         mistakeDetectorManager.shutdown();
 
         overlayManager.remove(debugOverlay);
+        overlayManager.remove(debugOverlayPanel);
         mistakeDetectorManager.unregisterFromEventBus(eventBus);
     }
 

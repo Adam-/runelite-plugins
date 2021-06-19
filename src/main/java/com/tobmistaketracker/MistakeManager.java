@@ -1,6 +1,7 @@
 package com.tobmistaketracker;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 
 import javax.inject.Singleton;
 import java.util.HashMap;
@@ -26,8 +27,9 @@ public class MistakeManager {
         return playerMistakes.compute(mistake, MistakeManager::increment);
     }
 
-    public Iterator<Map.Entry<TobMistake, Integer>> getMistakesForPlayer(String playerName) {
-        return getPlayerMistakes(playerName).entrySet().iterator();
+    public Map<TobMistake, Integer> getMistakesForPlayer(String playerName) {
+        return ImmutableMap.copyOf(getPlayerMistakes(playerName)); // TODO: Probably not needed like this. Probably
+        // Just allow clients to give a TobMistake and access the map ourselves.
     }
 
     private static <T> Integer increment(T key, Integer oldValue) {
