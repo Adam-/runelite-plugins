@@ -1,12 +1,12 @@
 package com.tobmistaketracker;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 
 import javax.inject.Singleton;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Singleton
 public class MistakeManager {
@@ -23,20 +23,31 @@ public class MistakeManager {
     }
 
     public int addMistakeForPlayer(String playerName, TobMistake mistake) {
-        Map<TobMistake, Integer> playerMistakes = getPlayerMistakes(playerName);
+        Map<TobMistake, Integer> playerMistakes = mistakesForPlayers.computeIfAbsent(playerName, k -> new HashMap<>());
         return playerMistakes.compute(mistake, MistakeManager::increment);
     }
 
-    public Map<TobMistake, Integer> getMistakesForPlayer(String playerName) {
-        return ImmutableMap.copyOf(getPlayerMistakes(playerName)); // TODO: Probably not needed like this. Probably
-        // Just allow clients to give a TobMistake and access the map ourselves.
+    public boolean hasAnyMistakes(String playerName) {
+        return mistakesForPlayers.containsKey(playerName);
+    }
+
+    public List<String> getPlayersWithMistakes() {
+        return mistakesForPlayers.keySet().stream().sorted().collect(Collectors.toList());
+    }
+
+    public int getMistakeCountForPlayer(String playerName, TobMistake mistake) {
+        Map<TobMistake, Integer> playerMistakes = mistakesForPlayers.get(playerName);
+        if (playerMistakes != null) {
+            Integer count = playerMistakes.get(mistake);
+            if (count != null) {
+                return count;
+            }
+        }
+
+        return 0;
     }
 
     private static <T> Integer increment(T key, Integer oldValue) {
         return oldValue == null ? 1 : oldValue + 1;
-    }
-
-    private Map<TobMistake, Integer> getPlayerMistakes(String playerName) {
-        return mistakesForPlayers.computeIfAbsent(playerName, k -> new HashMap<>());
     }
 }

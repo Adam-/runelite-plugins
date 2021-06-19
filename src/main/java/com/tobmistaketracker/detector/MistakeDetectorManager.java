@@ -17,6 +17,8 @@ import java.util.List;
 @Singleton
 public class MistakeDetectorManager implements TobMistakeDetector {
 
+    @VisibleForTesting
+    @Getter
     private final List<TobMistakeDetector> mistakeDetectors;
 
     @Getter
