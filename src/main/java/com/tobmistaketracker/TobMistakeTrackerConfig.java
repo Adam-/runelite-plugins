@@ -31,12 +31,12 @@ public interface TobMistakeTrackerConfig extends Config {
 
     // DO NOT PUSH TO PROD WITH THIS FEATURE UNCOMMENTED
     @ConfigItem(
-            keyName = "enableDebug",
-            name = "Enable Debug",
+            keyName = "isDebug",
+            name = "Debug",
             description = "Toggle Debug Mode",
             position = 99
     )
-    default boolean enableDebug() {
+    default boolean isDebug() {
         return true;
     }
 }

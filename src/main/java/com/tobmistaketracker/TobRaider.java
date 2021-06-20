@@ -26,10 +26,6 @@ public class TobRaider {
 
     @Getter
     @Setter(AccessLevel.PACKAGE)
-    private boolean previousIsDead;
-
-    @Getter
-    @Setter(AccessLevel.PACKAGE)
     private boolean isDead;
 
     TobRaider(@NonNull Player player) {

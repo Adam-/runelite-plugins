@@ -58,7 +58,7 @@ public class DebugOverlayPanel extends OverlayPanel {
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        if (!config.enableDebug()) return null;
+        if (!config.isDebug()) return null;
 
         if (plugin.isInTob()) {
             panelComponent.getChildren().add(TitleComponent.builder()

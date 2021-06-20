@@ -31,7 +31,7 @@ public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        if (!config.enableDebug()) return null;
+        if (!config.isDebug()) return null;
 
         for (TobRaider raider : plugin.getRaiders()) {
             if (raider.getPreviousWorldLocationForOverlay() != null) {

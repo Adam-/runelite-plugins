@@ -2,6 +2,7 @@ package com.tobmistaketracker;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Provides;
+import com.tobmistaketracker.detector.DeathMistakeDetector;
 import com.tobmistaketracker.detector.MaidenMistakeDetector;
 import com.tobmistaketracker.detector.MistakeDetectorManager;
 import com.tobmistaketracker.detector.TobMistakeDetector;
@@ -10,7 +11,6 @@ import com.tobmistaketracker.overlay.DebugOverlayPanel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Actor;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -154,8 +154,20 @@ public class TobMistakeTrackerPlugin extends Plugin {
             log.info("" + client.getTickCount() + " Found mistakes for " + raider.getName() + " - " + mistakes);
 
             for (TobMistake mistake : mistakes) {
+                // Handle special logic for deaths
+                if (mistake == TobMistake.DEATH) {
+                    raider.setDead(true);
+                }
+
                 int mistakeCount = addMistakeForPlayer(raider.getName(), mistake);
-                raider.setOverheadText("" + client.getTickCount() + " - BLOOD " + mistakeCount);
+
+                // TODO: Have this timeout after 5 ticks
+                raider.setOverheadText(mistake.getChatMessage());
+                client.addChatMessage(ChatMessageType.PUBLICCHAT, raider.getName(), mistake.getChatMessage(), null);
+                if (config.isDebug()) {
+                    raider.setOverheadText(
+                            String.format("%s - %s %s", client.getTickCount(), mistake.getMistakeName(), mistakeCount));
+                }
             }
         }
 
@@ -165,7 +177,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private void afterDetect(TobRaider raider) {
         raider.setPreviousWorldLocationForOverlay(raider.getPreviousWorldLocation());
         raider.setPreviousWorldLocation(raider.getCurrentWorldLocation());
-        raider.setPreviousIsDead(raider.isDead());
     }
 
     private void afterDetectAll() {
@@ -214,22 +225,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
     @Subscribe
     public void onActorDeath(ActorDeath event) {
-        Actor actor = event.getActor();
-        if (actor instanceof Player) {
-            Player player = (Player) actor;
-            if (player.getName() == null) {
-                return;
-            }
-
-            if (isPlayerInRaid(player)) {
-                // A Raider has died
-                TobRaider raider = raiders.get(player.getName());
-                log.info("Death: " + raider.getName());
-                addMistakeForPlayer(raider.getName(), TobMistake.DEATH);
-                raider.setDead(true);
-            }
-        }
-
         event.getActor().setOverheadText("Whoopsies I died!");
     }
 
@@ -305,7 +300,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
     }
 
     public boolean isPlayerInRaid(String playerName) {
-        return raiders.containsKey(playerName);
+        return playerName != null && raiders.containsKey(playerName);
     }
 
     public Iterable<TobRaider> getRaiders() {
@@ -318,10 +313,12 @@ public class TobMistakeTrackerPlugin extends Plugin {
     }
 
     @Provides
-    List<TobMistakeDetector> provideMistakeDetectors(MaidenMistakeDetector maidenMistakeDetector) {
+    List<TobMistakeDetector> provideMistakeDetectors(MaidenMistakeDetector maidenMistakeDetector,
+                                                     DeathMistakeDetector deathMistakeDetector) {
         List<TobMistakeDetector> mistakeDetectors = new ArrayList<>();
 
         mistakeDetectors.add(maidenMistakeDetector);
+        mistakeDetectors.add(deathMistakeDetector);
 
         return mistakeDetectors;
     }

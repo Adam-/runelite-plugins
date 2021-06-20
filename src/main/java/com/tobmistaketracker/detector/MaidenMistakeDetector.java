@@ -61,7 +61,6 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
 
     private static final int BLOOD_SPAWN_BLOOD_GAME_OBJECT_ID = 32984;
     private static final int MAIDEN_BLOOD_PROJECTILE_ID = 1578;
-    private static final int ICE_BARRAGE_PROJECTILE_ID = 368;
 
     private static final int CYCLES_PER_GAME_TICK = Constants.GAME_TICK_LENGTH / Constants.CLIENT_TICK_LENGTH;
 
@@ -116,7 +115,7 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
 
     @Override
     public List<TobMistake> detectMistakes(@NonNull TobRaider raider) {
-        if (!raider.isPreviousIsDead() && isOnBloodTile(raider.getPreviousWorldLocation())) {
+        if (!raider.isDead() && isOnBloodTile(raider.getPreviousWorldLocation())) {
             return Collections.singletonList(TobMistake.MAIDEN_BLOOD);
         }
 
