@@ -19,7 +19,6 @@ import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameTick;
-import net.runelite.api.events.GraphicChanged;
 import net.runelite.api.events.ProjectileMoved;
 import net.runelite.client.eventbus.Subscribe;
 
@@ -46,6 +45,15 @@ import java.util.Set;
  * The math is: gameTicksToActivate = floor(remainingCycles / CYCLES_PER_GAME_TICK).
  * <p>
  * Once the blood spot is active, it *always* last for exactly 11 GameTicks.
+ *
+ * Additionally, I was going to add splashing on a nylo as a mistake, but there were too many edge cases that couldn't
+ * be resolved guaranteed, so I ended up scrapping it for now. I might revisit it in the future. In case I do, this
+ * is how it works:
+ *
+ * A player will freeze on tick 1, which is also when the Projectile is created and the graphic
+ * on the npc is changed. By tick 2, the npc is actually frozen (if it caught), but the rest of the projectile
+ * could take several more ticks to finish (up to 5 total?) -- We should add a delay on when to show the mistake
+ * so it can't be used for decision-making.
  */
 @Slf4j
 @Singleton
@@ -108,7 +116,6 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
 
     @Override
     public List<TobMistake> detectMistakes(@NonNull TobRaider raider) {
-        // TODO: Detect splashing on a nylo
         if (!raider.isPreviousIsDead() && isOnBloodTile(raider.getPreviousWorldLocation())) {
             return Collections.singletonList(TobMistake.MAIDEN_BLOOD);
         }
@@ -130,30 +137,12 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
     @Subscribe
     public void onProjectileMoved(ProjectileMoved event) {
         if (event.getProjectile().getId() == MAIDEN_BLOOD_PROJECTILE_ID) {
-            log.info("" + client.getTickCount() + " - blood projectile remaining cycles: " +
-                    event.getProjectile().getRemainingCycles());
-
             int gameTicksToActivate =
                     (int) Math.floor((double) event.getProjectile().getRemainingCycles() / CYCLES_PER_GAME_TICK);
             int activationTick = client.getTickCount() + gameTicksToActivate;
             WorldPoint worldPoint = WorldPoint.fromLocal(client, event.getPosition());
 
             maidenBloodTilesToActivate.computeIfAbsent(activationTick, k -> new ArrayList<>()).add(worldPoint);
-        }
-
-        // What if two people, standing at the same location, freeze the same nylo on the same tick, and one splashes...
-        // What happens..? What is the graphic? Are both projectiles spawned? etc.
-
-        // So it looks like we do the freeze on tick 1, which is also when the projectile is created and the graphic
-        // on the npc is changed. By tick 2, the npc is actually frozen (if it caught), but the rest of the projectile
-        // could take several more ticks to finish (up to 5 total?) -- We should add a delay on when to show the mistake
-        // so it can't be used for decision-making.
-
-        // Looks like the graphic might get changed on every spell, even if they overlap -- need to test more.
-        if (event.getProjectile().getId() == ICE_BARRAGE_PROJECTILE_ID) { // Or ice blitz/burst maybe..? Who does that?
-            log.info("" + client.getTickCount() + " - ice barrage projectile remaining cycles: " +
-                    event.getProjectile().getRemainingCycles() + " - location: " +
-                    WorldPoint.fromLocal(client, event.getPosition()));
         }
     }
 
@@ -172,12 +161,6 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
             // Remove these *after* detecting this tick, since they were still present in the previous player location.
             bloodSpawnBloodTilesToRemove.add(go.getWorldLocation());
         }
-    }
-
-    @Subscribe
-    public void onGraphicChanged(GraphicChanged event) {
-        log.info("" + client.getTickCount() + " - name: " + event.getActor().getName() + " - graphic: " +
-                event.getActor().getGraphic() + " - position: " + event.getActor().getWorldLocation());
     }
 
     @Subscribe
