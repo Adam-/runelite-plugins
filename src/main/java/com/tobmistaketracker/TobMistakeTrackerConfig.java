@@ -29,14 +29,14 @@ public interface TobMistakeTrackerConfig extends Config {
         return false;
     }
 
-    // DO NOT PUSH TO PROD WITH THIS FEATURE UNCOMMENTED
     @ConfigItem(
             keyName = "isDebug",
             name = "Debug",
             description = "Toggle Debug Mode",
-            position = 99
+            position = 99,
+            hidden = false // This must be true when pushing to prod
     )
     default boolean isDebug() {
-        return true;
+        return false;
     }
 }
