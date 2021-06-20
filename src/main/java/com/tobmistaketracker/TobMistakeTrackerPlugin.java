@@ -2,10 +2,7 @@ package com.tobmistaketracker;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Provides;
-import com.tobmistaketracker.detector.DeathMistakeDetector;
-import com.tobmistaketracker.detector.MaidenMistakeDetector;
 import com.tobmistaketracker.detector.MistakeDetectorManager;
-import com.tobmistaketracker.detector.TobMistakeDetector;
 import com.tobmistaketracker.overlay.DebugOverlay;
 import com.tobmistaketracker.overlay.DebugOverlayPanel;
 import lombok.Getter;
@@ -21,6 +18,8 @@ import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.OverheadTextChanged;
+import net.runelite.api.events.PlayerDespawned;
+import net.runelite.api.events.VarClientStrChanged;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
@@ -32,14 +31,16 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 @PluginDescriptor(
@@ -89,8 +90,11 @@ public class TobMistakeTrackerPlugin extends Plugin {
     @VisibleForTesting
     private boolean inTob;
     private boolean isRaider;
+    @Getter
+    @VisibleForTesting
     private boolean allRaidersLoaded;
 
+    private String[] raiderNames;
     private Map<String, TobRaider> raiders; // name -> raider
 
     @Override
@@ -104,7 +108,9 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
     @Override
     protected void shutDown() throws Exception {
+        raiderNames = new String[0];
         raiders.clear();
+
         mistakeDetectorManager.shutdown();
 
         overlayManager.remove(debugOverlay);
@@ -118,7 +124,9 @@ public class TobMistakeTrackerPlugin extends Plugin {
         isRaider = false;
         allRaidersLoaded = false;
 
+        raiderNames = new String[MAX_RAIDERS];
         raiders = new HashMap<>(MAX_RAIDERS);
+
         mistakeDetectorManager.reset();
     }
 
@@ -184,30 +192,21 @@ public class TobMistakeTrackerPlugin extends Plugin {
     }
 
     private void loadRaiders() {
-        Set<String> raiderNames = new HashSet<>(MAX_RAIDERS);
-        for (int i = 0; i < MAX_RAIDERS; i++) {
-            String name = Text.sanitize(client.getVarcStrValue(THEATRE_RAIDERS_VARC + i));
-            if (name != null && !name.isEmpty()) {
-                raiderNames.add(name);
-            }
-        }
-
-        Map<String, TobRaider> raidersTemp = new HashMap<>(MAX_RAIDERS);
+        // Look through all players and see if they should be a raider
+        Set<String> raiderNamesSet = new HashSet<>(getRaiderNames());
         for (Player player : client.getPlayers()) {
-            if (raiderNames.contains(player.getName())) {
-                raidersTemp.put(player.getName(), new TobRaider(player));
+            if (player != null && player.getName() != null &&
+                    !raiders.containsKey(player.getName()) && raiderNamesSet.contains(player.getName())) {
+                raiders.put(player.getName(), new TobRaider(player));
+                log.info("Added player " + player.getName());
             }
         }
 
-        if (!raiderNames.isEmpty() && raiderNames.size() == raidersTemp.size()) {
-            raiders = raidersTemp;
-            allRaidersLoaded();
-        }
-    }
+        int totalRaiders = raiderNamesSet.size();
+        if (totalRaiders > 0 && raiders.size() == totalRaiders) {
+            allRaidersLoaded = true;
 
-    private void allRaidersLoaded() {
-        allRaidersLoaded = true;
-        mistakeDetectorManager.startup();
+        }
     }
 
     private boolean shouldTrackMistakes() {
@@ -221,6 +220,32 @@ public class TobMistakeTrackerPlugin extends Plugin {
         }
 
         return 0;
+    }
+
+    @Subscribe
+    public void onPlayerDespawned(PlayerDespawned event) {
+        // We only care about players that despawn when in a raid.
+        if (inTob && raiders.containsKey(event.getPlayer().getName())) {
+            raiders.remove(event.getPlayer().getName());
+            allRaidersLoaded = false;
+            log.info("Remove player " + event.getPlayer().getName());
+        }
+    }
+
+    @Subscribe
+    public void onVarClientStrChanged(VarClientStrChanged event) {
+        if (event.getIndex() >= THEATRE_RAIDERS_VARC && event.getIndex() < THEATRE_RAIDERS_VARC + MAX_RAIDERS) {
+            // A raider has joined or left -- reset allRaidersLoaded
+            allRaidersLoaded = false;
+
+            int raiderIndex = event.getIndex() - THEATRE_RAIDERS_VARC;
+            String raiderName = client.getVarcStrValue(event.getIndex());
+            if (raiderName != null && !raiderName.isEmpty()) {
+                raiderNames[raiderIndex] = Text.sanitize(raiderName);
+            } else {
+                raiderNames[raiderIndex] = null;
+            }
+        }
     }
 
     @Subscribe
@@ -238,6 +263,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
             } else if (isNewRaiderInRaid(newRaidState) || isNewAllowedSpectator(newRaidState)) {
                 inTob = true;
                 isRaider = isNewRaiderInRaid(newRaidState);
+                mistakeDetectorManager.startup();
             }
             raidState = newRaidState;
         }
@@ -295,11 +321,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
         return newRaidState == TOB_STATE_IN_TOB && config.spectatingEnabled();
     }
 
-    private boolean isPlayerInRaid(Player player) {
-        return isPlayerInRaid(player.getName());
-    }
-
-    public boolean isPlayerInRaid(String playerName) {
+    public boolean isLoadedRaider(String playerName) {
         return playerName != null && raiders.containsKey(playerName);
     }
 
@@ -307,19 +329,15 @@ public class TobMistakeTrackerPlugin extends Plugin {
         return Collections.unmodifiableCollection(raiders.values());
     }
 
-    @Provides
-    TobMistakeTrackerConfig provideConfig(ConfigManager configManager) {
-        return configManager.getConfig(TobMistakeTrackerConfig.class);
+    /**
+     * Gets copy of all the raider names. Elements returned are guaranteed to be non-null.
+     */
+    public List<String> getRaiderNames() {
+        return Arrays.stream(raiderNames).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     @Provides
-    List<TobMistakeDetector> provideMistakeDetectors(MaidenMistakeDetector maidenMistakeDetector,
-                                                     DeathMistakeDetector deathMistakeDetector) {
-        List<TobMistakeDetector> mistakeDetectors = new ArrayList<>();
-
-        mistakeDetectors.add(maidenMistakeDetector);
-        mistakeDetectors.add(deathMistakeDetector);
-
-        return mistakeDetectors;
+    TobMistakeTrackerConfig provideConfig(ConfigManager configManager) {
+        return configManager.getConfig(TobMistakeTrackerConfig.class);
     }
 }

@@ -19,6 +19,7 @@ import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.events.ProjectileMoved;
 import net.runelite.client.eventbus.Subscribe;
 
@@ -45,11 +46,11 @@ import java.util.Set;
  * The math is: gameTicksToActivate = floor(remainingCycles / CYCLES_PER_GAME_TICK).
  * <p>
  * Once the blood spot is active, it *always* last for exactly 11 GameTicks.
- *
+ * <p>
  * Additionally, I was going to add splashing on a nylo as a mistake, but there were too many edge cases that couldn't
  * be resolved guaranteed, so I ended up scrapping it for now. I might revisit it in the future. In case I do, this
  * is how it works:
- *
+ * <p>
  * A player will freeze on tick 1, which is also when the Projectile is created and the graphic
  * on the npc is changed. By tick 2, the npc is actually frozen (if it caught), but the rest of the projectile
  * could take several more ticks to finish (up to 5 total?) -- We should add a delay on when to show the mistake
@@ -159,6 +160,13 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
         if (go.getId() == BLOOD_SPAWN_BLOOD_GAME_OBJECT_ID) {
             // Remove these *after* detecting this tick, since they were still present in the previous player location.
             bloodSpawnBloodTilesToRemove.add(go.getWorldLocation());
+        }
+    }
+
+    @Subscribe
+    public void onNpcSpawned(NpcSpawned event) {
+        if (TobBossNames.MAIDEN.equals(event.getActor().getName())) {
+            startup();
         }
     }
 

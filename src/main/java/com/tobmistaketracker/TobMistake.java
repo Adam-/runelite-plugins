@@ -5,7 +5,8 @@ import lombok.NonNull;
 
 public enum TobMistake {
     DEATH("Death", "death", "Oh no, I've died! :("),
-    MAIDEN_BLOOD("Maiden Blood", "blood", "I've stood in Maiden blood!");
+    MAIDEN_BLOOD("Maiden Blood", "blood", "I've stood in Maiden blood!"),
+    BLOAT_HAND("Bloat Hand", "bloat", "I got handed by Bloat!");
 
     @Getter
     @NonNull

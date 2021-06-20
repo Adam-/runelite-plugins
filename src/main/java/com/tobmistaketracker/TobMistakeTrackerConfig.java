@@ -39,4 +39,6 @@ public interface TobMistakeTrackerConfig extends Config {
     default boolean isDebug() {
         return false;
     }
+
+    // TODO: Add a config for public chat messages and/or overheads. It might be annoying for people.
 }

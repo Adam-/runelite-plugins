@@ -1,7 +1,9 @@
 package com.tobmistaketracker.overlay;
 
 import com.tobmistaketracker.TobRaider;
+import com.tobmistaketracker.detector.BloatMistakeDetector;
 import com.tobmistaketracker.detector.MaidenMistakeDetector;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.OverlayLayer;
@@ -16,17 +18,20 @@ import java.awt.Graphics2D;
 /**
  * This is for testing with a visual aid
  */
+@Slf4j
 public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
 
     private final MaidenMistakeDetector maidenMistakeDetector;
+    private final BloatMistakeDetector bloatMistakeDetector;
 
     @Inject
-    public DebugOverlay(MaidenMistakeDetector maidenMistakeDetector) {
+    public DebugOverlay(MaidenMistakeDetector maidenMistakeDetector, BloatMistakeDetector bloatMistakeDetector) {
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_SCENE);
         setPriority(OverlayPriority.MED);
 
         this.maidenMistakeDetector = maidenMistakeDetector;
+        this.bloatMistakeDetector = bloatMistakeDetector;
     }
 
     @Override
@@ -35,7 +40,8 @@ public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
 
         for (TobRaider raider : plugin.getRaiders()) {
             if (raider.getPreviousWorldLocationForOverlay() != null) {
-                renderTile(graphics, toLocalPoint(raider.getPreviousWorldLocationForOverlay()), Color.MAGENTA);
+                LocalPoint localPoint = toLocalPoint(raider.getPreviousWorldLocationForOverlay());
+                renderTile(graphics, localPoint, Color.MAGENTA);
             }
         }
 
@@ -45,6 +51,11 @@ public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
 
         for (WorldPoint worldPoint : maidenMistakeDetector.getBloodSpawnBloodTiles()) {
             renderTile(graphics, toLocalPoint(worldPoint), Color.GREEN);
+        }
+
+        // I don't think this ever renders anything because they're detected and removed before the end of the tick.
+        for (WorldPoint worldPoint : bloatMistakeDetector.getActiveHandTiles()) {
+            renderTile(graphics, toLocalPoint(worldPoint), Color.RED);
         }
 
         return null;

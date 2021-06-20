@@ -19,6 +19,10 @@ import javax.inject.Inject;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
@@ -73,17 +77,27 @@ public class DebugOverlayPanel extends OverlayPanel {
         }
 
         panelComponent.getChildren().add(TitleComponent.builder()
+                .text(plugin.isAllRaidersLoaded() ? "All raiders loaded" : "All raiders NOT loaded")
+                .color(plugin.isAllRaidersLoaded() ? Color.GREEN : Color.RED)
+                .build());
+
+        panelComponent.getChildren().add(TitleComponent.builder()
                 .text("Game Tick: " + client.getTickCount())
                 .build());
 
         // Add all raiders
-        for (TobRaider raider : plugin.getRaiders()) {
-            renderPlayerComponents(raider.getName(), Color.CYAN);
+        for (String raiderName : plugin.getRaiderNames()) {
+            if (raiderName != null) {
+                renderPlayerComponents(raiderName, Color.CYAN);
+            }
         }
+
+        // For fast lookups
+        Set<String> raiderNames = new HashSet<>(plugin.getRaiderNames());
 
         // Add all non-raiders we've tracked with mistakes
         for (String playerName : mistakeManager.getPlayersWithMistakes()) {
-            if (!plugin.isPlayerInRaid(playerName)) {
+            if (!raiderNames.contains(playerName)) {
                 renderPlayerComponents(playerName, Color.WHITE);
             }
         }

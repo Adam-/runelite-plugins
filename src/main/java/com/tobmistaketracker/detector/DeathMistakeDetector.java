@@ -71,9 +71,10 @@ public class DeathMistakeDetector implements TobMistakeDetector {
         if (actor instanceof Player) {
             Player player = (Player) actor;
 
-            if (plugin.isPlayerInRaid(player.getName())) {
+            if (plugin.isLoadedRaider(player.getName())) {
                 playerDeaths.add(player.getName());
             }
         }
+        // TODO: If verzik death call shutdown()
     }
 }

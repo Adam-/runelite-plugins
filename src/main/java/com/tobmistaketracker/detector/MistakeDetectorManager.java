@@ -5,38 +5,47 @@ import com.tobmistaketracker.TobRaider;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
 import net.runelite.client.eventbus.EventBus;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Manager for all the {@link TobMistakeDetector}. It keeps all the detectors in memory in order to manage events.
+ */
 @Slf4j
 @Singleton
 public class MistakeDetectorManager implements TobMistakeDetector {
 
+    private final Client client;
     private final List<TobMistakeDetector> mistakeDetectors;
+
+    private final DeathMistakeDetector deathMistakeDetector;
 
     @Getter
     private boolean detectingMistakes;
 
     @Inject
-    public MistakeDetectorManager(List<TobMistakeDetector> mistakeDetectors) {
-        this.mistakeDetectors = mistakeDetectors;
+    public MistakeDetectorManager(Client client,
+                                  DeathMistakeDetector deathMistakeDetector,
+                                  MaidenMistakeDetector maidenMistakeDetector,
+                                  BloatMistakeDetector bloatMistakeDetector) {
+        this.client = client;
+        this.mistakeDetectors = Arrays.asList(deathMistakeDetector, maidenMistakeDetector, bloatMistakeDetector);
+        this.deathMistakeDetector = deathMistakeDetector;
         this.detectingMistakes = false;
     }
 
     @Override
     public void startup() {
-        // TODO: We don't need certain detectors running all the time (e.g. Bloat detector during Maiden)
-        // TODO: Maybe use NpcSpawned and NpcDespawned
-        for (TobMistakeDetector mistakeDetector : mistakeDetectors) {
-            mistakeDetector.startup();
-        }
-
         detectingMistakes = true;
+        // Always detect deaths throughout the raid
+        deathMistakeDetector.startup();
     }
 
     @Override
