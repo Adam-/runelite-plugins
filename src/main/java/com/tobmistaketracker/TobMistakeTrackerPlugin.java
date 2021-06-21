@@ -373,6 +373,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
     // FOR TESTING ONLY
     private void addTestMistakes() {
         if (config.isDebug()) {
+            boolean oldInTob = inTob;
             inTob = true;
             int numEverything = 3;
             for (int playerIndex = 0; playerIndex < numEverything; playerIndex++) {
@@ -382,7 +383,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
                     }
                 }
             }
-            inTob = false;
+            inTob = oldInTob;
         }
     }
 
@@ -394,9 +395,10 @@ public class TobMistakeTrackerPlugin extends Plugin {
                 String mistakeName = event.getOverheadText().split(" ")[2];
                 char id = event.getOverheadText().charAt(event.getOverheadText().length() - 1);
                 TobMistake mistake = TobMistake.valueOf(mistakeName.toUpperCase());
+                boolean oldInTob = inTob;
                 inTob = true;
                 addMistakeForPlayer("TestPlayer" + id, mistake);
-                inTob = false;
+                inTob = oldInTob;
             }
         }
     }

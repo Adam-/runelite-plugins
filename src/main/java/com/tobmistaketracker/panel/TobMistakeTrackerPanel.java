@@ -3,7 +3,7 @@ package com.tobmistaketracker.panel;
 import com.tobmistaketracker.MistakeManager;
 import com.tobmistaketracker.TobMistake;
 import com.tobmistaketracker.TobMistakeTrackerConfig;
-import com.tobmistaketracker.TobMistakeTrackerPlugin;
+import net.runelite.api.Client;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
@@ -37,7 +37,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
 
     private final TobMistakeTrackerConfig config;
     private final MistakeManager mistakeManager;
-
+    private final Client client;
 
     // Panel for overall mistake data
     private final JPanel overallPanel = new JPanel();
@@ -54,9 +54,10 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     private final PluginErrorPanel errorPanel = new PluginErrorPanel();
 
     @Inject
-    public TobMistakeTrackerPanel(TobMistakeTrackerConfig config, MistakeManager mistakeManager) {
+    public TobMistakeTrackerPanel(TobMistakeTrackerConfig config, MistakeManager mistakeManager, Client client) {
         this.config = config;
         this.mistakeManager = mistakeManager;
+        this.client = client;
 
         setBorder(new EmptyBorder(6, 6, 6, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -144,7 +145,6 @@ public class TobMistakeTrackerPanel extends PluginPanel {
      * @param playerName - The player name that a mistake was added for
      */
     public void addMistakeForPlayer(String playerName, TobMistake mistake) {
-        // TODO: Instead of repainting everything, just update what's needed.
         mistakeManager.addMistakeForPlayer(playerName, mistake);
 
         PlayerMistakesBox box = buildBox(playerName, mistake);
@@ -152,18 +152,44 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         updateOverallPanel();
     }
 
+    /**
+     * Removes a mistake for the specified player, both in the manager and the panel. This is only callable from
+     * the box's mistake's Reset action.
+     *
+     * @param playerName - The player name that a mistake was added for
+     */
+    // TODO: This is currently unused as I'm not sure I even want this feature.
+    private void removeMistakeForPlayer(String playerName, TobMistake mistake) {
+        mistakeManager.removeMistakeForPlayer(playerName, mistake);
+
+        for (PlayerMistakesBox box : playerMistakesBoxes) {
+            if (box.getPlayerName().equals(playerName)) {
+                box.rebuildAllMistakes();
+                updateOverallPanel();
+                return;
+            }
+        }
+    }
+
     private PlayerMistakesBox buildBox(String playerName, TobMistake mistake) {
         for (PlayerMistakesBox box : playerMistakesBoxes) {
             if (box.getPlayerName().equals(playerName)) {
-                // TODO: Ordering? -- Localplayer always first, then everyone else in order of most recent?
-//                box.addMistake(mistake);
+                if (client.getLocalPlayer() != null && playerName.equals(client.getLocalPlayer().getName())) {
+                    // This existing box is for me, make sure it goes first if it somehow isn't already
+                    mistakesContainer.setComponentZOrder(box, 0);
+                } else if (doesLocalPlayerHaveMistakesBox()) {
+                    // I already have some mistakes, so this should go right after
+                    mistakesContainer.setComponentZOrder(box, 1);
+                } else {
+                    // It's not for me, and I have no mistakes, it can go in the front
+                    mistakesContainer.setComponentZOrder(box, 0);
+                }
                 return box;
             }
         }
 
         // Create a new box if one could not be found
         PlayerMistakesBox box = new PlayerMistakesBox(mistakeManager, playerName);
-//        box.addMistake(mistake);
 
         // Use the existing popup menu or create a new one
         JPopupMenu popupMenu = box.getComponentPopupMenu();
@@ -198,9 +224,17 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         mistakesContainer.setVisible(true);
 
         // Add box to panel
+        if (client.getLocalPlayer() != null && playerName.equals(client.getLocalPlayer().getName())) {
+            // This box is for me, put at the front
+            mistakesContainer.add(box, 0);
+        } else if (doesLocalPlayerHaveMistakesBox()) {
+            // I already have some mistakes, so this should go right after
+            mistakesContainer.add(box, 1);
+        } else {
+            // It's not for me, and I have no mistakes, it can go in the front
+            mistakesContainer.add(box, 0);
+        }
         playerMistakesBoxes.add(box);
-        // TODO: Ordering? -- Localplayer always first, then everyone else in order of most recent?
-        mistakesContainer.add(box);
 
         return box;
     }
@@ -228,23 +262,12 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         return String.format(HTML_LABEL_TEMPLATE, ColorUtil.toHexColor(ColorScheme.LIGHT_GRAY_COLOR), key, valueStr);
     }
 
-    /**
-     * Removes a mistake for the specified player, both in the manager and the panel. This is only callable from
-     * the box's mistake's Reset action.
-     *
-     * @param playerName - The player name that a mistake was added for
-     */
-    // TODO: This is currently unused as I'm not sure I even want this feature.
-    private void removeMistakeForPlayer(String playerName, TobMistake mistake) {
-        mistakeManager.removeMistakeForPlayer(playerName, mistake);
-
-        for (PlayerMistakesBox box : playerMistakesBoxes) {
-            if (box.getPlayerName().equals(playerName)) {
-//                box.removeMistake(mistake);
-                box.rebuildAllMistakes();
-                updateOverallPanel();
-                return;
-            }
+    private boolean doesLocalPlayerHaveMistakesBox() {
+        if (client.getLocalPlayer() != null) {
+            String name = client.getLocalPlayer().getName();
+            return playerMistakesBoxes.stream().anyMatch(b -> b.getPlayerName().equals(name));
         }
+
+        return false;
     }
 }

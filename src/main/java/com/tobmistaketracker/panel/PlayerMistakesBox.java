@@ -2,7 +2,6 @@ package com.tobmistaketracker.panel;
 
 import com.tobmistaketracker.MistakeManager;
 import com.tobmistaketracker.TobMistake;
-import com.tobmistaketracker.TobMistakeTrackerPlugin;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
@@ -11,13 +10,13 @@ import net.runelite.client.ui.FontManager;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -74,7 +73,6 @@ public class PlayerMistakesBox extends JPanel {
     }
 
     void rebuildAllMistakes() {
-        // TODO: Instead of always repainting everything, just update what's needed.
         buildMistakes();
         raidCountLabel.setText(""); // TODO: e.g. x 53 raids (with mistakes?)
         mistakeCountLabel.setText(totalMistakes + " Mistakes");
@@ -102,20 +100,37 @@ public class PlayerMistakesBox extends JPanel {
         mistakesContainer.setLayout(new GridLayout(numRows, ITEMS_PER_ROW, 1, 1));
 
         for (int i = 0; i < numRows * ITEMS_PER_ROW; i++) {
-            final JPanel mistakeContainer = new JPanel();
+            // Create the panel for this mistake
+            final JPanel mistakeContainer = new JPanel(new BorderLayout(0, 0));
+            mistakeContainer.setMaximumSize(new Dimension(36, 32));
             mistakeContainer.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
             // If we still have mistakes to show for this row
             if (i < mistakeCountsForPlayer.size()) {
                 TobMistakeCount mistakeCount = mistakeCountsForPlayer.get(i);
+
+                // Create the image label
                 final JLabel imageLabel = new JLabel();
+                imageLabel.setLayout(new BorderLayout(0, 0));
                 imageLabel.setToolTipText(mistakeCount.getTooltipText());
                 imageLabel.setVerticalAlignment(SwingConstants.CENTER);
                 imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
                 BufferedImage mistakeImage = mistakeCount.getMistake().getMistakeImage();
                 imageLabel.setIcon(new ImageIcon(mistakeImage));
+
+                // Create the quantity label
+                final JLabel quantityLabel = new JLabel();
+                quantityLabel.setText(String.valueOf(mistakeCount.getCount()));
+                quantityLabel.setFont(FontManager.getRunescapeSmallFont());
+                quantityLabel.setForeground(Color.YELLOW);
+                quantityLabel.setVerticalAlignment(SwingConstants.BOTTOM);
+                quantityLabel.setHorizontalAlignment(SwingConstants.LEFT);
+
+                // Add them to the panel
+                imageLabel.add(quantityLabel, BorderLayout.NORTH); // Add the quantity to the image so it's on top of it
                 mistakeContainer.add(imageLabel);
+
             }
             mistakesContainer.add(mistakeContainer);
         }
