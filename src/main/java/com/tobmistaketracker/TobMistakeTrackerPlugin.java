@@ -5,6 +5,7 @@ import com.google.inject.Provides;
 import com.tobmistaketracker.detector.MistakeDetectorManager;
 import com.tobmistaketracker.overlay.DebugOverlay;
 import com.tobmistaketracker.overlay.DebugOverlayPanel;
+import com.tobmistaketracker.panel.TobMistakeTrackerPanel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -25,13 +26,18 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.swing.SwingUtilities;
+import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,6 +49,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@Singleton
 @Slf4j
 @PluginDescriptor(
         name = "Tob Mistake Tracker"
@@ -50,7 +57,6 @@ import java.util.stream.Collectors;
 public class TobMistakeTrackerPlugin extends Plugin {
 
     static final String CONFIG_GROUP = "tobMistakeTracker";
-    static final String CLEAR_MISTAKES_KEY = "clearMistakes";
 
     private static final int TOB_STATE_NO_PARTY = 0;
     private static final int TOB_STATE_IN_PARTY = 1;
@@ -72,6 +78,9 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private TobMistakeTrackerConfig config;
 
     @Inject
+    private ClientToolbar clientToolbar;
+
+    @Inject
     private OverlayManager overlayManager;
 
     @Inject
@@ -88,6 +97,9 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
     @Inject
     private MistakeDetectorManager mistakeDetectorManager;
+
+    private TobMistakeTrackerPanel panel;
+    private NavigationButton navButton;
 
     private int raidState;
     @Getter
@@ -111,6 +123,23 @@ public class TobMistakeTrackerPlugin extends Plugin {
             }
         });
 
+        if (config.isDebug()) {
+            addTestMistakes();
+        }
+
+        // Can't @Inject because we null it out in shutdown()
+        panel = injector.getInstance(TobMistakeTrackerPanel.class);
+
+        final BufferedImage icon = ImageUtil.loadImageResource(TobMistakeTrackerPlugin.class, "panel_icon.png");
+        panel.loadHeaderIcon(icon);
+        navButton = NavigationButton.builder()
+                .tooltip("Tob Mistake Tracker")
+                .icon(icon)
+                .priority(5)
+                .panel(panel)
+                .build();
+        clientToolbar.addNavigation(navButton);
+
         overlayManager.add(debugOverlay);
         overlayManager.add(debugOverlayPanel);
     }
@@ -118,6 +147,9 @@ public class TobMistakeTrackerPlugin extends Plugin {
     @Override
     protected void shutDown() throws Exception {
         resetRaidState();
+
+        clientToolbar.removeNavigation(navButton);
+        panel = null;
 
         overlayManager.remove(debugOverlay);
         overlayManager.remove(debugOverlayPanel);
@@ -138,7 +170,9 @@ public class TobMistakeTrackerPlugin extends Plugin {
     // This should run *after* all detectors have handled the GameTick.
     @Subscribe(priority = -1)
     public void onGameTick(GameTick event) {
-        client.getLocalPlayer().setOverheadText("" + client.getTickCount());
+        if (config.isDebug()) {
+            client.getLocalPlayer().setOverheadText("" + client.getTickCount());
+        }
 
         if (!inTob) return;
 
@@ -172,14 +206,14 @@ public class TobMistakeTrackerPlugin extends Plugin {
                     raider.setDead(true);
                 }
 
-                int mistakeCount = addMistakeForPlayer(raider.getName(), mistake);
+                addMistakeForPlayer(raider.getName(), mistake);
 
                 // TODO: Have this timeout after 5 ticks
                 raider.setOverheadText(mistake.getChatMessage());
                 client.addChatMessage(ChatMessageType.PUBLICCHAT, raider.getName(), mistake.getChatMessage(), null);
                 if (config.isDebug()) {
                     raider.setOverheadText(
-                            String.format("%s - %s %s", client.getTickCount(), mistake.getMistakeName(), mistakeCount));
+                            String.format("%s - %s", client.getTickCount(), mistake.getMistakeName()));
                 }
             }
         }
@@ -234,12 +268,10 @@ public class TobMistakeTrackerPlugin extends Plugin {
         return inTob;
     }
 
-    private int addMistakeForPlayer(String playerName, TobMistake mistake) {
+    private void addMistakeForPlayer(String playerName, TobMistake mistake) {
         if (shouldTrackMistakes()) {
-            return mistakeManager.addMistakeForPlayer(playerName, mistake);
+            SwingUtilities.invokeLater(() -> panel.addMistakeForPlayer(playerName, mistake));
         }
-
-        return 0;
     }
 
     @Subscribe
@@ -275,28 +307,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
     @Subscribe
     public void onVarbitChanged(VarbitChanged event) {
         computeInTob();
-    }
-
-    @Subscribe
-    public void onConfigChanged(ConfigChanged event) {
-        if (!CONFIG_GROUP.equals(event.getGroup())) {
-            return;
-        }
-
-        if (CLEAR_MISTAKES_KEY.equals(event.getKey())) {
-            mistakeManager.clearAllMistakes();
-        }
-    }
-
-    @Subscribe
-    public void onOverheadTextChanged(OverheadTextChanged event) {
-        // For Testing
-        if (event.getActor().equals(client.getLocalPlayer())) {
-            if (event.getOverheadText().startsWith("Test blood")) {
-                char id = event.getOverheadText().charAt(event.getOverheadText().length() - 1);
-                addMistakeForPlayer("TestPlayer" + id, TobMistake.MAIDEN_BLOOD);
-            }
-        }
     }
 
     @Subscribe
@@ -358,6 +368,37 @@ public class TobMistakeTrackerPlugin extends Plugin {
      */
     public List<String> getRaiderNames() {
         return Arrays.stream(raiderNames).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    // FOR TESTING ONLY
+    private void addTestMistakes() {
+        if (config.isDebug()) {
+            inTob = true;
+            int numEverything = 3;
+            for (int playerIndex = 0; playerIndex < numEverything; playerIndex++) {
+                for (TobMistake mistake : TobMistake.values()) {
+                    for (int mistakeCount = 0; mistakeCount < numEverything; mistakeCount++) {
+                        addMistakeForPlayer("Player" + playerIndex, mistake);
+                    }
+                }
+            }
+            inTob = false;
+        }
+    }
+
+    @Subscribe
+    public void onOverheadTextChanged(OverheadTextChanged event) {
+        // FOR TESTING ONLY
+        if (config.isDebug() && event.getActor().equals(client.getLocalPlayer())) {
+            if (event.getOverheadText().startsWith("Test mistake ")) {
+                String mistakeName = event.getOverheadText().split(" ")[2];
+                char id = event.getOverheadText().charAt(event.getOverheadText().length() - 1);
+                TobMistake mistake = TobMistake.valueOf(mistakeName.toUpperCase());
+                inTob = true;
+                addMistakeForPlayer("TestPlayer" + id, mistake);
+                inTob = false;
+            }
+        }
     }
 
     @Provides
