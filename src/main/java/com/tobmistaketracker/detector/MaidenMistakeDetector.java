@@ -138,6 +138,8 @@ public class MaidenMistakeDetector extends BaseTobMistakeDetector {
     public void onGameObjectSpawned(GameObjectSpawned event) {
         GameObject go = event.getGameObject();
         if (go.getId() == BLOOD_SPAWN_BLOOD_GAME_OBJECT_ID) {
+            // TODO: These are missing if the plugin is turned on during the wave, after some have spawned. We could
+            // TODO: aggregate all of them on startup too, to catch whatever's already been spawned. Pretty minor though
             bloodSpawnBloodTiles.add(go.getWorldLocation());
         }
     }
