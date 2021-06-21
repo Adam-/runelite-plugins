@@ -4,9 +4,8 @@ import com.tobmistaketracker.MistakeManager;
 import com.tobmistaketracker.TobMistake;
 import com.tobmistaketracker.TobMistakeTrackerConfig;
 import com.tobmistaketracker.TobMistakeTrackerPlugin;
-import com.tobmistaketracker.TobRaider;
 import com.tobmistaketracker.detector.MistakeDetectorManager;
-import com.tobmistaketracker.detector.TobMistakeDetector;
+import com.tobmistaketracker.detector.BaseTobMistakeDetector;
 import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPanel;
@@ -20,9 +19,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
@@ -105,7 +102,7 @@ public class DebugOverlayPanel extends OverlayPanel {
         // Add all mistake detectors
         renderMistakeDetector(mistakeDetectorManager.getClass().getSimpleName(),
                 mistakeDetectorManager.isDetectingMistakes());
-        for (TobMistakeDetector mistakeDetector : mistakeDetectorManager.getMistakeDetectors()) {
+        for (BaseTobMistakeDetector mistakeDetector : mistakeDetectorManager.getMistakeDetectors()) {
             renderMistakeDetector(mistakeDetector.getClass().getSimpleName(), mistakeDetector.isDetectingMistakes());
         }
 

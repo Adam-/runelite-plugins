@@ -2,11 +2,8 @@ package com.tobmistaketracker.detector;
 
 import com.tobmistaketracker.TobMistake;
 import com.tobmistaketracker.TobRaider;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
-import net.runelite.client.eventbus.EventBus;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -16,76 +13,45 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Manager for all the {@link TobMistakeDetector}. It keeps all the detectors in memory in order to manage events.
+ * Manager for all the {@link BaseTobMistakeDetector}. It keeps all the detectors in memory in order to manage events.
+ * <p>
+ * All detectors initialized in the manager are responsible for determining when to start detecting mistakes.
+ * The manager may call the startup() or shutdown() method on a detector at any time.
+ *
+ * When the manager is on (detectingMistakes = true), then all other detectors are subscribed to the EventBus and
+ * listening for events on when to turn themselves on/off. This will only be true while the player is in Tob.
  */
 @Slf4j
 @Singleton
-public class MistakeDetectorManager implements TobMistakeDetector {
+public class MistakeDetectorManager extends BaseTobMistakeDetector {
 
-    private final Client client;
-    private final List<TobMistakeDetector> mistakeDetectors;
-
-    private final DeathMistakeDetector deathMistakeDetector;
-
-    @Getter
-    private boolean detectingMistakes;
+    private final List<BaseTobMistakeDetector> mistakeDetectors;
 
     @Inject
-    public MistakeDetectorManager(Client client,
-                                  DeathMistakeDetector deathMistakeDetector,
+    public MistakeDetectorManager(DeathMistakeDetector deathMistakeDetector,
                                   MaidenMistakeDetector maidenMistakeDetector,
                                   BloatMistakeDetector bloatMistakeDetector) {
-        this.client = client;
-        this.mistakeDetectors = Arrays.asList(deathMistakeDetector, maidenMistakeDetector, bloatMistakeDetector);
-        this.deathMistakeDetector = deathMistakeDetector;
-        this.detectingMistakes = false;
+        this.mistakeDetectors = new ArrayList<>(Arrays.asList(
+                deathMistakeDetector, maidenMistakeDetector, bloatMistakeDetector));
     }
 
     @Override
     public void startup() {
+        super.startup();
+
+        for (BaseTobMistakeDetector mistakeDetector : mistakeDetectors) {
+            mistakeDetector.startup();
+        }
         detectingMistakes = true;
-        // Always detect deaths throughout the raid
-        deathMistakeDetector.startup();
     }
 
     @Override
     public void shutdown() {
-        reset();
-        mistakeDetectors.clear();
-    }
-
-    /**
-     * Shutdown all other detectors and stop detecting mistakes until startup() is called again. This *keeps* all
-     * currently installed detectors around, and just calls shutdown() on them.
-     */
-    public void reset() {
-        for (TobMistakeDetector mistakeDetector : mistakeDetectors) {
+        super.shutdown();
+        for (BaseTobMistakeDetector mistakeDetector : mistakeDetectors) {
             mistakeDetector.shutdown();
         }
-
-        detectingMistakes = false;
-    }
-
-    /**
-     * Called when the plugin is started
-     */
-    public void registerToEventBus(EventBus eventBus) {
-        for (TobMistakeDetector mistakeDetector : mistakeDetectors) {
-            eventBus.register(mistakeDetector);
-        }
-
-        eventBus.register(this);
-    }
-
-    /**
-     * Called when the plugin is shutdown
-     */
-    public void unregisterFromEventBus(EventBus eventBus) {
-        for (TobMistakeDetector mistakeDetector : mistakeDetectors) {
-            eventBus.unregister(mistakeDetector);
-        }
-
-        eventBus.unregister(this);
+        // Don't clear mistakeDetectors or else we can't get them back.
     }
 
     @Override
@@ -96,7 +62,7 @@ public class MistakeDetectorManager implements TobMistakeDetector {
             return mistakes;
         }
 
-        for (TobMistakeDetector mistakeDetector : mistakeDetectors) {
+        for (BaseTobMistakeDetector mistakeDetector : mistakeDetectors) {
             if (mistakeDetector.isDetectingMistakes()) {
                 mistakes.addAll(mistakeDetector.detectMistakes(raider));
             }
@@ -109,14 +75,14 @@ public class MistakeDetectorManager implements TobMistakeDetector {
     public void afterDetect() {
         if (!isDetectingMistakes()) return;
 
-        for (TobMistakeDetector mistakeDetector : mistakeDetectors) {
+        for (BaseTobMistakeDetector mistakeDetector : mistakeDetectors) {
             if (mistakeDetector.isDetectingMistakes()) {
                 mistakeDetector.afterDetect();
             }
         }
     }
 
-    public List<TobMistakeDetector> getMistakeDetectors() {
+    public List<BaseTobMistakeDetector> getMistakeDetectors() {
         return Collections.unmodifiableList(mistakeDetectors);
     }
 }

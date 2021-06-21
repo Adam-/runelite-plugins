@@ -103,19 +103,14 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
         overlayManager.add(debugOverlay);
         overlayManager.add(debugOverlayPanel);
-        mistakeDetectorManager.registerToEventBus(eventBus);
     }
 
     @Override
     protected void shutDown() throws Exception {
-        raiderNames = new String[0];
-        raiders.clear();
-
-        mistakeDetectorManager.shutdown();
+        resetRaidState();
 
         overlayManager.remove(debugOverlay);
         overlayManager.remove(debugOverlayPanel);
-        mistakeDetectorManager.unregisterFromEventBus(eventBus);
     }
 
     private void resetRaidState() {
@@ -127,7 +122,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
         raiderNames = new String[MAX_RAIDERS];
         raiders = new HashMap<>(MAX_RAIDERS);
 
-        mistakeDetectorManager.reset();
+        mistakeDetectorManager.shutdown();
     }
 
     // This should run *after* all detectors have handled the GameTick.
@@ -159,7 +154,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private void detect(@NonNull TobRaider raider) {
         List<TobMistake> mistakes = mistakeDetectorManager.detectMistakes(raider);
         if (!mistakes.isEmpty()) {
-            log.info("" + client.getTickCount() + " Found mistakes for " + raider.getName() + " - " + mistakes);
+            log.debug("" + client.getTickCount() + " Found mistakes for " + raider.getName() + " - " + mistakes);
 
             for (TobMistake mistake : mistakes) {
                 // Handle special logic for deaths
@@ -194,11 +189,17 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private void loadRaiders() {
         // Look through all players and see if they should be a raider
         Set<String> raiderNamesSet = new HashSet<>(getRaiderNames());
+        if (raiderNamesSet.isEmpty()) {
+            // Let's try loading raider names manually, since we might already be in a raid and thus
+            // onVarClientStrChanged will never get invoked
+            tryLoadRaiderNames();
+            raiderNamesSet = new HashSet<>(getRaiderNames());
+        }
+
         for (Player player : client.getPlayers()) {
             if (player != null && player.getName() != null &&
                     !raiders.containsKey(player.getName()) && raiderNamesSet.contains(player.getName())) {
                 raiders.put(player.getName(), new TobRaider(player));
-                log.info("Added player " + player.getName());
             }
         }
 
@@ -206,6 +207,16 @@ public class TobMistakeTrackerPlugin extends Plugin {
         if (totalRaiders > 0 && raiders.size() == totalRaiders) {
             allRaidersLoaded = true;
 
+        }
+    }
+
+    private void tryLoadRaiderNames() {
+        for (int i = 0; i < MAX_RAIDERS; i++) {
+            String playerName = client.getVarcStrValue(THEATRE_RAIDERS_VARC + i);
+
+            if (playerName != null && !playerName.isEmpty()) {
+                raiderNames[i] = (Text.sanitize(playerName));
+            }
         }
     }
 
@@ -228,7 +239,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
         if (inTob && raiders.containsKey(event.getPlayer().getName())) {
             raiders.remove(event.getPlayer().getName());
             allRaidersLoaded = false;
-            log.info("Remove player " + event.getPlayer().getName());
         }
     }
 

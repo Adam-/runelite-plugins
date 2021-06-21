@@ -1,15 +1,13 @@
 package com.tobmistaketracker.detector;
 
 import com.tobmistaketracker.TobMistake;
-import com.tobmistaketracker.TobMistakeTrackerPlugin;
 import com.tobmistaketracker.TobRaider;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
-import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.events.ActorDeath;
+import net.runelite.api.events.GameTick;
 import net.runelite.client.eventbus.Subscribe;
 
 import javax.inject.Inject;
@@ -21,34 +19,27 @@ import java.util.Set;
 
 @Slf4j
 @Singleton
-public class DeathMistakeDetector implements TobMistakeDetector {
+public class DeathMistakeDetector extends BaseTobMistakeDetector {
 
     private final Set<String> playerDeaths;
 
-    private final TobMistakeTrackerPlugin plugin;
-
-    private final Client client;
-
-    @Getter
-    private boolean detectingMistakes;
-
     @Inject
-    public DeathMistakeDetector(TobMistakeTrackerPlugin plugin, Client client) {
-        this.plugin = plugin;
-        this.client = client;
-
+    public DeathMistakeDetector() {
         this.playerDeaths = new HashSet<>();
     }
 
     @Override
     public void startup() {
+        super.startup();
+
+        // Always detect deaths throughout the raid
         detectingMistakes = true;
     }
 
     @Override
     public void shutdown() {
+        super.shutdown();
         playerDeaths.clear();
-        detectingMistakes = false;
     }
 
     @Override

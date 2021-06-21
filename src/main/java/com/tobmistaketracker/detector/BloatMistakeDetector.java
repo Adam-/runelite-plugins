@@ -4,17 +4,15 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.tobmistaketracker.TobBossNames;
 import com.tobmistaketracker.TobMistake;
-import com.tobmistaketracker.TobMistakeTrackerPlugin;
 import com.tobmistaketracker.TobRaider;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
-import net.runelite.api.Client;
 import net.runelite.api.NPC;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GraphicsObjectCreated;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.client.eventbus.Subscribe;
@@ -39,7 +37,7 @@ import java.util.Set;
  */
 @Slf4j
 @Singleton
-public class BloatMistakeDetector implements TobMistakeDetector {
+public class BloatMistakeDetector extends BaseTobMistakeDetector {
 
     // 1570 and 1572 are hands, 1571 and 1573 are feet. Let's just call everything hands for consistency.
     private static final Set<Integer> BLOAT_HAND_GRAPHICS_OBJECT_IDS = ImmutableSet.of(1570, 1571, 1572, 1573);
@@ -49,30 +47,15 @@ public class BloatMistakeDetector implements TobMistakeDetector {
 
     private final Set<WorldPoint> activeHandTiles;
 
-    private final TobMistakeTrackerPlugin plugin;
-
-    private final Client client;
-
-    @Getter
-    private boolean detectingMistakes;
-
     @Inject
-    public BloatMistakeDetector(TobMistakeTrackerPlugin plugin, Client client) {
-        this.plugin = plugin;
-        this.client = client;
-
+    public BloatMistakeDetector() {
         this.activeHandTiles = new HashSet<>();
     }
 
     @Override
-    public void startup() {
-        detectingMistakes = true;
-    }
-
-    @Override
     public void shutdown() {
+        super.shutdown();
         activeHandTiles.clear();
-        detectingMistakes = false;
     }
 
     @Override
@@ -99,8 +82,8 @@ public class BloatMistakeDetector implements TobMistakeDetector {
 
     @Subscribe
     public void onNpcSpawned(NpcSpawned event) {
-        if (TobBossNames.BLOAT.equals(event.getActor().getName())) {
-            startup();
+        if (!detectingMistakes && TobBossNames.BLOAT.equals(event.getActor().getName())) {
+            detectingMistakes = true;
         }
     }
 
@@ -112,6 +95,17 @@ public class BloatMistakeDetector implements TobMistakeDetector {
                 shutdown();
             }
         }
+    }
+
+    @Subscribe
+    public void onGameTick(GameTick event) {
+        if (!detectingMistakes && isAlreadySpawned()) {
+            detectingMistakes = true;
+        }
+    }
+
+    private boolean isAlreadySpawned() {
+        return client.getNpcs().stream().anyMatch(npc -> TobBossNames.BLOAT.equals(npc.getName()));
     }
 
     @VisibleForTesting

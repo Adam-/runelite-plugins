@@ -3,13 +3,10 @@ package com.tobmistaketracker.detector;
 import com.google.common.annotations.VisibleForTesting;
 import com.tobmistaketracker.TobBossNames;
 import com.tobmistaketracker.TobMistake;
-import com.tobmistaketracker.TobMistakeTrackerPlugin;
 import com.tobmistaketracker.TobRaider;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
-import net.runelite.api.Client;
 import net.runelite.api.Constants;
 import net.runelite.api.GameObject;
 import net.runelite.api.NPC;
@@ -58,7 +55,7 @@ import java.util.Set;
  */
 @Slf4j
 @Singleton
-public class MaidenMistakeDetector implements TobMistakeDetector {
+public class MaidenMistakeDetector extends BaseTobMistakeDetector {
 
     private static final int BLOOD_SPAWN_BLOOD_GAME_OBJECT_ID = 32984;
     private static final int MAIDEN_BLOOD_PROJECTILE_ID = 1578;
@@ -79,18 +76,8 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
     // From what I can tell, we need to remove the blood spawn tiles *after* we detect for that tick, so aggregate here
     private final Set<WorldPoint> bloodSpawnBloodTilesToRemove;
 
-    private final TobMistakeTrackerPlugin plugin;
-
-    private final Client client;
-
-    @Getter
-    private boolean detectingMistakes;
-
     @Inject
-    public MaidenMistakeDetector(TobMistakeTrackerPlugin plugin, Client client) {
-        this.plugin = plugin;
-        this.client = client;
-
+    public MaidenMistakeDetector() {
         bloodSpawnBloodTiles = new HashSet<>();
         bloodSpawnBloodTilesToRemove = new HashSet<>();
         maidenBloodTiles = new HashSet<>();
@@ -99,19 +86,13 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
     }
 
     @Override
-    public void startup() {
-        detectingMistakes = true;
-    }
-
-    @Override
     public void shutdown() {
+        super.shutdown();
         bloodSpawnBloodTiles.clear();
         bloodSpawnBloodTilesToRemove.clear();
         maidenBloodTiles.clear();
         maidenBloodTilesToActivate.clear();
         activeMaidenBloodTiles.clear();
-
-        detectingMistakes = false;
     }
 
     @Override
@@ -165,8 +146,8 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
 
     @Subscribe
     public void onNpcSpawned(NpcSpawned event) {
-        if (TobBossNames.MAIDEN.equals(event.getActor().getName())) {
-            startup();
+        if (!detectingMistakes && TobBossNames.MAIDEN.equals(event.getActor().getName())) {
+            detectingMistakes = true;
         }
     }
 
@@ -182,6 +163,10 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
 
     @Subscribe
     public void onGameTick(GameTick event) {
+        if (!detectingMistakes && isAlreadySpawned()) {
+            detectingMistakes = true;
+        }
+
         int currentGameTick = client.getTickCount();
 
         // Find all blood tiles to activate this Game Tick
@@ -200,6 +185,10 @@ public class MaidenMistakeDetector implements TobMistakeDetector {
                 maidenBloodTiles.remove(worldPoint);
             }
         }
+    }
+
+    private boolean isAlreadySpawned() {
+        return client.getNpcs().stream().anyMatch(npc -> TobBossNames.MAIDEN.equals(npc.getName()));
     }
 
     @VisibleForTesting
