@@ -6,6 +6,7 @@ import com.tobmistaketracker.TobRaider;
 import lombok.Getter;
 import lombok.NonNull;
 import net.runelite.api.Client;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
 
 import javax.inject.Inject;
@@ -25,6 +26,9 @@ public abstract class BaseTobMistakeDetector {
     protected Client client;
 
     @Inject
+    protected ClientThread clientThread;
+
+    @Inject
     protected EventBus eventBus;
 
     @Getter
@@ -39,6 +43,7 @@ public abstract class BaseTobMistakeDetector {
      */
     public void startup() {
         eventBus.register(this);
+        clientThread.invokeLater(this::computeDetectingMistakes);
     }
 
     /**
@@ -48,6 +53,11 @@ public abstract class BaseTobMistakeDetector {
         detectingMistakes = false;
         eventBus.unregister(this);
     }
+
+    /**
+     * Compute if the detector should start detecting mistakes. This is always from the client thread called on startup.
+     */
+    protected abstract void computeDetectingMistakes();
 
     /**
      * Detects mistakes for the given raider.

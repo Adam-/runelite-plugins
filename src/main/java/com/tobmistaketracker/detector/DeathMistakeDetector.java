@@ -29,9 +29,7 @@ public class DeathMistakeDetector extends BaseTobMistakeDetector {
     }
 
     @Override
-    public void startup() {
-        super.startup();
-
+    protected void computeDetectingMistakes() {
         // Always detect deaths throughout the raid
         detectingMistakes = true;
     }

@@ -21,6 +21,7 @@ import net.runelite.api.events.OverheadTextChanged;
 import net.runelite.api.events.PlayerDespawned;
 import net.runelite.api.events.VarClientStrChanged;
 import net.runelite.api.events.VarbitChanged;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
@@ -65,6 +66,9 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private Client client;
 
     @Inject
+    private ClientThread clientThread;
+
+    @Inject
     private TobMistakeTrackerConfig config;
 
     @Inject
@@ -100,6 +104,12 @@ public class TobMistakeTrackerPlugin extends Plugin {
     @Override
     protected void startUp() throws Exception {
         resetRaidState();
+        clientThread.invokeLater(() -> {
+            computeInTob();
+            if (inTob) {
+                tryLoadRaiders();
+            }
+        });
 
         overlayManager.add(debugOverlay);
         overlayManager.add(debugOverlayPanel);
@@ -114,7 +124,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
     }
 
     private void resetRaidState() {
-        raidState = 0;
+        raidState = TOB_STATE_NO_PARTY;
         inTob = false;
         isRaider = false;
         allRaidersLoaded = false;
@@ -133,7 +143,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
         if (!inTob) return;
 
         if (!allRaidersLoaded) {
-            loadRaiders();
+            tryLoadRaiders();
         }
 
         // Try detecting all possible mistakes for this GameTick
@@ -186,7 +196,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
         mistakeDetectorManager.afterDetect();
     }
 
-    private void loadRaiders() {
+    private void tryLoadRaiders() {
         // Look through all players and see if they should be a raider
         Set<String> raiderNamesSet = new HashSet<>(getRaiderNames());
         if (raiderNamesSet.isEmpty()) {
@@ -221,8 +231,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
     }
 
     private boolean shouldTrackMistakes() {
-        // Currently the only reason not to track a mistake is if spectating is turned off
-        return isRaider || config.spectatingEnabled();
+        return inTob;
     }
 
     private int addMistakeForPlayer(String playerName, TobMistake mistake) {
@@ -265,18 +274,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
     @Subscribe
     public void onVarbitChanged(VarbitChanged event) {
-        int newRaidState = client.getVar(Varbits.THEATRE_OF_BLOOD);
-        if (raidState != newRaidState) {
-            if (newRaidState == TOB_STATE_NO_PARTY || newRaidState == TOB_STATE_IN_PARTY) {
-                // We're not in a raid
-                resetRaidState();
-            } else if (isNewRaiderInRaid(newRaidState) || isNewAllowedSpectator(newRaidState)) {
-                inTob = true;
-                isRaider = isNewRaiderInRaid(newRaidState);
-                mistakeDetectorManager.startup();
-            }
-            raidState = newRaidState;
-        }
+        computeInTob();
     }
 
     @Subscribe
@@ -328,7 +326,23 @@ public class TobMistakeTrackerPlugin extends Plugin {
     }
 
     private boolean isNewAllowedSpectator(int newRaidState) {
-        return newRaidState == TOB_STATE_IN_TOB && config.spectatingEnabled();
+        return newRaidState == TOB_STATE_IN_TOB;
+    }
+
+    private void computeInTob() {
+        if (client.getGameState() != GameState.LOGGED_IN) return;
+
+        int newRaidState = client.getVar(Varbits.THEATRE_OF_BLOOD);
+        if (raidState != newRaidState) {
+            if (newRaidState == TOB_STATE_NO_PARTY || newRaidState == TOB_STATE_IN_PARTY) {
+                // We're not in a raid
+                resetRaidState();
+            } else if (newRaidState == TOB_STATE_IN_TOB) {
+                inTob = true;
+                mistakeDetectorManager.startup();
+            }
+            raidState = newRaidState;
+        }
     }
 
     public boolean isLoadedRaider(String playerName) {

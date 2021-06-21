@@ -42,7 +42,6 @@ public class MistakeDetectorManager extends BaseTobMistakeDetector {
         for (BaseTobMistakeDetector mistakeDetector : mistakeDetectors) {
             mistakeDetector.startup();
         }
-        detectingMistakes = true;
     }
 
     @Override
@@ -52,6 +51,12 @@ public class MistakeDetectorManager extends BaseTobMistakeDetector {
             mistakeDetector.shutdown();
         }
         // Don't clear mistakeDetectors or else we can't get them back.
+    }
+
+    @Override
+    protected void computeDetectingMistakes() {
+        // Always run the manager throughout the raid
+        detectingMistakes = true;
     }
 
     @Override

@@ -12,7 +12,6 @@ import net.runelite.api.NPC;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
-import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GraphicsObjectCreated;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.client.eventbus.Subscribe;
@@ -59,6 +58,13 @@ public class BloatMistakeDetector extends BaseTobMistakeDetector {
     }
 
     @Override
+    protected void computeDetectingMistakes() {
+        if (!detectingMistakes && isAlreadySpawned()) {
+            detectingMistakes = true;
+        }
+    }
+
+    @Override
     public List<TobMistake> detectMistakes(@NonNull TobRaider raider) {
         if (activeHandTiles.contains(raider.getPreviousWorldLocation())) {
             return Collections.singletonList(TobMistake.BLOAT_HAND);
@@ -94,13 +100,6 @@ public class BloatMistakeDetector extends BaseTobMistakeDetector {
             if (TobBossNames.BLOAT.equals(event.getActor().getName())) {
                 shutdown();
             }
-        }
-    }
-
-    @Subscribe
-    public void onGameTick(GameTick event) {
-        if (!detectingMistakes && isAlreadySpawned()) {
-            detectingMistakes = true;
         }
     }
 

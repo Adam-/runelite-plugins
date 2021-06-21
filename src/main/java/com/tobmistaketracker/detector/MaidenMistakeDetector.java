@@ -96,6 +96,13 @@ public class MaidenMistakeDetector extends BaseTobMistakeDetector {
     }
 
     @Override
+    protected void computeDetectingMistakes() {
+        if (!detectingMistakes && isAlreadySpawned()) {
+            detectingMistakes = true;
+        }
+    }
+
+    @Override
     public List<TobMistake> detectMistakes(@NonNull TobRaider raider) {
         if (!raider.isDead() && isOnBloodTile(raider.getPreviousWorldLocation())) {
             return Collections.singletonList(TobMistake.MAIDEN_BLOOD);
@@ -163,10 +170,6 @@ public class MaidenMistakeDetector extends BaseTobMistakeDetector {
 
     @Subscribe
     public void onGameTick(GameTick event) {
-        if (!detectingMistakes && isAlreadySpawned()) {
-            detectingMistakes = true;
-        }
-
         int currentGameTick = client.getTickCount();
 
         // Find all blood tiles to activate this Game Tick
