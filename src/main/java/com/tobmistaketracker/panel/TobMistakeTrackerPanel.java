@@ -133,6 +133,9 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         // Add the error for when there are no mistakes yet
         errorPanel.setContent("Tob Mistake Tracker", "You have not tracked any mistakes yet.");
         add(errorPanel);
+
+        overallPanel.setVisible(false);
+        mistakesContainer.setVisible(false);
     }
 
     public void loadHeaderIcon(BufferedImage img) {
