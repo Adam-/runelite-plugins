@@ -5,8 +5,12 @@ Tracks mistakes made by players throughout the Theatre of Blood.
 ![icon](src/main/resources/com/tobmistaketracker/panel_icon_large.png)
 
 ---
-Enabling this plugin will track mistakes for you and all of your teammates in a raid. It will also track
-mistakes while for other raiders while you're spectating.
+This plugin will track mistakes for you and your teammates in the Theatre of Blood. It will also track mistakes for
+other raiders while you're spectating.
+
+By default, when detecting a mistake, all players with this plugin will receive a public message of the mistake, a
+chat overhead above the player who made the mistake, and the mistake will be added to the Tob Mistake Tracker
+side-panel.
 
 Current mistakes being tracked:
 
