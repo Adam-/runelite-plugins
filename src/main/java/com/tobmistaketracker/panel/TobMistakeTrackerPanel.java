@@ -264,6 +264,8 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         updateOverallPanel();
         mistakesContainer.revalidate();
         mistakesContainer.repaint();
+
+        updateVisiblePanels(playerMistakesBoxes.isEmpty());
     }
 
     private PlayerMistakesBox buildBox(String playerName) {
