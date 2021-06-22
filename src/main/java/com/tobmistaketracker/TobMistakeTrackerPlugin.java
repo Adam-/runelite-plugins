@@ -20,8 +20,10 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.OverheadTextChanged;
 import net.runelite.api.events.PlayerDespawned;
+import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarClientStrChanged;
 import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
@@ -35,6 +37,7 @@ import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.swing.SwingUtilities;
 import java.awt.image.BufferedImage;
@@ -49,6 +52,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static net.runelite.api.widgets.WidgetID.TOB_PARTY_GROUP_ID;
+
 @Singleton
 @Slf4j
 @PluginDescriptor(
@@ -57,6 +62,9 @@ import java.util.stream.Collectors;
 public class TobMistakeTrackerPlugin extends Plugin {
 
     static final String CONFIG_GROUP = "tobMistakeTracker";
+
+    private static final int TOB_BOSS_INTERFACE_ID = 1;
+    private static final int TOB_BOSS_INTERFACE_TEXT_ID = 2;
 
     private static final int TOB_STATE_NO_PARTY = 0;
     private static final int TOB_STATE_IN_PARTY = 1;
@@ -93,9 +101,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private EventBus eventBus;
 
     @Inject
-    private MistakeManager mistakeManager;
-
-    @Inject
     private MistakeDetectorManager mistakeDetectorManager;
 
     @Inject
@@ -112,27 +117,24 @@ public class TobMistakeTrackerPlugin extends Plugin {
     @VisibleForTesting
     private boolean allRaidersLoaded;
 
+    @Getter
+    @VisibleForTesting
+    // This is in charge of determining if we need to reset the current raid panel. We need this boolean here due to
+    // disconnects/turning off and on the plugin mid-raid. This let's us know that we might need to reset the panel
+    // the next time that we transition back into a raid and the boss is Maiden.
+    // We set this to true any time we reset the raid state, and to false when we determine that we've entered a brand
+    // new raid.
+    private boolean panelMightNeedReset;
+
     private String[] raiderNames;
     private Map<String, TobRaider> raiders; // name -> raider
 
     @Override
     protected void startUp() throws Exception {
-        resetRaidState();
-
-        // If the plugin was turned on mid-raid, try to load the right state
-        clientThread.invokeLater(() -> {
-            computeInTob();
-            if (inTob) {
-                tryLoadRaiders();
-            }
-        });
-
-        // Let the ChatMessageManager handle events
-        eventBus.register(chatMessageManager);
-
         // Can't @Inject because we null it out in shutdown()
         panel = injector.getInstance(TobMistakeTrackerPanel.class);
 
+        // Add panel and icon
         final BufferedImage icon = ImageUtil.loadImageResource(TobMistakeTrackerPlugin.class, "panel_icon.png");
         panel.loadHeaderIcon(icon);
         navButton = NavigationButton.builder()
@@ -145,6 +147,20 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
         overlayManager.add(debugOverlay);
         overlayManager.add(debugOverlayPanel);
+
+        // Let the ChatMessageManager handle events
+        eventBus.register(chatMessageManager);
+
+        // Reset all state
+        resetRaidState();
+
+        // If the plugin was turned on mid-raid, try to load the right state
+        clientThread.invokeLater(() -> {
+            computeInTob();
+            if (inTob) {
+                tryLoadRaiders();
+            }
+        });
 
         if (config.isDebug()) {
             addTestMistakes();
@@ -170,6 +186,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
         raidState = TOB_STATE_NO_PARTY;
         inTob = false;
         allRaidersLoaded = false;
+        panelMightNeedReset = true;
 
         raiderNames = new String[MAX_RAIDERS];
         raiders = new HashMap<>(MAX_RAIDERS);
@@ -313,6 +330,23 @@ public class TobMistakeTrackerPlugin extends Plugin {
     }
 
     @Subscribe
+    public void onScriptPostFired(ScriptPostFired event) {
+        if (inTob && panelMightNeedReset && event.getScriptId() == 2315) {
+            Widget w = client.getWidget(TOB_PARTY_GROUP_ID, TOB_BOSS_INTERFACE_ID);
+            if (w != null) {
+                Widget childWidget = w.getChild(TOB_BOSS_INTERFACE_TEXT_ID);
+                if (childWidget != null) {
+                    if (TobBossNames.MAIDEN.equals(childWidget.getText())) {
+                        panel.resetCurrentRaid();
+                        // Set to false until next time we're no longer sure if we're in a raid.
+                        panelMightNeedReset = false;
+                    }
+                }
+            }
+        }
+    }
+
+    @Subscribe
     public void onGameStateChanged(GameStateChanged event) {
         if (event.getGameState() == GameState.LOADING) {
             // If there are still raiders, they can't be dead anymore after loading.
@@ -332,14 +366,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
                 }
             }
         }
-    }
-
-    private boolean isNewRaiderInRaid(int newRaidState) {
-        return raidState == TOB_STATE_IN_PARTY && newRaidState == TOB_STATE_IN_TOB;
-    }
-
-    private boolean isNewAllowedSpectator(int newRaidState) {
-        return newRaidState == TOB_STATE_IN_TOB;
     }
 
     private void computeInTob() {
@@ -367,7 +393,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
     }
 
     /**
-     * Gets copy of all the raider names. Elements returned are guaranteed to be non-null.
+     * Gets a copy of all the raider names. Elements returned are guaranteed to be non-null.
      */
     public List<String> getRaiderNames() {
         return Arrays.stream(raiderNames).filter(Objects::nonNull).collect(Collectors.toList());
@@ -404,6 +430,18 @@ public class TobMistakeTrackerPlugin extends Plugin {
                 inTob = oldInTob;
             }
         }
+    }
+
+    @Provides
+    @Named("currentRaidMistakeManager")
+    MistakeManager provideCurrentRaidMistakeManager() {
+        return new MistakeManager();
+    }
+
+    @Provides
+    @Named("allRaidsMistakeManager")
+    MistakeManager provideAllRaidsMistakeManager() {
+        return new MistakeManager();
     }
 
     @Provides

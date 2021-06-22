@@ -1,15 +1,10 @@
 package com.tobmistaketracker;
 
-import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-@Singleton
-// TODO: Instead of a singleton, have one for all-time and one for the current raid.
 public class MistakeManager {
 
     private final Map<String, Map<TobMistake, Integer>> mistakesForPlayers;

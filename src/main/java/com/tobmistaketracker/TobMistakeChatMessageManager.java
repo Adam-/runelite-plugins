@@ -27,6 +27,9 @@ import java.util.Map;
  * <p>
  * For example, if a player types something on tick 1, and then on tick 5 the manager sets their overhead text, on
  * tick 6 the overhead text automatically gets removed from the initial player's overhead message hook.
+ * <p>
+ * Update: Turns out, Adam is awesome and is publicly exposing the Player's setOverheadCycle() API. Once that's done
+ * we can largely simplify this class, and/or do away with it altogether.
  */
 @Singleton
 public class TobMistakeChatMessageManager {

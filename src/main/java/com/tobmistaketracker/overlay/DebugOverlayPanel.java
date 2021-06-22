@@ -1,11 +1,9 @@
 package com.tobmistaketracker.overlay;
 
-import com.tobmistaketracker.MistakeManager;
-import com.tobmistaketracker.TobMistake;
 import com.tobmistaketracker.TobMistakeTrackerConfig;
 import com.tobmistaketracker.TobMistakeTrackerPlugin;
-import com.tobmistaketracker.detector.MistakeDetectorManager;
 import com.tobmistaketracker.detector.BaseTobMistakeDetector;
+import com.tobmistaketracker.detector.MistakeDetectorManager;
 import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPanel;
@@ -18,8 +16,6 @@ import javax.inject.Inject;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.util.HashSet;
-import java.util.Set;
 
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY;
 import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
@@ -36,12 +32,10 @@ public class DebugOverlayPanel extends OverlayPanel {
     private final TobMistakeTrackerPlugin plugin;
     private final TobMistakeTrackerConfig config;
 
-    private final MistakeManager mistakeManager;
     private final MistakeDetectorManager mistakeDetectorManager;
 
     @Inject
     public DebugOverlayPanel(Client client, TobMistakeTrackerPlugin plugin, TobMistakeTrackerConfig config,
-                             MistakeManager mistakeManager,
                              MistakeDetectorManager mistakeDetectorManager) {
         super(plugin);
         setPosition(OverlayPosition.TOP_RIGHT);
@@ -50,7 +44,6 @@ public class DebugOverlayPanel extends OverlayPanel {
         this.client = client;
         this.plugin = plugin;
         this.config = config;
-        this.mistakeManager = mistakeManager;
         this.mistakeDetectorManager = mistakeDetectorManager;
 
         getMenuEntries().add(new OverlayMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, OVERLAY_NAME));
@@ -79,25 +72,13 @@ public class DebugOverlayPanel extends OverlayPanel {
                 .build());
 
         panelComponent.getChildren().add(TitleComponent.builder()
-                .text("Game Tick: " + client.getTickCount())
+                .text(plugin.isPanelMightNeedReset() ? "panelMightNeedReset TRUE" : "panelMightNeedReset FALSE")
+                .color(plugin.isPanelMightNeedReset() ? Color.GREEN : Color.RED)
                 .build());
 
-        // Add all raiders
-        for (String raiderName : plugin.getRaiderNames()) {
-            if (raiderName != null) {
-                renderPlayerComponents(raiderName, Color.CYAN);
-            }
-        }
-
-        // For fast lookups
-        Set<String> raiderNames = new HashSet<>(plugin.getRaiderNames());
-
-        // Add all non-raiders we've tracked with mistakes
-        for (String playerName : mistakeManager.getPlayersWithMistakes()) {
-            if (!raiderNames.contains(playerName)) {
-                renderPlayerComponents(playerName, Color.WHITE);
-            }
-        }
+        panelComponent.getChildren().add(TitleComponent.builder()
+                .text("Game Tick: " + client.getTickCount())
+                .build());
 
         // Add all mistake detectors
         renderMistakeDetector(mistakeDetectorManager.getClass().getSimpleName(),
@@ -107,38 +88,6 @@ public class DebugOverlayPanel extends OverlayPanel {
         }
 
         return super.render(graphics);
-    }
-
-    private void renderPlayerComponents(String playerName, Color playerNameColor) {
-        panelComponent.getChildren().add(LineComponent.builder()
-                .left(playerName)
-                .right("Mistakes:")
-                .leftColor(playerNameColor)
-                .build());
-
-        if (mistakeManager.hasAnyMistakes(playerName)) {
-            renderMistakesForPlayer(playerName);
-        } else {
-            panelComponent.getChildren().add(LineComponent.builder()
-                    .left("NONE")
-                    .build());
-        }
-
-        // Newline
-        panelComponent.getChildren().add(LineComponent.builder().build());
-    }
-
-    private void renderMistakesForPlayer(String playerName) {
-        for (TobMistake mistake : TobMistake.values()) {
-            int count = mistakeManager.getMistakeCountForPlayer(playerName, mistake);
-            if (count > 0) {
-                panelComponent.getChildren().add(LineComponent.builder()
-                        .left(mistake.getMistakeName())
-                        .right(String.valueOf(count))
-                        .rightColor(Color.RED)
-                        .build());
-            }
-        }
     }
 
     private void renderMistakeDetector(String name, boolean isOn) {

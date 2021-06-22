@@ -31,8 +31,11 @@ public class MistakeDetectorManager extends BaseTobMistakeDetector {
     public MistakeDetectorManager(DeathMistakeDetector deathMistakeDetector,
                                   MaidenMistakeDetector maidenMistakeDetector,
                                   BloatMistakeDetector bloatMistakeDetector) {
+        // Order matters -- death should be last
         this.mistakeDetectors = new ArrayList<>(Arrays.asList(
-                deathMistakeDetector, maidenMistakeDetector, bloatMistakeDetector));
+                maidenMistakeDetector,
+                bloatMistakeDetector,
+                deathMistakeDetector));
     }
 
     @Override
