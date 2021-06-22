@@ -23,7 +23,7 @@ public interface TobMistakeTrackerConfig extends Config {
             name = "Debug",
             description = "Toggle debug mode",
             position = 99,
-            hidden = false // This must be true when pushing to prod
+            hidden = true // This must be true when pushing to prod
     )
     default boolean isDebug() {
         return false;
