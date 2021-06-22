@@ -1,4 +1,4 @@
-# Tob Mistake Detector
+# Tob Mistake Tracker
 
 Tracks mistakes made by players throughout the Theatre of Blood.
 
