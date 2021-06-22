@@ -10,7 +10,8 @@ public interface TobMistakeTrackerConfig extends Config {
     @ConfigItem(
             keyName = "showMistakesInChat",
             name = "Show Mistakes In Chat",
-            description = "When a player makes a mistake in ToB, whether or not to put it in public chat",
+            description = "When a player makes a mistake in ToB, whether or not to put it in public chat for other " +
+                    "raiders who have the plugin to see.",
             position = 1
     )
     default boolean showMistakesInChat() {
@@ -27,6 +28,4 @@ public interface TobMistakeTrackerConfig extends Config {
     default boolean isDebug() {
         return false;
     }
-
-    // TODO: Add a config for public chat messages and/or overheads. It might be annoying for people.
 }
