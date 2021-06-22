@@ -98,6 +98,9 @@ public class TobMistakeTrackerPlugin extends Plugin {
     @Inject
     private MistakeDetectorManager mistakeDetectorManager;
 
+    @Inject
+    private TobMistakeChatMessageManager chatMessageManager;
+
     private TobMistakeTrackerPanel panel;
     private NavigationButton navButton;
 
@@ -105,7 +108,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
     @Getter
     @VisibleForTesting
     private boolean inTob;
-    private boolean isRaider;
     @Getter
     @VisibleForTesting
     private boolean allRaidersLoaded;
@@ -116,6 +118,8 @@ public class TobMistakeTrackerPlugin extends Plugin {
     @Override
     protected void startUp() throws Exception {
         resetRaidState();
+
+        // If the plugin was turned on mid-raid, try to load the right state
         clientThread.invokeLater(() -> {
             computeInTob();
             if (inTob) {
@@ -123,9 +127,8 @@ public class TobMistakeTrackerPlugin extends Plugin {
             }
         });
 
-        if (config.isDebug()) {
-            addTestMistakes();
-        }
+        // Let the ChatMessageManager handle events
+        eventBus.register(chatMessageManager);
 
         // Can't @Inject because we null it out in shutdown()
         panel = injector.getInstance(TobMistakeTrackerPanel.class);
@@ -142,11 +145,19 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
         overlayManager.add(debugOverlay);
         overlayManager.add(debugOverlayPanel);
+
+        if (config.isDebug()) {
+            addTestMistakes();
+        }
     }
 
     @Override
     protected void shutDown() throws Exception {
         resetRaidState();
+
+        // Tell the ChatMessageManager to shutdown, including removing all outstanding overhead texts from the plugin
+        chatMessageManager.shutdown();
+        eventBus.unregister(chatMessageManager);
 
         clientToolbar.removeNavigation(navButton);
         panel = null;
@@ -158,7 +169,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private void resetRaidState() {
         raidState = TOB_STATE_NO_PARTY;
         inTob = false;
-        isRaider = false;
         allRaidersLoaded = false;
 
         raiderNames = new String[MAX_RAIDERS];
@@ -207,14 +217,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
                 }
 
                 addMistakeForPlayer(raider.getName(), mistake);
-
-                // TODO: Have this timeout after 5 ticks
-                raider.setOverheadText(mistake.getChatMessage());
-                client.addChatMessage(ChatMessageType.PUBLICCHAT, raider.getName(), mistake.getChatMessage(), null);
-                if (config.isDebug()) {
-                    raider.setOverheadText(
-                            String.format("%s - %s", client.getTickCount(), mistake.getMistakeName()));
-                }
+                chatMessageManager.playerMadeMistake(raider.getPlayer(), mistake);
             }
         }
 

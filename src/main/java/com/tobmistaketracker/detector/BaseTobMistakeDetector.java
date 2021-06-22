@@ -55,7 +55,9 @@ public abstract class BaseTobMistakeDetector {
     }
 
     /**
-     * Compute if the detector should start detecting mistakes. This is always from the client thread called on startup.
+     * Compute if the detector should start detecting mistakes. This is always called from the client thread on startup.
+     * This allows for detectors to startup right away if the plugin is turned on mid-raid, for example, and they missed
+     * their normal startup trigger.
      */
     protected abstract void computeDetectingMistakes();
 

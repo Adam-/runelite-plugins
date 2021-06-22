@@ -8,9 +8,19 @@ import net.runelite.client.config.ConfigItem;
 public interface TobMistakeTrackerConfig extends Config {
 
     @ConfigItem(
+            keyName = "showMistakesInChat",
+            name = "Show Mistakes In Chat",
+            description = "When a player makes a mistake in ToB, whether or not to put it in public chat",
+            position = 1
+    )
+    default boolean showMistakesInChat() {
+        return true;
+    }
+
+    @ConfigItem(
             keyName = "isDebug",
             name = "Debug",
-            description = "Toggle Debug Mode",
+            description = "Toggle debug mode",
             position = 99,
             hidden = false // This must be true when pushing to prod
     )

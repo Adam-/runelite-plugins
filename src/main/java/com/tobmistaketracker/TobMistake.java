@@ -7,8 +7,8 @@ import net.runelite.client.util.ImageUtil;
 import java.awt.image.BufferedImage;
 
 public enum TobMistake {
-    DEATH("Death", "death.png", "Oh no, I've died! :("),
-    MAIDEN_BLOOD("Maiden Blood", "maiden_blood.png", "I've stood in Maiden blood!"),
+    DEATH("Death", "death.png", "Whoopsies, I've died!"),
+    MAIDEN_BLOOD("Maiden Blood", "maiden_blood.png", "I'm drowning in Maiden's blood!"),
     BLOAT_HAND("Bloat Hand", "bloat_hand.png", "I got handed by Bloat!");
 
     @Getter
