@@ -14,7 +14,6 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.Varbits;
-import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -320,11 +319,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
     }
 
     @Subscribe
-    public void onActorDeath(ActorDeath event) {
-        event.getActor().setOverheadText("Whoopsies I died!");
-    }
-
-    @Subscribe
     public void onVarbitChanged(VarbitChanged event) {
         computeInTob();
     }
@@ -361,6 +355,8 @@ public class TobMistakeTrackerPlugin extends Plugin {
         if (event.getMessageNode().getType() == ChatMessageType.GAMEMESSAGE) {
             if (STORY_MODE_FAILED_PATTERN.matcher(event.getMessage()).find()) {
                 // Failed a story mode attempt, all raiders are no longer dead.
+                // TODO: I'm not sure this works for spectators, but I mean, who spectates story mode I guess...
+                // TODO: I'll need to test it more if I care to fix it for story mode spectators...
                 for (TobRaider raider : raiders.values()) {
                     raider.setDead(false);
                 }
