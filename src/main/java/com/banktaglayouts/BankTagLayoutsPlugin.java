@@ -1010,7 +1010,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		Layout layout = getBankOrder(layoutable);
 		if (layout == null) return;
 
-		int index = getIndexForMousePosition(false);
+		int index = getIndexForMousePosition(true);
 		if (index == -1) return;
 		int itemIdAtIndex = layout.getItemAtIndex(index);
 
@@ -1019,14 +1019,17 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		boolean isRealItem = indexToWidget.containsKey(index);
 		if (!menuEntryAdded.getOption().equals("Examine") && isRealItem) return;
 
+		boolean isLayoutPlaceholder = fakeItems.stream()
+			.filter(fakeItem -> fakeItem.getIndex() == index && fakeItem.isLayoutPlaceholder()).findAny().isPresent();
+
 		MenuEntry newEntry;
 
 		int itemCount = layout.countItemsWithId(itemIdAtIndex);
-		if (itemCount > 1) {
+		if (itemCount > 1 && !isLayoutPlaceholder) {
 			newEntry = new MenuEntry();
 			newEntry.setOption(REMOVE_DUPLICATE_ITEM);
 			newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor));
-			newEntry.setType(MenuAction.RUNELITE.getId());
+			newEntry.setType(MenuAction.RUNELITE_OVERLAY.getId());
 			newEntry.setParam0(index);
 			insertMenuEntry(newEntry, client.getMenuEntries(), false);
 		}
@@ -1034,7 +1037,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		newEntry = new MenuEntry();
 		newEntry.setOption(DUPLICATE_ITEM);
 		newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor));
-		newEntry.setType(MenuAction.RUNELITE.getId());
+		newEntry.setType(MenuAction.RUNELITE_OVERLAY.getId());
 		newEntry.setParam0(index);
 		insertMenuEntry(newEntry, client.getMenuEntries(), false);
 
