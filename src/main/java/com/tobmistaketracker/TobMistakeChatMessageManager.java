@@ -15,6 +15,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Manages chat messages being sent by the plugin on behalf of the player. Whenever a mistake happens for a player,
+ * this will add the corresponding overhead text and optionally send a message to the chat box. After an appropriate
+ * delay, the manager will also clear the overhead text that it added on the player's behalf, since this doesn't happen
+ * automatically for overhead text changes outside of OverheadTextChanged events.
+ * <p>
+ * NOTE: Currently, there's a bug where the chat message will clear prematurely if the player typed something before
+ * making a mistake and the manager changed its overhead on their behalf. The initial message will trigger its reset
+ * regardless of the manager changing the overhead text.
+ * <p>
+ * For example, if a player types something on tick 1, and then on tick 5 the manager sets their overhead text, on
+ * tick 6 the overhead text automatically gets removed from the initial player's overhead message hook.
+ */
 @Singleton
 public class TobMistakeChatMessageManager {
 

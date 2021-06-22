@@ -18,6 +18,7 @@ public enum TobMistake {
     @Getter
     @NonNull
     // TODO: Maybe have a list of messages to say after reaching a certain amount of mistakes
+    // TODO: Maybe have these be configurable for each mistake in the config?
     private final String chatMessage;
 
     @Getter
