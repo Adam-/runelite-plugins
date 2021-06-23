@@ -65,6 +65,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private static final int TOB_BOSS_INTERFACE_ID = 1;
     private static final int TOB_BOSS_INTERFACE_TEXT_ID = 2;
 
+    // These are some of the possible values for Varbits.THEATRE_OF_BLOOD
     private static final int TOB_STATE_NO_PARTY = 0;
     private static final int TOB_STATE_IN_PARTY = 1;
     private static final int TOB_STATE_IN_TOB = 2;
@@ -105,6 +106,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
     @Inject
     private TobMistakeChatMessageManager chatMessageManager;
 
+    private final BufferedImage icon = ImageUtil.loadImageResource(TobMistakeTrackerPlugin.class, "panel_icon.png");
     private TobMistakeTrackerPanel panel;
     private NavigationButton navButton;
 
@@ -134,7 +136,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
         panel = injector.getInstance(TobMistakeTrackerPanel.class);
 
         // Add panel and icon
-        final BufferedImage icon = ImageUtil.loadImageResource(TobMistakeTrackerPlugin.class, "panel_icon.png");
         panel.loadHeaderIcon(icon);
         navButton = NavigationButton.builder()
                 .tooltip("Tob Mistake Tracker")
@@ -326,15 +327,13 @@ public class TobMistakeTrackerPlugin extends Plugin {
     @Subscribe
     public void onScriptPostFired(ScriptPostFired event) {
         if (inTob && panelMightNeedReset && event.getScriptId() == 2315) {
-            Widget w = client.getWidget(TOB_PARTY_GROUP_ID, TOB_BOSS_INTERFACE_ID);
-            if (w != null) {
-                Widget childWidget = w.getChild(TOB_BOSS_INTERFACE_TEXT_ID);
-                if (childWidget != null) {
-                    if (TobBossNames.MAIDEN.equals(childWidget.getText())) {
-                        panel.resetCurrentRaid();
-                        // Set to false until next time we're no longer sure if we're in a raid.
-                        panelMightNeedReset = false;
-                    }
+            Widget widget = client.getWidget(TOB_PARTY_GROUP_ID, TOB_BOSS_INTERFACE_ID);
+            if (widget != null && widget.getChild(TOB_BOSS_INTERFACE_TEXT_ID) != null) {
+                Widget childWidget = widget.getChild(TOB_BOSS_INTERFACE_TEXT_ID);
+                if (TobBossNames.MAIDEN.equals(childWidget.getText())) {
+                    panel.resetCurrentRaid();
+                    // Set to false until next time we're no longer sure if we're in a raid.
+                    panelMightNeedReset = false;
                 }
             }
         }

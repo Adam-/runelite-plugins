@@ -16,8 +16,6 @@ import java.util.List;
  * Interface for detecting mistakes during The Theatre of Blood
  */
 public abstract class BaseTobMistakeDetector {
-    // When in a tob, register all
-    // only detectmistakes wehn startup though.
 
     @Inject
     protected TobMistakeTrackerPlugin plugin;

@@ -1,7 +1,6 @@
 package com.tobmistaketracker.detector;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableSet;
 import com.tobmistaketracker.TobBossNames;
 import com.tobmistaketracker.TobMistake;
 import com.tobmistaketracker.TobRaider;
@@ -37,9 +36,6 @@ import java.util.Set;
 @Slf4j
 @Singleton
 public class BloatMistakeDetector extends BaseTobMistakeDetector {
-
-    // 1570 and 1572 are hands, 1571 and 1573 are feet. Let's just call everything hands for consistency.
-    private static final Set<Integer> BLOAT_HAND_GRAPHICS_OBJECT_IDS = ImmutableSet.of(1570, 1571, 1572, 1573);
 
     // This is the blood squirt animation that spawns and plays when a hand hits the ground.
     private static final int BLOAT_HAND_BLOOD_GRAPHICS_OBJECT_ID = 1576;

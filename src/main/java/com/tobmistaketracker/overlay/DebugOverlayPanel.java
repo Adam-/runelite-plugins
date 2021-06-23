@@ -82,7 +82,7 @@ public class DebugOverlayPanel extends OverlayPanel {
 
         // Add all mistake detectors
         renderMistakeDetector(mistakeDetectorManager.getClass().getSimpleName(),
-                mistakeDetectorManager.isDetectingMistakes());
+                mistakeDetectorManager.isStarted());
         for (BaseTobMistakeDetector mistakeDetector : mistakeDetectorManager.getMistakeDetectors()) {
             renderMistakeDetector(mistakeDetector.getClass().getSimpleName(), mistakeDetector.isDetectingMistakes());
         }

@@ -1,7 +1,9 @@
 package com.tobmistaketracker.detector;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.tobmistaketracker.TobMistake;
 import com.tobmistaketracker.TobRaider;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,15 +19,19 @@ import java.util.List;
  * <p>
  * All detectors initialized in the manager are responsible for determining when to start detecting mistakes.
  * The manager may call the startup() or shutdown() method on a detector at any time.
- *
- * When the manager is on (detectingMistakes = true), then all other detectors are subscribed to the EventBus and
+ * <p>
+ * When the manager is on (started = true), then all other detectors are subscribed to the EventBus and
  * listening for events on when to turn themselves on/off. This will only be true while the player is in Tob.
  */
 @Slf4j
 @Singleton
-public class MistakeDetectorManager extends BaseTobMistakeDetector {
+public class MistakeDetectorManager {
 
     private final List<BaseTobMistakeDetector> mistakeDetectors;
+
+    @Getter
+    @VisibleForTesting
+    private boolean started;
 
     @Inject
     public MistakeDetectorManager(DeathMistakeDetector deathMistakeDetector,
@@ -36,37 +42,28 @@ public class MistakeDetectorManager extends BaseTobMistakeDetector {
                 maidenMistakeDetector,
                 bloatMistakeDetector,
                 deathMistakeDetector));
+        this.started = false;
     }
 
-    @Override
     public void startup() {
-        super.startup();
-
+        started = true;
         for (BaseTobMistakeDetector mistakeDetector : mistakeDetectors) {
             mistakeDetector.startup();
         }
     }
 
-    @Override
     public void shutdown() {
-        super.shutdown();
+        started = false;
         for (BaseTobMistakeDetector mistakeDetector : mistakeDetectors) {
             mistakeDetector.shutdown();
         }
         // Don't clear mistakeDetectors or else we can't get them back.
     }
 
-    @Override
-    protected void computeDetectingMistakes() {
-        // Always run the manager throughout the raid
-        detectingMistakes = true;
-    }
-
-    @Override
     public List<TobMistake> detectMistakes(@NonNull TobRaider raider) {
         List<TobMistake> mistakes = new ArrayList<>();
 
-        if (!isDetectingMistakes()) {
+        if (!started) {
             return mistakes;
         }
 
@@ -79,9 +76,8 @@ public class MistakeDetectorManager extends BaseTobMistakeDetector {
         return mistakes;
     }
 
-    @Override
     public void afterDetect() {
-        if (!isDetectingMistakes()) return;
+        if (!started) return;
 
         for (BaseTobMistakeDetector mistakeDetector : mistakeDetectors) {
             if (mistakeDetector.isDetectingMistakes()) {

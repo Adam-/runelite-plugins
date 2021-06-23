@@ -39,8 +39,4 @@ public class TobRaider {
     public WorldPoint getCurrentWorldLocation() {
         return player.getWorldLocation();
     }
-
-    public void setOverheadText(String overheadText) {
-        player.setOverheadText(overheadText);
-    }
 }
