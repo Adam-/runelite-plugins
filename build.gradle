@@ -27,7 +27,7 @@ dependencies {
 }
 
 group = 'com.tobmistaketracker'
-version = '1.0-SNAPSHOT'
+version = '0.1'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {

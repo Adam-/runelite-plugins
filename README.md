@@ -2,8 +2,6 @@
 
 Tracks mistakes made by players throughout the Theatre of Blood.
 
-![icon](src/main/resources/com/tobmistaketracker/panel_icon_large.png)
-
 ---
 This plugin will track mistakes for you and your teammates in the Theatre of Blood. It will also track mistakes for
 other raiders while you're spectating.
@@ -26,7 +24,7 @@ Coming Soon:
 * Stepping on acid during **Verzik P2**
 
 * Meleeing the team as the tank during **Verzik P3**
-* Taking a purple tornado during **Verziks P3**
+* Taking a purple tornado during **Verzik P3**
 
 ---
 
