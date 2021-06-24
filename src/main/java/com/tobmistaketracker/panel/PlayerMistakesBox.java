@@ -1,6 +1,6 @@
 package com.tobmistaketracker.panel;
 
-import com.tobmistaketracker.MistakeManager;
+import com.tobmistaketracker.state.MistakeStateManager;
 import com.tobmistaketracker.TobMistake;
 import lombok.Getter;
 import lombok.NonNull;
@@ -26,7 +26,7 @@ public class PlayerMistakesBox extends JPanel {
 
     private static final int ITEMS_PER_ROW = 5;
 
-    private final MistakeManager mistakeManager;
+    private final MistakeStateManager mistakeStateManager;
 
     @NonNull
     @Getter
@@ -37,8 +37,8 @@ public class PlayerMistakesBox extends JPanel {
     private final JLabel raidCountLabel;
     private final JLabel mistakeCountLabel;
 
-    protected PlayerMistakesBox(MistakeManager mistakeManager, @NonNull String playerName) {
-        this.mistakeManager = mistakeManager;
+    protected PlayerMistakesBox(MistakeStateManager mistakeStateManager, @NonNull String playerName) {
+        this.mistakeStateManager = mistakeStateManager;
         this.playerName = playerName;
 
         setLayout(new BorderLayout(0, 1));
@@ -87,7 +87,7 @@ public class PlayerMistakesBox extends JPanel {
 
         List<TobMistakeCount> mistakeCountsForPlayer = new ArrayList<>();
         for (TobMistake mistake : TobMistake.values()) {
-            int mistakeCount = mistakeManager.getMistakeCountForPlayer(playerName, mistake);
+            int mistakeCount = mistakeStateManager.getMistakeCountForPlayer(playerName, mistake);
             if (mistakeCount > 0) {
                 totalMistakes += mistakeCount;
                 mistakeCountsForPlayer.add(new TobMistakeCount(mistake, mistakeCount));

@@ -162,9 +162,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
             }
         });
 
-        if (config.isDebug()) {
-            addTestMistakes();
-        }
+        panel.reload();
     }
 
     @Override
@@ -270,7 +268,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
         int totalRaiders = raiderNamesSet.size();
         if (totalRaiders > 0 && raiders.size() == totalRaiders) {
             allRaidersLoaded = true;
-
         }
     }
 
@@ -331,7 +328,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
             if (widget != null && widget.getChild(TOB_BOSS_INTERFACE_TEXT_ID) != null) {
                 Widget childWidget = widget.getChild(TOB_BOSS_INTERFACE_TEXT_ID);
                 if (TobBossNames.MAIDEN.equals(childWidget.getText())) {
-                    panel.resetCurrentRaid();
+                    panel.newRaid();
                     // Set to false until next time we're no longer sure if we're in a raid.
                     panelMightNeedReset = false;
                 }
@@ -425,18 +422,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
                 inTob = oldInTob;
             }
         }
-    }
-
-    @Provides
-    @Named("currentRaidMistakeManager")
-    MistakeManager provideCurrentRaidMistakeManager() {
-        return new MistakeManager();
-    }
-
-    @Provides
-    @Named("allRaidsMistakeManager")
-    MistakeManager provideAllRaidsMistakeManager() {
-        return new MistakeManager();
     }
 
     @Provides
