@@ -1,6 +1,7 @@
 package com.tobmistaketracker.panel;
 
-import com.tobmistaketracker.MistakeManager;
+import com.tobmistaketracker.state.MistakeStateManager;
+import com.tobmistaketracker.state.MistakeStateReader;
 import com.tobmistaketracker.TobMistake;
 import com.tobmistaketracker.TobMistakeTrackerConfig;
 import net.runelite.api.Client;
@@ -13,7 +14,6 @@ import net.runelite.client.util.QuantityFormatter;
 import net.runelite.client.util.SwingUtil;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -24,7 +24,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -44,8 +44,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
 
     private final Client client;
 
-    private final MistakeManager currentRaidMistakeManager;
-    private final MistakeManager allRaidsMistakeManager;
+    private MistakeStateManager mistakeStateManager;
 
     // Panel for all actions
     private final JPanel actionsContainer = new JPanel();
@@ -70,12 +69,9 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     private final PluginErrorPanel errorPanel = new PluginErrorPanel();
 
     @Inject
-    public TobMistakeTrackerPanel(TobMistakeTrackerConfig config, Client client,
-                                  @Named("currentRaidMistakeManager") MistakeManager currentRaidMistakeManager,
-                                  @Named("allRaidsMistakeManager") MistakeManager allRaidsMistakeManager) {
+    public TobMistakeTrackerPanel(TobMistakeTrackerConfig config, Client client) {
         this.client = client;
-        this.currentRaidMistakeManager = currentRaidMistakeManager;
-        this.allRaidsMistakeManager = allRaidsMistakeManager;
+        this.mistakeStateManager = new MistakeStateManager();
 
         setBorder(new EmptyBorder(6, 6, 6, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -200,6 +196,11 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         updateVisiblePanels(true);
     }
 
+    public void reload() {
+        mistakeStateManager = MistakeStateReader.read();
+        rebuildAll();
+    }
+
     public void loadHeaderIcon(BufferedImage img) {
         overallIcon.setIcon(new ImageIcon(img));
     }
@@ -207,8 +208,8 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     /**
      * Resets the current raid mistakes and panel
      */
-    public void resetCurrentRaid() {
-        currentRaidMistakeManager.clearAllMistakes();
+    public void newRaid() {
+        mistakeStateManager.newRaid();
         if (!isShowingAll) {
             // We're looking at the current raid view
             resetUi();
@@ -221,9 +222,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
      * @param playerName - The player name that a mistake was added for
      */
     public void addMistakeForPlayer(String playerName, TobMistake mistake) {
-        // Always add to both
-        currentRaidMistakeManager.addMistakeForPlayer(playerName, mistake);
-        allRaidsMistakeManager.addMistakeForPlayer(playerName, mistake);
+        mistakeStateManager.addMistakeForPlayer(playerName, mistake);
 
         PlayerMistakesBox box = buildBox(playerName);
         box.rebuildAllMistakes();
@@ -231,32 +230,17 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     }
 
     /**
-     * Removes a mistake for the specified player, both in the manager and the panel. This is only callable from
-     * the box's mistake's Reset action.
-     *
-     * @param playerName - The player name that a mistake was added for
-     */
-    // TODO: This is currently unused as I'm not sure I even want this feature.
-    private void removeMistakeForPlayer(String playerName, TobMistake mistake) {
-        getMistakeManager().removeMistakeForPlayer(playerName, mistake);
-
-        for (PlayerMistakesBox box : playerMistakesBoxes) {
-            if (box.getPlayerName().equals(playerName)) {
-                box.rebuildAllMistakes();
-                updateOverallPanel();
-                return;
-            }
-        }
-    }
-
-    /**
      * Rebuilds all the boxes from scratch based on which view we're currently looking at
      */
     private void rebuildAll() {
-        SwingUtil.fastRemoveAll(mistakesContainer);
+        if (SwingUtilities.isEventDispatchThread()) {
+            SwingUtil.fastRemoveAll(mistakesContainer);
+        } else {
+            mistakesContainer.removeAll();
+        }
         playerMistakesBoxes.clear();
 
-        for (String playerName : getMistakeManager().getPlayersWithMistakes()) {
+        for (String playerName : mistakeStateManager.getPlayersWithMistakes()) {
             buildBox(playerName);
         }
 
@@ -286,7 +270,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         }
 
         // Create a new box if one could not be found
-        PlayerMistakesBox box = new PlayerMistakesBox(getMistakeManager(), playerName);
+        PlayerMistakesBox box = new PlayerMistakesBox(mistakeStateManager, playerName);
 
         // Use the existing popup menu or create a new one
         JPopupMenu popupMenu = box.getComponentPopupMenu();
@@ -299,9 +283,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         // Create reset menu
         final JMenuItem reset = new JMenuItem("Reset ALL Mistakes for " + playerName);
         reset.addActionListener(e -> {
-            // Always remove from both
-            currentRaidMistakeManager.removeMistakesForPlayer(playerName);
-            allRaidsMistakeManager.removeMistakesForPlayer(playerName);
+            mistakeStateManager.removeAllMistakesForPlayer(playerName);
             playerMistakesBoxes.remove(box);
 
             updateOverallPanel();
@@ -335,8 +317,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     }
 
     private void resetAll() {
-        currentRaidMistakeManager.clearAllMistakes();
-        allRaidsMistakeManager.clearAllMistakes();
+        mistakeStateManager.resetAll();
         resetUi();
     }
 
@@ -352,9 +333,9 @@ public class TobMistakeTrackerPanel extends PluginPanel {
 
     private void updateOverallPanel() {
         overallPlayersLabel.setText(htmlLabel("Total players: ",
-                getMistakeManager().getPlayersWithMistakes().size()));
+                mistakeStateManager.getPlayersWithMistakes().size()));
         overallMistakesLabel.setText(htmlLabel("Total mistakes: ",
-                getMistakeManager().getTotalMistakesForAllPlayers()));
+                mistakeStateManager.getTotalMistakeCountForAllPlayers()));
     }
 
     private static String htmlLabel(String key, long value) {
@@ -390,6 +371,8 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         isShowingAll = !isShowingAll;
         currentViewTitle.setText(getCurrentViewTitleText());
         switchMistakesViewBtn.setText(getSwitchMistakesViewButtonText());
+
+        mistakeStateManager.switchMistakes();
         rebuildAll();
     }
 
@@ -399,9 +382,5 @@ public class TobMistakeTrackerPanel extends PluginPanel {
 
     private String getSwitchMistakesViewButtonText() {
         return isShowingAll ? "Show Current" : "Show All";
-    }
-
-    private MistakeManager getMistakeManager() {
-        return isShowingAll ? allRaidsMistakeManager : currentRaidMistakeManager;
     }
 }

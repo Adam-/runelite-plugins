@@ -1,11 +1,16 @@
-package com.tobmistaketracker;
+package com.tobmistaketracker.state;
+
+import com.tobmistaketracker.TobMistake;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class MistakeManager {
+/**
+ * Keeps track of mistakes for players
+ */
+class MistakeManager {
 
     private final Map<String, Map<TobMistake, Integer>> mistakesForPlayers;
 
@@ -17,26 +22,13 @@ public class MistakeManager {
         mistakesForPlayers.clear();
     }
 
-    public int addMistakeForPlayer(String playerName, TobMistake mistake) {
+    public void addMistakeForPlayer(String playerName, TobMistake mistake) {
         Map<TobMistake, Integer> playerMistakes = mistakesForPlayers.computeIfAbsent(playerName, k -> new HashMap<>());
-        return playerMistakes.compute(mistake, MistakeManager::increment);
+        playerMistakes.compute(mistake, MistakeManager::increment);
     }
 
-    public Map<TobMistake, Integer> removeMistakesForPlayer(String playerName) {
-        return mistakesForPlayers.remove(playerName);
-    }
-
-    public Integer removeMistakeForPlayer(String playerName, TobMistake mistake) {
-        Map<TobMistake, Integer> playerMistakes = mistakesForPlayers.get(playerName);
-        if (playerMistakes != null) {
-            return playerMistakes.remove(mistake);
-        }
-
-        return null;
-    }
-
-    public boolean hasAnyMistakes(String playerName) {
-        return mistakesForPlayers.containsKey(playerName);
+    public void removeAllMistakesForPlayer(String playerName) {
+        mistakesForPlayers.remove(playerName);
     }
 
     public Set<String> getPlayersWithMistakes() {
@@ -55,7 +47,7 @@ public class MistakeManager {
         return 0;
     }
 
-    public int getTotalMistakesForAllPlayers() {
+    public int getTotalMistakeCountForAllPlayers() {
         int totalMistakes = 0;
         for (Map<TobMistake, Integer> mistakesForPlayer : mistakesForPlayers.values()) {
             for (int mistakes : mistakesForPlayer.values()) {
@@ -65,14 +57,6 @@ public class MistakeManager {
 
         return totalMistakes;
     }
-
-//    public Iterable<TobMistake> getMistakesForPlayer(String playerName) {
-//        if (hasAnyMistakes(playerName)) {
-//            return Collections.unmodifiableList(mistakesForPlayers.get(playerName))
-//        }
-//
-//        return Collections.emptyList();
-//    }
 
     private static <T> Integer increment(T key, Integer oldValue) {
         return oldValue == null ? 1 : oldValue + 1;
