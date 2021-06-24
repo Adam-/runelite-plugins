@@ -4,23 +4,16 @@ import com.tobmistaketracker.TobMistake;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Singleton;
-import java.nio.file.Path;
 import java.util.Set;
-
-import static net.runelite.client.RuneLite.RUNELITE_DIR;
 
 /**
  * In charge of the different MistakeManagers, and knowing which one is the currently viewed one.
- *
+ * <p>
  * For now, these are very small and writes are relatively infrequent, so let's write to disk for every write API.
  */
 @Slf4j
 @Singleton
 public class MistakeStateManager {
-
-    static final Path MISTAKE_STATE_DIR = RUNELITE_DIR.toPath().resolve("tob-mistake-tracker");
-    // Use the same mistake state file regardless of user
-    static final Path MISTAKE_STATE_FILE_PATH = MISTAKE_STATE_DIR.resolve("mistake-state.txt");
 
     private final MistakeManager currentRaidMistakeManager;
     private final MistakeManager allRaidsMistakeManager;
@@ -28,13 +21,25 @@ public class MistakeStateManager {
     private int raidAttempts;
 
     private transient boolean isAll;
+    private final transient boolean developerMode;
 
-    public MistakeStateManager() {
+    public MistakeStateManager(boolean developerMode) {
         this.currentRaidMistakeManager = new MistakeManager();
         this.allRaidsMistakeManager = new MistakeManager();
 
         this.raidAttempts = 0;
         this.isAll = false;
+        this.developerMode = developerMode;
+    }
+
+    public MistakeStateManager(MistakeStateManager other, boolean developerMode) {
+        this.currentRaidMistakeManager = other.currentRaidMistakeManager;
+        this.allRaidsMistakeManager = other.allRaidsMistakeManager;
+        this.raidAttempts = other.raidAttempts;
+        this.isAll = other.isAll;
+
+        // Use the passed in developerMode
+        this.developerMode = developerMode;
     }
 
     public void addMistakeForPlayer(String playerName, TobMistake mistake) {
@@ -42,7 +47,7 @@ public class MistakeStateManager {
         currentRaidMistakeManager.addMistakeForPlayer(playerName, mistake);
         allRaidsMistakeManager.addMistakeForPlayer(playerName, mistake);
 
-        MistakeStateWriter.write(this);
+        MistakeStateWriter.write(this, developerMode);
     }
 
     public void removeAllMistakesForPlayer(String playerName) {
@@ -50,7 +55,7 @@ public class MistakeStateManager {
         currentRaidMistakeManager.removeAllMistakesForPlayer(playerName);
         allRaidsMistakeManager.removeAllMistakesForPlayer(playerName);
 
-        MistakeStateWriter.write(this);
+        MistakeStateWriter.write(this, developerMode);
     }
 
     public void resetAll() {
@@ -59,7 +64,7 @@ public class MistakeStateManager {
         allRaidsMistakeManager.clearAllMistakes();
         raidAttempts = 0;
 
-        MistakeStateWriter.write(this);
+        MistakeStateWriter.write(this, developerMode);
     }
 
     public void newRaid() {
@@ -69,7 +74,7 @@ public class MistakeStateManager {
         // Increment our raid attempts since this is now a new raid
         raidAttempts += 1;
 
-        MistakeStateWriter.write(this);
+        MistakeStateWriter.write(this, developerMode);
     }
 
     public Set<String> getPlayersWithMistakes() {

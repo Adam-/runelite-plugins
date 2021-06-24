@@ -11,6 +11,7 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -23,20 +24,23 @@ public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
 
     private final MaidenMistakeDetector maidenMistakeDetector;
     private final BloatMistakeDetector bloatMistakeDetector;
+    private final boolean developerMode;
 
     @Inject
-    public DebugOverlay(MaidenMistakeDetector maidenMistakeDetector, BloatMistakeDetector bloatMistakeDetector) {
+    public DebugOverlay(MaidenMistakeDetector maidenMistakeDetector, BloatMistakeDetector bloatMistakeDetector,
+                        @Named("developerMode") boolean developerMode) {
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_SCENE);
         setPriority(OverlayPriority.MED);
 
         this.maidenMistakeDetector = maidenMistakeDetector;
         this.bloatMistakeDetector = bloatMistakeDetector;
+        this.developerMode = developerMode;
     }
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        if (!config.isDebug()) return null;
+        if (!developerMode) return null;
 
         for (TobRaider raider : plugin.getRaiders()) {
             if (raider.getPreviousWorldLocationForOverlay() != null) {

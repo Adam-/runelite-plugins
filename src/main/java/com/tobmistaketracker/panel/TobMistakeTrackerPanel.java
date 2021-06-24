@@ -1,9 +1,8 @@
 package com.tobmistaketracker.panel;
 
+import com.tobmistaketracker.TobMistake;
 import com.tobmistaketracker.state.MistakeStateManager;
 import com.tobmistaketracker.state.MistakeStateReader;
-import com.tobmistaketracker.TobMistake;
-import com.tobmistaketracker.TobMistakeTrackerConfig;
 import net.runelite.api.Client;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -14,6 +13,7 @@ import net.runelite.client.util.QuantityFormatter;
 import net.runelite.client.util.SwingUtil;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -45,6 +45,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     private final Client client;
 
     private MistakeStateManager mistakeStateManager;
+    private final boolean developerMode;
 
     // Panel for all actions
     private final JPanel actionsContainer = new JPanel();
@@ -69,9 +70,10 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     private final PluginErrorPanel errorPanel = new PluginErrorPanel();
 
     @Inject
-    public TobMistakeTrackerPanel(TobMistakeTrackerConfig config, Client client) {
+    public TobMistakeTrackerPanel(Client client, @Named("developerMode") boolean developerMode) {
         this.client = client;
-        this.mistakeStateManager = new MistakeStateManager();
+        this.mistakeStateManager = new MistakeStateManager(developerMode);
+        this.developerMode = developerMode;
 
         setBorder(new EmptyBorder(6, 6, 6, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -105,7 +107,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         SwingUtil.removeButtonDecorations(switchMistakesViewBtn);
         switchMistakesViewBtn.setText(getSwitchMistakesViewButtonText());
         switchMistakesViewBtn.setBackground(Color.WHITE);
-        switchMistakesViewBtn.setBorder(new EmptyBorder(10 ,10 ,10 ,10));
+        switchMistakesViewBtn.setBorder(new EmptyBorder(10, 10, 10, 10));
         switchMistakesViewBtn.setBorderPainted(true);
         switchMistakesViewBtn.setPreferredSize(new Dimension(100, 10));
 
@@ -180,7 +182,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         layoutPanel.add(mistakesContainer);
 
         // Create testing button
-        if (config.isDebug()) {
+        if (developerMode) {
             JButton testButton = new JButton("Test Mistakes");
             testButton.addActionListener(e ->
             {
@@ -197,7 +199,11 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     }
 
     public void reload() {
-        mistakeStateManager = MistakeStateReader.read();
+        MistakeStateManager loadedMistakeStateManager = MistakeStateReader.read(developerMode);
+
+        // Ensure we set the right developerMode by copying it over to a new object
+        mistakeStateManager = new MistakeStateManager(loadedMistakeStateManager, developerMode);
+
         rebuildAll();
     }
 
