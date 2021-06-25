@@ -51,7 +51,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static net.runelite.api.widgets.WidgetID.TOB_PARTY_GROUP_ID;
+import static net.runelite.api.widgets.WidgetID.TOB_GROUP_ID;
 
 @Singleton
 @Slf4j
@@ -324,7 +324,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
     @Subscribe
     public void onScriptPostFired(ScriptPostFired event) {
         if (inTob && panelMightNeedReset && event.getScriptId() == 2315) {
-            Widget widget = client.getWidget(TOB_PARTY_GROUP_ID, TOB_BOSS_INTERFACE_ID);
+            Widget widget = client.getWidget(TOB_GROUP_ID, TOB_BOSS_INTERFACE_ID);
             if (widget != null && widget.getChild(TOB_BOSS_INTERFACE_TEXT_ID) != null) {
                 Widget childWidget = widget.getChild(TOB_BOSS_INTERFACE_TEXT_ID);
                 if (TobBossNames.MAIDEN.equals(childWidget.getText())) {
