@@ -10,6 +10,7 @@ import net.runelite.api.events.OverheadTextChanged;
 import net.runelite.client.eventbus.Subscribe;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,14 +40,17 @@ public class TobMistakeChatMessageManager {
 
     private final TobMistakeTrackerConfig config;
     private final Client client;
+    private final boolean developerMode;
 
     private final Map<String, Integer> playerNameToTimeoutTick;
     private final Map<Integer, Map<String, Player>> timeoutTickToPlayers;
 
     @Inject
-    TobMistakeChatMessageManager(TobMistakeTrackerConfig config, Client client) {
+    TobMistakeChatMessageManager(TobMistakeTrackerConfig config, Client client,
+                                 @Named("developerMode") boolean developerMode) {
         this.config = config;
         this.client = client;
+        this.developerMode = developerMode;
 
         this.playerNameToTimeoutTick = new HashMap<>();
         this.timeoutTickToPlayers = new HashMap<>();
@@ -64,7 +68,7 @@ public class TobMistakeChatMessageManager {
      */
     public void playerMadeMistake(Player player, TobMistake mistake) {
         String overheadText = mistake.getChatMessage();
-        if (config.isDebug()) {
+        if (developerMode) {
             overheadText = String.format("%s - %s", client.getTickCount(), overheadText);
         }
 

@@ -1,6 +1,5 @@
 package com.tobmistaketracker.overlay;
 
-import com.tobmistaketracker.TobMistakeTrackerConfig;
 import com.tobmistaketracker.TobMistakeTrackerPlugin;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
@@ -19,8 +18,6 @@ public abstract class BaseTobMistakeTrackerOverlay extends Overlay {
     protected Client client;
     @Inject
     protected TobMistakeTrackerPlugin plugin;
-    @Inject
-    protected TobMistakeTrackerConfig config;
 
     protected BaseTobMistakeTrackerOverlay() {
     }

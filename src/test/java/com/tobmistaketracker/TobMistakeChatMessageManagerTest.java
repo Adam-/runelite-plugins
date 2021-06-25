@@ -40,7 +40,7 @@ public class TobMistakeChatMessageManagerTest {
     public void before() {
         when(mockPlayer.getName()).thenReturn(PLAYER_NAME);
 
-        chatMessageManager = new TobMistakeChatMessageManager(config, client);
+        chatMessageManager = new TobMistakeChatMessageManager(config, client, false);
     }
 
     @Test

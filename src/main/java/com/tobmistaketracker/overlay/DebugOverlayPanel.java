@@ -1,6 +1,5 @@
 package com.tobmistaketracker.overlay;
 
-import com.tobmistaketracker.TobMistakeTrackerConfig;
 import com.tobmistaketracker.TobMistakeTrackerPlugin;
 import com.tobmistaketracker.detector.BaseTobMistakeDetector;
 import com.tobmistaketracker.detector.MistakeDetectorManager;
@@ -13,6 +12,7 @@ import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -30,21 +30,23 @@ public class DebugOverlayPanel extends OverlayPanel {
 
     private final Client client;
     private final TobMistakeTrackerPlugin plugin;
-    private final TobMistakeTrackerConfig config;
 
     private final MistakeDetectorManager mistakeDetectorManager;
 
+    private final boolean developerMode;
+
     @Inject
-    public DebugOverlayPanel(Client client, TobMistakeTrackerPlugin plugin, TobMistakeTrackerConfig config,
-                             MistakeDetectorManager mistakeDetectorManager) {
+    public DebugOverlayPanel(Client client, TobMistakeTrackerPlugin plugin,
+                             MistakeDetectorManager mistakeDetectorManager,
+                             @Named("developerMode") boolean developerMode) {
         super(plugin);
         setPosition(OverlayPosition.TOP_RIGHT);
         setPriority(OverlayPriority.MED);
 
         this.client = client;
         this.plugin = plugin;
-        this.config = config;
         this.mistakeDetectorManager = mistakeDetectorManager;
+        this.developerMode = developerMode;
 
         getMenuEntries().add(new OverlayMenuEntry(RUNELITE_OVERLAY_CONFIG, OPTION_CONFIGURE, OVERLAY_NAME));
         getMenuEntries().add(new OverlayMenuEntry(RUNELITE_OVERLAY, "Reset", OVERLAY_NAME));
@@ -52,7 +54,7 @@ public class DebugOverlayPanel extends OverlayPanel {
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        if (!config.isDebug()) return null;
+        if (!developerMode) return null;
 
         if (plugin.isInTob()) {
             panelComponent.getChildren().add(TitleComponent.builder()

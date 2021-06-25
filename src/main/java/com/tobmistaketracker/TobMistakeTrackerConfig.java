@@ -17,15 +17,4 @@ public interface TobMistakeTrackerConfig extends Config {
     default boolean showMistakesInChat() {
         return true;
     }
-
-    @ConfigItem(
-            keyName = "isDebug",
-            name = "Debug",
-            description = "Toggle debug mode",
-            position = 99,
-            hidden = true // This must be true when pushing to prod
-    )
-    default boolean isDebug() {
-        return false;
-    }
 }

@@ -10,9 +10,10 @@ import javax.inject.Singleton;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
-import static com.tobmistaketracker.state.MistakeStateManager.MISTAKE_STATE_DIR;
-import static com.tobmistaketracker.state.MistakeStateManager.MISTAKE_STATE_FILE_PATH;
+import static com.tobmistaketracker.state.MistakeStateUtil.getMistakeStateDir;
+import static com.tobmistaketracker.state.MistakeStateUtil.getMistakeStateFilePath;
 
 /**
  * Writes MistakeState to disk
@@ -24,18 +25,19 @@ public class MistakeStateWriter {
 
     private static final Gson GSON = RuneLiteAPI.GSON;
 
-    public static void write(MistakeStateManager mistakeStateManager) {
+    public static void write(MistakeStateManager mistakeStateManager, boolean developerMode) {
         try {
-            Files.createDirectories(MISTAKE_STATE_DIR);
+            Files.createDirectories(getMistakeStateDir());
         } catch (IOException e) {
-            log.error("Unable to create directories " + MISTAKE_STATE_DIR, e);
+            log.error("Unable to create directories " + getMistakeStateDir(), e);
             return;
         }
 
-        try (BufferedWriter writer = Files.newBufferedWriter(MISTAKE_STATE_FILE_PATH)) {
+        final Path filepath = getMistakeStateFilePath(developerMode);
+        try (BufferedWriter writer = Files.newBufferedWriter(filepath)) {
             writer.write(GSON.toJson(mistakeStateManager));
         } catch (IOException e) {
-            log.error("Unable to write mistake state to " + MISTAKE_STATE_FILE_PATH, e);
+            log.error("Unable to write mistake state to " + filepath, e);
         }
     }
 }
