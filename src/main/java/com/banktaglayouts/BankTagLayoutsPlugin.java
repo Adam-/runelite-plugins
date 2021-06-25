@@ -915,6 +915,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	public void onMenuEntryAdded(MenuEntryAdded menuEntryAdded)
 	{
 		if (!sawMenuEntryAddedThisClientTick) {
+			sawMenuEntryAddedThisClientTick = true;
+
 			// If you move the items when you're dragging an item over its duplicates, undesirable behavior occurs.
 			if (!mouseIsPressed)
 			{
@@ -925,8 +927,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 					setItemPositions(indexToWidget);
 				}
 			}
-
-			sawMenuEntryAddedThisClientTick = true;
 		}
 
 		addBankTagTabMenuEntries(menuEntryAdded);
@@ -971,6 +971,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		int mousePositionIndex = getIndexForMousePosition();
 		Layout layout = getBankOrder(getCurrentLayoutableThing());
+		if (layout == null) return false;
 		int itemId = layout.getItemAtIndex(mousePositionIndex);
 
 		if (itemId == -1)
