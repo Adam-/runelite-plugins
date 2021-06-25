@@ -16,17 +16,20 @@ import java.io.InputStream;
 @Slf4j
 public class SoundEngine {
 
+    private static final long CLIP_MTIME_UNLOADED = -2;
+
+    private long lastClipMTime = CLIP_MTIME_UNLOADED;
     private Clip clip = null;
 
     private boolean loadClip(Sound sound) {
         try {
             InputStream resourceStream = SoundEngine.class.getResourceAsStream(sound.getResourceName());
             if (resourceStream == null) {
-                log.error("Failed to load C Engineer sound " + sound + " as resource stream was null!");
+                log.warn("Failed to load C Engineer sound " + sound + " as resource stream was null!");
             } else {
                 InputStream fileStream = new BufferedInputStream(resourceStream);
                 AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(fileStream);
-                clip.open(audioInputStream); // TODO currently erroring with "Invalid format" on both my own wav file, and the idle notifier default wav file
+                clip.open(audioInputStream); // liable to error with pulseaudio, works on windows, no clue about mac
                 return true;
             }
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
@@ -36,7 +39,8 @@ public class SoundEngine {
     }
 
     public void playClip(Sound sound) {
-        if (clip == null || !clip.isOpen()) {
+        long currentMTime = System.currentTimeMillis();
+        if (clip == null || currentMTime != lastClipMTime || !clip.isOpen()) {
             if (clip != null && clip.isOpen()) {
                 clip.close();
             }
@@ -44,10 +48,12 @@ public class SoundEngine {
             try {
                 clip = AudioSystem.getClip();
             } catch (LineUnavailableException e) {
+                lastClipMTime = CLIP_MTIME_UNLOADED;
                 log.warn("Failed to get clip for C Engineer sound " + sound, e);
                 return;
             }
 
+            lastClipMTime = currentMTime;
             if (!loadClip(sound)) {
                 return;
             }
@@ -57,6 +63,6 @@ public class SoundEngine {
         // Using loop instead of start + setFramePosition prevents the clip
         // from not being played sometimes, presumably a race condition in the
         // underlying line driver
-        clip.loop(1);
+        clip.loop(0);
     }
 }
