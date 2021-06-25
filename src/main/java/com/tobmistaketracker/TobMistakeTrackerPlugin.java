@@ -17,6 +17,7 @@ import net.runelite.api.Varbits;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.OverheadTextChanged;
 import net.runelite.api.events.PlayerDespawned;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarClientStrChanged;
@@ -35,6 +36,7 @@ import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.swing.SwingUtilities;
 import java.awt.image.BufferedImage;
@@ -193,6 +195,10 @@ public class TobMistakeTrackerPlugin extends Plugin {
     // This should run *after* all detectors have handled the GameTick.
     @Subscribe(priority = -1)
     public void onGameTick(GameTick event) {
+        if (config.isDebug()) {
+            client.getLocalPlayer().setOverheadText("" + client.getTickCount());
+        }
+
         if (!inTob) return;
 
         if (!allRaidersLoaded) {
@@ -383,6 +389,39 @@ public class TobMistakeTrackerPlugin extends Plugin {
      */
     public List<String> getRaiderNames() {
         return Arrays.stream(raiderNames).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    // FOR TESTING ONLY
+    private void addTestMistakes() {
+        if (config.isDebug()) {
+            boolean oldInTob = inTob;
+            inTob = true;
+            int numEverything = 3;
+            for (int playerIndex = 0; playerIndex < numEverything; playerIndex++) {
+                for (TobMistake mistake : TobMistake.values()) {
+                    for (int mistakeCount = 0; mistakeCount < numEverything; mistakeCount++) {
+                        addMistakeForPlayer("Player" + playerIndex, mistake);
+                    }
+                }
+            }
+            inTob = oldInTob;
+        }
+    }
+
+    @Subscribe
+    public void onOverheadTextChanged(OverheadTextChanged event) {
+        // FOR TESTING ONLY
+        if (config.isDebug() && event.getActor().equals(client.getLocalPlayer())) {
+            if (event.getOverheadText().startsWith("Test mistake ")) {
+                String mistakeName = event.getOverheadText().split(" ")[2];
+                char id = event.getOverheadText().charAt(event.getOverheadText().length() - 1);
+                TobMistake mistake = TobMistake.valueOf(mistakeName.toUpperCase());
+                boolean oldInTob = inTob;
+                inTob = true;
+                addMistakeForPlayer("TestPlayer" + id, mistake);
+                inTob = oldInTob;
+            }
+        }
     }
 
     @Provides
