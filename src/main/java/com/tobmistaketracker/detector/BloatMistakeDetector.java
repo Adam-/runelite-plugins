@@ -62,7 +62,7 @@ public class BloatMistakeDetector extends BaseTobMistakeDetector {
 
     @Override
     public List<TobMistake> detectMistakes(@NonNull TobRaider raider) {
-        if (activeHandTiles.contains(raider.getPreviousWorldLocation())) {
+        if (!raider.isDead() && activeHandTiles.contains(raider.getPreviousWorldLocation())) {
             return Collections.singletonList(TobMistake.BLOAT_HAND);
         }
 

@@ -10,7 +10,6 @@ import net.runelite.api.Actor;
 import net.runelite.api.Constants;
 import net.runelite.api.GameObject;
 import net.runelite.api.NPC;
-import net.runelite.api.annotations.VisibleForDevtools;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.GameObjectDespawned;
@@ -201,7 +200,7 @@ public class MaidenMistakeDetector extends BaseTobMistakeDetector {
         return Collections.unmodifiableSet(bloodSpawnBloodTiles);
     }
 
-    @VisibleForDevtools
+    @VisibleForTesting
     public Set<WorldPoint> getMaidenBloodTiles() {
         return Collections.unmodifiableSet(maidenBloodTiles);
     }

@@ -3,6 +3,7 @@ package com.tobmistaketracker.overlay;
 import com.tobmistaketracker.TobRaider;
 import com.tobmistaketracker.detector.BloatMistakeDetector;
 import com.tobmistaketracker.detector.MaidenMistakeDetector;
+import com.tobmistaketracker.detector.VerzikP2MistakeDetector;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
@@ -24,10 +25,12 @@ public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
 
     private final MaidenMistakeDetector maidenMistakeDetector;
     private final BloatMistakeDetector bloatMistakeDetector;
+    private final VerzikP2MistakeDetector verzikP2MistakeDetector;
     private final boolean developerMode;
 
     @Inject
     public DebugOverlay(MaidenMistakeDetector maidenMistakeDetector, BloatMistakeDetector bloatMistakeDetector,
+                        VerzikP2MistakeDetector verzikP2MistakeDetector,
                         @Named("developerMode") boolean developerMode) {
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_SCENE);
@@ -35,6 +38,7 @@ public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
 
         this.maidenMistakeDetector = maidenMistakeDetector;
         this.bloatMistakeDetector = bloatMistakeDetector;
+        this.verzikP2MistakeDetector = verzikP2MistakeDetector;
         this.developerMode = developerMode;
     }
 
@@ -57,9 +61,8 @@ public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
             renderTile(graphics, toLocalPoint(worldPoint), Color.GREEN);
         }
 
-        // I don't think this ever renders anything because they're detected and removed before the end of the tick.
-        for (WorldPoint worldPoint : bloatMistakeDetector.getActiveHandTiles()) {
-            renderTile(graphics, toLocalPoint(worldPoint), Color.RED);
+        for (WorldPoint worldPoint : verzikP2MistakeDetector.getVerzikP2AcidTiles()) {
+            renderTile(graphics, toLocalPoint(worldPoint), Color.GREEN);
         }
 
         return null;
