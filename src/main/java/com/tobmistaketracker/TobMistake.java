@@ -9,7 +9,12 @@ import java.awt.image.BufferedImage;
 public enum TobMistake {
     DEATH("Death", "death.png", "I'm planking!"),
     MAIDEN_BLOOD("Maiden Blood", "maiden_blood.png", "I'm drowning in Maiden's blood!"),
-    BLOAT_HAND("Bloat Hand", "bloat_hand.png", "I'm stunned!");
+    BLOAT_HAND("Bloat Hand", "bloat_hand.png", "I'm stunned!"),
+    VERZIK_P2_ACID("Verzik P2 Acid", "verzik_p2_acid.png", "I can't count to four!"),
+    VERZIK_P2_BOMB("Verzik P2 Bomb", "verzik_p2_bomb.png", "I'm eating cabbages!"),
+    VERZIK_P2_BOUNCE("Verzik P2 Bounce", "verzik_p2_bounce.png", "Bye!"),
+    VERZIK_P3_MELEE("Verzik P3 Melee", "verzik_p3_melee.png", "Sorry, I can't tank!"),
+    VERZIK_P3_PURPLE("Verzik P3 Purple Tornado", "verzik_p3_purple.png", "I'm healing Verzik!");
 
     @Getter
     @NonNull
