@@ -15,15 +15,15 @@ Current mistakes being tracked:
 * ![death](src/main/resources/com/tobmistaketracker/death.png) **Deaths** throughout the raid
 * ![maiden_blood](src/main/resources/com/tobmistaketracker/maiden_blood.png) Standing in **Maiden** Blood
 * ![bloat_hand](src/main/resources/com/tobmistaketracker/bloat_hand.png) Getting hit by **Bloat** Hands
+* ![verzik_p2_bounce](src/main/resources/com/tobmistaketracker/verzik_p2_bounce.png) Getting bounced during **Verzik P2**
+* ![verzik_p2_bomb](src/main/resources/com/tobmistaketracker/verzik_p2_bomb.png) Getting bombed during **Verzik P2**
+* ![verzik_p2_acid](src/main/resources/com/tobmistaketracker/verzik_p2_acid.png) Stepping on acid during **Verzik P2**
 
 Coming Soon:
 
 * Taking damage from a **Soteseg** orb with no vengeance
-* Getting bounced during **Verzik P2**
-* Getting bombed during **Verzik P2**
-* Stepping on acid during **Verzik P2**
-
 * Meleeing the team as the tank during **Verzik P3**
+* Getting webbed during **Verzik P3**
 * Taking a purple tornado during **Verzik P3**
 
 ---
