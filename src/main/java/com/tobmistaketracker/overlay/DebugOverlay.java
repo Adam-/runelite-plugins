@@ -4,6 +4,7 @@ import com.tobmistaketracker.TobRaider;
 import com.tobmistaketracker.detector.BloatMistakeDetector;
 import com.tobmistaketracker.detector.MaidenMistakeDetector;
 import com.tobmistaketracker.detector.VerzikP2MistakeDetector;
+import com.tobmistaketracker.detector.VerzikP3MistakeDetector;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
@@ -26,11 +27,14 @@ public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
     private final MaidenMistakeDetector maidenMistakeDetector;
     private final BloatMistakeDetector bloatMistakeDetector;
     private final VerzikP2MistakeDetector verzikP2MistakeDetector;
+    private final VerzikP3MistakeDetector verzikP3MistakeDetector;
     private final boolean developerMode;
 
     @Inject
-    public DebugOverlay(MaidenMistakeDetector maidenMistakeDetector, BloatMistakeDetector bloatMistakeDetector,
+    public DebugOverlay(MaidenMistakeDetector maidenMistakeDetector,
+                        BloatMistakeDetector bloatMistakeDetector,
                         VerzikP2MistakeDetector verzikP2MistakeDetector,
+                        VerzikP3MistakeDetector verzikP3MistakeDetector,
                         @Named("developerMode") boolean developerMode) {
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_SCENE);
@@ -39,6 +43,7 @@ public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
         this.maidenMistakeDetector = maidenMistakeDetector;
         this.bloatMistakeDetector = bloatMistakeDetector;
         this.verzikP2MistakeDetector = verzikP2MistakeDetector;
+        this.verzikP3MistakeDetector = verzikP3MistakeDetector;
         this.developerMode = developerMode;
     }
 
@@ -63,6 +68,10 @@ public class DebugOverlay extends BaseTobMistakeTrackerOverlay {
 
         for (WorldPoint worldPoint : verzikP2MistakeDetector.getVerzikP2AcidTiles()) {
             renderTile(graphics, toLocalPoint(worldPoint), Color.GREEN);
+        }
+
+        for (WorldPoint worldPoint : verzikP3MistakeDetector.getVerzikP3WebTiles()) {
+            renderTile(graphics, toLocalPoint(worldPoint), Color.ORANGE);
         }
 
         return null;
