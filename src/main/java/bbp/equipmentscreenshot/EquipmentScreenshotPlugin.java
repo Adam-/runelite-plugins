@@ -129,6 +129,7 @@ public class EquipmentScreenshotPlugin extends Plugin
 
 	private static final List<Integer> SNOWFLAKE_RANGED_WEAPONS = new ImmutableList.Builder<Integer>().
 			add(ItemID.CRYSTAL_BOW).
+			add(ItemID.BOW_OF_FAERDHINEN).
 			add(ItemID.CRAWS_BOW).
 			add(ItemID.CRAWS_BOW_U).
 			add(ItemID.TOXIC_BLOWPIPE).
@@ -247,6 +248,7 @@ public class EquipmentScreenshotPlugin extends Plugin
 	private double preciseWeight;
 	private int weaponAmagic;
 	private int weaponAranged;
+	private int weaponSranged;
 	private boolean isSalamander;
 	private boolean isSnowflakeMagicWeapon;
 	private int attackStyleVarbit = -1;
@@ -502,6 +504,8 @@ public class EquipmentScreenshotPlugin extends Plugin
 				if (config.showAllOptions() || config.showStats())
 				{
 					final ItemEquipmentStats ies = itemManager.getItemStats(item.getId(), false).getEquipment();
+					if (ies == null)
+						continue;
 					prayer += ies.getPrayer();
 					str += ies.getStr();
 					if (!eis.equals(EquipmentInventorySlot.AMMO) ||
@@ -530,6 +534,7 @@ public class EquipmentScreenshotPlugin extends Plugin
 					{
 						weaponAmagic = ies.getAmagic();
 						weaponAranged = ies.getArange();
+						weaponSranged = ies.getRstr();
 						isSalamander = SALAMANDERS.contains(item.getId());
 						isSnowflakeMagicWeapon = SNOWFLAKE_MAGIC_WEAPONS.contains(item.getId());
 					}
@@ -627,7 +632,7 @@ public class EquipmentScreenshotPlugin extends Plugin
 					util.drawIconWithText(g2d, new Point(50, 22), MDMG_ICON, 1,
 							mdmg + "%", true);
 				}
-				else if ((!isSalamander && weaponAranged > 0) || (isSalamander && attackStyleVarbit == 1))
+				else if ((!isSalamander && (weaponAranged > 0 || weaponSranged > 0)) || (isSalamander && attackStyleVarbit == 1))
 				{
 					util.drawIconWithText(g2d, new Point(50, 23), RSTR_ICON, 2,
 							rstr, true);
