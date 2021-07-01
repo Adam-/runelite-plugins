@@ -159,7 +159,7 @@ public class EquipmentScreenshotPlugin extends Plugin
 			add(ItemID.RUNE_DARTP).
 			add(ItemID.DRAGON_DARTP).
 			add(ItemID.BRONZE_DARTP_5628).
-			add(ItemID.IRON_DARTP_5629).
+			add(ItemID.IRON_DARTP_5636).
 			add(ItemID.STEEL_DARTP_5630).
 			add(ItemID.BLACK_DARTP_5631).
 			add(ItemID.MITHRIL_DARTP_5632).
