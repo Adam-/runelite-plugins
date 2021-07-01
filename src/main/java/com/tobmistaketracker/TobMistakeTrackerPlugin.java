@@ -3,8 +3,6 @@ package com.tobmistaketracker;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Provides;
 import com.tobmistaketracker.detector.MistakeDetectorManager;
-import com.tobmistaketracker.overlay.DebugOverlay;
-import com.tobmistaketracker.overlay.DebugOverlayPanel;
 import com.tobmistaketracker.panel.TobMistakeTrackerPanel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -30,7 +28,6 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
-import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 
@@ -87,15 +84,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
     private ClientToolbar clientToolbar;
 
     @Inject
-    private OverlayManager overlayManager;
-
-    @Inject
-    private DebugOverlay debugOverlay;
-
-    @Inject
-    private DebugOverlayPanel debugOverlayPanel;
-
-    @Inject
     private EventBus eventBus;
 
     @Inject
@@ -143,9 +131,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
                 .build();
         clientToolbar.addNavigation(navButton);
 
-        overlayManager.add(debugOverlay);
-        overlayManager.add(debugOverlayPanel);
-
         // Let the ChatMessageManager handle events
         eventBus.register(chatMessageManager);
 
@@ -173,9 +158,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
         clientToolbar.removeNavigation(navButton);
         panel = null;
-
-        overlayManager.remove(debugOverlay);
-        overlayManager.remove(debugOverlayPanel);
     }
 
     private void resetRaidState() {
