@@ -50,6 +50,7 @@ class EquipmentBlowpipeOverlay
 			put(ItemID.MITHRIL_DART, ItemID.MITHRIL_BAR).
 			put(ItemID.ADAMANT_DART, ItemID.ADAMANTITE_BAR).
 			put(ItemID.RUNE_DART, ItemID.RUNITE_BAR).
+			put(ItemID.AMETHYST_DART, ItemID.AMETHYST).
 			put(ItemID.DRAGON_DART, -1).
 			build();
 

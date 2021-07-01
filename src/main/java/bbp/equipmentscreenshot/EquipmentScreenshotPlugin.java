@@ -70,6 +70,7 @@ import net.runelite.client.ui.FontManager;
 import net.runelite.client.util.ImageCapture;
 import net.runelite.client.util.Text;
 import net.runelite.http.api.item.ItemEquipmentStats;
+import net.runelite.http.api.item.ItemStats;
 
 @PluginDescriptor(
 	name = "Equipment Screenshot",
@@ -114,6 +115,7 @@ public class EquipmentScreenshotPlugin extends Plugin
 			put("Mithril dart", ItemID.MITHRIL_DART).
 			put("Adamant dart", ItemID.ADAMANT_DART).
 			put("Rune dart", ItemID.RUNE_DART).
+			put("Amethyst dart", ItemID.AMETHYST_DART).
 			put("Dragon dart", ItemID.DRAGON_DART).
 			build();
 
@@ -149,6 +151,7 @@ public class EquipmentScreenshotPlugin extends Plugin
 			add(ItemID.MITHRIL_DART).
 			add(ItemID.ADAMANT_DART).
 			add(ItemID.RUNE_DART).
+			add(ItemID.AMETHYST_DART).
 			add(ItemID.DRAGON_DART).
 			add(ItemID.BRONZE_DARTP).
 			add(ItemID.IRON_DARTP).
@@ -157,14 +160,16 @@ public class EquipmentScreenshotPlugin extends Plugin
 			add(ItemID.MITHRIL_DARTP).
 			add(ItemID.ADAMANT_DARTP).
 			add(ItemID.RUNE_DARTP).
+			add(ItemID.AMETHYST_DARTP).
 			add(ItemID.DRAGON_DARTP).
 			add(ItemID.BRONZE_DARTP_5628).
-			add(ItemID.IRON_DARTP_5629).
+			add(ItemID.IRON_DARTP_5636).
 			add(ItemID.STEEL_DARTP_5630).
 			add(ItemID.BLACK_DARTP_5631).
 			add(ItemID.MITHRIL_DARTP_5632).
 			add(ItemID.ADAMANT_DARTP_5633).
 			add(ItemID.RUNE_DARTP_5634).
+			add(ItemID.AMETHYST_DARTP_25855).
 			add(ItemID.DRAGON_DARTP_11233).
 			add(ItemID.BRONZE_DARTP_5635).
 			add(ItemID.IRON_DARTP_5636).
@@ -173,6 +178,7 @@ public class EquipmentScreenshotPlugin extends Plugin
 			add(ItemID.MITHRIL_DARTP_5639).
 			add(ItemID.ADAMANT_DARTP_5640).
 			add(ItemID.RUNE_DARTP_5641).
+			add(ItemID.AMETHYST_DARTP_25857).
 			add(ItemID.DRAGON_DARTP_11234).
 
 			// Knives
@@ -578,9 +584,13 @@ public class EquipmentScreenshotPlugin extends Plugin
 				if (weapon != null && (weapon.getId() == ItemID.TOXIC_BLOWPIPE ||
 						weapon.getId() == ItemID.TOXIC_BLOWPIPE_EMPTY) && dartID != 0)
 				{
-					final ItemEquipmentStats ies = itemManager.getItemStats(dartID, false).getEquipment();
-					rangeA += ies.getArange();
-					rstr += ies.getRstr();
+					final ItemStats is = itemManager.getItemStats(dartID, false);
+					if(is != null)
+					{
+						final ItemEquipmentStats ies = is.getEquipment();
+						rangeA += ies.getArange();
+						rstr += ies.getRstr();
+					}
 				}
 			}
 
