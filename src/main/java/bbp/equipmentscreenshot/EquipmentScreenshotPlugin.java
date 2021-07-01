@@ -33,23 +33,15 @@ import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
 import lombok.Getter;
 
-import net.runelite.api.ChatMessageType;
-import net.runelite.api.Client;
-import net.runelite.api.Constants;
-import net.runelite.api.EquipmentInventorySlot;
-import net.runelite.api.InventoryID;
-import net.runelite.api.Item;
-import net.runelite.api.ItemContainer;
-import net.runelite.api.ItemID;
-import net.runelite.api.MenuAction;
-import net.runelite.api.SpriteID;
-import net.runelite.api.VarPlayer;
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.*;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.VarbitChanged;
@@ -78,6 +70,7 @@ import net.runelite.http.api.item.ItemStats;
 	tags = {"items", "inventory", "equipment", "screenshot"},
 	enabledByDefault = false
 )
+@Slf4j
 public class EquipmentScreenshotPlugin extends Plugin
 {
 	private static final int INV_ROW_SIZE = 4;
@@ -409,10 +402,11 @@ public class EquipmentScreenshotPlugin extends Plugin
 				final Item item = items[i];
 				if (item.getQuantity() > 0)
 				{
-					if (itemManager.getItemStats(item.getId(), false) != null &&
-							!itemManager.getItemComposition(item.getId()).isStackable())
+					final int itemId = item.getId();
+					if (itemManager.getItemStats(itemId, false) != null &&
+							!itemManager.getItemComposition(itemId).isStackable())
 					{
-						preciseWeight += itemManager.getItemStats(item.getId(), false).getWeight();
+						preciseWeight += itemManager.getItemStats(itemId, false).getWeight();
 					}
 
 					final BufferedImage image = util.getImage(item);
@@ -421,12 +415,12 @@ public class EquipmentScreenshotPlugin extends Plugin
 						int x = 16 /*horizontal offset*/ + ITEM_H_SIZE * (i % INV_ROW_SIZE);
 						int y = 8 /*vertical offset*/ + ITEM_V_SIZE * (i / INV_ROW_SIZE);
 						g2d.drawImage(image, null, x, y);
-						if (config.runepouchOverlay() && (item.getId() == ItemID.RUNE_POUCH || item.getId() == ItemID.RUNE_POUCH_L))
+						if (config.runepouchOverlay() && (itemId == ItemID.RUNE_POUCH || itemId == ItemID.RUNE_POUCH_L))
 						{
 							equipmentRunepouchOverlay.renderRunepouchOverlay(g2d, new net.runelite.api.Point(x, y));
 						}
 
-						if (config.blowpipeOverlay() && item.getId() == ItemID.TOXIC_BLOWPIPE)
+						if (config.blowpipeOverlay() && itemId == ItemID.TOXIC_BLOWPIPE)
 						{
 							equipmentBlowpipeOverlay.renderBlowpipeOverlay(g2d, new net.runelite.api.Point(x, y));
 						}
@@ -501,11 +495,16 @@ public class EquipmentScreenshotPlugin extends Plugin
 				item = itemContainer.getItem(eis.getSlotIdx());
 			if (item != null && item.getQuantity() > 0)
 			{
+				final int itemId = item.getId();
 				if (config.showAllOptions() || config.showStats())
 				{
-					final ItemEquipmentStats ies = itemManager.getItemStats(item.getId(), false).getEquipment();
-					if (ies == null)
+					final ItemStats is = itemManager.getItemStats(itemId, false);
+					if (is == null) {
+						log.info("Error finding item stats for the {} slot with item {} using itemID: {}", eis.name().toLowerCase(), itemManager.getItemComposition(itemId).getName(), itemId);
+						log.info("This probably means the itemID is new and not yet cached in the Runelite item stats database");
 						continue;
+					}
+					final ItemEquipmentStats ies = is.getEquipment();
 					prayer += ies.getPrayer();
 					str += ies.getStr();
 					if (!eis.equals(EquipmentInventorySlot.AMMO) ||
@@ -535,14 +534,14 @@ public class EquipmentScreenshotPlugin extends Plugin
 						weaponAmagic = ies.getAmagic();
 						weaponAranged = ies.getArange();
 						weaponSranged = ies.getRstr();
-						isSalamander = SALAMANDERS.contains(item.getId());
-						isSnowflakeMagicWeapon = SNOWFLAKE_MAGIC_WEAPONS.contains(item.getId());
+						isSalamander = SALAMANDERS.contains(itemId);
+						isSnowflakeMagicWeapon = SNOWFLAKE_MAGIC_WEAPONS.contains(itemId);
 					}
 
-					if (itemManager.getItemStats(item.getId(), false) != null &&
-							!itemManager.getItemComposition(item.getId()).isStackable())
+					if (itemManager.getItemStats(itemId, false) != null &&
+							!itemManager.getItemComposition(itemId).isStackable())
 					{
-						preciseWeight += itemManager.getItemStats(item.getId(), false).getWeight();
+						preciseWeight += itemManager.getItemStats(itemId, false).getWeight();
 					}
 				}
 
@@ -551,7 +550,7 @@ public class EquipmentScreenshotPlugin extends Plugin
 				{
 					g2d.drawImage(image, null, p.x + util.EQUIPMENT_PADDING, p.y + util.EQUIPMENT_PADDING);
 
-					if (config.blowpipeOverlay() && item.getId() == ItemID.TOXIC_BLOWPIPE)
+					if (config.blowpipeOverlay() && itemId == ItemID.TOXIC_BLOWPIPE)
 					{
 						equipmentBlowpipeOverlay.renderBlowpipeOverlay(g2d, new net.runelite.api.Point(p.x, p.y));
 					}
