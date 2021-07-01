@@ -1,11 +1,11 @@
 package com.tobmistaketracker.state;
 
 import com.google.gson.Gson;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.http.api.RuneLiteAPI;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -20,20 +20,28 @@ import static com.tobmistaketracker.state.MistakeStateUtil.getMistakeStateFilePa
  */
 @Slf4j
 @Singleton
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class MistakeStateWriter {
 
     private static final Gson GSON = RuneLiteAPI.GSON;
 
-    public static void write(MistakeStateManager mistakeStateManager, boolean developerMode) {
+    private final Path mistakeStateDir;
+    private final Path mistakeStateFilePath;
+
+    @Inject
+    public MistakeStateWriter(@Named("developerMode") boolean developerMode) {
+        this.mistakeStateDir = getMistakeStateDir();
+        this.mistakeStateFilePath = getMistakeStateFilePath(developerMode);
+    }
+
+    public void write(MistakeStateManager mistakeStateManager) {
         try {
-            Files.createDirectories(getMistakeStateDir());
+            Files.createDirectories(mistakeStateDir);
         } catch (IOException e) {
-            log.error("Unable to create directories " + getMistakeStateDir(), e);
+            log.error("Unable to create directories " + mistakeStateDir, e);
             return;
         }
 
-        final Path filepath = getMistakeStateFilePath(developerMode);
+        final Path filepath = mistakeStateFilePath;
         try (BufferedWriter writer = Files.newBufferedWriter(filepath)) {
             writer.write(GSON.toJson(mistakeStateManager));
         } catch (IOException e) {

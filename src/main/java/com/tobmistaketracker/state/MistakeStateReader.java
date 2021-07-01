@@ -2,11 +2,11 @@ package com.tobmistaketracker.state;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.http.api.RuneLiteAPI;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,23 +20,31 @@ import static com.tobmistaketracker.state.MistakeStateUtil.getMistakeStateFilePa
  */
 @Slf4j
 @Singleton
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class MistakeStateReader {
 
     private static final Gson GSON = RuneLiteAPI.GSON;
 
-    public static MistakeStateManager read(boolean developerMode) {
-        final Path filepath = getMistakeStateFilePath(developerMode);
+    private final MistakeStateWriter mistakeStateWriter;
+    private final Path mistakeStateFilePath;
 
-        if (Files.exists(filepath)) {
-            try (BufferedReader reader = Files.newBufferedReader(filepath);
+    @Inject
+    public MistakeStateReader(MistakeStateWriter mistakeStateWriter, @Named("developerMode") boolean developerMode) {
+        this.mistakeStateWriter = mistakeStateWriter;
+        this.mistakeStateFilePath = getMistakeStateFilePath(developerMode);
+    }
+
+    public MistakeStateManager read() {
+        if (Files.exists(mistakeStateFilePath)) {
+            try (BufferedReader reader = Files.newBufferedReader(mistakeStateFilePath);
                  JsonReader jsonReader = new JsonReader(reader)) {
-                return GSON.fromJson(jsonReader, MistakeStateManager.class);
+                MistakeStateManager mistakeStateManager = GSON.fromJson(jsonReader, MistakeStateManager.class);
+                mistakeStateManager.setMistakeStateWriter(mistakeStateWriter);
+                return mistakeStateManager;
             } catch (IOException e) {
-                log.error("Unable to read mistake state from " + filepath, e);
+                log.error("Unable to read mistake state from " + mistakeStateFilePath, e);
             }
         }
 
-        return new MistakeStateManager(developerMode);
+        return new MistakeStateManager(mistakeStateWriter);
     }
 }

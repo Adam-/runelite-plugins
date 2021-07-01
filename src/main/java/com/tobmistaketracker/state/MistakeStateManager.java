@@ -1,6 +1,7 @@
 package com.tobmistaketracker.state;
 
 import com.tobmistaketracker.TobMistake;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Singleton;
@@ -21,25 +22,16 @@ public class MistakeStateManager {
     private int raidAttempts;
 
     private transient boolean isAll;
-    private final transient boolean developerMode;
+    @Setter
+    private transient MistakeStateWriter mistakeStateWriter;
 
-    public MistakeStateManager(boolean developerMode) {
+    public MistakeStateManager(MistakeStateWriter mistakeStateWriter) {
         this.currentRaidMistakeManager = new MistakeManager();
         this.allRaidsMistakeManager = new MistakeManager();
+        this.mistakeStateWriter = mistakeStateWriter;
 
         this.raidAttempts = 0;
         this.isAll = false;
-        this.developerMode = developerMode;
-    }
-
-    public MistakeStateManager(MistakeStateManager other, boolean developerMode) {
-        this.currentRaidMistakeManager = other.currentRaidMistakeManager;
-        this.allRaidsMistakeManager = other.allRaidsMistakeManager;
-        this.raidAttempts = other.raidAttempts;
-        this.isAll = other.isAll;
-
-        // Use the passed in developerMode
-        this.developerMode = developerMode;
     }
 
     public void addMistakeForPlayer(String playerName, TobMistake mistake) {
@@ -47,7 +39,7 @@ public class MistakeStateManager {
         currentRaidMistakeManager.addMistakeForPlayer(playerName, mistake);
         allRaidsMistakeManager.addMistakeForPlayer(playerName, mistake);
 
-        MistakeStateWriter.write(this, developerMode);
+        mistakeStateWriter.write(this);
     }
 
     public void removeAllMistakesForPlayer(String playerName) {
@@ -55,7 +47,7 @@ public class MistakeStateManager {
         currentRaidMistakeManager.removeAllMistakesForPlayer(playerName);
         allRaidsMistakeManager.removeAllMistakesForPlayer(playerName);
 
-        MistakeStateWriter.write(this, developerMode);
+        mistakeStateWriter.write(this);
     }
 
     public void resetAll() {
@@ -64,7 +56,7 @@ public class MistakeStateManager {
         allRaidsMistakeManager.clearAllMistakes();
         raidAttempts = 0;
 
-        MistakeStateWriter.write(this, developerMode);
+        mistakeStateWriter.write(this);
     }
 
     public void newRaid() {
@@ -74,7 +66,7 @@ public class MistakeStateManager {
         // Increment our raid attempts since this is now a new raid
         raidAttempts += 1;
 
-        MistakeStateWriter.write(this, developerMode);
+        mistakeStateWriter.write(this);
     }
 
     public Set<String> getPlayersWithMistakes() {

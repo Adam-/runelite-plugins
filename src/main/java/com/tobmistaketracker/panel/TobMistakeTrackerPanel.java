@@ -3,6 +3,7 @@ package com.tobmistaketracker.panel;
 import com.tobmistaketracker.TobMistake;
 import com.tobmistaketracker.state.MistakeStateManager;
 import com.tobmistaketracker.state.MistakeStateReader;
+import com.tobmistaketracker.state.MistakeStateWriter;
 import net.runelite.api.Client;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -44,8 +45,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
 
     private final Client client;
 
-    private MistakeStateManager mistakeStateManager;
-    private final boolean developerMode;
+    private final MistakeStateManager mistakeStateManager;
 
     // Panel for all actions
     private final JPanel actionsContainer = new JPanel();
@@ -70,10 +70,10 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     private final PluginErrorPanel errorPanel = new PluginErrorPanel();
 
     @Inject
-    public TobMistakeTrackerPanel(Client client, @Named("developerMode") boolean developerMode) {
+    public TobMistakeTrackerPanel(Client client, MistakeStateReader mistakeStateReader,
+                                  @Named("developerMode") boolean developerMode) {
         this.client = client;
-        this.mistakeStateManager = new MistakeStateManager(developerMode);
-        this.developerMode = developerMode;
+        this.mistakeStateManager = mistakeStateReader.read();
 
         setBorder(new EmptyBorder(6, 6, 6, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -198,12 +198,10 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         updateVisiblePanels(true);
     }
 
+    /**
+     * The plugin has been reloaded, reload the panel
+     */
     public void reload() {
-        MistakeStateManager loadedMistakeStateManager = MistakeStateReader.read(developerMode);
-
-        // Ensure we set the right developerMode by copying it over to a new object
-        mistakeStateManager = new MistakeStateManager(loadedMistakeStateManager, developerMode);
-
         rebuildAll();
     }
 
