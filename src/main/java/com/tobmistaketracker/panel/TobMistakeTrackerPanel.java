@@ -1,15 +1,16 @@
 package com.tobmistaketracker.panel;
 
 import com.tobmistaketracker.TobMistake;
+import com.tobmistaketracker.TobMistakeTrackerPlugin;
 import com.tobmistaketracker.state.MistakeStateManager;
 import com.tobmistaketracker.state.MistakeStateReader;
-import com.tobmistaketracker.state.MistakeStateWriter;
 import net.runelite.api.Client;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.PluginErrorPanel;
 import net.runelite.client.util.ColorUtil;
+import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.QuantityFormatter;
 import net.runelite.client.util.SwingUtil;
 
@@ -18,6 +19,7 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -25,11 +27,13 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -44,14 +48,25 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     private static final String HTML_LABEL_TEMPLATE =
             "<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
 
+    private static final boolean DEFAULT_IS_RAID_DEATHS = true;
+
+    private static final ImageIcon RAID_DEATHS_ICON;
+    private static final ImageIcon RAID_DEATHS_ICON_FADED;
+    private static final ImageIcon RAID_DEATHS_ICON_HOVER;
+
+    private static final ImageIcon ROOM_DEATHS_ICON;
+    private static final ImageIcon ROOM_DEATHS_ICON_FADED;
+    private static final ImageIcon ROOM_DEATHS_ICON_HOVER;
+
     private final Client client;
 
     private final MistakeStateManager mistakeStateManager;
 
-    // Panel for all actions
-    private final JPanel actionsContainer = new JPanel();
     private final JLabel currentViewTitle = new JLabel();
     private final JButton switchMistakesViewBtn = new JButton();
+
+    private final JRadioButton raidDeathsBtn = new JRadioButton();
+    private final JRadioButton roomDeathsBtn = new JRadioButton();
 
     // Panel for overall mistake data
     private final JPanel overallPanel = new JPanel();
@@ -66,10 +81,25 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     // Keep track of all boxes
     private final List<PlayerMistakesBox> playerMistakesBoxes = new ArrayList<>();
 
+    // Keep track of the current death grouping
+    private boolean isRaidDeaths;
     // Keep track of the current view we're showing
     private boolean isShowingAll = false;
 
     private final PluginErrorPanel errorPanel = new PluginErrorPanel();
+
+    static {
+        final BufferedImage raidDeathsImg = ImageUtil.loadImageResource(TobMistakeTrackerPlugin.class, "raid_deaths.png");
+        final BufferedImage roomDeathsImg = ImageUtil.loadImageResource(TobMistakeTrackerPlugin.class, "room_deaths.png");
+
+        RAID_DEATHS_ICON = new ImageIcon(raidDeathsImg);
+        RAID_DEATHS_ICON_FADED = new ImageIcon(ImageUtil.alphaOffset(raidDeathsImg, -180));
+        RAID_DEATHS_ICON_HOVER = new ImageIcon(ImageUtil.alphaOffset(raidDeathsImg, -220));
+
+        ROOM_DEATHS_ICON = new ImageIcon(roomDeathsImg);
+        ROOM_DEATHS_ICON_FADED = new ImageIcon(ImageUtil.alphaOffset(roomDeathsImg, -180));
+        ROOM_DEATHS_ICON_HOVER = new ImageIcon(ImageUtil.alphaOffset(roomDeathsImg, -220));
+    }
 
     @Inject
     public TobMistakeTrackerPanel(Client client, MistakeStateReader mistakeStateReader,
@@ -86,24 +116,24 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         layoutPanel.setLayout(new BoxLayout(layoutPanel, BoxLayout.Y_AXIS));
         add(layoutPanel, BorderLayout.NORTH);
 
-        // Create panel for the top actions (like switching view button)
-        actionsContainer.setLayout(new BorderLayout());
-        actionsContainer.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        actionsContainer.setPreferredSize(new Dimension(0, 30));
-        actionsContainer.setBorder(new EmptyBorder(5, 5, 5, 10));
+        // Create panel for the header (contains things like view, action buttons, etc.)
+        JPanel headerContainer = new JPanel(new GridLayout(2, 1, 0, 0));
+        headerContainer.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-        // Create the panel for the buttons
-        final JPanel viewButtons = new JPanel(new GridLayout(1, 3, 10, 0));
-        viewButtons.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        // Create the view container
+        final JPanel viewContainer = new JPanel(new BorderLayout());
+        viewContainer.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        viewContainer.setPreferredSize(new Dimension(0, 30));
+        viewContainer.setBorder(new EmptyBorder(5, 5, 5, 10));
 
-        // Create the panel for the current view title
+        // Create the container for the view title
         final JPanel leftTitleContainer = new JPanel(new BorderLayout(5, 0));
         leftTitleContainer.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
         // Create the current view title
         currentViewTitle.setForeground(Color.WHITE);
         currentViewTitle.setText(getCurrentViewTitleText());
-        leftTitleContainer.add(currentViewTitle, BorderLayout.CENTER);
+        leftTitleContainer.add(currentViewTitle, BorderLayout.WEST);
 
         // Create the switch view button
         SwingUtil.removeButtonDecorations(switchMistakesViewBtn);
@@ -126,12 +156,45 @@ public class TobMistakeTrackerPanel extends PluginPanel {
                 switchMistakesViewBtn.setBackground(Color.WHITE);
             }
         });
-        viewButtons.add(switchMistakesViewBtn);
 
-        // Add all our panels to the top container for actions
-        actionsContainer.add(leftTitleContainer, BorderLayout.CENTER);
-        actionsContainer.add(viewButtons, BorderLayout.EAST);
-        actionsContainer.setVisible(true);
+        // Add the view container to header
+        viewContainer.add(leftTitleContainer, BorderLayout.WEST);
+        viewContainer.add(switchMistakesViewBtn, BorderLayout.EAST);
+        headerContainer.add(viewContainer);
+
+        // Create the panel for the action buttons
+        final JPanel actionButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        actionButtons.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        actionButtons.setPreferredSize(new Dimension(0, 30));
+        actionButtons.setBorder(new EmptyBorder(5, 5, 5, 10));
+
+        // Create the raid deaths button
+        SwingUtil.removeButtonDecorations(raidDeathsBtn);
+        raidDeathsBtn.setIcon(RAID_DEATHS_ICON_FADED);
+        raidDeathsBtn.setRolloverIcon(RAID_DEATHS_ICON_HOVER);
+        raidDeathsBtn.setSelectedIcon(RAID_DEATHS_ICON);
+        raidDeathsBtn.setToolTipText("Group all raid deaths into a singular mistake");
+        raidDeathsBtn.addActionListener(e -> changeDeathGrouping(true));
+
+        // Create the room deaths button
+        SwingUtil.removeButtonDecorations(roomDeathsBtn);
+        roomDeathsBtn.setIcon(ROOM_DEATHS_ICON_FADED);
+        roomDeathsBtn.setRolloverIcon(ROOM_DEATHS_ICON_HOVER);
+        roomDeathsBtn.setSelectedIcon(ROOM_DEATHS_ICON);
+        roomDeathsBtn.setToolTipText("Show each room's deaths as their own mistakes");
+        roomDeathsBtn.addActionListener(e -> changeDeathGrouping(false));
+
+        ButtonGroup raidRoomGroup = new ButtonGroup();
+        raidRoomGroup.add(raidDeathsBtn);
+        raidRoomGroup.add(roomDeathsBtn);
+
+        // Add all action buttons to the header
+        actionButtons.add(raidDeathsBtn);
+        actionButtons.add(roomDeathsBtn);
+        headerContainer.add(actionButtons);
+
+        changeDeathGrouping(DEFAULT_IS_RAID_DEATHS);
+        headerContainer.setVisible(true);
 
         // Create panel that will contain overall data (at the top)
         overallPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -181,7 +244,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         mistakesContainer.setLayout(new BoxLayout(mistakesContainer, BoxLayout.Y_AXIS));
 
         // Add all our panels in the order we want them to appear
-        layoutPanel.add(actionsContainer);
+        layoutPanel.add(headerContainer);
         layoutPanel.add(overallPanel);
         layoutPanel.add(mistakesContainer);
 
@@ -236,7 +299,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         mistakeStateManager.addMistakeForPlayer(playerName, mistake);
 
         PlayerMistakesBox box = buildBox(playerName);
-        box.rebuildAllMistakes();
+        box.rebuildAllMistakes(isRaidDeaths);
         updateOverallPanel();
     }
 
@@ -255,7 +318,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
             buildBox(playerName);
         }
 
-        playerMistakesBoxes.forEach(PlayerMistakesBox::rebuildAllMistakes);
+        playerMistakesBoxes.forEach(box -> box.rebuildAllMistakes(isRaidDeaths));
         updateOverallPanel();
         mistakesContainer.revalidate();
         mistakesContainer.repaint();
@@ -375,6 +438,12 @@ public class TobMistakeTrackerPanel extends PluginPanel {
             overallPanel.setVisible(true);
             mistakesContainer.setVisible(true);
         }
+    }
+
+    private void changeDeathGrouping(boolean isRaid) {
+        isRaidDeaths = isRaid;
+        (isRaid ? raidDeathsBtn : roomDeathsBtn).setSelected(true);
+        rebuildAll();
     }
 
     private void switchMistakesView() {

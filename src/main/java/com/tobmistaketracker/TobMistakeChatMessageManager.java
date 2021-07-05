@@ -64,6 +64,10 @@ public class TobMistakeChatMessageManager {
      */
     public void playerMadeMistake(Player player, TobMistake mistake) {
         final String overheadText = mistake.getChatMessage();
+        if (overheadText.isEmpty()) {
+            // This is the case for the universal DEATH mistake, for example.
+            return;
+        }
 
         final int timeoutTick = client.getTickCount() + OVERHEAD_TEXT_TICK_TIMEOUT;
 

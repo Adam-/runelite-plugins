@@ -56,6 +56,7 @@ import static net.runelite.api.widgets.WidgetID.TOB_GROUP_ID;
 public class TobMistakeTrackerPlugin extends Plugin {
 
     static final String CONFIG_GROUP = "tobMistakeTracker";
+    public static final int TOB_ROOM_TRANSITION_SCRIPT_ID = 2315;
 
     private static final int TOB_BOSS_INTERFACE_ID = 1;
     private static final int TOB_BOSS_INTERFACE_TEXT_ID = 2;
@@ -299,15 +300,12 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
     @Subscribe
     public void onScriptPostFired(ScriptPostFired event) {
-        if (inTob && panelMightNeedReset && event.getScriptId() == 2315) {
-            Widget widget = client.getWidget(TOB_GROUP_ID, TOB_BOSS_INTERFACE_ID);
-            if (widget != null && widget.getChild(TOB_BOSS_INTERFACE_TEXT_ID) != null) {
-                Widget childWidget = widget.getChild(TOB_BOSS_INTERFACE_TEXT_ID);
-                if (TobBossNames.MAIDEN.equals(childWidget.getText())) {
-                    panel.newRaid(new HashSet<>(getRaiderNames()));
-                    // Set to false until next time we're no longer sure if we're in a raid.
-                    panelMightNeedReset = false;
-                }
+        if (inTob && panelMightNeedReset && event.getScriptId() == TOB_ROOM_TRANSITION_SCRIPT_ID) {
+            final String roomText = getTobRoomEnterText(client);
+            if (TobBossNames.MAIDEN.equals(roomText)) {
+                panel.newRaid(new HashSet<>(getRaiderNames()));
+                // Set to false until next time we're no longer sure if we're in a raid.
+                panelMightNeedReset = false;
             }
         }
     }
@@ -365,6 +363,22 @@ public class TobMistakeTrackerPlugin extends Plugin {
      */
     public List<String> getRaiderNames() {
         return Arrays.stream(raiderNames).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    /**
+     * Retrieves the room text when entering a tob room
+     *
+     * @param client The client
+     * @return The text shown on the screen from the tob widget when entering a new room, or empty string if none
+     */
+    public static String getTobRoomEnterText(final Client client) {
+        Widget widget = client.getWidget(TOB_GROUP_ID, TOB_BOSS_INTERFACE_ID);
+        if (widget != null && widget.getChild(TOB_BOSS_INTERFACE_TEXT_ID) != null) {
+            Widget childWidget = widget.getChild(TOB_BOSS_INTERFACE_TEXT_ID);
+            return childWidget.getText();
+        }
+
+        return "";
     }
 
     @Provides

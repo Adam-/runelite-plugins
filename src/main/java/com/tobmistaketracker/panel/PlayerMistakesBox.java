@@ -1,7 +1,7 @@
 package com.tobmistaketracker.panel;
 
-import com.tobmistaketracker.state.MistakeStateManager;
 import com.tobmistaketracker.TobMistake;
+import com.tobmistaketracker.state.MistakeStateManager;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Value;
@@ -73,8 +73,8 @@ public class PlayerMistakesBox extends JPanel {
         setComponentPopupMenu(popupMenu);
     }
 
-    void rebuildAllMistakes() {
-        buildMistakes();
+    void rebuildAllMistakes(boolean isRaidDeaths) {
+        buildMistakes(isRaidDeaths);
 
         final String mistakeString = totalMistakes == 1 ? "Mistake" : "Mistakes";
         mistakeCountLabel.setText(String.format("%s %s", totalMistakes, mistakeString));
@@ -89,12 +89,18 @@ public class PlayerMistakesBox extends JPanel {
         repaint();
     }
 
-    private void buildMistakes() {
+    private void buildMistakes(boolean isRaidDeaths) {
         totalMistakes = 0;
         setVisible(true);
 
         List<TobMistakeCount> mistakeCountsForPlayer = new ArrayList<>();
         for (TobMistake mistake : TobMistake.values()) {
+            if (isRaidDeaths && TobMistake.isRoomDeath(mistake)) {
+                continue;
+            } else if (!isRaidDeaths && mistake == TobMistake.DEATH) {
+                continue;
+            }
+
             int mistakeCount = mistakeStateManager.getMistakeCountForPlayer(playerName, mistake);
             if (mistakeCount > 0) {
                 totalMistakes += mistakeCount;
