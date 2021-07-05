@@ -19,8 +19,6 @@ public class MistakeStateManager {
     private final MistakeManager currentRaidMistakeManager;
     private final MistakeManager allRaidsMistakeManager;
 
-    private int raidAttempts;
-
     private transient boolean isAll;
     @Setter
     private transient MistakeStateWriter mistakeStateWriter;
@@ -30,7 +28,6 @@ public class MistakeStateManager {
         this.allRaidsMistakeManager = new MistakeManager();
         this.mistakeStateWriter = mistakeStateWriter;
 
-        this.raidAttempts = 0;
         this.isAll = false;
     }
 
@@ -54,17 +51,17 @@ public class MistakeStateManager {
         // Always clear from both
         currentRaidMistakeManager.clearAllMistakes();
         allRaidsMistakeManager.clearAllMistakes();
-        raidAttempts = 0;
 
         mistakeStateWriter.write(this);
     }
 
-    public void newRaid() {
+    public void newRaid(Set<String> playerNames) {
         // Clear just the current mistakes
         currentRaidMistakeManager.clearAllMistakes();
 
-        // Increment our raid attempts since this is now a new raid
-        raidAttempts += 1;
+        // Denote to the manager that there's a new raid, incrementing the raid count for all players in this raid
+        // Raid count for current raid isn't valid, so only do for all raids
+        allRaidsMistakeManager.newRaid(playerNames);
 
         mistakeStateWriter.write(this);
     }
@@ -85,6 +82,16 @@ public class MistakeStateManager {
         return isAll ?
                 allRaidsMistakeManager.getTotalMistakeCountForAllPlayers() :
                 currentRaidMistakeManager.getTotalMistakeCountForAllPlayers();
+    }
+
+    public int getRaidCountForPlayer(String playerName) {
+        return isAll ? allRaidsMistakeManager.getRaidCountForPlayer(playerName) :
+                0; // Raid count for current raid isn't valid, so return 0
+    }
+
+    public int getTrackedRaids() {
+        return isAll ? allRaidsMistakeManager.getTrackedRaids() :
+                1; // Tracked raids for current raid is always just the 1 raid
     }
 
     public void switchMistakes() {

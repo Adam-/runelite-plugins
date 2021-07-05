@@ -304,7 +304,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
             if (widget != null && widget.getChild(TOB_BOSS_INTERFACE_TEXT_ID) != null) {
                 Widget childWidget = widget.getChild(TOB_BOSS_INTERFACE_TEXT_ID);
                 if (TobBossNames.MAIDEN.equals(childWidget.getText())) {
-                    panel.newRaid();
+                    panel.newRaid(new HashSet<>(getRaiderNames()));
                     // Set to false until next time we're no longer sure if we're in a raid.
                     panelMightNeedReset = false;
                 }

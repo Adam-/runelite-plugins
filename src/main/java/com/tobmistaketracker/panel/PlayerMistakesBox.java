@@ -53,15 +53,16 @@ public class PlayerMistakesBox extends JPanel {
         playerNameLabel.setForeground(Color.WHITE);
         playerMistakesTitle.add(playerNameLabel, BorderLayout.WEST);
 
-        raidCountLabel = new JLabel(); // TODO: e.g. x 53 Raids
-        raidCountLabel.setFont(FontManager.getRunescapeSmallFont());
-        raidCountLabel.setForeground(Color.LIGHT_GRAY);
-        playerMistakesTitle.add(raidCountLabel, BorderLayout.CENTER);
-
         mistakeCountLabel = new JLabel(); // e.g. 78 Mistakes
         mistakeCountLabel.setFont(FontManager.getRunescapeSmallFont());
         mistakeCountLabel.setForeground(Color.LIGHT_GRAY);
-        playerMistakesTitle.add(mistakeCountLabel, BorderLayout.EAST);
+        mistakeCountLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        playerMistakesTitle.add(mistakeCountLabel, BorderLayout.CENTER);
+
+        raidCountLabel = new JLabel(); // e.g. (53 Raids)
+        raidCountLabel.setFont(FontManager.getRunescapeSmallFont());
+        raidCountLabel.setForeground(Color.GRAY);
+        playerMistakesTitle.add(raidCountLabel, BorderLayout.EAST);
 
         add(playerMistakesTitle, BorderLayout.NORTH);
         add(mistakesContainer, BorderLayout.CENTER);
@@ -74,8 +75,15 @@ public class PlayerMistakesBox extends JPanel {
 
     void rebuildAllMistakes() {
         buildMistakes();
-        raidCountLabel.setText(""); // TODO: e.g. x 53 raids (with mistakes?)
-        mistakeCountLabel.setText(totalMistakes + " Mistakes");
+
+        final String mistakeString = totalMistakes == 1 ? "Mistake" : "Mistakes";
+        mistakeCountLabel.setText(String.format("%s %s", totalMistakes, mistakeString));
+
+        final int totalRaids = mistakeStateManager.getRaidCountForPlayer(playerName);
+        if (totalRaids > 0) {
+            final String raidString = totalRaids == 1 ? "Raid" : "Raids";
+            raidCountLabel.setText(String.format("(%s %s)", totalRaids, raidString));
+        }
 
         validate();
         repaint();

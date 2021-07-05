@@ -36,6 +36,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Singleton
 public class TobMistakeTrackerPanel extends PluginPanel {
@@ -56,6 +57,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     private final JPanel overallPanel = new JPanel();
     private final JLabel overallPlayersLabel = new JLabel();
     private final JLabel overallMistakesLabel = new JLabel();
+    private final JLabel overallRaidsLabel = new JLabel();
     private final JLabel overallIcon = new JLabel();
 
     // Panel for all PlayerMistakesBoxes
@@ -142,12 +144,14 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         // Add icon and contents to overallPanel
         final JPanel overallInfo = new JPanel();
         overallInfo.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        overallInfo.setLayout(new GridLayout(2, 1));
+        overallInfo.setLayout(new GridLayout(3, 1));
         overallInfo.setBorder(new EmptyBorder(2, 10, 2, 0));
         overallPlayersLabel.setFont(FontManager.getRunescapeSmallFont());
         overallMistakesLabel.setFont(FontManager.getRunescapeSmallFont());
+        overallRaidsLabel.setFont(FontManager.getRunescapeSmallFont());
         overallInfo.add(overallPlayersLabel);
         overallInfo.add(overallMistakesLabel);
+        overallInfo.add(overallRaidsLabel);
         overallPanel.add(overallIcon, BorderLayout.WEST);
         overallPanel.add(overallInfo, BorderLayout.CENTER);
 
@@ -210,11 +214,14 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     }
 
     /**
-     * Resets the current raid mistakes and panel
+     * Resets the current raid mistakes and panel, and notifies the manager that a new raid has been entered
      */
-    public void newRaid() {
-        mistakeStateManager.newRaid();
-        if (!isShowingAll) {
+    public void newRaid(Set<String> playerNames) {
+        mistakeStateManager.newRaid(playerNames);
+        if (isShowingAll) {
+            // Only the overall panel can change between raids
+            updateOverallPanel();
+        } else {
             // We're looking at the current raid view
             resetUi();
         }
@@ -340,6 +347,8 @@ public class TobMistakeTrackerPanel extends PluginPanel {
                 mistakeStateManager.getPlayersWithMistakes().size()));
         overallMistakesLabel.setText(htmlLabel("Total mistakes: ",
                 mistakeStateManager.getTotalMistakeCountForAllPlayers()));
+        overallRaidsLabel.setText(htmlLabel("Tracked raids: ",
+                mistakeStateManager.getTrackedRaids()));
     }
 
     private static String htmlLabel(String key, long value) {
