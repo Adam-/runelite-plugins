@@ -314,7 +314,7 @@ public class TobMistakeTrackerPlugin extends Plugin {
         if (inTob && panelMightNeedReset && event.getScriptId() == TOB_ROOM_TRANSITION_SCRIPT_ID) {
             final String roomText = getTobRoomEnterText(client);
             if (TobBossNames.MAIDEN.equals(roomText)) {
-                panel.newRaid(new HashSet<>(getRaiderNames()));
+                panel.newRaid(getRaiderNames());
                 // Set to false until next time we're no longer sure if we're in a raid.
                 panelMightNeedReset = false;
             }

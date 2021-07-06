@@ -39,8 +39,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Singleton
 public class TobMistakeTrackerPanel extends PluginPanel {
@@ -61,6 +64,8 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     private final Client client;
 
     private final MistakeStateManager mistakeStateManager;
+
+    private List<String> currentRaiderNames;
 
     private final JLabel currentViewTitle = new JLabel();
     private final JButton switchMistakesViewBtn = new JButton();
@@ -89,8 +94,10 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     private final PluginErrorPanel errorPanel = new PluginErrorPanel();
 
     static {
-        final BufferedImage raidDeathsImg = ImageUtil.loadImageResource(TobMistakeTrackerPlugin.class, "raid_deaths.png");
-        final BufferedImage roomDeathsImg = ImageUtil.loadImageResource(TobMistakeTrackerPlugin.class, "room_deaths.png");
+        final BufferedImage raidDeathsImg = ImageUtil.loadImageResource(
+                TobMistakeTrackerPlugin.class, "raid_deaths.png");
+        final BufferedImage roomDeathsImg = ImageUtil.loadImageResource(
+                TobMistakeTrackerPlugin.class, "room_deaths.png");
 
         RAID_DEATHS_ICON = new ImageIcon(raidDeathsImg);
         RAID_DEATHS_ICON_FADED = new ImageIcon(ImageUtil.alphaOffset(raidDeathsImg, -180));
@@ -106,6 +113,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
                                   @Named("developerMode") boolean developerMode) {
         this.client = client;
         this.mistakeStateManager = mistakeStateReader.read();
+        this.currentRaiderNames = Collections.emptyList();
 
         setBorder(new EmptyBorder(6, 6, 6, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -279,13 +287,14 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     /**
      * Resets the current raid mistakes and panel, and notifies the manager that a new raid has been entered
      */
-    public void newRaid(Set<String> playerNames) {
-        mistakeStateManager.newRaid(playerNames);
+    public void newRaid(List<String> playerNames) {
+        currentRaiderNames = playerNames;
+        mistakeStateManager.newRaid(new HashSet<>(playerNames));
         if (isShowingAll) {
-            // Only the overall panel can change between raids
             updateOverallPanel();
+            reorderRaiderBoxes();
         } else {
-            // We're looking at the current raid view
+            // We're looking at the current raid view, reset it and start over
             resetUi();
         }
     }
@@ -301,6 +310,9 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         PlayerMistakesBox box = buildBox(playerName);
         box.rebuildAllMistakes(isRaidDeaths);
         updateOverallPanel();
+
+        // Ensure ordering is correct
+        reorderRaiderBoxes();
     }
 
     /**
@@ -320,6 +332,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
 
         playerMistakesBoxes.forEach(box -> box.rebuildAllMistakes(isRaidDeaths));
         updateOverallPanel();
+        reorderRaiderBoxes();
         mistakesContainer.revalidate();
         mistakesContainer.repaint();
 
@@ -329,16 +342,6 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     private PlayerMistakesBox buildBox(String playerName) {
         for (PlayerMistakesBox box : playerMistakesBoxes) {
             if (box.getPlayerName().equals(playerName)) {
-                if (client.getLocalPlayer() != null && playerName.equals(client.getLocalPlayer().getName())) {
-                    // This existing box is for me, make sure it goes first if it somehow isn't already
-                    mistakesContainer.setComponentZOrder(box, 0);
-                } else if (doesLocalPlayerHaveMistakesBox()) {
-                    // I already have some mistakes, so this should go right after
-                    mistakesContainer.setComponentZOrder(box, 1);
-                } else {
-                    // It's not for me, and I have no mistakes, it can go in the front
-                    mistakesContainer.setComponentZOrder(box, 0);
-                }
                 return box;
             }
         }
@@ -375,19 +378,30 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         updateVisiblePanels(false);
 
         // Add box to panel
-        if (client.getLocalPlayer() != null && playerName.equals(client.getLocalPlayer().getName())) {
-            // This box is for me, put at the front
-            mistakesContainer.add(box, 0);
-        } else if (doesLocalPlayerHaveMistakesBox()) {
-            // I already have some mistakes, so this should go right after
-            mistakesContainer.add(box, 1);
-        } else {
-            // It's not for me, and I have no mistakes, it can go in the front
-            mistakesContainer.add(box, 0);
-        }
+        mistakesContainer.add(box);
         playerMistakesBoxes.add(box);
 
         return box;
+    }
+
+    private void reorderRaiderBoxes() {
+        // For lookups
+        Map<String, PlayerMistakesBox> playerNameToBox = playerMistakesBoxes.stream()
+                .collect(Collectors.toMap(PlayerMistakesBox::getPlayerName, e -> e));
+
+        // Reverse iteration so that we can put each player's box at the top, meaning last raider will be at the bottom
+        for (int i = currentRaiderNames.size() - 1; i >= 0; i--) {
+            PlayerMistakesBox box = playerNameToBox.get(currentRaiderNames.get(i));
+            if (box != null) {
+                moveBoxToTop(box);
+            }
+        }
+
+        // Always put local player at the top
+        if (client.getLocalPlayer() != null && playerNameToBox.get(client.getLocalPlayer().getName()) != null) {
+            PlayerMistakesBox box = playerNameToBox.get(client.getLocalPlayer().getName());
+            moveBoxToTop(box);
+        }
     }
 
     private void resetAll() {
@@ -426,6 +440,10 @@ public class TobMistakeTrackerPanel extends PluginPanel {
         }
 
         return false;
+    }
+
+    private void moveBoxToTop(PlayerMistakesBox box) {
+        mistakesContainer.setComponentZOrder(box, 0);
     }
 
     private void updateVisiblePanels(boolean isEmpty) {
