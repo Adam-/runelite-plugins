@@ -11,12 +11,12 @@ import java.util.Set;
 public enum TobMistake {
     // All death chat messages will be handled by the corresponding specific DEATH enum
     DEATH("Death", "death.png", ""),
-    DEATH_MAIDEN("Maiden Death", "death.png", "I'm planking!"),
-    DEATH_BLOAT("Bloat Death", "death.png", "I'm planking!"),
-    DEATH_NYLOCAS("Nylocas Death", "death.png", "I'm planking!"),
-    DEATH_SOTETSEG("Sotetseg Death", "death.png", "I'm planking!"),
-    DEATH_XARPUS("Xarpus Death", "death.png", "I'm planking!"),
-    DEATH_VERZIK("Verzik Death", "death.png", "I'm planking!"),
+    DEATH_MAIDEN("Maiden Death", "death_maiden.png", "I'm planking!"),
+    DEATH_BLOAT("Bloat Death", "death_bloat.png", "I'm planking!"),
+    DEATH_NYLOCAS("Nylocas Death", "death_nylo.png", "I'm planking!"),
+    DEATH_SOTETSEG("Sotetseg Death", "death_sot.png", "I'm planking!"),
+    DEATH_XARPUS("Xarpus Death", "death_xarpus.png", "I'm planking!"),
+    DEATH_VERZIK("Verzik Death", "death_verzik.png", "I'm planking!"),
     MAIDEN_BLOOD("Maiden Blood", "maiden_blood.png", "I'm drowning in Maiden's blood!"),
     BLOAT_HAND("Bloat Hand", "bloat_hand.png", "I'm stunned!"),
     VERZIK_P2_BOUNCE("Verzik P2 Bounce", "verzik_p2_bounce.png", "Bye!"),

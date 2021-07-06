@@ -48,7 +48,7 @@ public class TobMistakeTrackerPanel extends PluginPanel {
     private static final String HTML_LABEL_TEMPLATE =
             "<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
 
-    private static final boolean DEFAULT_IS_RAID_DEATHS = true;
+    private static final boolean DEFAULT_IS_RAID_DEATHS = false;
 
     private static final ImageIcon RAID_DEATHS_ICON;
     private static final ImageIcon RAID_DEATHS_ICON_FADED;
