@@ -12,7 +12,7 @@ side-panel.
 
 Current mistakes being tracked:
 
-* ![death](src/main/resources/com/tobmistaketracker/death.png) **Deaths** throughout the raid
+* ![death](src/main/resources/com/tobmistaketracker/death.png) **Deaths** throughout the raid (including specific death counts per room)
 * ![maiden_blood](src/main/resources/com/tobmistaketracker/maiden_blood.png) Standing in **Maiden** Blood
 * ![bloat_hand](src/main/resources/com/tobmistaketracker/bloat_hand.png) Getting hit by **Bloat** Hands
 * ![verzik_p2_bounce](src/main/resources/com/tobmistaketracker/verzik_p2_bounce.png) Getting bounced during **Verzik P2**
@@ -36,3 +36,17 @@ Coming Soon:
 ![death](src/main/resources/com/tobmistaketracker/death_action.png)
 
 ![maiden_blood](src/main/resources/com/tobmistaketracker/maiden_blood_action.png)
+
+---
+
+## Changes
+
+#### 2.0
+* Track raid counts for each player
+* Track deaths per boss rom
+* Add death grouping with new death icons per boss room to panel
+* Fix chat overhead messages not always displaying long enough
+* Reorder boxes in panel to have local player first followed by current raiders
+
+#### 1.0
+* Initial release
