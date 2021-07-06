@@ -5,10 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.events.ActorDeath;
-import net.runelite.api.events.GameStateChanged;
-import net.runelite.api.events.StatChanged;
-import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.events.*;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -19,6 +16,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import javax.inject.Inject;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 @Slf4j
 @PluginDescriptor(
@@ -42,26 +40,48 @@ public class CEngineerCompletedPlugin extends Plugin
 	@Inject
 	private CEngineerCompletedConfig config;
 
+	private final Varbits[] varbitsAchievementDiaries = {
+			Varbits.DIARY_ARDOUGNE_EASY, Varbits.DIARY_ARDOUGNE_MEDIUM, Varbits.DIARY_ARDOUGNE_HARD, Varbits.DIARY_ARDOUGNE_ELITE,
+			Varbits.DIARY_DESERT_EASY, Varbits.DIARY_DESERT_MEDIUM, Varbits.DIARY_DESERT_HARD, Varbits.DIARY_DESERT_ELITE,
+			Varbits.DIARY_FALADOR_EASY, Varbits.DIARY_FALADOR_MEDIUM, Varbits.DIARY_FALADOR_HARD, Varbits.DIARY_FALADOR_ELITE,
+			Varbits.DIARY_KANDARIN_EASY, Varbits.DIARY_KANDARIN_MEDIUM, Varbits.DIARY_KANDARIN_HARD, Varbits.DIARY_KANDARIN_ELITE,
+			Varbits.DIARY_KARAMJA_EASY, Varbits.DIARY_KARAMJA_MEDIUM, Varbits.DIARY_KARAMJA_HARD, Varbits.DIARY_KARAMJA_ELITE,
+			Varbits.DIARY_KOUREND_EASY, Varbits.DIARY_KOUREND_MEDIUM, Varbits.DIARY_KOUREND_HARD, Varbits.DIARY_KOUREND_ELITE,
+			Varbits.DIARY_LUMBRIDGE_EASY, Varbits.DIARY_LUMBRIDGE_MEDIUM, Varbits.DIARY_LUMBRIDGE_HARD, Varbits.DIARY_LUMBRIDGE_ELITE,
+			Varbits.DIARY_MORYTANIA_EASY, Varbits.DIARY_MORYTANIA_MEDIUM, Varbits.DIARY_MORYTANIA_HARD, Varbits.DIARY_MORYTANIA_ELITE,
+			Varbits.DIARY_VARROCK_EASY, Varbits.DIARY_VARROCK_MEDIUM, Varbits.DIARY_VARROCK_HARD, Varbits.DIARY_VARROCK_ELITE,
+			Varbits.DIARY_WESTERN_EASY, Varbits.DIARY_WESTERN_MEDIUM, Varbits.DIARY_WESTERN_HARD, Varbits.DIARY_WESTERN_ELITE,
+			Varbits.DIARY_WILDERNESS_EASY, Varbits.DIARY_WILDERNESS_MEDIUM, Varbits.DIARY_WILDERNESS_HARD, Varbits.DIARY_WILDERNESS_ELITE
+	};
+	private static final Pattern COLLECTION_LOG_ITEM_REGEX = Pattern.compile("New item added to your collection log: .*");
+
 	private final Map<Skill, Integer> oldExperience = new EnumMap<>(Skill.class);
+	private final Map<Varbits, Integer> oldAchievementDiaries = new EnumMap<>(Varbits.class);
 
 	@Override
 	protected void startUp() throws Exception
 	{
-		clientThread.invoke(this::setupOldExperienceHashmap);
+		clientThread.invoke(this::setupOldMaps);
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
 		oldExperience.clear();
+		oldAchievementDiaries.clear();
 	}
 
-	private void setupOldExperienceHashmap() {
+	private void setupOldMaps() {
 		if (client.getGameState() != GameState.LOGGED_IN) {
 			oldExperience.clear();
+			oldAchievementDiaries.clear();
 		} else {
 			for (final Skill skill : Skill.values()) {
 				oldExperience.put(skill, client.getSkillExperience(skill));
+			}
+			for (Varbits v : varbitsAchievementDiaries) {
+				int var = client.getVar(v);
+				oldAchievementDiaries.put(v, var);
 			}
 		}
 	}
@@ -76,6 +96,7 @@ public class CEngineerCompletedPlugin extends Plugin
 			case LOGGING_IN:
 			case LOGIN_SCREEN_AUTHENTICATOR:
 				oldExperience.clear();
+				oldAchievementDiaries.clear();
 		}
 	}
 
@@ -120,6 +141,34 @@ public class CEngineerCompletedPlugin extends Plugin
 		if (config.announceDeath() && actorDeath.getActor() == client.getLocalPlayer()) {
 			client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Dying on my HCIM: completed.", null); // TODO remove, for testing before sounds present
 			soundEngine.playClip(Sound.DEATH);
+		}
+	}
+
+	@Subscribe
+	public void onChatMessage(ChatMessage chatMessage) {
+		if (chatMessage.getType() != ChatMessageType.GAMEMESSAGE && chatMessage.getType() != ChatMessageType.SPAM) {
+			return;
+		}
+
+		if (config.announceCollectionLog() && COLLECTION_LOG_ITEM_REGEX.matcher(chatMessage.getMessage()).matches()) {
+			client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Collection log slot: completed.", null); // TODO remove, for testing before sounds present
+			soundEngine.playClip(Sound.TEST);
+		}
+	}
+
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged varbitChanged) {
+		// Apparently I can't check if it's a particular varbit using the names from Varbits enum, so this is the way
+		for (Varbits v : varbitsAchievementDiaries) {
+			int var = client.getVar(v);
+			int previousValue = oldAchievementDiaries.getOrDefault(v, -1);
+			if (previousValue != -1 && previousValue != var) {
+				// Doesn't matter what the value is, as long as it's not -1 (just discovering value exists) and has changed (diaries don't un-unlock so direction doesn't matter)
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Achievement diary: completed.", null); // TODO remove, for testing before sounds present
+				// TODO this route has not yet been tested in-game
+				soundEngine.playClip(Sound.TEST);
+			}
+			oldAchievementDiaries.put(v, var);
 		}
 	}
 
