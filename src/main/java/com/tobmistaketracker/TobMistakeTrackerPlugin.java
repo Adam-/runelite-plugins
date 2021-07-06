@@ -9,6 +9,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
+import net.runelite.api.Constants;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.Varbits;
@@ -70,6 +71,10 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
     private static final int MAX_RAIDERS = 5;
 
+    private static final int OVERHEAD_TEXT_TICK_TIMEOUT = 5;
+    private static final int CYCLES_PER_GAME_TICK = Constants.GAME_TICK_LENGTH / Constants.CLIENT_TICK_LENGTH;
+    private static final int CYCLES_FOR_OVERHEAD_TEXT = OVERHEAD_TEXT_TICK_TIMEOUT * CYCLES_PER_GAME_TICK;
+
     private static final Pattern STORY_MODE_FAILED_PATTERN = Pattern.compile("You have failed.");
 
     @Inject
@@ -89,9 +94,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
 
     @Inject
     private MistakeDetectorManager mistakeDetectorManager;
-
-    @Inject
-    private TobMistakeChatMessageManager chatMessageManager;
 
     private final BufferedImage icon = ImageUtil.loadImageResource(TobMistakeTrackerPlugin.class, "panel_icon.png");
     private TobMistakeTrackerPanel panel;
@@ -132,9 +134,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
                 .build();
         clientToolbar.addNavigation(navButton);
 
-        // Let the ChatMessageManager handle events
-        eventBus.register(chatMessageManager);
-
         // Reset all state
         resetRaidState();
 
@@ -152,10 +151,6 @@ public class TobMistakeTrackerPlugin extends Plugin {
     @Override
     protected void shutDown() throws Exception {
         resetRaidState();
-
-        // Tell the ChatMessageManager to shutdown, including removing all outstanding overhead texts from the plugin
-        chatMessageManager.shutdown();
-        eventBus.unregister(chatMessageManager);
 
         clientToolbar.removeNavigation(navButton);
         panel = null;
@@ -209,11 +204,27 @@ public class TobMistakeTrackerPlugin extends Plugin {
                 }
 
                 addMistakeForPlayer(raider.getName(), mistake);
-                chatMessageManager.playerMadeMistake(raider.getPlayer(), mistake);
+                addChatMessageForPlayerMistake(raider.getPlayer(), mistake);
             }
         }
 
         afterDetect(raider);
+    }
+
+    private void addChatMessageForPlayerMistake(Player player, TobMistake mistake) {
+        final String overheadText = mistake.getChatMessage();
+        if (overheadText.isEmpty()) {
+            // This is the case for the universal DEATH mistake, for example.
+            return;
+        }
+
+        player.setOverheadText(overheadText);
+        player.setOverheadCycle(CYCLES_FOR_OVERHEAD_TEXT);
+
+        // Add to chat box if config is enabled
+        if (config.showMistakesInChat()) {
+            client.addChatMessage(ChatMessageType.PUBLICCHAT, player.getName(), mistake.getChatMessage(), null);
+        }
     }
 
     private void afterDetect(TobRaider raider) {
