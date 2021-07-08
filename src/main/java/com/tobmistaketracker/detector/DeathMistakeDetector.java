@@ -7,10 +7,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.AnimationID;
+import net.runelite.api.Actor;
 import net.runelite.api.NPC;
 import net.runelite.api.Player;
-import net.runelite.api.events.AnimationChanged;
+import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.client.eventbus.Subscribe;
@@ -89,11 +89,14 @@ public class DeathMistakeDetector extends BaseTobMistakeDetector {
     }
 
     @Subscribe
-    public void onAnimationChanged(AnimationChanged event) {
-        // This is a bit more accurate than using onActorDeath, since this guarantees that the server thinks the player
-        // is dead, as opposed to just the client thinking so.
-        if (event.getActor() instanceof Player && event.getActor().getAnimation() == AnimationID.DEATH) {
-            playerDeaths.add(event.getActor().getName());
+    public void onActorDeath(ActorDeath event) {
+        Actor actor = event.getActor();
+        if (actor instanceof Player) {
+            Player player = (Player) actor;
+
+            if (plugin.isLoadedRaider(player.getName())) {
+                playerDeaths.add(player.getName());
+            }
         }
     }
 

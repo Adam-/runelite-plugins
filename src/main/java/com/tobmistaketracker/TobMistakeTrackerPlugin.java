@@ -364,6 +364,10 @@ public class TobMistakeTrackerPlugin extends Plugin {
         }
     }
 
+    public boolean isLoadedRaider(String playerName) {
+        return playerName != null && raiders.containsKey(playerName);
+    }
+
     public Iterable<TobRaider> getRaiders() {
         return Collections.unmodifiableCollection(raiders.values());
     }
