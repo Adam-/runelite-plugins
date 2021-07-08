@@ -43,7 +43,6 @@ Coming Soon:
 
 #### 2.1
 * Add config for toggling mistake overhead text
-* Fix bug where plugin thinks a player dies who didn't actually die
 
 #### 2.0
 * Track raid counts for each player
