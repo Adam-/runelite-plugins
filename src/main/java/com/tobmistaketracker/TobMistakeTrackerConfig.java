@@ -17,4 +17,15 @@ public interface TobMistakeTrackerConfig extends Config {
     default boolean showMistakesInChat() {
         return true;
     }
+
+    @ConfigItem(
+            keyName = "showMistakesOnOverheadText",
+            name = "Show Mistakes On Overhead Text",
+            description = "When a player makes a mistake in ToB, whether or not to show the overhead text for other " +
+                    "raiders who have the plugin to see.",
+            position = 2
+    )
+    default boolean showMistakesOnOverheadText() {
+        return true;
+    }
 }

@@ -218,8 +218,11 @@ public class TobMistakeTrackerPlugin extends Plugin {
             return;
         }
 
-        player.setOverheadText(overheadText);
-        player.setOverheadCycle(CYCLES_FOR_OVERHEAD_TEXT);
+        // Add to overhead text if config is enabled
+        if (config.showMistakesOnOverheadText()) {
+            player.setOverheadText(overheadText);
+            player.setOverheadCycle(CYCLES_FOR_OVERHEAD_TEXT);
+        }
 
         // Add to chat box if config is enabled
         if (config.showMistakesInChat()) {
