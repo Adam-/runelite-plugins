@@ -897,4 +897,34 @@ public class BankLayoutTest
 		checkLayout(layout, 11, GAMES_NECKLACE_8);
 		assertEquals(8, layout.allPairs().size());
 	}
+
+	/**
+	 * https://github.com/geheur/bank-tag-custom-layouts/issues/32
+	 */
+	@Test
+	public void testLayoutGeneratorWithMoreItemsThanDuplicateLimitAsTheFirstItemsInTheInventory() {
+		LayoutGenerator layoutGenerator = new LayoutGenerator(plugin);
+		Layout layout = layoutGenerator.basicLayout(Collections.emptyList(), Arrays.asList(
+			MAGIC_LOGS.id,
+			MAGIC_LOGS.id,
+			MAGIC_LOGS.id,
+			MAGIC_LOGS.id
+			), Layout.emptyLayout(), 3);
+		checkLayout(layout, 0, MAGIC_LOGS);
+		assertEquals(1, layout.allPairs().size());
+	}
+
+	@Test
+	public void testLayoutGeneratorWithEmptyInventory() {
+		LayoutGenerator layoutGenerator = new LayoutGenerator(plugin);
+
+		Layout layout = layoutGenerator.basicLayout(Collections.emptyList(), Arrays.asList(), Layout.emptyLayout(), 3);
+		assertEquals(0, layout.allPairs().size());
+
+		layout = layoutGenerator.basicLayout(Collections.emptyList(), Arrays.asList(-1), Layout.emptyLayout(), 3);
+		assertEquals(0, layout.allPairs().size());
+
+		layout = layoutGenerator.basicLayout(Collections.emptyList(), Collections.nCopies(28, -1), Layout.emptyLayout(), 3);
+		assertEquals(0, layout.allPairs().size());
+	}
 }

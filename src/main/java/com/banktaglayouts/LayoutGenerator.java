@@ -1,6 +1,7 @@
 package com.banktaglayouts;
 
 import com.banktaglayouts.invsetupsstuff.InventorySetup;
+import java.util.AbstractMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,43 +38,37 @@ public class LayoutGenerator {
                 .collect(Collectors.toList());
         i = layoutItems(equippedItems, currentLayout, previewLayout, displacedItems, i, true);
 
+        inventory = inventory.stream().filter(integer -> integer != -1).collect(Collectors.toList());
+
         // lay out the inventory items.
-        // distinct leaves the first duplicate it encounters and removes only duplicates coming after the first.
 		if (duplicateLimit <= 0)
 		{
+			// distinct leaves the first duplicate it encounters and removes only duplicates coming after the first.
 			inventory = inventory.stream().distinct().collect(Collectors.toList());
 		}
 		else
 		{
-			List<Integer> newInventory = new ArrayList<>();
+			List<Map.Entry<Integer, Integer>> groupedInventory = new ArrayList<>();
+
 			int inARow = 0;
 			int lastItemId = -1;
 			for (Integer itemId : inventory)
 			{
 				if (lastItemId != itemId)
 				{
+					int quantity = inARow > duplicateLimit ? 1 : inARow;
+					groupedInventory.add(new AbstractMap.SimpleEntry<>(lastItemId, quantity));
 					inARow = 0;
 				}
 				inARow++;
-				if (inARow <= duplicateLimit)
-				{
-					newInventory.add(itemId);
-				}
-				else if (inARow == duplicateLimit + 1)
-				{
-					while (true)
-					{
-						if (newInventory.get(newInventory.size() - 1) != (int) itemId)
-						{
-							break;
-						}
-						newInventory.remove(newInventory.size() - 1);
-					}
-					newInventory.add(itemId);
-				}
+
 				lastItemId = itemId;
 			}
-			inventory = newInventory;
+			int quantity = inARow > duplicateLimit ? 1 : inARow;
+			if (quantity > 0) groupedInventory.add(new AbstractMap.SimpleEntry<>(lastItemId, quantity));
+
+			inventory = groupedInventory.stream().flatMap(entry -> Collections.nCopies(entry.getValue(), entry.getKey()).stream()).collect(Collectors.toList());
+			System.out.println("inventory after duplicates is now " + inventory);
 		}
 
         i = layoutItems(inventory, currentLayout, previewLayout, displacedItems, i, true);

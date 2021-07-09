@@ -390,10 +390,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 				return;
 			}
 
-		hideLayoutPreviewButtons(false);
+			hideLayoutPreviewButtons(false);
 
-		Layout currentLayout = getBankOrderNonPreview(currentLayoutableThing);
-		if (currentLayout == null) currentLayout = Layout.emptyLayout();
+			Layout currentLayout = getBankOrderNonPreview(currentLayoutableThing);
+			if (currentLayout == null) currentLayout = Layout.emptyLayout();
 
 			previewLayout = layoutGenerator.basicLayout(equippedGear, inventory, currentLayout, getAutoLayoutDuplicateLimit());
 		} else {
@@ -422,6 +422,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		return Arrays.stream(container.getItems()).map(w -> w.getId()).collect(Collectors.toList());
 	}
 
+	/**
+	 * empty spaces before an item are always -1, empty spaces after an item may be -1 or may not be included in the
+	 * list at all.
+	 */
 	private List<Integer> getInventory() {
 		ItemContainer container = client.getItemContainer(InventoryID.INVENTORY);
 		if (container == null) return Collections.emptyList();
