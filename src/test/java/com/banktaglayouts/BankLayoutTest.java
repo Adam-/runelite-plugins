@@ -927,4 +927,45 @@ public class BankLayoutTest
 		layout = layoutGenerator.basicLayout(Collections.emptyList(), Collections.nCopies(28, -1), Layout.emptyLayout(), 3);
 		assertEquals(0, layout.allPairs().size());
 	}
+
+	@Test
+	public void testLayoutGeneratorDoesntDeleteDuplicateItems() {
+		LayoutGenerator layoutGenerator = new LayoutGenerator(plugin);
+		Layout initialLayout = generateLayout(
+			new LayoutItem(MAGIC_LOGS, 0),
+			new LayoutItem(MAGIC_LOGS, 8),
+			new LayoutItem(MAGIC_LOGS, 1),
+
+			new LayoutItem(MAGIC_LOGS, 9),
+			new LayoutItem(MAGIC_LOGS, 2)
+		);
+		Layout layout = layoutGenerator.basicLayout(Collections.emptyList(), Arrays.asList(
+			MAGIC_LOGS.id,
+			MAGIC_LOGS.id,
+			MAGIC_LOGS.id
+		), initialLayout, 3);
+		checkLayout(layout, 0, MAGIC_LOGS);
+		checkLayout(layout, 8, MAGIC_LOGS);
+		checkLayout(layout, 1, MAGIC_LOGS);
+		checkLayout(layout, 9, MAGIC_LOGS);
+		checkLayout(layout, 2, MAGIC_LOGS);
+		assertEquals(5, layout.allPairs().size());
+	}
+
+	@Test
+	public void testLayoutGeneratorWorksWithVariantItems() {
+		LayoutGenerator layoutGenerator = new LayoutGenerator(plugin);
+		Layout initialLayout = generateLayout(
+			new LayoutItem(GAMES_NECKLACE_8, 0),
+			new LayoutItem(GAMES_NECKLACE_7, 8)
+		);
+		Layout layout = layoutGenerator.basicLayout(Collections.emptyList(), Arrays.asList(
+			GAMES_NECKLACE_8.id,
+			GAMES_NECKLACE_6.id
+		), initialLayout, 3);
+		checkLayout(layout, 0, GAMES_NECKLACE_8);
+		checkLayout(layout, 8, GAMES_NECKLACE_6);
+		System.out.println("layout: " + layout);
+		assertEquals(2, layout.allPairs().size());
+	}
 }

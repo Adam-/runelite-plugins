@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import net.runelite.client.game.ItemVariationMapping;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -48,27 +49,7 @@ public class LayoutGenerator {
 		}
 		else
 		{
-			List<Map.Entry<Integer, Integer>> groupedInventory = new ArrayList<>();
-
-			int inARow = 0;
-			int lastItemId = -1;
-			for (Integer itemId : inventory)
-			{
-				if (lastItemId != itemId)
-				{
-					int quantity = inARow > duplicateLimit ? 1 : inARow;
-					groupedInventory.add(new AbstractMap.SimpleEntry<>(lastItemId, quantity));
-					inARow = 0;
-				}
-				inARow++;
-
-				lastItemId = itemId;
-			}
-			int quantity = inARow > duplicateLimit ? 1 : inARow;
-			if (quantity > 0) groupedInventory.add(new AbstractMap.SimpleEntry<>(lastItemId, quantity));
-
-			inventory = groupedInventory.stream().flatMap(entry -> Collections.nCopies(entry.getValue(), entry.getKey()).stream()).collect(Collectors.toList());
-			System.out.println("inventory after duplicates is now " + inventory);
+			inventory = limitDuplicates(inventory, duplicateLimit);
 		}
 
         i = layoutItems(inventory, currentLayout, previewLayout, displacedItems, i, true);
@@ -85,7 +66,7 @@ public class LayoutGenerator {
             int currentItemAtIndex = itemPosition.getValue();
             int previewItemAtIndex = previewLayout.getItemAtIndex(index);
 
-            if (currentItemAtIndex != -1 && previewItemAtIndex == -1 && !layoutContainsItem(currentItemAtIndex, previewLayout)) {
+            if (currentItemAtIndex != -1 && previewItemAtIndex == -1) {
                 previewLayout.putItem(currentItemAtIndex, index);
             }
         }
@@ -96,7 +77,7 @@ public class LayoutGenerator {
         int j = displacedItemsStart;
         while (displacedItems.size() > 0 && j < 2000 / 38 * 8) {
             int currentItemAtIndex = currentLayout.getItemAtIndex(j);
-            if (currentItemAtIndex == -1 || listContainsItem(currentItemAtIndex, equippedItems) || listContainsItem(currentItemAtIndex, inventory)) {
+            if (currentItemAtIndex == -1) {
                 Integer itemId = displacedItems.remove(0);
                 log.debug(itemId + " goes to " + j);
                 previewLayout.putItem(itemId, j);
@@ -108,7 +89,32 @@ public class LayoutGenerator {
         return previewLayout;
     }
 
-    private int layoutItems(List<Integer> inventory, Layout currentLayout, Layout previewLayout, List<Integer> displacedItems, int i, boolean useZigZag) {
+	private List<Integer> limitDuplicates(List<Integer> inventory, int duplicateLimit)
+	{
+		List<Map.Entry<Integer, Integer>> groupedInventory = new ArrayList<>();
+
+		int inARow = 0;
+		int lastItemId = -1;
+		for (Integer itemId : inventory)
+		{
+			if (lastItemId != itemId)
+			{
+				int quantity = inARow > duplicateLimit ? 1 : inARow;
+				groupedInventory.add(new AbstractMap.SimpleEntry<>(lastItemId, quantity));
+				inARow = 0;
+			}
+			inARow++;
+
+			lastItemId = itemId;
+		}
+		int quantity = inARow > duplicateLimit ? 1 : inARow;
+		if (quantity > 0) groupedInventory.add(new AbstractMap.SimpleEntry<>(lastItemId, quantity));
+
+		inventory = groupedInventory.stream().flatMap(entry -> Collections.nCopies(entry.getValue(), entry.getKey()).stream()).collect(Collectors.toList());
+		return inventory;
+	}
+
+	private int layoutItems(List<Integer> inventory, Layout currentLayout, Layout previewLayout, List<Integer> displacedItems, int i, boolean useZigZag) {
         for (Integer itemId : inventory) {
             if (itemId == -1) continue;
             int index = useZigZag ? toZigZagIndex(i, 0, 0) : i;
@@ -141,9 +147,9 @@ public class LayoutGenerator {
     }
 
     private boolean layoutContainsItem(int id, Layout previewLayout) {
-        int nonPlaceholderId = plugin.getNonPlaceholderId(id);
+		int baseId = ItemVariationMapping.map(plugin.getNonPlaceholderId(id));
         for (Integer item : previewLayout.getAllUsedItemIds()) {
-            if (nonPlaceholderId == plugin.getNonPlaceholderId(item)) {
+            if (baseId == ItemVariationMapping.map(plugin.getNonPlaceholderId(item))) {
                 return true;
             }
         }
