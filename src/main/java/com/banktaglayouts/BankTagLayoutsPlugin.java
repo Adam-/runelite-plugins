@@ -439,6 +439,26 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private int lastScrollY = -1;
 	@Subscribe
 	public void onClientTick(ClientTick clientTick) {
+		// This fixes a vanilla bug where it's possible open a placeholder's right-click menu while trying to withdraw an item - see https://github.com/geheur/bank-tag-custom-layouts/issues/33 for more info.
+		// I would do this in onMenuEntryAdded but client.getDraggedOnWidget() does not feel trustworthy at that point in the client tick - it is often null when it shouldn't bee - consistently and circumventable, but this makes me not trust the return value.
+		if (
+			config.preventVanillaPlaceholderMenuBug() &&
+			client.getDraggedWidget() != null &&
+			client.getDraggedOnWidget() != null
+		) {
+			MenuEntry[] menuEntries = client.getMenuEntries();
+			if (menuEntries.length >= 1)
+			{
+				MenuEntry menuEntry = menuEntries[menuEntries.length - 1];
+				if (
+					WidgetInfo.TO_GROUP(menuEntry.getParam1()) == WidgetID.BANK_GROUP_ID &&
+					menuEntry.getOption().equals("Release")
+				) {
+					menuEntry.setType(MenuAction.CC_OP.getId());
+				}
+			}
+		}
+
 		sawMenuEntryAddedThisClientTick = false;
 
 		Widget container = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
@@ -1083,7 +1103,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 			newEntry = new MenuEntry();
 			newEntry.setOption(REMOVE_FROM_LAYOUT_MENU_OPTION);
-			newEntry.setType(MenuAction.RUNELITE_OVERLAY.getId());
+			boolean preventPlaceholderMenuBug =
+				config.preventVanillaPlaceholderMenuBug() &&
+				client.getDraggedWidget() != null
+			;
+			newEntry.setType((preventPlaceholderMenuBug ? MenuAction.CC_OP : MenuAction.RUNELITE_OVERLAY).getId());
 			newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor));
 			newEntry.setParam0(index);
 			insertMenuEntry(newEntry, client.getMenuEntries(), false);
@@ -1165,6 +1189,17 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
+		// This fixes a vanilla bug where it's possible to release a placeholder without clicking "Release" - see https://github.com/geheur/bank-tag-custom-layouts/issues/33 for more info.
+		if (
+			config.preventVanillaPlaceholderMenuBug() &&
+			!client.isMenuOpen() &&
+			WidgetInfo.TO_GROUP(event.getWidgetId()) == WidgetID.BANK_GROUP_ID &&
+			event.getMenuOption().equals("Release")
+		) {
+			event.setConsumed(true);
+			return;
+		}
+
 		if (!(event.getMenuAction() == MenuAction.RUNELITE_OVERLAY || event.getMenuAction() == MenuAction.RUNELITE)) return;
 
 		String menuTarget = Text.removeTags(event.getMenuTarget()).replace("\u00a0"," ");

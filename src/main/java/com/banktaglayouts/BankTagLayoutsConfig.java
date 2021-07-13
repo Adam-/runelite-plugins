@@ -97,4 +97,12 @@ public interface BankTagLayoutsConfig extends Config {
 		return 4;
 	}
 
+	@ConfigItem(
+		keyName = "preventVanillaPlaceholderMenuBug",
+		name = "Prevent placeholder menu bug",
+		description = "Prevents bug in the vanilla client that can prevent item withdrawal and inadvertent placeholder removal. See https://github.com/geheur/bank-tag-custom-layouts/issues/33 for more info.",
+		position = 10
+	)
+	default boolean preventVanillaPlaceholderMenuBug() { return true; }
+
 }
