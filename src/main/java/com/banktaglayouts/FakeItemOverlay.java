@@ -60,47 +60,47 @@ public class FakeItemOverlay extends Overlay {
 
         graphics.clip(bankItemArea);
 
-        if (config.showLayoutPlaceholders()) {
-            for (BankTagLayoutsPlugin.FakeItem fakeItem : plugin.fakeItems) {
-                int dragDeltaX = 0;
-                int dragDeltaY = 0;
-                if (fakeItem.index == plugin.draggedItemIndex && plugin.antiDrag.mayDrag()) {
-                    dragDeltaX = client.getMouseCanvasPosition().getX() - plugin.dragStartX;
-                    dragDeltaY = client.getMouseCanvasPosition().getY() - plugin.dragStartY;
-                    dragDeltaY += bankItemContainer.getScrollY() - plugin.dragStartScroll;
-                }
-                int fakeItemId = fakeItem.getItemId();
+		for (BankTagLayoutsPlugin.FakeItem fakeItem : plugin.fakeItems) {
+			if (fakeItem.isLayoutPlaceholder() && !config.showLayoutPlaceholders()) continue;
 
-                int x = BankTagLayoutsPlugin.getXForIndex(fakeItem.index) + canvasLocation.getX() + dragDeltaX;
-                int y = BankTagLayoutsPlugin.getYForIndex(fakeItem.index) + canvasLocation.getY() - scrollY + dragDeltaY;
-                if (y + BankTagLayoutsPlugin.BANK_ITEM_HEIGHT > bankItemArea.getMinY() && y < bankItemArea.getMaxY())
-                {
-                    if (fakeItem.isLayoutPlaceholder())
-                    {
-                        graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
-                        BufferedImage image = itemManager.getImage(fakeItemId, 1000, false);
-                        graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
-                        BufferedImage outline = itemManager.getItemOutline(fakeItemId, 1000, Color.GRAY);
-                        graphics.drawImage(outline, x, y, null);
-                    } else {
-                        if (fakeItem.quantity == 0) {
-                            // placeholder.
-                            graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-                        } else {
-                            graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
-                        }
-                        boolean showQuantity = itemManager.getItemComposition(fakeItemId).isStackable() || fakeItem.quantity != 1;
-                        BufferedImage image = itemManager.getImage(fakeItemId, fakeItem.quantity, showQuantity);
-                        graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
+			int dragDeltaX = 0;
+			int dragDeltaY = 0;
+			if (fakeItem.index == plugin.draggedItemIndex && plugin.antiDrag.mayDrag()) {
+				dragDeltaX = client.getMouseCanvasPosition().getX() - plugin.dragStartX;
+				dragDeltaY = client.getMouseCanvasPosition().getY() - plugin.dragStartY;
+				dragDeltaY += bankItemContainer.getScrollY() - plugin.dragStartScroll;
+			}
+			int fakeItemId = fakeItem.getItemId();
 
-                        if (log.isDebugEnabled()) {
-                            graphics.setColor(Color.PINK);
-                            graphics.drawString("Dup", x, y + 33);
-                        }
-                    }
-                }
-            }
-        }
+			int x = BankTagLayoutsPlugin.getXForIndex(fakeItem.index) + canvasLocation.getX() + dragDeltaX;
+			int y = BankTagLayoutsPlugin.getYForIndex(fakeItem.index) + canvasLocation.getY() - scrollY + dragDeltaY;
+			if (y + BankTagLayoutsPlugin.BANK_ITEM_HEIGHT > bankItemArea.getMinY() && y < bankItemArea.getMaxY())
+			{
+				if (fakeItem.isLayoutPlaceholder())
+				{
+					graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
+					BufferedImage image = itemManager.getImage(fakeItemId, 1000, false);
+					graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
+					BufferedImage outline = itemManager.getItemOutline(fakeItemId, 1000, Color.GRAY);
+					graphics.drawImage(outline, x, y, null);
+				} else {
+					if (fakeItem.quantity == 0) {
+						// placeholder.
+						graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+					} else {
+						graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+					}
+					boolean showQuantity = itemManager.getItemComposition(fakeItemId).isStackable() || fakeItem.quantity != 1;
+					BufferedImage image = itemManager.getImage(fakeItemId, fakeItem.quantity, showQuantity);
+					graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
+
+					if (log.isDebugEnabled()) {
+						graphics.setColor(Color.PINK);
+						graphics.drawString("Dup", x, y + 33);
+					}
+				}
+			}
+		}
 
         return null;
     }
