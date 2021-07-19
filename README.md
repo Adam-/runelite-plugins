@@ -4,7 +4,7 @@ C Engineer announces when you complete an achievement
 
 ### Announcement options include
 - *wip* level ups
-- *wip* quests
+- *wip* quests *todo* change to use chat message "Congratulations, you've completed a quest: [qst name]" instead of widget loaded
 - dying "on my hcim"
 - *wip* col log slot (requires game chat notification messages)
 - *wip* achievement diaries
