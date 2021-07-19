@@ -124,7 +124,7 @@ public class CEngineerCompletedPlugin extends Plugin
 		// If we get here, 'skill' was leveled up!
 		if (config.announceLevelUp()) {
 			client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "" + skill + " level up: completed.", null); // TODO remove, for testing before sounds present
-			soundEngine.playClip(Sound.TEST);
+			soundEngine.playClip(Sound.LEVEL_UP);
 		}
 	}
 
@@ -132,7 +132,7 @@ public class CEngineerCompletedPlugin extends Plugin
 	public void onWidgetLoaded(WidgetLoaded widgetLoaded) {
 		if (config.announceQuestCompletion() && WidgetID.QUEST_COMPLETED_GROUP_ID == widgetLoaded.getGroupId()) {
 			client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Quest: completed.", null); // TODO remove, for testing before sounds present
-			soundEngine.playClip(Sound.TEST);
+			soundEngine.playClip(Sound.QUEST);
 		}
 	}
 
@@ -152,7 +152,7 @@ public class CEngineerCompletedPlugin extends Plugin
 
 		if (config.announceCollectionLog() && COLLECTION_LOG_ITEM_REGEX.matcher(chatMessage.getMessage()).matches()) {
 			client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Collection log slot: completed.", null); // TODO remove, for testing before sounds present
-			soundEngine.playClip(Sound.TEST);
+			soundEngine.playClip(Sound.COLLECTION_LOG_SLOT);
 		}
 	}
 
@@ -166,7 +166,7 @@ public class CEngineerCompletedPlugin extends Plugin
 				// Doesn't matter what the value is, as long as it's not -1 (just discovering value exists) and has changed (diaries don't un-unlock so direction doesn't matter)
 				client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Achievement diary: completed.", null); // TODO remove, for testing before sounds present
 				// TODO this route has not yet been tested in-game
-				soundEngine.playClip(Sound.TEST);
+				soundEngine.playClip(Sound.ACHIEVEMENT_DIARY);
 			}
 			oldAchievementDiaries.put(v, var);
 		}

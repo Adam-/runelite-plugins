@@ -30,16 +30,6 @@ public interface CEngineerCompletedConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "announceDeath",
-			name = "When you die",
-			description = "Should C Engineer relive his PvP HCIM death when you die?"
-	)
-	default boolean announceDeath()
-	{
-		return true;
-	}
-
-	@ConfigItem(
 		keyName = "announceCollectionLog",
 		name = "New collection log entry",
 		description = "Should C Engineer announce when you fill in a new slot in your collection log? This one relies on you having chat messages (included with the popup option) enabled in game settings!"
@@ -55,6 +45,16 @@ public interface CEngineerCompletedConfig extends Config
 		description = "Should C Engineer announce when you complete a new achievement diary?"
 	)
 	default boolean announceAchievementDiary()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "announceDeath",
+			name = "When you die",
+			description = "Should C Engineer relive his PvP HCIM death when you die?"
+	)
+	default boolean announceDeath()
 	{
 		return true;
 	}

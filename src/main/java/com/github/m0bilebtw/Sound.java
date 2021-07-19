@@ -1,8 +1,11 @@
 package com.github.m0bilebtw;
 
 public enum Sound {
-    TEST("/notifier.wav"), /* TODO remove Sound.TEST replacing each use with respective actual sound clip */
-    DEATH("/dying_on_my_hcim_completed.wav");
+    LEVEL_UP("/LevelUpCompleted_r1.mp3"),
+    QUEST("/QuestCompleted_r1.mp3"),
+    COLLECTION_LOG_SLOT("/ColLogSlotCompleted_r1.mp3"),
+    ACHIEVEMENT_DIARY("/AchieveDiaryCompleted_r1.mp3"),
+    DEATH("/DyingHCIMCompleted_r1.mp3");
 
     private final String resourceName;
 
