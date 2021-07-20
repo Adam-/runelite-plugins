@@ -71,23 +71,12 @@ public interface CEngineerCompletedConfig extends Config
 
 	@ConfigItem(
 			keyName = "showChatMessages",
-			name = "See announcement in public chat (only you will see it)",
+			name = "Show fake public chat message (only you will see it)",
 			description = "Should C Engineer announce your achievements in game chat as well as audibly?"
 	)
 	default boolean showChatMessages()
 	{
 		return true;
 	}
-
-//	@ConfigItem(
-//		keyName = "announceClueScrolls",
-//		name = "Each completed clue scroll step",
-//		description = "Should C Engineer announce when you complete a clue scroll step?"
-//	)
-//	default boolean announceClueScrollStep()
-//	{
-//		return true;
-//	}
-
 
 }

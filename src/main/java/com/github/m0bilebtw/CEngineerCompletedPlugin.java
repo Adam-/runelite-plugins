@@ -55,6 +55,7 @@ public class CEngineerCompletedPlugin extends Plugin
 	};
 	private static final Pattern COLLECTION_LOG_ITEM_REGEX = Pattern.compile("New item added to your collection log:.*");
 	private static final Pattern QUEST_REGEX = Pattern.compile("Congratulations, you\'ve completed a quest:.*");
+	private static final String C_ENGINEER = "C Engineer";
 
 	private final Map<Skill, Integer> oldExperience = new EnumMap<>(Skill.class);
 	private final Map<Varbits, Integer> oldAchievementDiaries = new EnumMap<>(Varbits.class);
@@ -137,7 +138,7 @@ public class CEngineerCompletedPlugin extends Plugin
 		//  * xpBefore == -1              (don't fire when first setting new known value)
 		//  * xpAfter <= xpBefore         (do not allow 200m -> 200m exp drops)
 		//  * levelBefore >= levelAfter   (stop if if we're not actually reaching a new level)
-		//  * levelAfter > MAX_REAL_LEVEL && config says don't include virtual (ignore virtual levels unless config says to include)
+		//  * levelAfter > MAX_REAL_LEVEL && config says don't include virtual (level is virtual and config ignores virtual)
 		if (xpBefore == -1 || xpAfter <= xpBefore || levelBefore >= levelAfter ||
 				(levelAfter > Experience.MAX_REAL_LEVEL && !config.announceLevelUpIncludesVirtual())) {
 			return;
@@ -146,7 +147,7 @@ public class CEngineerCompletedPlugin extends Plugin
 		// If we get here, 'skill' was leveled up!
 		if (config.announceLevelUp()) {
 			if (config.showChatMessages()) {
-				client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Level up: completed.", null);
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, C_ENGINEER, "Level up: completed.", null);
 			}
 			soundEngine.playClip(Sound.LEVEL_UP);
 		}
@@ -156,7 +157,7 @@ public class CEngineerCompletedPlugin extends Plugin
 	public void onActorDeath(ActorDeath actorDeath) {
 		if (config.announceDeath() && actorDeath.getActor() == client.getLocalPlayer()) {
 			if (config.showChatMessages()) {
-				client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Dying on my HCIM: completed.", null);
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, C_ENGINEER, "Dying on my HCIM: completed.", null);
 			}
 			soundEngine.playClip(Sound.DEATH);
 		}
@@ -170,13 +171,13 @@ public class CEngineerCompletedPlugin extends Plugin
 
 		if (config.announceCollectionLog() && COLLECTION_LOG_ITEM_REGEX.matcher(chatMessage.getMessage()).matches()) {
 			if (config.showChatMessages()) {
-				client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Collection log slot: completed.", null);
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, C_ENGINEER, "Collection log slot: completed.", null);
 			}
 			soundEngine.playClip(Sound.COLLECTION_LOG_SLOT);
 
 		} else if (config.announceQuestCompletion() && QUEST_REGEX.matcher(chatMessage.getMessage()).matches()) {
 			if (config.showChatMessages()) {
-				client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Quest: completed.", null);
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, C_ENGINEER, "Quest: completed.", null);
 			}
 			soundEngine.playClip(Sound.QUEST);
 		}
@@ -197,10 +198,10 @@ public class CEngineerCompletedPlugin extends Plugin
 		for (Varbits diary : varbitsAchievementDiaries) {
 			int newValue = client.getVar(diary);
 			int previousValue = oldAchievementDiaries.getOrDefault(diary, -1);
-			if (previousValue != -1 && previousValue != newValue && isAchievementDiaryCompleted(diary, newValue)) {
+			if (config.announceAchievementDiary() && previousValue != -1 && previousValue != newValue && isAchievementDiaryCompleted(diary, newValue)) {
 				// value was not unknown (we know the previous value), value has changed, and value indicates diary is completed now
 				if (config.showChatMessages()) {
-					client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Achievement diary: completed.", null);
+					client.addChatMessage(ChatMessageType.PUBLICCHAT, C_ENGINEER, "Achievement diary: completed.", null);
 				}
 				soundEngine.playClip(Sound.ACHIEVEMENT_DIARY);
 			}
