@@ -20,6 +20,16 @@ public interface CEngineerCompletedConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "announceLevelUpIncludesVirtual",
+			name = "Include virtual level ups",
+			description = "Should C Engineer announce when you gain a virtual (>99) level in a skill?"
+	)
+	default boolean announceLevelUpIncludesVirtual()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "announceQuestCompletion",
 		name = "Quest completions",
 		description = "Should C Engineer announce when you complete a quest?"
@@ -55,6 +65,16 @@ public interface CEngineerCompletedConfig extends Config
 			description = "Should C Engineer relive his PvP HCIM death when you die?"
 	)
 	default boolean announceDeath()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+			keyName = "showChatMessages",
+			name = "See announcement in public chat (only you will see it)",
+			description = "Should C Engineer announce your achievements in game chat as well as audibly?"
+	)
+	default boolean showChatMessages()
 	{
 		return true;
 	}

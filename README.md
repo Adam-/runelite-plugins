@@ -5,11 +5,13 @@ C Engineer announces when you complete an achievement!
 Huge thanks to [C Engineer](https://www.youtube.com/channel/UCUNoAjAgVHEHc6jrUr4XuWQ) for providing custom recorded audio for this plugin!
 
 ### Announcement options include
-- *wip* level ups
-- *wip* quests *todo* change to use chat message "Congratulations, you've completed a quest: [qst name]" instead of widget loaded
-- *wip* col log slot (requires game chat notification messages)
-- *wip* achievement diaries
+- level ups
+- quests
+- collection log slot (requires game chat notification messages)
+- achievement diaries
 - dying "on my hcim" (plays for any account type)
+
+and 'public' chat messages for each of the above (that only you can see)
 
 ### Potential future expansions
 - clue scroll completion

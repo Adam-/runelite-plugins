@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 @PluginDescriptor(
 	name = "C Engineer: Completed",
 	description = "C Engineer announces when you complete an achievement",
-	tags = {"skills", "stats", "levels", "progress", "bars"}
+	tags = {"c engineer", "stats", "levels", "quests", "diary", "announce"}
 )
 
 public class CEngineerCompletedPlugin extends Plugin
@@ -53,10 +53,14 @@ public class CEngineerCompletedPlugin extends Plugin
 			Varbits.DIARY_WESTERN_EASY, Varbits.DIARY_WESTERN_MEDIUM, Varbits.DIARY_WESTERN_HARD, Varbits.DIARY_WESTERN_ELITE,
 			Varbits.DIARY_WILDERNESS_EASY, Varbits.DIARY_WILDERNESS_MEDIUM, Varbits.DIARY_WILDERNESS_HARD, Varbits.DIARY_WILDERNESS_ELITE
 	};
-	private static final Pattern COLLECTION_LOG_ITEM_REGEX = Pattern.compile("New item added to your collection log: .*");
+	private static final Pattern COLLECTION_LOG_ITEM_REGEX = Pattern.compile("New item added to your collection log:.*");
+	private static final Pattern QUEST_REGEX = Pattern.compile("Congratulations, you\'ve completed a quest:.*");
 
 	private final Map<Skill, Integer> oldExperience = new EnumMap<>(Skill.class);
 	private final Map<Varbits, Integer> oldAchievementDiaries = new EnumMap<>(Varbits.class);
+
+	private int ticksSinceLogin = 0;
+	private boolean resetTicks = false;
 
 	@Override
 	protected void startUp() throws Exception
@@ -79,9 +83,9 @@ public class CEngineerCompletedPlugin extends Plugin
 			for (final Skill skill : Skill.values()) {
 				oldExperience.put(skill, client.getSkillExperience(skill));
 			}
-			for (Varbits v : varbitsAchievementDiaries) {
-				int var = client.getVar(v);
-				oldAchievementDiaries.put(v, var);
+			for (Varbits diary : varbitsAchievementDiaries) {
+				int value = client.getVar(diary);
+				oldAchievementDiaries.put(diary, value);
 			}
 		}
 	}
@@ -97,7 +101,24 @@ public class CEngineerCompletedPlugin extends Plugin
 			case LOGIN_SCREEN_AUTHENTICATOR:
 				oldExperience.clear();
 				oldAchievementDiaries.clear();
+			case CONNECTION_LOST:
+				resetTicks = true;
+				// set to 0 here in-case of race condition with varbits changing before this handler is called
+				// when game state becomes LOGGED_IN
+				ticksSinceLogin = 0;
+				break;
+			case LOGGED_IN:
+				if (resetTicks) {
+					resetTicks = false;
+					ticksSinceLogin = 0;
+				}
 		}
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick tick)
+	{
+		ticksSinceLogin++;
 	}
 
 	@Subscribe
@@ -114,32 +135,29 @@ public class CEngineerCompletedPlugin extends Plugin
 
 		// Do not proceed if any of the following are true:
 		//  * xpBefore == -1              (don't fire when first setting new known value)
-		//  * levelAfter > MAX_REAL_LEVEL (we only care about real level ups)
 		//  * xpAfter <= xpBefore         (do not allow 200m -> 200m exp drops)
 		//  * levelBefore >= levelAfter   (stop if if we're not actually reaching a new level)
-		if (xpBefore == -1 || levelAfter > Experience.MAX_REAL_LEVEL || xpAfter <= xpBefore || levelBefore >= levelAfter) {
+		//  * levelAfter > MAX_REAL_LEVEL && config says don't include virtual (ignore virtual levels unless config says to include)
+		if (xpBefore == -1 || xpAfter <= xpBefore || levelBefore >= levelAfter ||
+				(levelAfter > Experience.MAX_REAL_LEVEL && !config.announceLevelUpIncludesVirtual())) {
 			return;
 		}
 
 		// If we get here, 'skill' was leveled up!
 		if (config.announceLevelUp()) {
-			client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "" + skill + " level up: completed.", null); // TODO remove, for testing before sounds present
+			if (config.showChatMessages()) {
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Level up: completed.", null);
+			}
 			soundEngine.playClip(Sound.LEVEL_UP);
-		}
-	}
-
-	@Subscribe
-	public void onWidgetLoaded(WidgetLoaded widgetLoaded) {
-		if (config.announceQuestCompletion() && WidgetID.QUEST_COMPLETED_GROUP_ID == widgetLoaded.getGroupId()) {
-			client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Quest: completed.", null); // TODO remove, for testing before sounds present
-			soundEngine.playClip(Sound.QUEST);
 		}
 	}
 
 	@Subscribe
 	public void onActorDeath(ActorDeath actorDeath) {
 		if (config.announceDeath() && actorDeath.getActor() == client.getLocalPlayer()) {
-			client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Dying on my HCIM: completed.", null); // TODO remove, for testing before sounds present
+			if (config.showChatMessages()) {
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Dying on my HCIM: completed.", null);
+			}
 			soundEngine.playClip(Sound.DEATH);
 		}
 	}
@@ -151,24 +169,53 @@ public class CEngineerCompletedPlugin extends Plugin
 		}
 
 		if (config.announceCollectionLog() && COLLECTION_LOG_ITEM_REGEX.matcher(chatMessage.getMessage()).matches()) {
-			client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Collection log slot: completed.", null); // TODO remove, for testing before sounds present
+			if (config.showChatMessages()) {
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Collection log slot: completed.", null);
+			}
 			soundEngine.playClip(Sound.COLLECTION_LOG_SLOT);
+
+		} else if (config.announceQuestCompletion() && QUEST_REGEX.matcher(chatMessage.getMessage()).matches()) {
+			if (config.showChatMessages()) {
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Quest: completed.", null);
+			}
+			soundEngine.playClip(Sound.QUEST);
 		}
 	}
 
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged varbitChanged) {
+		// As we can't listen to specific varbits, we get a tonne of events BEFORE the game has even set the player's
+		// diary varbits correctly, meaning it assumes every diary is on 0, then suddenly every diary that has been
+		// completed gets updated to the true value and tricks the plugin into thinking they only just finished it.
+		// To avoid this behaviour, we make sure the current tick count is sufficiently high that we've already passed
+		// the initial wave of varbit changes from logging in.
+		if (ticksSinceLogin < 8) {
+			return;
+		}
+
 		// Apparently I can't check if it's a particular varbit using the names from Varbits enum, so this is the way
-		for (Varbits v : varbitsAchievementDiaries) {
-			int var = client.getVar(v);
-			int previousValue = oldAchievementDiaries.getOrDefault(v, -1);
-			if (previousValue != -1 && previousValue != var) {
-				// Doesn't matter what the value is, as long as it's not -1 (just discovering value exists) and has changed (diaries don't un-unlock so direction doesn't matter)
-				client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Achievement diary: completed.", null); // TODO remove, for testing before sounds present
-				// TODO this route has not yet been tested in-game
+		for (Varbits diary : varbitsAchievementDiaries) {
+			int newValue = client.getVar(diary);
+			int previousValue = oldAchievementDiaries.getOrDefault(diary, -1);
+			if (previousValue != -1 && previousValue != newValue && isAchievementDiaryCompleted(diary, newValue)) {
+				// value was not unknown (we know the previous value), value has changed, and value indicates diary is completed now
+				if (config.showChatMessages()) {
+					client.addChatMessage(ChatMessageType.PUBLICCHAT, "C Engineer", "Achievement diary: completed.", null);
+				}
 				soundEngine.playClip(Sound.ACHIEVEMENT_DIARY);
 			}
-			oldAchievementDiaries.put(v, var);
+			oldAchievementDiaries.put(diary, newValue);
+		}
+	}
+
+	private boolean isAchievementDiaryCompleted(Varbits diary, int value) {
+		switch (diary) {
+			case DIARY_KARAMJA_EASY:
+			case DIARY_KARAMJA_MEDIUM:
+			case DIARY_KARAMJA_HARD:
+				return value == 2; // jagex, why?
+			default:
+				return value == 1;
 		}
 	}
 
