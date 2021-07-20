@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
-import net.runelite.api.widgets.WidgetID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -54,7 +53,7 @@ public class CEngineerCompletedPlugin extends Plugin
 			Varbits.DIARY_WILDERNESS_EASY, Varbits.DIARY_WILDERNESS_MEDIUM, Varbits.DIARY_WILDERNESS_HARD, Varbits.DIARY_WILDERNESS_ELITE
 	};
 	private static final Pattern COLLECTION_LOG_ITEM_REGEX = Pattern.compile("New item added to your collection log:.*");
-	private static final Pattern QUEST_REGEX = Pattern.compile("Congratulations, you\'ve completed a quest:.*");
+	private static final Pattern QUEST_REGEX = Pattern.compile("Congratulations, you've completed a quest:.*");
 	private static final String C_ENGINEER = "C Engineer";
 
 	private final Map<Skill, Integer> oldExperience = new EnumMap<>(Skill.class);
