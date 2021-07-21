@@ -1,13 +1,6 @@
 package com.herblorerecipes;
 
-import static com.herblorerecipes.util.Utils.SHOW_LEVEL_REQS_IN_TOOLTIP;
-import static com.herblorerecipes.util.Utils.SHOW_PRIMARIES_IN_TOOLTIP;
-import static com.herblorerecipes.util.Utils.SHOW_SECONDARIES_IN_TOOLTIP;
-import static com.herblorerecipes.util.Utils.SHOW_TOOLTIP_ON_POTIONS;
-import static com.herblorerecipes.util.Utils.SHOW_TOOLTIP_ON_PRIMARIES;
-import static com.herblorerecipes.util.Utils.SHOW_TOOLTIP_ON_SECONDARIES;
-import static com.herblorerecipes.util.Utils.SHOW_TOOLTIP_ON_UNFINISHED;
-import static com.herblorerecipes.util.Utils.SHOW_TOOLTIP_ON_SEEDS;
+import static com.herblorerecipes.util.Utils.*;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
@@ -100,6 +93,28 @@ public interface HerbloreRecipesConfig extends Config
 		description = "Setting to show or hide herblore level requirements on the tooltip. This will clear the tooltip cache"
 	)
 	default boolean showLevelReqsInTooltip()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		position = 8,
+		keyName = SHOW_OVERLAY_IN_BANK,
+		name = "Show Recipes Overlay in Bank",
+		description = "Setting to toggle whether the herblore recipes overlay appears on herblore items in the bank"
+	)
+	default boolean showOverlayInBank()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		position = 9,
+		keyName = SHOW_OVERLAY_IN_INV,
+		name = "Show Recipes Overlay in Inventory",
+		description = "Setting to toggle whether the herblore recipes overlay appears on herblore items in the inventory"
+	)
+	default boolean showOverlayInInv()
 	{
 		return true;
 	}
