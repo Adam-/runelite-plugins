@@ -117,43 +117,17 @@ public class HerbloreRecipesOverlay extends Overlay
 				switch (groupId)
 				{
 					case WidgetID.INVENTORY_GROUP_ID:
-					case WidgetID.BANK_GROUP_ID:
-					case WidgetID.BANK_INVENTORY_GROUP_ID:
-						Optional<ItemContainer> container = getContainer(widgetId);
-						if (container.isPresent())
+						if (config.showOverlayInInv())
 						{
-							Optional<Item> item = getContainerItem(container.get(), menuEntry.getParam0());
-							if (item.isPresent())
-							{
-								String itemName = stripExtra(itemManager.getItemComposition(item.get().getId()).getName());
-
-								if (config.showTooltipOnPrimaries() && Potion.getPrimaries().contains(itemName))
-								{
-									getTooltip(TOOLTIP_PRIMARY_TEXT, KEY_PRIMARY_IDENTIFIER + itemName);
-								}
-								if (config.showTooltipOnSecondaries() && Potion.getSecondariesSet().stream().anyMatch(s -> s.contains(itemName)))
-								{
-									getTooltip(TOOLTIP_SECONDARY_TEXT, KEY_SECONDARY_IDENTIFIER + itemName);
-								}
-								if (config.showTooltipOnUnfinished() && Potion.getUnfinishedPotions().contains(itemName))
-								{
-									getTooltip(TOOLTIP_UNF_TEXT, KEY_UNF_IDENTIFIER + itemName);
-								}
-								if (config.showTooltipOnPotions() && Potion.getPotionNames().contains(itemName))
-								{
-									getTooltip(String.format(TOOLTIP_POTION_TEXT, ColorUtil.wrapWithColorTag(itemName, AQUA)), KEY_POTION_IDENTIFIER + itemName);
-								}
-								if (config.showTooltipOnSeeds() && Potion.getSeeds().contains(itemName))
-								{
-									getTooltip(TOOLTIP_SEED_TEXT, KEY_SEED_IDENTIFIER + itemName);
-								}
-							}
-							if (stringBuilder.length() > 0)
-							{
-								addTooltip();
-							}
-							break;
+							renderHerbloreOverlay(menuEntry, widgetId);
 						}
+						break;
+					case WidgetID.BANK_GROUP_ID:
+						if (config.showOverlayInBank())
+						{
+							renderHerbloreOverlay(menuEntry, widgetId);
+						}
+						break;
 				}
 				break;
 		}
@@ -201,6 +175,43 @@ public class HerbloreRecipesOverlay extends Overlay
 		catch (ExecutionException e)
 		{
 			throw new RuntimeException(e.getMessage(), e.getCause());
+		}
+	}
+
+	private void renderHerbloreOverlay(MenuEntry menuEntry, int widgetId) {
+		Optional<ItemContainer> container = getContainer(widgetId);
+		if (container.isPresent())
+		{
+			Optional<Item> item = getContainerItem(container.get(), menuEntry.getParam0());
+			if (item.isPresent())
+			{
+				String itemName = stripExtra(itemManager.getItemComposition(item.get().getId()).getName());
+
+				if (config.showTooltipOnPrimaries() && Potion.getPrimaries().contains(itemName))
+				{
+					getTooltip(TOOLTIP_PRIMARY_TEXT, KEY_PRIMARY_IDENTIFIER + itemName);
+				}
+				if (config.showTooltipOnSecondaries() && Potion.getSecondariesSet().stream().anyMatch(s -> s.contains(itemName)))
+				{
+					getTooltip(TOOLTIP_SECONDARY_TEXT, KEY_SECONDARY_IDENTIFIER + itemName);
+				}
+				if (config.showTooltipOnUnfinished() && Potion.getUnfinishedPotions().contains(itemName))
+				{
+					getTooltip(TOOLTIP_UNF_TEXT, KEY_UNF_IDENTIFIER + itemName);
+				}
+				if (config.showTooltipOnPotions() && Potion.getPotionNames().contains(itemName))
+				{
+					getTooltip(String.format(TOOLTIP_POTION_TEXT, ColorUtil.wrapWithColorTag(itemName, AQUA)), KEY_POTION_IDENTIFIER + itemName);
+				}
+				if (config.showTooltipOnSeeds() && Potion.getSeeds().contains(itemName))
+				{
+					getTooltip(TOOLTIP_SEED_TEXT, KEY_SEED_IDENTIFIER + itemName);
+				}
+			}
+			if (stringBuilder.length() > 0)
+			{
+				addTooltip();
+			}
 		}
 	}
 }

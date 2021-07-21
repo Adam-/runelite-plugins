@@ -18,4 +18,6 @@ public class Utils
 	public static final String SHOW_PRIMARIES_IN_TOOLTIP = "showPrimaryIngredientsAlongsidePrimaries";
 	public static final String SHOW_SECONDARIES_IN_TOOLTIP = "showSecondaryIngredientsAlongsidePrimaries";
 	public static final String SHOW_LEVEL_REQS_IN_TOOLTIP = "showLevelReqs";
+	public static final String SHOW_OVERLAY_IN_BANK = "showOverlayInBank";
+	public static final String SHOW_OVERLAY_IN_INV = "showOverlayInInv";
 }
