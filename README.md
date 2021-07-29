@@ -8,13 +8,14 @@ Huge thanks to [C Engineer](https://www.youtube.com/channel/UCUNoAjAgVHEHc6jrUr4
 - level ups
 - quests
 - collection log slot (requires game chat notification messages)
-- achievement diaries
+- achievement diaries (per tier, not per task)
+- combat achievements (per task, not per tier)
 - dying "on my hcim" (plays for any account type)
 
 and 'public' chat messages for each of the above (that only you can see)
 
 ### Planned / Work In Progress expansions
-- combat achievements (per task, not per tier)
+- none
 
 ### Potential future expansions
 - clue scroll completion

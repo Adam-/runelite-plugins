@@ -53,6 +53,7 @@ public class CEngineerCompletedPlugin extends Plugin
 			Varbits.DIARY_WILDERNESS_EASY, Varbits.DIARY_WILDERNESS_MEDIUM, Varbits.DIARY_WILDERNESS_HARD, Varbits.DIARY_WILDERNESS_ELITE
 	};
 	private static final Pattern COLLECTION_LOG_ITEM_REGEX = Pattern.compile("New item added to your collection log:.*");
+	private static final Pattern COMBAT_TASK_REGEX = Pattern.compile("Congratulations, you've completed an? (?:\\w+) combat task:.*");
 	private static final Pattern QUEST_REGEX = Pattern.compile("Congratulations, you've completed a quest:.*");
 	private static final String C_ENGINEER = "C Engineer";
 
@@ -179,6 +180,12 @@ public class CEngineerCompletedPlugin extends Plugin
 				client.addChatMessage(ChatMessageType.PUBLICCHAT, C_ENGINEER, "Quest: completed.", null);
 			}
 			soundEngine.playClip(Sound.QUEST);
+
+		} else if (config.announceCombatAchievement() && COMBAT_TASK_REGEX.matcher(chatMessage.getMessage()).matches()) {
+			if (config.showChatMessages()) {
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, C_ENGINEER, "Combat task: completed.", null);
+			}
+			soundEngine.playClip(Sound.COMBAT_TASK);
 		}
 	}
 

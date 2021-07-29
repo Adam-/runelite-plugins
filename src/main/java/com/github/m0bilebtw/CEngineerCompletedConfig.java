@@ -59,10 +59,20 @@ public interface CEngineerCompletedConfig extends Config {
     }
 
     @ConfigItem(
+            keyName = "announceCombatAchievement",
+            name = "Completed combat achievement tasks",
+            description = "Should C Engineer announce when you complete a new combat achievement task?",
+            position = 5
+    )
+    default boolean announceCombatAchievement() {
+        return true;
+    }
+
+    @ConfigItem(
             keyName = "announceDeath",
             name = "When you die",
             description = "Should C Engineer relive his PvP HCIM death when you die?",
-            position = 5
+            position = 6
     )
     default boolean announceDeath() {
         return true;
@@ -72,7 +82,7 @@ public interface CEngineerCompletedConfig extends Config {
             keyName = "showChatMessages",
             name = "Show fake public chat message (only you will see it)",
             description = "Should C Engineer announce your achievements in game chat as well as audibly?",
-            position = 6
+            position = 7
     )
     default boolean showChatMessages() {
         return true;
