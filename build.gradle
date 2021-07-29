@@ -24,7 +24,7 @@ dependencies {
 }
 
 group = 'com.github.m0bilebtw'
-version = '0.1'
+version = '0.2'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {
