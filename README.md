@@ -1,4 +1,4 @@
-# C Engineer: Completed
+# C Engineer: Completed [![Plugin Installs](http://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/installs/plugin/c-engineer-completed)](https://runelite.net/plugin-hub/m0bile%20btw) [![Plugin Rank](http://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/rank/plugin/c-engineer-completed)](https://runelite.net/plugin-hub)
 ##### A plugin for [RuneLite](https://runelite.net/)
 C Engineer announces when you complete an achievement!
 
@@ -12,6 +12,9 @@ Huge thanks to [C Engineer](https://www.youtube.com/channel/UCUNoAjAgVHEHc6jrUr4
 - dying "on my hcim" (plays for any account type)
 
 and 'public' chat messages for each of the above (that only you can see)
+
+### Planned / Work In Progress expansions
+- combat achievements (per task, not per tier)
 
 ### Potential future expansions
 - clue scroll completion
