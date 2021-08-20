@@ -29,19 +29,17 @@
 package com.larsvansoest.runelite.clueitems;
 
 import com.google.inject.Provides;
-import com.larsvansoest.runelite.clueitems.config.EmoteClueItemsConfig;
-import com.larsvansoest.runelite.clueitems.config.EmoteClueItemsConfigProvider;
-import com.larsvansoest.runelite.clueitems.data.EmoteClueImage;
-import com.larsvansoest.runelite.clueitems.data.util.EmoteClueImages;
-import com.larsvansoest.runelite.clueitems.overlay.EmoteClueItemOverlay;
+import com.larsvansoest.runelite.clueitems.data.EmoteClueImages;
+import com.larsvansoest.runelite.clueitems.overlay.EmoteClueItemsOverlay;
+import com.larsvansoest.runelite.clueitems.progress.ProgressManager;
 import com.larsvansoest.runelite.clueitems.ui.EmoteClueItemsPanel;
-import com.larsvansoest.runelite.clueitems.ui.requirement.RequirementPanelProvider;
-import com.larsvansoest.runelite.clueitems.ui.EmoteClueItemsPanelPalette;
-import com.larsvansoest.runelite.clueitems.progress.RequirementStatusManager;
-import javax.inject.Inject;
+import com.larsvansoest.runelite.clueitems.ui.Palette;
+import com.larsvansoest.runelite.clueitems.ui.content.requirement.RequirementPanelProvider;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.callback.ClientThread;
@@ -51,16 +49,17 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.cluescrolls.clues.emote.STASHUnit;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 
+import javax.inject.Inject;
+
 @Slf4j
-@PluginDescriptor(
-	name = "Emote Clue Items",
-	description = "Highlight required items for emote clue steps.",
-	tags = {"emote", "clue", "item", "items", "scroll"}
-)
+@PluginDescriptor(name = "Emote Clue Items",
+                  description = "Highlight required items for emote clue steps.",
+                  tags = {"emote", "clue", "item", "items", "scroll"})
 public class EmoteClueItemsPlugin extends Plugin
 {
 	@Inject
@@ -81,38 +80,38 @@ public class EmoteClueItemsPlugin extends Plugin
 	@Inject
 	private ClientToolbar clientToolbar;
 
-	private EmoteClueItemOverlay overlay;
+	private EmoteClueItemsOverlay overlay;
 	private NavigationButton navigationButton;
-	private RequirementStatusManager requirementStatusManager;
+	private ProgressManager progressManager;
 	private EmoteClueItemsPanel emoteClueItemsPanel;
 
 	@Override
 	protected void startUp()
 	{
-		EmoteClueItemsConfigProvider emoteClueItemsConfigProvider = new EmoteClueItemsConfigProvider(this.config);
-		this.overlay = new EmoteClueItemOverlay(this.itemManager, emoteClueItemsConfigProvider);
+		this.overlay = new EmoteClueItemsOverlay(this.itemManager, this.config);
 		this.overlayManager.add(this.overlay);
 
-		EmoteClueItemsPanelPalette emoteClueItemsPalette = EmoteClueItemsPanelPalette.DARK;
-		RequirementPanelProvider requirementPanelProvider = new RequirementPanelProvider(emoteClueItemsPalette, this.itemManager);
+		final Palette emoteClueItemsPalette = Palette.RUNELITE;
+		final RequirementPanelProvider requirementPanelProvider = new RequirementPanelProvider(emoteClueItemsPalette, this.itemManager);
 		this.emoteClueItemsPanel = new EmoteClueItemsPanel(emoteClueItemsPalette, requirementPanelProvider);
 
-		this.navigationButton = NavigationButton.builder()
-			.tooltip("Emote Clue Items")
-			.icon(EmoteClueImages.resizeCanvas(EmoteClueImage.Ribbon.ALL, 16, 16))
-			.priority(7)
-			.panel(this.emoteClueItemsPanel)
-			.build();
+		this.navigationButton = NavigationButton
+				.builder()
+				.tooltip("Emote Clue Items")
+				.icon(EmoteClueImages.resizeCanvas(EmoteClueImages.Ribbon.ALL, 16, 16))
+				.priority(7)
+				.panel(this.emoteClueItemsPanel)
+				.build();
 
 		this.clientToolbar.addNavigation(this.navigationButton);
 
-		this.requirementStatusManager = new RequirementStatusManager(requirementPanelProvider, this.client, this.clientThread);
+		this.progressManager = new ProgressManager(requirementPanelProvider, this.client, this.clientThread);
 	}
 
 	@Subscribe
-	protected void onItemContainerChanged(ItemContainerChanged event)
+	protected void onItemContainerChanged(final ItemContainerChanged event)
 	{
-		this.requirementStatusManager.handleEmoteClueItemChanges(event);
+		this.progressManager.handleEmoteClueItemChanges(event);
 		if (event.getContainerId() == 95)
 		{
 			this.emoteClueItemsPanel.removeDisclaimer();
@@ -120,24 +119,78 @@ public class EmoteClueItemsPlugin extends Plugin
 	}
 
 	@Subscribe
-	protected void onGameStateChanged(GameStateChanged event)
+	protected void onGameStateChanged(final GameStateChanged event)
 	{
 		if (event.getGameState() == GameState.LOGIN_SCREEN)
 		{
-			this.requirementStatusManager.reset();
+			this.progressManager.reset();
 			this.emoteClueItemsPanel.setDisclaimer("To start display of progression, please open your bank once.");
 		}
 	}
 
 	@Subscribe
-	protected void onConfigChanged(ConfigChanged event) {
-		if(event.getKey().equals("DisplayProgressPanel")) {
-			if(event.getNewValue().equals("false")) {
+	protected void onConfigChanged(final ConfigChanged event)
+	{
+		if (event.getKey().equals("DisplayProgressPanel"))
+		{
+			if (event.getNewValue().equals("false"))
+			{
 				this.clientToolbar.removeNavigation(this.navigationButton);
 			}
-			else {
+			else
+			{
 				this.clientToolbar.addNavigation(this.navigationButton);
 			}
+		}
+	}
+
+	@Subscribe
+	protected void onCommandExecuted(final CommandExecuted event)
+	{
+		if (event.getCommand().equals("clear"))
+		{
+			for (int i = 0; i < 5; i++)
+			{
+				this.client.addChatMessage(ChatMessageType.CONSOLE, "", "", "sender-debug");
+			}
+		}
+		else if (event.getCommand().equals("callscript"))
+		{
+			clientThread.invokeLater(() ->
+			{
+				final int[] intStackPrior = client.getIntStack().clone();
+				final String[] stringStackPrior = client.getStringStack().clone();
+				client.runScript(
+						Integer.valueOf(event.getArguments()[0]),
+						STASHUnit.GYPSY_TENT_ENTRANCE.getObjectId(),
+						Integer.valueOf(event.getArguments()[1]),
+						Integer.valueOf(event.getArguments()[2]),
+						Integer.valueOf(event.getArguments()[3])
+				);
+				final int[] intStackAfter = client.getIntStack().clone();
+				final String[] stringStackAfter = client.getStringStack().clone();
+				if (intStackPrior.length != intStackAfter.length || stringStackPrior.length != stringStackAfter.length)
+				{
+					this.client.addChatMessage(ChatMessageType.CONSOLE, "", "Unequal size", "sender-debug");
+				}
+				else
+				{
+					for (int i = 0; i < intStackPrior.length; i++)
+					{
+						if (intStackPrior[i] != intStackAfter[i])
+						{
+							this.client.addChatMessage(ChatMessageType.CONSOLE, "", "Int " + i + " changed: " + intStackPrior[i] + " -> " + intStackAfter[i], "sender-debug");
+						}
+					}
+					for (int i = 0; i < stringStackPrior.length; i++)
+					{
+						if (!stringStackPrior[i].equals(stringStackAfter[i]))
+						{
+							this.client.addChatMessage(ChatMessageType.CONSOLE, "", "String " + i + " changed: " + stringStackPrior[i] + " -> " + stringStackPrior[i], "sender-debug");
+						}
+					}
+				}
+			});
 		}
 	}
 
@@ -149,7 +202,7 @@ public class EmoteClueItemsPlugin extends Plugin
 	}
 
 	@Provides
-	EmoteClueItemsConfig provideConfig(ConfigManager configManager)
+	EmoteClueItemsConfig provideConfig(final ConfigManager configManager)
 	{
 		return configManager.getConfig(EmoteClueItemsConfig.class);
 	}

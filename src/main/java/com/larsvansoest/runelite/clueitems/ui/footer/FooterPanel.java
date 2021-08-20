@@ -28,38 +28,33 @@
 
 package com.larsvansoest.runelite.clueitems.ui.footer;
 
-import com.larsvansoest.runelite.clueitems.data.EmoteClueImage;
-import com.larsvansoest.runelite.clueitems.ui.EmoteClueItemsPanelPalette;
-import com.larsvansoest.runelite.clueitems.data.util.EmoteClueImages;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSeparator;
-import javax.swing.border.MatteBorder;
+import com.larsvansoest.runelite.clueitems.data.EmoteClueImages;
+import com.larsvansoest.runelite.clueitems.ui.Palette;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.util.LinkBrowser;
 
+import javax.swing.*;
+import javax.swing.border.MatteBorder;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
 public class FooterPanel extends JPanel
 {
-	public FooterPanel(EmoteClueItemsPanelPalette emoteClueItemsPanelPalette, String pluginName, String pluginVersion, String gitHubUrl) {
+	public FooterPanel(final Palette palette, final String pluginName, final String pluginVersion, final String gitHubUrl)
+	{
 		super(new GridBagLayout());
 
-		Color color = emoteClueItemsPanelPalette.getFooterColor();
-		Font font = FontManager.getRunescapeSmallFont();
+		final Color color = palette.getFooterColor();
+		final Font font = FontManager.getRunescapeSmallFont();
 
-		JSeparator separator = new JSeparator();
+		final JSeparator separator = new JSeparator();
 		separator.setBorder(new MatteBorder(1, 0, 0, 0, color));
 
-		JLabel pluginNameLabel = this.getTextLabel(String.format("%s %s", pluginName, pluginVersion), font, color);
-		JLabel gitHubLabel = this.getGitHubLabel(gitHubUrl);
+		final JLabel pluginNameLabel = this.getTextLabel(String.format("%s %s", pluginName, pluginVersion), font, color);
+		final JLabel gitHubLabel = this.getGitHubLabel(gitHubUrl);
 
-		GridBagConstraints c = new GridBagConstraints();
+		final GridBagConstraints c = new GridBagConstraints();
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 0;
 		c.gridy = 0;
@@ -81,8 +76,9 @@ public class FooterPanel extends JPanel
 		super.add(gitHubLabel, c);
 	}
 
-	private JLabel getTextLabel(String string, Font font, Color color) {
-		JLabel label = new JLabel();
+	private JLabel getTextLabel(final String string, final Font font, final Color color)
+	{
+		final JLabel label = new JLabel();
 		label.setText(string);
 		label.setHorizontalAlignment(JLabel.RIGHT);
 		label.setVerticalAlignment(JLabel.CENTER);
@@ -91,10 +87,11 @@ public class FooterPanel extends JPanel
 		return label;
 	}
 
-	private JLabel getGitHubLabel(String gitHubUrl) {
-		ImageIcon defaultIcon = new ImageIcon(EmoteClueImage.Toolbar.Footer.GITHUB);
-		ImageIcon illuminatedIcon = new ImageIcon(EmoteClueImages.illuminate(EmoteClueImage.Toolbar.Footer.GITHUB, 150));
-		JLabel gitHubLabel = new JLabel();
+	private JLabel getGitHubLabel(final String gitHubUrl)
+	{
+		final ImageIcon defaultIcon = new ImageIcon(EmoteClueImages.Toolbar.Footer.GITHUB);
+		final ImageIcon illuminatedIcon = new ImageIcon(EmoteClueImages.illuminate(EmoteClueImages.Toolbar.Footer.GITHUB, 150));
+		final JLabel gitHubLabel = new JLabel();
 		gitHubLabel.setToolTipText("Visit the GitHub repository webpage.");
 		gitHubLabel.setHorizontalAlignment(JLabel.LEFT);
 		gitHubLabel.setVerticalAlignment(JLabel.CENTER);
@@ -102,19 +99,19 @@ public class FooterPanel extends JPanel
 		gitHubLabel.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(MouseEvent e)
+			public void mousePressed(final MouseEvent e)
 			{
 				LinkBrowser.browse(gitHubUrl);
 			}
 
 			@Override
-			public void mouseEntered(MouseEvent e)
+			public void mouseEntered(final MouseEvent e)
 			{
 				gitHubLabel.setIcon(illuminatedIcon);
 			}
 
 			@Override
-			public void mouseExited(MouseEvent e)
+			public void mouseExited(final MouseEvent e)
 			{
 				gitHubLabel.setIcon(defaultIcon);
 			}

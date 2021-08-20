@@ -28,8 +28,10 @@
 
 package com.larsvansoest.runelite.clueitems.data;
 
-import com.larsvansoest.runelite.clueitems.vendor.runelite.client.plugins.cluescrolls.clues.EmoteClue;
-import java.awt.Color;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+import java.awt.*;
 
 /**
  * Contains values for all {@link EmoteClue} difficulties.
@@ -37,6 +39,8 @@ import java.awt.Color;
  * @author Lars van Soest
  * @since 2.0.0
  */
+@Getter
+@RequiredArgsConstructor
 public enum EmoteClueDifficulty
 {
 	Beginner(new Color(169, 158, 157)),
@@ -52,14 +56,4 @@ public enum EmoteClueDifficulty
 	Master(new Color(155, 48, 38));
 
 	private final Color color;
-
-	EmoteClueDifficulty(Color color)
-	{
-		this.color = color;
-	}
-
-	public Color getColor()
-	{
-		return this.color;
-	}
 }

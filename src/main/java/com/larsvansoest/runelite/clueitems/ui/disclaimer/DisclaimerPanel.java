@@ -28,63 +28,59 @@
 
 package com.larsvansoest.runelite.clueitems.ui.disclaimer;
 
-import com.larsvansoest.runelite.clueitems.data.EmoteClueImage;
-import com.larsvansoest.runelite.clueitems.data.util.EmoteClueImages;
-import com.larsvansoest.runelite.clueitems.ui.EmoteClueItemsPanelPalette;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
+import com.larsvansoest.runelite.clueitems.data.EmoteClueImages;
+import com.larsvansoest.runelite.clueitems.ui.Palette;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.components.shadowlabel.JShadowedLabel;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class DisclaimerPanel extends JPanel
 {
 	private final JLabel textLabel;
 
-	public DisclaimerPanel(EmoteClueItemsPanelPalette emoteClueItemsPanelPalette, Runnable onClick) {
+	public DisclaimerPanel(final Palette palette, final Runnable onClick)
+	{
 		super(new GridBagLayout());
-		super.setBackground(emoteClueItemsPanelPalette.getDislaimerColor());
+		super.setBackground(palette.getDisclaimerColor());
 
-		JLabel questionCircleIconLabel = new JLabel(new ImageIcon(EmoteClueImage.Toolbar.Disclaimer.QUESTION_CIRCLE));
+		final JLabel questionCircleIconLabel = new JLabel(new ImageIcon(EmoteClueImages.Toolbar.Disclaimer.QUESTION_CIRCLE));
 
 		this.textLabel = new JShadowedLabel();
 		this.textLabel.setHorizontalAlignment(JLabel.LEFT);
 		this.textLabel.setVerticalAlignment(JLabel.CENTER);
 		this.textLabel.setFont(FontManager.getRunescapeSmallFont());
 
-		Icon closeIllumatedIcon = new ImageIcon(EmoteClueImages.illuminate(EmoteClueImage.Toolbar.Disclaimer.CLOSE, 150));
-		Icon closeIcon = new ImageIcon(EmoteClueImage.Toolbar.Disclaimer.CLOSE);
-		JLabel closeIconLabel = new JLabel(closeIcon);
+		final Icon closeIllumatedIcon = new ImageIcon(EmoteClueImages.illuminate(EmoteClueImages.Toolbar.Disclaimer.CLOSE, 150));
+		final Icon closeIcon = new ImageIcon(EmoteClueImages.Toolbar.Disclaimer.CLOSE);
+		final JLabel closeIconLabel = new JLabel(closeIcon);
 		closeIconLabel.setToolTipText("Close");
 		closeIconLabel.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(MouseEvent e)
+			public void mousePressed(final MouseEvent e)
 			{
 				onClick.run();
 			}
 
 			@Override
-			public void mouseEntered(MouseEvent e)
+			public void mouseEntered(final MouseEvent e)
 			{
 				closeIconLabel.setIcon(closeIllumatedIcon);
 			}
 
 			@Override
-			public void mouseExited(MouseEvent e)
+			public void mouseExited(final MouseEvent e)
 			{
 				closeIconLabel.setIcon(closeIcon);
 			}
 		});
 
 
-		GridBagConstraints c = new GridBagConstraints();
+		final GridBagConstraints c = new GridBagConstraints();
 		c.gridx = 0;
 		c.gridy = 0;
 		c.fill = GridBagConstraints.BOTH;
@@ -106,7 +102,8 @@ public class DisclaimerPanel extends JPanel
 		super.add(closeIconLabel, c);
 	}
 
-	public void setText(String text) {
+	public void setText(final String text)
+	{
 		this.textLabel.setText(String.format("<html><p style=\"width:100%%\">%s</p></html>", text));
 	}
 }
