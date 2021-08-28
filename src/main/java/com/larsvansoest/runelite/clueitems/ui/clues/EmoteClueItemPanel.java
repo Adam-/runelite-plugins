@@ -26,33 +26,34 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.larsvansoest.runelite.clueitems.ui.content.requirement;
+package com.larsvansoest.runelite.clueitems.ui.clues;
 
-import com.larsvansoest.runelite.clueitems.data.EmoteClueItem;
-import net.runelite.client.ui.ColorScheme;
+import com.larsvansoest.runelite.clueitems.data.*;
+import com.larsvansoest.runelite.clueitems.ui.EmoteClueItemsPalette;
+import com.larsvansoest.runelite.clueitems.ui.components.FoldablePanel;
+import lombok.Getter;
 
-import java.awt.*;
+import javax.swing.*;
+import java.util.Arrays;
 
-/**
- * Represents values for {@link EmoteClueItem} completion status.
- *
- * @author Lars van Soest
- * @since 2.0.0
- */
-public enum Status
+
+public class EmoteClueItemPanel extends FoldablePanel
 {
-	Complete(ColorScheme.PROGRESS_COMPLETE_COLOR),
+	@Getter
+	private final EmoteClueDifficulty[] difficulties;
+	@Getter
+	private final int quantity;
 
-	InProgress(ColorScheme.PROGRESS_INPROGRESS_COLOR),
-
-	InComplete(ColorScheme.LIGHT_GRAY_COLOR),
-
-	Unknown(new Color(254, 254, 254, 69));
-
-	public final Color colour;
-
-	Status(final Color colour)
+	public EmoteClueItemPanel(final EmoteClueItemsPalette palette, final EmoteClueItem emoteClueItem)
 	{
-		this.colour = colour;
+		super(palette, emoteClueItem.getCollectiveName());
+
+		final EmoteClue[] emoteClues = EmoteClueAssociations.EmoteClueItemToEmoteClues.get(emoteClueItem);
+
+		this.difficulties = Arrays.stream(emoteClues).map(EmoteClue::getEmoteClueDifficulty).distinct().toArray(EmoteClueDifficulty[]::new);
+		Arrays.stream(this.difficulties).map(EmoteClueImages::getRibbon).map(ImageIcon::new).map(JLabel::new).forEach(super::addRightIcon);
+
+		this.quantity = emoteClues.length;
+		super.addRightIcon(new JLabel(String.valueOf(this.quantity)));
 	}
 }

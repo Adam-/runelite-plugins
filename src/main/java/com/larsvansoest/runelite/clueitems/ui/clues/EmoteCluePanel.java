@@ -26,17 +26,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.larsvansoest.runelite.clueitems.ui.content.clue;
+package com.larsvansoest.runelite.clueitems.ui.clues;
 
 import com.larsvansoest.runelite.clueitems.data.EmoteClue;
 import com.larsvansoest.runelite.clueitems.data.EmoteClueDifficulty;
 import com.larsvansoest.runelite.clueitems.data.EmoteClueImages;
-import com.larsvansoest.runelite.clueitems.ui.Palette;
-import com.larsvansoest.runelite.clueitems.ui.content.foldable.FoldablePanel;
-import com.larsvansoest.runelite.clueitems.ui.content.requirement.Status;
+import com.larsvansoest.runelite.clueitems.ui.EmoteClueItemsPalette;
+import com.larsvansoest.runelite.clueitems.ui.components.FoldablePanel;
+import lombok.Getter;
 import net.runelite.client.plugins.cluescrolls.clues.Enemy;
 import net.runelite.client.plugins.cluescrolls.clues.emote.Emote;
-import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.components.shadowlabel.JShadowedLabel;
 
@@ -44,72 +43,52 @@ import javax.swing.*;
 import javax.swing.border.MatteBorder;
 import java.awt.*;
 
+
 public class EmoteCluePanel extends FoldablePanel
 {
-	private static final Color propertyNameColor = ColorScheme.LIGHT_GRAY_COLOR;
-	private static final Color propertyValueColor = new Color(propertyNameColor.getRed(), propertyNameColor.getGreen(), propertyNameColor.getBlue(), 150);
+	@Getter
+	private final Emote firstEmote;
+	@Getter
+	private final Emote secondEmote;
+	@Getter
+	private final Enemy enemy;
+	@Getter
+	private final String description;
+	@Getter
+	private final EmoteClueDifficulty difficulty;
 
-	public EmoteCluePanel(final Palette palette, final EmoteClue emoteClue)
+	public EmoteCluePanel(final EmoteClueItemsPalette palette, final EmoteClue emoteClue)
 	{
 		super(palette, emoteClue.getLocationName());
 
-		final EmoteClueDifficulty emoteClueDifficulty = emoteClue.getEmoteClueDifficulty();
-		super.addLeftIcon(new JLabel(new ImageIcon(EmoteClueImages.getScroll(emoteClueDifficulty))));
+		this.difficulty = emoteClue.getEmoteClueDifficulty();
+		super.addLeftIcon(new JLabel(new ImageIcon(EmoteClueImages.getScroll(this.difficulty))));
 
-		final Emote firstEmote = emoteClue.getFirstEmote();
-		final Emote secondEmote = emoteClue.getSecondEmote();
-		final Enemy enemy = emoteClue.getEnemy();
-		final String description = emoteClue.getText();
+		this.firstEmote = emoteClue.getFirstEmote();
+		this.secondEmote = emoteClue.getSecondEmote();
+		this.enemy = emoteClue.getEnemy();
+		this.description = emoteClue.getText();
 
-		final JPanel foldContent = super.getFoldContent();
-		foldContent.setBackground(palette.getSubPanelBackgroundColor());
-		foldContent.setVisible(false);
-
-		final JPanel difficultyPanel = this.getPropertyPanel("Difficulty", emoteClueDifficulty.name());
-		final JPanel firstEmotePanel = this.getPropertyPanel("First emote", firstEmote.getName());
-		final JPanel secondEmotePanel = this.getPropertyPanel("Second emote", secondEmote == null ? "none" : secondEmote.getName());
-		final JPanel enemyPanel = this.getPropertyPanel("Enemy", enemy == null ? "none" : enemy.getText());
-
-		final JPanel descriptionLabel = this.getDescriptionPanel(description);
-
-		final GridBagConstraints c = new GridBagConstraints();
-		c.gridx = 0;
-		c.gridy = 0;
-		c.gridwidth = 1;
-		c.gridheight = 1;
-		c.insets = new Insets(5, 5, 0, 5);
-		c.fill = GridBagConstraints.BOTH;
-		c.weightx = 1;
-
-		foldContent.add(difficultyPanel, c);
-
-		c.gridy++;
-		foldContent.add(firstEmotePanel, c);
-
-		c.gridy++;
-		foldContent.add(secondEmotePanel, c);
-
-		c.gridy++;
-		foldContent.add(enemyPanel, c);
-
-		c.gridy++;
-		foldContent.add(descriptionLabel, c);
+		super.addChild(this.getPropertyPanel(palette, "Difficulty", this.difficulty.name()));
+		super.addChild(this.getPropertyPanel(palette, "First emote", this.firstEmote.getName()));
+		super.addChild(this.getPropertyPanel(palette, "Second emote", this.secondEmote == null ? "none" : this.secondEmote.getName()));
+		super.addChild(this.getPropertyPanel(palette, "Enemy", this.enemy == null ? "none" : this.enemy.getText()));
+		super.addChild(this.getDescriptionPanel(palette, this.description));
 	}
 
-	private JPanel getPropertyPanel(final String name, final String value)
+	private JPanel getPropertyPanel(final EmoteClueItemsPalette palette, final String name, final String value)
 	{
 		final JPanel propertyPanel = new JPanel(new GridBagLayout());
+		propertyPanel.setBackground(palette.getFoldContentColor());
 
 		final JLabel nameLabel = new JShadowedLabel(String.format("%s:", name));
 		nameLabel.setFont(FontManager.getRunescapeSmallFont());
-		nameLabel.setForeground(propertyNameColor);
-		nameLabel.setOpaque(false);
+		nameLabel.setForeground(palette.getPropertyNameColor());
 		nameLabel.setHorizontalAlignment(JLabel.CENTER);
 
 		final JLabel valueLabel = new JLabel(value.toLowerCase());
 		valueLabel.setFont(FontManager.getRunescapeSmallFont());
-		valueLabel.setForeground(propertyValueColor);
-		valueLabel.setOpaque(false);
+		valueLabel.setForeground(palette.getPropertyValueColor());
 		valueLabel.setHorizontalAlignment(JLabel.CENTER);
 
 		final GridBagConstraints c = new GridBagConstraints();
@@ -126,7 +105,7 @@ public class EmoteCluePanel extends FoldablePanel
 		return propertyPanel;
 	}
 
-	private JPanel getDescriptionPanel(final String description)
+	private JPanel getDescriptionPanel(final EmoteClueItemsPalette palette, final String description)
 	{
 		final JPanel descriptionPanel = new JPanel(new GridBagLayout());
 		descriptionPanel.setBackground(new Color(0, 0, 0, 0));
@@ -134,15 +113,15 @@ public class EmoteCluePanel extends FoldablePanel
 		final JLabel header = new JShadowedLabel("Description");
 		header.setFont(FontManager.getRunescapeSmallFont());
 		header.setHorizontalAlignment(JLabel.LEFT);
-		header.setForeground(propertyNameColor);
+		header.setForeground(palette.getPropertyNameColor());
 
 		final JSeparator separator = new JSeparator();
-		separator.setBorder(new MatteBorder(1, 0, 0, 0, propertyValueColor));
+		separator.setBorder(new MatteBorder(1, 0, 0, 0, palette.getPropertyValueColor()));
 
 		final JLabel content = new JLabel(String.format("<html><p style=\"width:100%%\">%s</p></html>", description));
 		content.setFont(FontManager.getRunescapeSmallFont());
 		content.setHorizontalAlignment(JLabel.LEFT);
-		content.setForeground(propertyValueColor);
+		content.setForeground(palette.getPropertyValueColor());
 
 		final GridBagConstraints c = new GridBagConstraints();
 		c.gridx = 0;
@@ -160,24 +139,5 @@ public class EmoteCluePanel extends FoldablePanel
 		descriptionPanel.add(content, c);
 
 		return descriptionPanel;
-	}
-
-	@Override
-	public void setStatus(final Status status)
-	{
-
-	}
-
-	@Override
-	public void onHeaderMousePressed()
-	{
-		if (super.getExpanded())
-		{
-			super.fold();
-		}
-		else
-		{
-			super.unfold();
-		}
 	}
 }

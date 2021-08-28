@@ -31,7 +31,7 @@ package com.larsvansoest.runelite.clueitems.progress;
 import lombok.NonNull;
 import net.runelite.api.Item;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 class ItemTracker
@@ -56,7 +56,7 @@ class ItemTracker
 			@NonNull
 			final Item[] items)
 	{
-		final LinkedList<Item> deltas = new LinkedList<>();
+		final ArrayList<Item> deltas = new ArrayList<>();
 		for (int i = 0; i < items.length; i++)
 		{
 			final Item previousItem = this.items[i];

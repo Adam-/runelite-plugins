@@ -29,7 +29,6 @@
 package com.larsvansoest.runelite.clueitems.data;
 
 import com.larsvansoest.runelite.clueitems.progress.ProgressManager;
-import com.larsvansoest.runelite.clueitems.ui.content.requirement.RequirementPanelProvider;
 import net.runelite.client.plugins.cluescrolls.clues.item.SlotLimitationRequirement;
 import org.apache.commons.lang3.ArrayUtils;
 

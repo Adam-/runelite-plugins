@@ -35,8 +35,8 @@ import net.runelite.client.plugins.cluescrolls.clues.EmoteClue;
 import net.runelite.client.plugins.cluescrolls.clues.item.ItemRequirement;
 import net.runelite.client.plugins.cluescrolls.clues.item.ItemRequirements;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -1145,7 +1145,7 @@ public enum EmoteClueItem implements ItemRequirement
 		this.itemId = itemId;
 		this.name = name;
 		this.children = null;
-		this.parents = new LinkedList<>();
+		this.parents = new ArrayList<>();
 	}
 
 	EmoteClueItem(final String name, final Boolean isStrong, final EmoteClueItem... emoteClueItems)
@@ -1158,7 +1158,7 @@ public enum EmoteClueItem implements ItemRequirement
 		{
 			child.addParent(this);
 		}
-		this.parents = new LinkedList<>();
+		this.parents = new ArrayList<>();
 	}
 
 	public final List<EmoteClueItem> getChildren()

@@ -26,10 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.larsvansoest.runelite.clueitems.ui.content.item;
+package com.larsvansoest.runelite.clueitems.ui.components;
 
-import com.larsvansoest.runelite.clueitems.ui.content.UpdatablePanel;
-import com.larsvansoest.runelite.clueitems.ui.content.requirement.Status;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
@@ -43,6 +41,7 @@ public class ItemSlotPanel extends UpdatablePanel
 	private final int itemId;
 	private final JLabel itemIcon;
 	private ImageIcon transparentIcon;
+	private int quantity;
 
 	public ItemSlotPanel(final ItemManager itemManager, final int itemId, final String name)
 	{
@@ -72,13 +71,15 @@ public class ItemSlotPanel extends UpdatablePanel
 		super.add(this.itemIcon, c);
 	}
 
-	public void setStatus(final int quantity)
+	public void setQuantity(final int quantity)
 	{
-		this.itemIcon.setIcon(quantity > 0 ? new ImageIcon(this.itemManager.getImage(this.itemId, quantity, true)) : this.transparentIcon);
+		this.setStatus(quantity > 0 ? Status.Complete : Status.InComplete);
+		this.quantity = quantity;
 	}
 
 	@Override
 	public void setStatus(final Status status)
 	{
+		this.itemIcon.setIcon(status == Status.Complete ? new ImageIcon(this.itemManager.getImage(this.itemId, this.quantity, true)) : this.transparentIcon);
 	}
 }

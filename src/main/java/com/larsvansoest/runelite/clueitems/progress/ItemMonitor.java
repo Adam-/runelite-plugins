@@ -31,8 +31,8 @@ package com.larsvansoest.runelite.clueitems.progress;
 import com.larsvansoest.runelite.clueitems.data.EmoteClueAssociations;
 import net.runelite.api.Item;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 
 class ItemMonitor
@@ -80,7 +80,7 @@ class ItemMonitor
 				return null;
 		}
 
-		final List<Item> emoteClueDeltas = new LinkedList<>();
+		final List<Item> emoteClueDeltas = new ArrayList<>();
 		for (final Item delta : deltas)
 		{
 			final int id = delta.getId();

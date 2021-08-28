@@ -26,30 +26,29 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.larsvansoest.runelite.clueitems.ui.footer;
+package com.larsvansoest.runelite.clueitems.ui.components;
 
 import com.larsvansoest.runelite.clueitems.data.EmoteClueImages;
-import com.larsvansoest.runelite.clueitems.ui.Palette;
+import com.larsvansoest.runelite.clueitems.ui.EmoteClueItemsPalette;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.util.LinkBrowser;
 
 import javax.swing.*;
-import javax.swing.border.MatteBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class FooterPanel extends JPanel
 {
-	public FooterPanel(final Palette palette, final String pluginName, final String pluginVersion, final String gitHubUrl)
+	public FooterPanel(final EmoteClueItemsPalette emoteClueItemsPalette, final String pluginName, final String pluginVersion, final String gitHubUrl)
 	{
 		super(new GridBagLayout());
 
-		final Color color = palette.getFooterColor();
+		final Color color = emoteClueItemsPalette.getFooterColor();
 		final Font font = FontManager.getRunescapeSmallFont();
 
-		final JSeparator separator = new JSeparator();
-		separator.setBorder(new MatteBorder(1, 0, 0, 0, color));
+		final JSeparator separator = new JSeparator(SwingConstants.HORIZONTAL);
+		separator.setBackground(color);
 
 		final JLabel pluginNameLabel = this.getTextLabel(String.format("%s %s", pluginName, pluginVersion), font, color);
 		final JLabel gitHubLabel = this.getGitHubLabel(gitHubUrl);
@@ -63,11 +62,9 @@ public class FooterPanel extends JPanel
 		super.add(separator, c);
 		c.insets.top = 5;
 		c.gridy++;
-		c.weightx = 0;
 		c.gridwidth = 1;
 		c.insets.left = 1;
 		c.insets.right = 1;
-		c.weightx = 1;
 		c.anchor = GridBagConstraints.EAST;
 		super.add(pluginNameLabel, c);
 		c.gridx++;
