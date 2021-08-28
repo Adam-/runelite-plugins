@@ -155,7 +155,7 @@ public class FoldablePanel extends UpdatablePanel
 	public void addChild(final FoldablePanel child)
 	{
 		this.foldContentElements.add(child);
-		this.foldContentFoldablePanels.add((child));
+		this.foldContentFoldablePanels.add(child);
 	}
 
 	public void addChild(final JComponent child)
@@ -172,8 +172,8 @@ public class FoldablePanel extends UpdatablePanel
 		this.foldContentElements.forEach(this.foldContent::remove);
 		this.foldIcon.setIcon(FOLD_ICONS.LEFT);
 		this.expanded = false;
-		super.revalidate();
-		super.repaint();
+		this.foldContent.revalidate();
+		this.foldContent.repaint();
 	}
 
 	public void unfold()
@@ -193,8 +193,8 @@ public class FoldablePanel extends UpdatablePanel
 		this.foldContent.setVisible(true);
 		this.foldIcon.setIcon(FOLD_ICONS.DOWN);
 		this.expanded = true;
-		super.revalidate();
-		super.repaint();
+		this.foldContent.revalidate();
+		this.foldContent.repaint();
 	}
 
 	public void setStatus(final Status status)

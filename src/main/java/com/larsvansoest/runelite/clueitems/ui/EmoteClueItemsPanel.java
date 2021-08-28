@@ -2,24 +2,17 @@ package com.larsvansoest.runelite.clueitems.ui;
 
 import com.larsvansoest.runelite.clueitems.data.EmoteClue;
 import com.larsvansoest.runelite.clueitems.data.EmoteClueAssociations;
-import com.larsvansoest.runelite.clueitems.data.EmoteClueImages;
 import com.larsvansoest.runelite.clueitems.data.EmoteClueItem;
 import com.larsvansoest.runelite.clueitems.ui.clues.EmoteClueItemPanel;
 import com.larsvansoest.runelite.clueitems.ui.clues.EmoteClueItemsGrid;
 import com.larsvansoest.runelite.clueitems.ui.clues.EmoteCluePanel;
-import com.larsvansoest.runelite.clueitems.ui.components.FooterPanel;
-import com.larsvansoest.runelite.clueitems.ui.components.ItemCollectionPanel;
-import com.larsvansoest.runelite.clueitems.ui.components.ItemSlotPanel;
-import com.larsvansoest.runelite.clueitems.ui.components.UpdatablePanel;
+import com.larsvansoest.runelite.clueitems.ui.components.*;
 import com.larsvansoest.runelite.clueitems.ui.stashes.StashUnitPanel;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.PluginPanel;
-import net.runelite.client.ui.components.materialtabs.MaterialTab;
-import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -28,9 +21,6 @@ import java.util.stream.Collectors;
 
 public class EmoteClueItemsPanel extends PluginPanel
 {
-	private final MaterialTabGroup tabGroup;
-	private final ArrayList<JPanel> tabPanels;
-
 	private final Map<EmoteClueItem, EmoteClueItemPanel> emoteClueItemPanelMap;
 	private final Map<EmoteClueItem, ItemSlotPanel> slotPanelMap;
 	private final EmoteClueItemsGrid clueItemsGrid;
@@ -61,7 +51,7 @@ public class EmoteClueItemsPanel extends PluginPanel
 			// Add item collection log
 			final ItemCollectionPanel collectionPanel = new ItemCollectionPanel(palette, 6);
 			this.addSubItems(collectionPanel, emoteClueItem);
-			collectionPanel.setHeaderColor(palette.getFoldHeaderTextColor()); // Header will not display collection progress. 
+			collectionPanel.setHeaderColor(palette.getFoldHeaderTextColor()); // Header will not display collection progress.
 			itemPanel.addChild(collectionPanel);
 
 			// Add emote clue panels & info
@@ -73,19 +63,17 @@ public class EmoteClueItemsPanel extends PluginPanel
 
 		final StashUnitPanel stashUnitPanel = new StashUnitPanel(palette);
 
-		this.tabGroup = new MaterialTabGroup();
-		this.tabGroup.setLayout(new GridLayout(0, 6, 7, 7));
-		this.tabPanels = new ArrayList<>();
-		this.addTab(new ImageIcon(EmoteClueImages.Toolbar.Footer.GITHUB), this.clueItemsGrid);
-		this.addTab(new ImageIcon(EmoteClueImages.Toolbar.Footer.GITHUB), stashUnitPanel);
+		final TabMenu tabMenu = new TabMenu(palette, this.clueItemsGrid, "Items", "Emote Clue Items");
+		tabMenu.addTab(stashUnitPanel, "Stashes", "Stash Units", false);
 
 		final GridBagConstraints c = new GridBagConstraints();
-		c.fill = GridBagConstraints.HORIZONTAL;
+		c.fill = GridBagConstraints.BOTH;
 		c.weightx = 1;
+		c.weighty = 1;
 		c.gridx = 0;
 		c.gridy = 0;
 
-		super.add(this.tabGroup, c);
+		super.add(tabMenu, c);
 		c.gridy++;
 		super.add(this.clueItemsGrid, c);
 		super.add(stashUnitPanel, c);
@@ -93,21 +81,6 @@ public class EmoteClueItemsPanel extends PluginPanel
 		c.gridy++;
 		c.insets = new Insets(10, 20, 0, 20);
 		super.add(new FooterPanel(palette, pluginName, pluginVersion, gitHubUrl), c);
-	}
-
-	private void addTab(final ImageIcon icon, final JPanel visiblePanel)
-	{
-		final MaterialTab tab = new MaterialTab(icon, this.tabGroup, null);
-		tab.setOnSelectEvent(() ->
-		{
-			for (final JPanel tabPanel : this.tabPanels)
-			{
-				tabPanel.setVisible(tabPanel == visiblePanel);
-			}
-			return true;
-		});
-		this.tabPanels.add(visiblePanel);
-		this.tabGroup.addTab(tab);
 	}
 
 	private void addSubItems(final ItemCollectionPanel subPanel, final EmoteClueItem child)

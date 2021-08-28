@@ -88,7 +88,7 @@ public class EmoteClueItemsPlugin extends Plugin
 		this.overlayManager.add(this.overlay);
 
 		final EmoteClueItemsPalette emoteClueItemsPalette = EmoteClueItemsPalette.RUNELITE;
-		this.emoteClueItemsPanel = new EmoteClueItemsPanel(emoteClueItemsPalette, this.itemManager, "Emote Clue Items", "v2.0.2", "https://github.com/larsvansoest/emote-clue-items");
+		this.emoteClueItemsPanel = new EmoteClueItemsPanel(emoteClueItemsPalette, this.itemManager, "Emote Clue Items", "v2.1.0", "https://github.com/larsvansoest/emote-clue-items");
 
 		this.navigationButton = NavigationButton
 				.builder()

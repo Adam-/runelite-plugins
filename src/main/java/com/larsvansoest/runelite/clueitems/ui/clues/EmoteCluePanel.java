@@ -108,15 +108,12 @@ public class EmoteCluePanel extends FoldablePanel
 	private JPanel getDescriptionPanel(final EmoteClueItemsPalette palette, final String description)
 	{
 		final JPanel descriptionPanel = new JPanel(new GridBagLayout());
-		descriptionPanel.setBackground(new Color(0, 0, 0, 0));
+		descriptionPanel.setBackground(palette.getFoldContentColor());
 
 		final JLabel header = new JShadowedLabel("Description");
 		header.setFont(FontManager.getRunescapeSmallFont());
 		header.setHorizontalAlignment(JLabel.LEFT);
 		header.setForeground(palette.getPropertyNameColor());
-
-		final JSeparator separator = new JSeparator();
-		separator.setBorder(new MatteBorder(1, 0, 0, 0, palette.getPropertyValueColor()));
 
 		final JLabel content = new JLabel(String.format("<html><p style=\"width:100%%\">%s</p></html>", description));
 		content.setFont(FontManager.getRunescapeSmallFont());
@@ -128,10 +125,8 @@ public class EmoteCluePanel extends FoldablePanel
 		c.gridy = 0;
 		c.weightx = 1;
 		c.fill = GridBagConstraints.BOTH;
+		header.setBorder(new MatteBorder(0, 0, 1, 0, palette.getPropertyValueColor()));
 		descriptionPanel.add(header, c);
-
-		c.gridy++;
-		descriptionPanel.add(separator, c);
 
 		c.insets.top = 3;
 		c.insets.bottom = 3;
