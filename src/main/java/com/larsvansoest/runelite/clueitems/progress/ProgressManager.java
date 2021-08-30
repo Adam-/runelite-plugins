@@ -111,7 +111,7 @@ public class ProgressManager
 	{
 		if (emoteClueItemChanges != null)
 		{
-			final LinkedList<Map.Entry<EmoteClueItem, UpdatablePanel.Status>> parents = new LinkedList<>();
+			final ArrayDeque<Map.Entry<EmoteClueItem, UpdatablePanel.Status>> parents = new ArrayDeque<>();
 
 			// Set single item (sub-)requirement status
 			for (final Item item : emoteClueItemChanges)
@@ -126,7 +126,7 @@ public class ProgressManager
 				this.panel.setItemSlotStatus(emoteClueItem, quantity);
 			}
 
-			final LinkedList<Map.Entry<EmoteClueItem, UpdatablePanel.Status>> parentCache = new LinkedList<>();
+			final ArrayDeque<Map.Entry<EmoteClueItem, UpdatablePanel.Status>> parentCache = new ArrayDeque<>();
 			// Update requirement ancestors accordingly
 			while (parents.size() > 0)
 			{

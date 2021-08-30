@@ -73,8 +73,8 @@ public class ItemSlotPanel extends UpdatablePanel
 
 	public void setQuantity(final int quantity)
 	{
-		this.setStatus(quantity > 0 ? Status.Complete : Status.InComplete);
 		this.quantity = quantity;
+		this.setStatus(quantity > 0 ? Status.Complete : Status.InComplete);
 	}
 
 	@Override
