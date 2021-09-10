@@ -103,15 +103,6 @@ public class DiscordLootLoggerPlugin extends Plugin
 			String s = config.lootNpcs();
 			lootNpcs = s != null ? Text.fromCSV(s) : Collections.emptyList();
 		}
-		/**
-		 * Used to check if the given webhook is valid.
-		 * If not: notify user.
-		 */
-		if (configChanged.getKey().equals("webhook")) {
-			if(!validateWebHook()) {
-				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Clan notification webhook is invalid or unreachable", null);
-			}
-		}
 	}
 
 	@Subscribe
@@ -368,63 +359,6 @@ public class DiscordLootLoggerPlugin extends Plugin
 		}
 
 		return list;
-	}
-
-	private static String format(Date date)
-	{
-		synchronized (TIME_FORMAT)
-		{
-			return TIME_FORMAT.format(date);
-		}
-	}
-
-	/**
-	 * Method for validating the given webhook provided in the config by the user.
-	 * @return
-	 */
-	private boolean validateWebHook() {
-		if (config.webhook().isEmpty()) return false;
-		if (!urlValidator(config.webhook())) return false;
-		return urlResponseValidator(config.webhook());
-	}
-
-	/**
-	 * Method for validating the URL of the webhook.
-	 * @param url Input url from the config.
-	 * @return return true if the url is valid. False otherwise.
-	 */
-	private boolean urlValidator(String url)
-	{
-		try {
-			new URL(url).toURI();
-			return true;
-		}
-		catch (Exception e) {
-			log.error("Caught error: "+  e.getMessage());
-			return false;
-		}
-	}
-
-	/**
-	 * Method for checking if the given URL is reachable.
-	 * @param url Input url from the config.
-	 * @return return true if the url is reachable. False otherwise.
-	 */
-	private boolean urlResponseValidator(String url) {
-		try {
-			URL validUrl = new URL(url);
-
-			HttpsURLConnection con = (HttpsURLConnection) validUrl.openConnection();
-			con.setRequestMethod("HEAD");
-
-			int responseCode = con.getResponseCode();
-
-			return responseCode == HttpsURLConnection.HTTP_OK;
-		}
-		catch (Exception e) {
-			log.error("Caught error: "+  e.getMessage());
-			return false;
-		}
 	}
 
 }
