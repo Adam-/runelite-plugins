@@ -3,6 +3,7 @@ package info.sigterm.plugins.discordlootlogger;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 
 @ConfigGroup(DiscordLootLoggerConfig.GROUP)
 public interface DiscordLootLoggerConfig extends Config
@@ -72,5 +73,52 @@ public interface DiscordLootLoggerConfig extends Config
 	{
 		return false;
 	}
+
+	@ConfigSection(
+			name="Clan Drop Notifications",
+			description = "Settings for clan drop notifications",
+			position = 2
+	)
+
+	String clanDropNotifications = "Clan Drop Notifications";
+
+	@ConfigItem(
+			keyName = "enableClanDrops",
+			name = "Enable Clan Drops",
+			description = "Enable this if you want to automatically post a screenshot when you receive a clan drop",
+			position = 1,
+			section = clanDropNotifications
+	)
+
+	default boolean enableClanDrops() {
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "autoMessageEnabled",
+			name = "Enable auto message",
+			description = "Enables an auto message in the chatbox",
+			section = clanDropNotifications,
+			position = 2
+	)
+	default boolean autoMessageEnabled() {return false;}
+
+	@ConfigItem(
+			keyName = "autoMessageDate",
+			name = "Enable date post",
+			description = "Enables automatic date posting in the chat",
+			section = clanDropNotifications,
+			position = 3
+	)
+	default boolean autoMessageDate() {return false;}
+
+	@ConfigItem(
+			keyName = "autoMessage",
+			name = "Auto Message",
+			description = "The auto message to type",
+			section = clanDropNotifications,
+			position = 4)
+	default String autoMessage() {return "";}
+
 
 }

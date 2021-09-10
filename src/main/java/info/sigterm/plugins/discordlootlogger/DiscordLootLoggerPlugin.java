@@ -5,16 +5,20 @@ import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
+import javax.net.ssl.HttpsURLConnection;
+
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.NPC;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -69,6 +73,7 @@ public class DiscordLootLoggerPlugin extends Plugin
 	{
 		return "https://static.runelite.net/cache/item/icon/" + itemId + ".png";
 	}
+	private static final DateFormat TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
 
 	@Inject
 	private Client client;
@@ -97,6 +102,15 @@ public class DiscordLootLoggerPlugin extends Plugin
 		{
 			String s = config.lootNpcs();
 			lootNpcs = s != null ? Text.fromCSV(s) : Collections.emptyList();
+		}
+		/**
+		 * Used to check if the given webhook is valid.
+		 * If not: notify user.
+		 */
+		if (configChanged.getKey().equals("webhook")) {
+			if(!validateWebHook()) {
+				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Clan notification webhook is invalid or unreachable", null);
+			}
 		}
 	}
 
@@ -139,6 +153,63 @@ public class DiscordLootLoggerPlugin extends Plugin
 		}
 
 		processLoot(lootReceived.getName(), lootReceived.getItems());
+	}
+
+	/**
+	 * Check if the incoming message should be processed for clan drop notifications
+	 * @param chatMessage
+	 */
+	@Subscribe(priority = 1)
+	public void onChatMessage(ChatMessage chatMessage) {
+
+		// Return if disabled
+		if(!config.enableClanDrops()) return;
+
+		// Return if it is not of the type clan message
+		if(chatMessage.getType() != ChatMessageType.FRIENDSCHAT) {
+			return;
+		}
+		String messageContent = chatMessage.getMessage();
+
+		// Only parse clan drops and pets
+		if(!(messageContent.contains("received") || messageContent.contains("funny feeling") || messageContent.contains("sneaking into your backpack"))) {
+			return;
+		}
+
+		String playerName = Text.sanitize(getPlayerName());
+
+
+		// Only process if in the users name
+		boolean isTarget = Text.sanitize(messageContent).contains(playerName);
+		if(!isTarget) return;
+
+		processClanDrop(messageContent);
+	}
+
+	/**
+	 * Method for processing clan drops.
+	 * @param message the message to post in the discord
+	 */
+	private void processClanDrop(String message) {
+		WebhookBody webhookBody = new WebhookBody();
+		StringBuilder stringBuilder = new StringBuilder();
+		if(config.autoMessageEnabled()) {
+			if(config.autoMessageDate()) {
+				SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+				Date date = new Date();
+				stringBuilder.append(formatter.format(date));
+				stringBuilder.append(" ");
+
+				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "Discord Loot Logger", formatter.format(date) + " " + config.autoMessage(), null);
+			}
+			else {
+				client.addChatMessage(ChatMessageType.GAMEMESSAGE, "Discord Loot Logger", config.autoMessage(), null);
+			}
+		}
+		stringBuilder.append(message);
+		webhookBody.setContent(stringBuilder.toString());
+		sendWebhook(webhookBody);
+
 	}
 
 	private String getPlayerName()
@@ -298,4 +369,62 @@ public class DiscordLootLoggerPlugin extends Plugin
 
 		return list;
 	}
+
+	private static String format(Date date)
+	{
+		synchronized (TIME_FORMAT)
+		{
+			return TIME_FORMAT.format(date);
+		}
+	}
+
+	/**
+	 * Method for validating the given webhook provided in the config by the user.
+	 * @return
+	 */
+	private boolean validateWebHook() {
+		if (config.webhook().isEmpty()) return false;
+		if (!urlValidator(config.webhook())) return false;
+		return urlResponseValidator(config.webhook());
+	}
+
+	/**
+	 * Method for validating the URL of the webhook.
+	 * @param url Input url from the config.
+	 * @return return true if the url is valid. False otherwise.
+	 */
+	private boolean urlValidator(String url)
+	{
+		try {
+			new URL(url).toURI();
+			return true;
+		}
+		catch (Exception e) {
+			log.error("Caught error: "+  e.getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * Method for checking if the given URL is reachable.
+	 * @param url Input url from the config.
+	 * @return return true if the url is reachable. False otherwise.
+	 */
+	private boolean urlResponseValidator(String url) {
+		try {
+			URL validUrl = new URL(url);
+
+			HttpsURLConnection con = (HttpsURLConnection) validUrl.openConnection();
+			con.setRequestMethod("HEAD");
+
+			int responseCode = con.getResponseCode();
+
+			return responseCode == HttpsURLConnection.HTTP_OK;
+		}
+		catch (Exception e) {
+			log.error("Caught error: "+  e.getMessage());
+			return false;
+		}
+	}
+
 }
