@@ -166,7 +166,7 @@ public class DiscordLootLoggerPlugin extends Plugin
 		if(!config.enableClanDrops()) return;
 
 		// Return if it is not of the type clan message
-		if(chatMessage.getType() != ChatMessageType.FRIENDSCHAT) {
+		if(chatMessage.getType() != ChatMessageType.CLAN_MESSAGE) {
 			return;
 		}
 		String messageContent = chatMessage.getMessage();
