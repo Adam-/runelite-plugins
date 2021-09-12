@@ -111,7 +111,8 @@ import static org.jocl.CL.clCreateFromGLBuffer;
 	description = "Utilizes the GPU",
 	enabledByDefault = false,
 	tags = {"fog", "draw distance"},
-	loadInSafeMode = false
+	loadInSafeMode = false,
+	conflicts = "GPU"
 )
 @Slf4j
 public class GpuPluginExperimental extends Plugin implements DrawCallbacks
