@@ -204,6 +204,7 @@ public class CEngineerCompletedPlugin extends Plugin
 		for (Varbits diary : varbitsAchievementDiaries) {
 			int newValue = client.getVar(diary);
 			int previousValue = oldAchievementDiaries.getOrDefault(diary, -1);
+			oldAchievementDiaries.put(diary, newValue);
 			if (config.announceAchievementDiary() && previousValue != -1 && previousValue != newValue && isAchievementDiaryCompleted(diary, newValue)) {
 				// value was not unknown (we know the previous value), value has changed, and value indicates diary is completed now
 				if (config.showChatMessages()) {
@@ -211,7 +212,6 @@ public class CEngineerCompletedPlugin extends Plugin
 				}
 				soundEngine.playClip(Sound.ACHIEVEMENT_DIARY);
 			}
-			oldAchievementDiaries.put(diary, newValue);
 		}
 	}
 
