@@ -25,19 +25,19 @@ Whats more, STASHUnit fill statuses are stored in your Runelite's config manager
 By logging into your Runelite account on the client, even when you log in on another computer, your fill statuses are saved. 
 STASHUnit build statuses are automatically updated when building a STASHUnit, and the results are immediately visible in the overview.
 
-![Interface item highlighting](/readme/interface-item-highlighting.gif)
+![Status management updates](/readme/status-management-updates.gif)
 
 ### Other plugin features
 Among other interfaces, items in your bank, inventory and equipment are highlighted by their respective tier colours.
 Individually, for each supported in-game interface, overlay display may be switched on or off in the plugin settings.
 
-![Item collection log caching](/readme/item-collection-log-caching.gif)
+![Interface item highlighting](/readme/interface-item-highlighting.gif)
 
 #### Dynamic item collection log caching
 Whenever the user picks up an item, the item collection log of related emote clue item requirement status are updated,
 cached, and displayed.
 
-![Status management updates](/readme/status-management-updates.gif)
+![Item collection log caching](/readme/item-collection-log-caching.gif)
 
 #### Requirement lookup
 The overview panel allows for querying and sorting the data. Moreover, the input header allows for any combination of
