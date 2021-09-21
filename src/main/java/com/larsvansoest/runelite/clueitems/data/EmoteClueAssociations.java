@@ -28,8 +28,6 @@
 
 package com.larsvansoest.runelite.clueitems.data;
 
-import com.larsvansoest.runelite.clueitems.progress.ProgressManager;
-import net.runelite.client.plugins.cluescrolls.clues.item.SlotLimitationRequirement;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.AbstractMap;
@@ -41,29 +39,58 @@ import java.util.stream.Collectors;
 /**
  * Provides static predicate mappings over {@link EmoteClueItem} data set.
  * <p>
- * Use-case examples are requirement progression inference by {@link ProgressManager} class, nested requirement visualisation by {@link RequirementPanelProvider}.
+ * Use-case examples are requirement progression inference by {@link com.larsvansoest.runelite.clueitems.progress.ProgressManager} class, nested requirement visualisation by {@link com.larsvansoest.runelite.clueitems.ui.EmoteClueItemsPanel}.
  *
  * @author Lars van Soest
  * @since 2.0.0
  */
 public abstract class EmoteClueAssociations
 {
-	public static final Map<Integer, EmoteClueItem> ItemIdToEmoteClueItemSlot = Arrays
+	/**
+	 * Maps {@link net.runelite.api.ItemID} to corresponding {@link com.larsvansoest.runelite.clueitems.data.EmoteClueItem}.
+	 * <p>
+	 * Only contains items used for emote clues.
+	 */
+	public static final Map<Integer, EmoteClueItem> ItemIdToEmoteClueItem = Arrays
 			.stream(EmoteClueItem.values())
 			.filter(emoteClueItem -> emoteClueItem.getItemId() != null)
 			.collect(Collectors.toMap(EmoteClueItem::getItemId, Function.identity()));
 
+	/**
+	 * Maps {@link com.larsvansoest.runelite.clueitems.data.EmoteClueDifficulty} to all {@link com.larsvansoest.runelite.clueitems.data.EmoteClue} of that difficulty.
+	 */
 	public static final Map<EmoteClueDifficulty, EmoteClue[]> DifficultyToEmoteClues = EmoteClue.CLUES
 			.stream()
 			.map(emoteClue -> new AbstractMap.SimpleImmutableEntry<>(emoteClue, emoteClue.getEmoteClueDifficulty()))
 			.collect(Collectors.toMap(AbstractMap.SimpleImmutableEntry::getValue, entry -> new EmoteClue[]{entry.getKey()}, ArrayUtils::addAll));
 
+	/**
+	 * Maps {@link com.larsvansoest.runelite.clueitems.data.EmoteClueItem} to all {@link com.larsvansoest.runelite.clueitems.data.EmoteClue} that use it.
+	 * <p>
+	 * Map does not contain {@link com.larsvansoest.runelite.clueitems.data.EmoteClueItem}'s children which are indirectly related to the {@link com.larsvansoest.runelite.clueitems.data.EmoteClueItem}.
+	 */
 	public static final Map<EmoteClueItem, EmoteClue[]> EmoteClueItemToEmoteClues = EmoteClue.CLUES
 			.stream()
 			.flatMap(emoteClue -> Arrays
 					.stream(emoteClue.getItemRequirements())
-					.filter(itemRequirement -> !(itemRequirement instanceof SlotLimitationRequirement))
-					.map(itemRequirement -> (EmoteClueItem) itemRequirement)
+					.filter(itemRequirement -> (itemRequirement instanceof EmoteClueItem))
+					.map(EmoteClueItem.class::cast)
 					.map(emoteClueItem -> new AbstractMap.SimpleImmutableEntry<>(emoteClue, emoteClueItem)))
 			.collect(Collectors.toMap(AbstractMap.SimpleImmutableEntry::getValue, entry -> new EmoteClue[]{entry.getKey()}, ArrayUtils::addAll));
+
+	/**
+	 * Maps {@link com.larsvansoest.runelite.clueitems.data.StashUnit} to all {@link com.larsvansoest.runelite.clueitems.data.EmoteClue} that use it.
+	 */
+	public static final Map<StashUnit, EmoteClue[]> STASHUnitToEmoteClues = EmoteClue.CLUES
+			.stream()
+			.collect(Collectors.toMap(EmoteClue::getStashUnit, emoteClue -> new EmoteClue[]{emoteClue}, ArrayUtils::addAll));
+
+	/**
+	 * Maps {@link com.larsvansoest.runelite.clueitems.data.EmoteClue} to all {@link com.larsvansoest.runelite.clueitems.data.EmoteClueItem} that it uses.
+	 */
+	public static final Map<EmoteClue, EmoteClueItem[]> EmoteClueToEmoteClueItems = EmoteClue.CLUES
+			.stream()
+			.collect(Collectors.toMap(Function.identity(),
+					emoteClue -> Arrays.stream(emoteClue.getItemRequirements()).filter(EmoteClueItem.class::isInstance).map(EmoteClueItem.class::cast).toArray(EmoteClueItem[]::new)
+			));
 }

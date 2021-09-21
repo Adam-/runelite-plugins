@@ -1,35 +1,6 @@
-/*
- * BSD 2-Clause License
- *
- * Copyright (c) 2020, Lars van Soest
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package com.larsvansoest.runelite.clueitems.progress;
 
-import com.larsvansoest.runelite.clueitems.data.EmoteClueAssociations;
-import com.larsvansoest.runelite.clueitems.data.EmoteClueItem;
+import com.larsvansoest.runelite.clueitems.data.*;
 import com.larsvansoest.runelite.clueitems.ui.EmoteClueItemsPanel;
 import com.larsvansoest.runelite.clueitems.ui.components.UpdatablePanel;
 import net.runelite.api.Client;
@@ -38,54 +9,82 @@ import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.config.ConfigManager;
 import net.runelite.client.plugins.cluescrolls.clues.item.AllRequirementsCollection;
 import net.runelite.client.plugins.cluescrolls.clues.item.ItemRequirement;
 
-import java.util.*;
+import javax.swing.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
- * Monitors player owned items and subsequent changes to {@link ItemContainer} objects for Inventory, Bank and Equipment.
- * <p>
- * Uses {@link EmoteClueItemsPanel} to represent requirement statuses on {@link UpdatablePanel.Status} accordingly.
+ * Keeps track of item requirement progression. Contains inventory change and STASHUnit fill status functionality.
  *
  * @author Lars van Soest
- * @see EmoteClueItem
  * @since 2.0.0
  */
 public class ProgressManager
 {
-	public final StashMonitor stashMonitor;
-	private final Map<EmoteClueItem, UpdatablePanel.Status> statusMap;
-	private final ItemMonitor itemsMonitor;
+	private final InventoryMonitor inventoryMonitor;
+	private final StashMonitor stashMonitor;
+	private final HashMap<EmoteClueItem, UpdatablePanel.Status> inventoryStatusMap;
+	private final Map<EmoteClueItem, Map<StashUnit, Boolean>> stashFilledStatusMap;
 	private final EmoteClueItemsPanel panel;
 	private final Client client;
 	private final ClientThread clientThread;
 	private boolean initialState;
 
-	public ProgressManager(final EmoteClueItemsPanel panel, final Client client, final ClientThread clientThread, final StashMonitor stashMonitor)
+	public ProgressManager(final ConfigManager configManager, final EmoteClueItemsPanel panel, final Client client, final ClientThread clientThread)
 	{
-		this.statusMap = new HashMap<>(EmoteClueItem.values().length);
-		this.itemsMonitor = new ItemMonitor();
 		this.panel = panel;
 		this.client = client;
 		this.clientThread = clientThread;
-		this.stashMonitor = stashMonitor;
-		this.reset();
+		this.inventoryMonitor = new InventoryMonitor();
+		this.stashMonitor = new StashMonitor("[EmoteClueItems]", "STASHUnit fill statuses", configManager);
+		this.inventoryStatusMap = new HashMap<>(EmoteClueItem.values().length);
+		this.stashFilledStatusMap = new HashMap<>(EmoteClueAssociations.EmoteClueItemToEmoteClues.keySet().size());
+		EmoteClueAssociations.EmoteClueItemToEmoteClues.forEach(((emoteClueItem, emoteClues) ->
+		{
+			final Map<StashUnit, Boolean> emoteClueStashFillStatusMap = new HashMap<>(emoteClues.length);
+			for (final EmoteClue emoteClue : emoteClues)
+			{
+				emoteClueStashFillStatusMap.put(emoteClue.getStashUnit(), false);
+			}
+			this.stashFilledStatusMap.put(emoteClueItem, emoteClueStashFillStatusMap);
+		}));
 	}
 
+	/**
+	 * Clears all cached progression data.
+	 */
 	public void reset()
 	{
-		for (final EmoteClueItem emoteClueItem : EmoteClueItem.values())
+		this.initialState = true;
+		this.inventoryMonitor.reset();
+		for (final EmoteClueItem emoteClueItem : EmoteClueAssociations.EmoteClueItemToEmoteClues.keySet())
 		{
-			this.statusMap.put(emoteClueItem, UpdatablePanel.Status.InComplete);
+			final Map<StashUnit, Boolean> emoteClueStashFillStatusMap = this.stashFilledStatusMap.get(emoteClueItem);
+			emoteClueStashFillStatusMap.keySet().forEach(key -> emoteClueStashFillStatusMap.put(key, false));
 			this.panel.setEmoteClueItemStatus(emoteClueItem, UpdatablePanel.Status.InComplete);
 			this.panel.setItemSlotStatus(emoteClueItem, 0);
-			this.itemsMonitor.reset();
-			this.initialState = true;
+		}
+		for (final EmoteClueItem emoteClueItem : EmoteClueItem.values())
+		{
+			this.inventoryStatusMap.put(emoteClueItem, UpdatablePanel.Status.InComplete);
+		}
+		for (final StashUnit stashUnit : StashUnit.values())
+		{
+			this.panel.turnOnSTASHFilledButton(stashUnit);
+			this.panel.turnOffSTASHFilledButton(stashUnit, new ImageIcon(EmoteClueImages.Toolbar.CheckSquare.WAITING), "Please open your bank to log STASH progress.");
 		}
 	}
 
-	public void handleEmoteClueItemChanges(final ItemContainerChanged event)
+	/**
+	 * Writes item changes to progression data.
+	 */
+	public void processInventoryChanges(final ItemContainerChanged event)
 	{
 		final int containerId = event.getContainerId();
 
@@ -96,58 +95,114 @@ public class ProgressManager
 				final ItemContainer bankContainer = this.client.getItemContainer(InventoryID.BANK);
 				if (bankContainer != null)
 				{
-					this.handleChanges(this.itemsMonitor.fetchEmoteClueItemChanges(95, bankContainer.getItems()));
+					this.handleItemChanges(this.inventoryMonitor.fetchEmoteClueItemChanges(95, bankContainer.getItems()));
 					this.initialState = false;
 				}
 			});
 		}
 		else
 		{
-			this.handleChanges(this.itemsMonitor.fetchEmoteClueItemChanges(containerId, event.getItemContainer().getItems()));
+			this.handleItemChanges(this.inventoryMonitor.fetchEmoteClueItemChanges(containerId, event.getItemContainer().getItems()));
 		}
 	}
 
-	private void handleChanges(final List<Item> emoteClueItemChanges)
+	/**
+	 * Call this function after user login.
+	 * <p>
+	 * Using {@link com.larsvansoest.runelite.clueitems.progress.StashMonitor}, verifies if user-data is consistent with data stored in Runelite's {@link net.runelite.client.config.ConfigManager}.
+	 * <p>
+	 * Resets config data if data is corrupted, possible by game update.
+	 */
+	public void validateConfig()
+	{
+		this.stashMonitor.validate();
+		for (final StashUnit stashUnit : StashUnit.values())
+		{
+			this.setStashUnitFilled(stashUnit, this.stashMonitor.getStashFilled(stashUnit));
+		}
+	}
+
+	private void handleItemChanges(final List<Item> emoteClueItemChanges)
 	{
 		if (emoteClueItemChanges != null)
 		{
-			final ArrayDeque<Map.Entry<EmoteClueItem, UpdatablePanel.Status>> parents = new ArrayDeque<>();
-
 			// Set single item (sub-)requirement status
 			for (final Item item : emoteClueItemChanges)
 			{
 				final int quantity = item.getQuantity();
-				final EmoteClueItem emoteClueItem = EmoteClueAssociations.ItemIdToEmoteClueItemSlot.get(item.getId());
+				final EmoteClueItem emoteClueItem = EmoteClueAssociations.ItemIdToEmoteClueItem.get(item.getId());
 
 				final UpdatablePanel.Status status = quantity > 0 ? UpdatablePanel.Status.Complete : UpdatablePanel.Status.InComplete;
-				this.statusMap.put(emoteClueItem, status);
-				parents.add(new AbstractMap.SimpleEntry<>(emoteClueItem, status));
-
 				this.panel.setItemSlotStatus(emoteClueItem, quantity);
+				this.setEmoteClueItemInventoryStatus(emoteClueItem, status);
 			}
+		}
+	}
 
-			final ArrayDeque<Map.Entry<EmoteClueItem, UpdatablePanel.Status>> parentCache = new ArrayDeque<>();
-			// Update requirement ancestors accordingly
-			while (parents.size() > 0)
+	/**
+	 * Returns whether given {@link com.larsvansoest.runelite.clueitems.data.StashUnit} is set as filled in progression data.
+	 */
+	public boolean getStashUnitFilled(final StashUnit stashUnit)
+	{
+		return this.stashMonitor.getStashFilled(stashUnit);
+	}
+
+	/**
+	 * Specify given {@link com.larsvansoest.runelite.clueitems.data.StashUnit} as filled in progression data.
+	 */
+	public void setStashUnitFilled(final StashUnit stashUnit, final boolean filled)
+	{
+		this.stashMonitor.setStashFilled(stashUnit, filled);
+		for (final EmoteClue emoteClue : EmoteClueAssociations.STASHUnitToEmoteClues.get(stashUnit))
+		{
+			for (final EmoteClueItem emoteClueItem : EmoteClueAssociations.EmoteClueToEmoteClueItems.get(emoteClue))
 			{
-				while (parents.size() > 0)
-				{
-					parentCache.add(parents.poll());
-				}
-				while (parentCache.size() > 0)
-				{
-					final Map.Entry<EmoteClueItem, UpdatablePanel.Status> childEntry = parentCache.poll();
-					final EmoteClueItem child = childEntry.getKey();
-					final UpdatablePanel.Status status = childEntry.getValue();
-					this.panel.setEmoteClueItemStatus(child, status);
-					for (final EmoteClueItem parent : child.getParents())
-					{
-						final UpdatablePanel.Status parentStatus = this.getParentStatus(parent);
-						parents.add(new AbstractMap.SimpleEntry<>(parent, parentStatus));
-						this.statusMap.put(parent, parentStatus);
-					}
-				}
+				this.setEmoteClueItemStashFilledStatus(emoteClueItem, stashUnit, filled);
 			}
+		}
+	}
+
+	private void setEmoteClueItemStashFilledStatus(final EmoteClueItem emoteClueItem, final StashUnit stashUnit, final Boolean filled)
+	{
+		this.stashFilledStatusMap.get(emoteClueItem).put(stashUnit, filled);
+		this.setEmoteClueItemStatus(emoteClueItem, this.updateEmoteClueItemStatus(emoteClueItem));
+	}
+
+	private void setEmoteClueItemInventoryStatus(final EmoteClueItem emoteClueItem, final UpdatablePanel.Status status)
+	{
+		this.inventoryStatusMap.put(emoteClueItem, status);
+		this.setEmoteClueItemStatus(emoteClueItem, this.updateEmoteClueItemStatus(emoteClueItem));
+	}
+
+	private UpdatablePanel.Status updateEmoteClueItemStatus(final EmoteClueItem emoteClueItem)
+	{
+		final UpdatablePanel.Status inventoryStatus = this.inventoryStatusMap.get(emoteClueItem);
+		this.panel.setCollectionLogStatus(emoteClueItem, inventoryStatus);
+		if (inventoryStatus == UpdatablePanel.Status.Complete)
+		{
+			return UpdatablePanel.Status.Complete;
+		}
+		final Map<StashUnit, Boolean> emoteClueStashFilledMap = this.stashFilledStatusMap.get(emoteClueItem);
+		if (Objects.nonNull(emoteClueStashFilledMap) && !this.initialState)
+		{
+			if (this.stashFilledStatusMap.get(emoteClueItem).values().stream().allMatch(Boolean::booleanValue))
+			{
+				return UpdatablePanel.Status.Complete;
+			}
+			if (this.stashFilledStatusMap.get(emoteClueItem).values().stream().anyMatch(Boolean::booleanValue))
+			{
+				return UpdatablePanel.Status.InProgress;
+			}
+		}
+		return inventoryStatus;
+	}
+
+	private void setEmoteClueItemStatus(final EmoteClueItem emoteClueItem, final UpdatablePanel.Status status)
+	{
+		this.panel.setEmoteClueItemStatus(emoteClueItem, status);
+		for (final EmoteClueItem parent : emoteClueItem.getParents())
+		{
+			this.setEmoteClueItemStatus(parent, this.getParentStatus(parent));
 		}
 	}
 
@@ -162,7 +217,7 @@ public class ProgressManager
 	{
 		for (final EmoteClueItem child : children)
 		{
-			if (this.statusMap.get(child) == UpdatablePanel.Status.Complete)
+			if (this.updateEmoteClueItemStatus(child) == UpdatablePanel.Status.Complete)
 			{
 				return UpdatablePanel.Status.Complete;
 			}
@@ -176,7 +231,7 @@ public class ProgressManager
 		boolean allMatch = true;
 		for (final EmoteClueItem child : children)
 		{
-			if (this.statusMap.get(child) == UpdatablePanel.Status.Complete)
+			if (this.updateEmoteClueItemStatus(child) == UpdatablePanel.Status.Complete)
 			{
 				anyMatch = true;
 			}

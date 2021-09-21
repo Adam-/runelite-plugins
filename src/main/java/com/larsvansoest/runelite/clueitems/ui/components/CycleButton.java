@@ -30,6 +30,7 @@ package com.larsvansoest.runelite.clueitems.ui.components;
 
 import com.larsvansoest.runelite.clueitems.ui.EmoteClueItemsPalette;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import javax.swing.*;
@@ -40,6 +41,12 @@ import java.util.ArrayDeque;
 import java.util.Objects;
 import java.util.Queue;
 
+/**
+ * Button which cycles values each time it is clicked. Allows use of unique icons to display currently selected value.
+ *
+ * @author Lars van Soest
+ * @since 3.0.0
+ */
 public class CycleButton extends JPanel
 {
 	private final JLabel optionLabel;
@@ -50,13 +57,37 @@ public class CycleButton extends JPanel
 	private int minWidth;
 	private int minHeight;
 
-	CycleButton(
+	@Getter
+	private boolean turnedOn;
+	private String toolTipBeforeDisabled;
+	private Icon iconBeforeDisabled;
+
+	private int stageCount;
+
+	/**
+	 * Creates the button with specified default value.
+	 *
+	 * @param primary         Icon to display when value is selected.
+	 * @param onSelectPrimary Runnable to execute when value is selected.
+	 * @param defaultToolTip  Tooltip to display when hovering the cycle button.
+	 */
+	public CycleButton(
 			final EmoteClueItemsPalette emoteClueItemsPalette, final Icon primary, final Runnable onSelectPrimary, final String defaultToolTip)
 	{
 		this(emoteClueItemsPalette, primary, onSelectPrimary, null, null, defaultToolTip);
 	}
 
-	CycleButton(
+	/**
+	 * Creates the button with specified default left and right-click value.
+	 *
+	 * @param emoteClueItemsPalette Colour scheme for the button.
+	 * @param primary               Icon to display when value is selected.
+	 * @param onSelectPrimary       Runnable to execute when value is selected.
+	 * @param secondary             Runnable to execute when secondary value is selected.
+	 * @param onSelectSecondary     Runnable to execute when secondary value is selected.
+	 * @param defaultToolTip        Tooltip to display when hovering the cycle button.
+	 */
+	public CycleButton(
 			final EmoteClueItemsPalette emoteClueItemsPalette, final Icon primary, final Runnable onSelectPrimary, final Icon secondary, final Runnable onSelectSecondary, final String defaultToolTip)
 	{
 		super(new GridBagLayout());
@@ -67,13 +98,19 @@ public class CycleButton extends JPanel
 			@Override
 			public void mousePressed(final MouseEvent e)
 			{
-				CycleButton.this.next(e.getButton() == MouseEvent.BUTTON1);
+				if (CycleButton.this.turnedOn)
+				{
+					CycleButton.this.next(e.getButton() == MouseEvent.BUTTON1);
+				}
 			}
 
 			@Override
 			public void mouseEntered(final MouseEvent e)
 			{
-				CycleButton.super.setBackground(emoteClueItemsPalette.getHoverColor());
+				if (CycleButton.this.turnedOn)
+				{
+					CycleButton.super.setBackground(emoteClueItemsPalette.getHoverColor());
+				}
 			}
 
 			@Override
@@ -82,6 +119,8 @@ public class CycleButton extends JPanel
 				CycleButton.super.setBackground(emoteClueItemsPalette.getDefaultColor());
 			}
 		});
+
+		this.stageCount = 0;
 
 		this.optionLabel = new JLabel();
 		this.optionLabel.setHorizontalAlignment(JLabel.CENTER);
@@ -95,13 +134,33 @@ public class CycleButton extends JPanel
 
 		this.stageQueue = new ArrayDeque<>();
 		this.defaultToolTip = defaultToolTip;
-		this.currentStage = new Stage(primary, onSelectPrimary, secondary, onSelectSecondary, defaultToolTip);
+		this.currentStage = new Stage(primary, onSelectPrimary, secondary, onSelectSecondary, defaultToolTip, this.stageCount++);
 		this.currentValue = primary;
 		onSelectPrimary.run();
+
+		this.turnedOn = true;
 
 		final GridBagConstraints c = new GridBagConstraints();
 		c.fill = GridBagConstraints.BOTH;
 		super.add(this.optionLabel, c);
+	}
+
+	/**
+	 * Cycle through values until value with specified stage id is reached.
+	 *
+	 * @param id Value stage returned by {@link #addOption(javax.swing.Icon, Runnable, String)} and {@link #addOption(javax.swing.Icon, Runnable, javax.swing.Icon, Runnable, String)}.
+	 */
+	public void cycleToStage(final int id)
+	{
+		final int initialId = this.currentStage.id;
+		while (this.currentStage.id != id)
+		{
+			this.next(true);
+			if (this.currentStage.id == initialId)
+			{
+				break;
+			}
+		}
 	}
 
 	private void next(final Boolean isPrimaryMouseKey)
@@ -134,30 +193,97 @@ public class CycleButton extends JPanel
 		runnable.run();
 	}
 
-	public void addOption(final Icon icon, final Runnable onSelect, final String toolTip)
+	/**
+	 * Add a new value to the button cycle.
+	 *
+	 * @param icon     Icon to display when value is selected.
+	 * @param onSelect Runnable to execute when value is selected.
+	 * @param toolTip  Tooltip to display when hovering the {@link com.larsvansoest.runelite.clueitems.ui.components.CycleButton}.
+	 * @return Returns the stage id of added value, to be used as parameter for {@link #cycleToStage(int)}.
+	 */
+	public int addOption(final Icon icon, final Runnable onSelect, final String toolTip)
 	{
-		this.addOption(icon, onSelect, null, null, toolTip);
+		return this.addOption(icon, onSelect, null, null, toolTip);
 	}
 
-	public void addOption(
+	/**
+	 * Add a new value to the button cycle.
+	 * <p>
+	 * When the value is selected, right-clicking the {@link com.larsvansoest.runelite.clueitems.ui.components.CycleButton} toggles the specified primary value to the secondary, and vice versa.
+	 *
+	 * @param primary           Icon to display when primary value is selected.
+	 * @param onSelectPrimary   Runnable to execute when primary value is selected.
+	 * @param secondary         Runnable to execute when secondary value is selected.
+	 * @param onSelectSecondary Runnable to execute when secondary value is selected.
+	 * @param toolTip           Tooltip to display when hovering the {@link com.larsvansoest.runelite.clueitems.ui.components.CycleButton}.
+	 * @return Returns the stage id of added value, to be used as parameter for {@link #cycleToStage(int)}.
+	 */
+	public int addOption(
 			final Icon primary, final Runnable onSelectPrimary, final Icon secondary, final Runnable onSelectSecondary, final String toolTip)
 	{
-		this.stageQueue.add(new Stage(primary, onSelectPrimary, secondary, onSelectSecondary, toolTip));
+		final int stageId = this.stageCount++;
+		this.stageQueue.add(new Stage(primary, onSelectPrimary, secondary, onSelectSecondary, toolTip, stageId));
 		this.minWidth = Math.max(this.minWidth, primary.getIconWidth());
 		this.minHeight = Math.max(this.minHeight, primary.getIconHeight());
 		final Dimension size = new Dimension(this.minWidth, this.minHeight);
 		super.setMinimumSize(size);
 		super.setPreferredSize(size);
+		return stageId;
+	}
+
+	/**
+	 * Enables cycle function when clicking the {@link com.larsvansoest.runelite.clueitems.ui.components.CycleButton}.
+	 * <p>
+	 * Enabled by default. Needed to re-enable cycling after executing {@link #turnOff(javax.swing.Icon, String)}.
+	 */
+	public void turnOn()
+	{
+		if (!this.turnedOn)
+		{
+			super.setToolTipText(this.toolTipBeforeDisabled);
+			this.toolTipBeforeDisabled = null;
+			this.optionLabel.setIcon(this.iconBeforeDisabled);
+			this.iconBeforeDisabled = null;
+			this.turnedOn = true;
+		}
+	}
+
+	/**
+	 * Disable cycle function when clicking {@link com.larsvansoest.runelite.clueitems.ui.components.CycleButton}.
+	 * <p>
+	 * When turned off, the {@link com.larsvansoest.runelite.clueitems.ui.components.CycleButton} will display given icon, and shows given tooltip when the user hovers the button.
+	 * <p>
+	 * To re-enable the cycle function, execute {@link #turnOn()}.
+	 *
+	 * @param disabledIcon    The {@link javax.swing.Icon} to display while the button is disabled.
+	 * @param disabledToolTip Tooltip to display when hovering the {@link com.larsvansoest.runelite.clueitems.ui.components.CycleButton}.
+	 */
+	public void turnOff(
+			@NonNull
+			final Icon disabledIcon, final String disabledToolTip)
+	{
+		if (this.turnedOn)
+		{
+			this.toolTipBeforeDisabled = super.getToolTipText();
+			this.iconBeforeDisabled = this.optionLabel.getIcon();
+			this.optionLabel.setIcon(disabledIcon);
+			if (Objects.nonNull(disabledToolTip))
+			{
+				super.setToolTipText(disabledToolTip);
+			}
+			this.turnedOn = false;
+		}
 	}
 
 	@RequiredArgsConstructor
 	@Getter
-	private final class Stage
+	private static final class Stage
 	{
 		private final Icon primary;
 		private final Runnable onSelectPrimary;
 		private final Icon secondary;
 		private final Runnable onSelectSecondary;
 		private final String toolTip;
+		private final int id;
 	}
 }

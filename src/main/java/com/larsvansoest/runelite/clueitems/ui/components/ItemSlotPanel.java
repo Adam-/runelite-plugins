@@ -28,6 +28,7 @@
 
 package com.larsvansoest.runelite.clueitems.ui.components;
 
+import lombok.Getter;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
@@ -35,14 +36,30 @@ import net.runelite.client.util.ImageUtil;
 import javax.swing.*;
 import java.awt.*;
 
-public class ItemSlotPanel extends UpdatablePanel
+/**
+ * Displays an item in a collection-log fashion.
+ * <p>
+ * It displays an item icon with an item quantity.
+ * <p>
+ * If the quantity is 0, the icon is semi-faded.
+ */
+public class ItemSlotPanel extends JPanel implements UpdatablePanel
 {
 	private final ItemManager itemManager;
 	private final int itemId;
 	private final JLabel itemIcon;
+	@Getter
+	private Status status;
 	private ImageIcon transparentIcon;
 	private int quantity;
 
+	/**
+	 * Creates the panel.
+	 *
+	 * @param itemManager Runelite's item manager to derive the item icons from.
+	 * @param itemId      The {@link net.runelite.api.ItemID} of the item to display.
+	 * @param name        The name of the item to display as tooltip when hovering over the item.
+	 */
 	public ItemSlotPanel(final ItemManager itemManager, final int itemId, final String name)
 	{
 		super.setLayout(new GridBagLayout());
@@ -71,15 +88,27 @@ public class ItemSlotPanel extends UpdatablePanel
 		super.add(this.itemIcon, c);
 	}
 
+	/**
+	 * Sets the quantity of the item display.
+	 *
+	 * @param quantity the new item quantity to display.
+	 */
 	public void setQuantity(final int quantity)
 	{
 		this.quantity = quantity;
 		this.setStatus(quantity > 0 ? Status.Complete : Status.InComplete);
 	}
 
-	@Override
+	/**
+	 * Sets the status of the item display.
+	 * <p>
+	 * If the status is complete, the item is displayed normally with its quantity. It is displayed semi-transparent otherwise.
+	 *
+	 * @param status the new status of the item slot.
+	 */
 	public void setStatus(final Status status)
 	{
 		this.itemIcon.setIcon(status == Status.Complete ? new ImageIcon(this.itemManager.getImage(this.itemId, this.quantity, true)) : this.transparentIcon);
+		this.status = status;
 	}
 }

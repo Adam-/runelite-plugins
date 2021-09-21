@@ -1,32 +1,53 @@
 package com.larsvansoest.runelite.clueitems.progress;
 
+import com.larsvansoest.runelite.clueitems.data.StashUnit;
 import lombok.RequiredArgsConstructor;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.plugins.cluescrolls.clues.emote.STASHUnit;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
+/**
+ * Provides utility to write and read stash fill status to Runelite's {@link net.runelite.client.config.ConfigManager}.
+ *
+ * @author Lars van Soest
+ * @since 3.0.0
+ */
 @RequiredArgsConstructor
-public class StashMonitor
+class StashMonitor
 {
-	private static final String GROUP = "[EmoteClueItems] Stash status";
-	private static final int[] STASH_UNITS = Arrays.stream(STASHUnit.values()).mapToInt(STASHUnit::getObjectId).sorted().toArray();
+	private static final int[] STASH_IDS_ORDERED = Arrays.stream(StashUnit.values()).mapToInt(stashUnit -> stashUnit.getStashUnit().getObjectId()).sorted().toArray();
+	private static final String STASH_IDS_ORDERED_FINGERPRINT = Arrays.stream(STASH_IDS_ORDERED).mapToObj(String::valueOf).collect(Collectors.joining(","));
+	private static final String FINGERPRINT_KEY = "_fingerprint";
 
+	private final String group;
+	private final String key;
 	private final ConfigManager config;
 
-	public void setStashFilled(final String key, final STASHUnit stashUnit, final boolean filled)
+	public void setStashFilled(final StashUnit stashUnit, final boolean filled)
 	{
-		final String stashes = this.config.getRSProfileConfiguration(GROUP, key);
-		final StringBuilder stashesBuilder = stashes.length() == STASH_UNITS.length ? new StringBuilder(stashes) : new StringBuilder(StringUtils.repeat('0', STASH_UNITS.length));
-		stashesBuilder.setCharAt(ArrayUtils.indexOf(STASH_UNITS, stashUnit.getObjectId()), filled ? '1' : '0');
-		this.config.setRSProfileConfiguration(GROUP, key, stashesBuilder.toString());
+		final StringBuilder stashesBuilder = new StringBuilder(this.config.getRSProfileConfiguration(this.group, this.key));
+		stashesBuilder.setCharAt(ArrayUtils.indexOf(STASH_IDS_ORDERED, stashUnit.getStashUnit().getObjectId()), filled ? '1' : '0');
+		this.config.setRSProfileConfiguration(this.group, this.key, stashesBuilder.toString());
 	}
 
-	public boolean getStashFilled(final String key, final STASHUnit stashUnit)
+	public boolean getStashFilled(final StashUnit stashUnit)
 	{
-		final String stashes = this.config.getRSProfileConfiguration(GROUP, key);
-		return stashes.length() == STASH_UNITS.length && stashes.charAt(ArrayUtils.indexOf(STASH_UNITS, stashUnit.getObjectId())) == '1';
+		final String stashes = this.config.getRSProfileConfiguration(this.group, this.key);
+		return stashes.charAt(ArrayUtils.indexOf(STASH_IDS_ORDERED, stashUnit.getStashUnit().getObjectId())) == '1';
+	}
+
+	public void validate()
+	{
+		final String stashes = this.config.getRSProfileConfiguration(this.group, this.key);
+		final String fingerPrint = this.config.getRSProfileConfiguration(this.group, FINGERPRINT_KEY);
+		if (Objects.isNull(stashes) || Objects.isNull(fingerPrint) || !fingerPrint.equals(STASH_IDS_ORDERED_FINGERPRINT) || stashes.length() != STASH_IDS_ORDERED.length)
+		{
+			this.config.setRSProfileConfiguration(this.group, this.key, StringUtils.repeat('0', STASH_IDS_ORDERED.length));
+			this.config.setRSProfileConfiguration(this.group, FINGERPRINT_KEY, STASH_IDS_ORDERED_FINGERPRINT);
+		}
 	}
 }

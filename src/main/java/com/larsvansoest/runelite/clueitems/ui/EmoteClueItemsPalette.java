@@ -53,6 +53,7 @@ public enum EmoteClueItemsPalette
 			ColorScheme.LIGHT_GRAY_COLOR,
 			ColorScheme.MEDIUM_GRAY_COLOR,
 			ColorScheme.DARKER_GRAY_HOVER_COLOR,
+			ColorScheme.BRAND_ORANGE,
 			ColorScheme.LIGHT_GRAY_COLOR,
 			new Color(ColorScheme.LIGHT_GRAY_COLOR.getRed(), ColorScheme.LIGHT_GRAY_COLOR.getGreen(), ColorScheme.LIGHT_GRAY_COLOR.getBlue(), 150)
 	);
@@ -64,6 +65,7 @@ public enum EmoteClueItemsPalette
 	private final Color foldHeaderTextColor;
 	private final Color footerColor;
 	private final Color disclaimerColor;
+	private final Color brandingColor;
 	private final Color propertyNameColor;
 	private final Color propertyValueColor;
 }

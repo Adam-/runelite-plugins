@@ -40,11 +40,19 @@ import java.awt.*;
  * @see FoldablePanel
  * @since 2.0.0
  */
-public abstract class UpdatablePanel extends JPanel
+public interface UpdatablePanel
 {
-	public abstract void setStatus(UpdatablePanel.Status status);
-	
-	public enum Status
+	/**
+	 * In similar fashion to Runescape's quest progression, requirement progression is represented by the following states:
+	 * <ul>
+	 *     <li>Complete</li>
+	 *     <li>InProgress</li>
+	 *     <li>InComplete</li>
+	 * </ul>
+	 * <p>
+	 * For practicality, this enum also contains an entry for Unknown.
+	 */
+	enum Status
 	{
 		Complete(ColorScheme.PROGRESS_COMPLETE_COLOR),
 

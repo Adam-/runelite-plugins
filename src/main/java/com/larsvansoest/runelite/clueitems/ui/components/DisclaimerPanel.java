@@ -38,10 +38,22 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+/**
+ * Displays a notification, supported by a question mark icon and a close button with configurable onClick behaviour.
+ *
+ * @author Lars van Soest
+ * @since 3.0.0
+ */
 public class DisclaimerPanel extends JPanel
 {
 	private final JLabel textLabel;
 
+	/**
+	 * Creates the panel.
+	 *
+	 * @param emoteClueItemsPalette Colour scheme for the panel.
+	 * @param onClick               Behaviour to run when the notification's close button is pressed.
+	 */
 	public DisclaimerPanel(final EmoteClueItemsPalette emoteClueItemsPalette, final Runnable onClick)
 	{
 		super(new GridBagLayout());
@@ -102,6 +114,11 @@ public class DisclaimerPanel extends JPanel
 		super.add(closeIconLabel, c);
 	}
 
+	/**
+	 * Sets the notification to given text. Applied html formatting for automatic line breaks.
+	 *
+	 * @param text The text of the notification.
+	 */
 	public void setText(final String text)
 	{
 		this.textLabel.setText(String.format("<html><p style=\"width:100%%\">%s</p></html>", text));

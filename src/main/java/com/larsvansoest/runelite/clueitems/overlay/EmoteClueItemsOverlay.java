@@ -43,6 +43,9 @@ import java.util.Arrays;
 
 /**
  * Extends {@link WidgetItemOverlay}. Scans and marks items required for emote clue scroll steps.
+ *
+ * @author Lars van Soest
+ * @since 1.0.4
  */
 public class EmoteClueItemsOverlay extends WidgetItemOverlay
 {
@@ -144,14 +147,18 @@ public class EmoteClueItemsOverlay extends WidgetItemOverlay
 
 	static class Component
 	{
-		static class Ribbon
+		static final class Ribbon
 		{
-			static ImageComponent BEGINNER = new ImageComponent(EmoteClueImages.Ribbon.BEGINNER);
-			static ImageComponent EASY = new ImageComponent(EmoteClueImages.Ribbon.EASY);
-			static ImageComponent MEDIUM = new ImageComponent(EmoteClueImages.Ribbon.MEDIUM);
-			static ImageComponent HARD = new ImageComponent(EmoteClueImages.Ribbon.HARD);
-			static ImageComponent ELITE = new ImageComponent(EmoteClueImages.Ribbon.ELITE);
-			static ImageComponent MASTER = new ImageComponent(EmoteClueImages.Ribbon.MASTER);
+			static final ImageComponent BEGINNER = new ImageComponent(EmoteClueImages.Ribbon.BEGINNER);
+			static final ImageComponent EASY = new ImageComponent(EmoteClueImages.Ribbon.EASY);
+			static final ImageComponent MEDIUM = new ImageComponent(EmoteClueImages.Ribbon.MEDIUM);
+			static final ImageComponent HARD = new ImageComponent(EmoteClueImages.Ribbon.HARD);
+			static final ImageComponent ELITE = new ImageComponent(EmoteClueImages.Ribbon.ELITE);
+			static final ImageComponent MASTER = new ImageComponent(EmoteClueImages.Ribbon.MASTER);
+
+			private Ribbon()
+			{
+			}
 		}
 	}
 }

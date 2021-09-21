@@ -1144,7 +1144,7 @@ public enum EmoteClueItem implements ItemRequirement
 		this.itemRequirement = ItemRequirements.item(itemId);
 		this.itemId = itemId;
 		this.name = name;
-		this.children = null;
+		this.children = new ArrayList<>();
 		this.parents = new ArrayList<>();
 	}
 

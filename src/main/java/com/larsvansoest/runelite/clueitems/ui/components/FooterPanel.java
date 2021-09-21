@@ -38,8 +38,19 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+/**
+ * Displays plugin version and a GitHub icon with a hyperlink.
+ */
 public class FooterPanel extends JPanel
 {
+	/**
+	 * Creates the footer.
+	 *
+	 * @param emoteClueItemsPalette Colour scheme for the grid.
+	 * @param pluginName            Plugin name to display.
+	 * @param pluginVersion         Plugin version to display.
+	 * @param gitHubUrl             Hyperlink when clicking the GitHub icon.
+	 */
 	public FooterPanel(final EmoteClueItemsPalette emoteClueItemsPalette, final String pluginName, final String pluginVersion, final String gitHubUrl)
 	{
 		super(new GridBagLayout());

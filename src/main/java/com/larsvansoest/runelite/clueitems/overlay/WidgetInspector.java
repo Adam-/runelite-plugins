@@ -30,6 +30,12 @@ package com.larsvansoest.runelite.clueitems.overlay;
 
 import net.runelite.api.widgets.WidgetItem;
 
+/**
+ * Utility class with Runescape item container widget inspection functionality.
+ *
+ * @author Lars van Soest
+ * @since 1.2.0
+ */
 public abstract class WidgetInspector
 {
 	/**

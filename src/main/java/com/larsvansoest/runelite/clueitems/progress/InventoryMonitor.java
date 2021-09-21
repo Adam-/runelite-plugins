@@ -35,25 +35,25 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-class ItemMonitor
+class InventoryMonitor
 {
 	private final ItemTracker inventoryTracker;
 	private final ItemTracker bankTracker;
 	private final ItemTracker equipmentTracker;
 	private final HashMap<Integer, Integer> collectionLog;
 
-	public ItemMonitor()
+	public InventoryMonitor()
 	{
 		this.inventoryTracker = new ItemTracker(28);
 		this.bankTracker = new ItemTracker(816);
 		this.equipmentTracker = new ItemTracker(13);
-		this.collectionLog = new HashMap<>(EmoteClueAssociations.ItemIdToEmoteClueItemSlot.keySet().size());
+		this.collectionLog = new HashMap<>(EmoteClueAssociations.ItemIdToEmoteClueItem.keySet().size());
 		this.reset();
 	}
 
 	public void reset()
 	{
-		for (final Integer itemId : EmoteClueAssociations.ItemIdToEmoteClueItemSlot.keySet())
+		for (final Integer itemId : EmoteClueAssociations.ItemIdToEmoteClueItem.keySet())
 		{
 			this.collectionLog.put(itemId, 0);
 		}
