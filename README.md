@@ -18,32 +18,32 @@ required to fill the STASHUnit, construction requirements and much more.
 Listed under each emote clue item requirement, the original overview now shows which related stash units are built and/or filled. 
 With this integration, next to the original inventory item tracking, requirement completion can also be performed through filling stash units. 
 
-[![Image from Gyazo](https://i.gyazo.com/1041cfb617d66dfed9f82ef607767d39.gif)](https://gyazo.com/1041cfb617d66dfed9f82ef607767d39)
+![Filling stashes pdates status](/readme/filling-stashes-updates-status.gif)
 
 #### Status management and updates
 Whats more, STASHUnit fill statuses are stored in your Runelite's config manager for each runescape account that you have. 
 By logging into your Runelite account on the client, even when you log in on another computer, your fill statuses are saved. 
 STASHUnit build statuses are automatically updated when building a STASHUnit, and the results are immediately visible in the overview.
 
-[![Image from Gyazo](https://i.gyazo.com/5c0033ab8acbabfa5619f17a268fe40f.gif)](https://gyazo.com/5c0033ab8acbabfa5619f17a268fe40f)
+![Interface item highlighting](/readme/interface-item-highlighting.gif)
 
 ### Other plugin features
 Among other interfaces, items in your bank, inventory and equipment are highlighted by their respective tier colours.
 Individually, for each supported in-game interface, overlay display may be switched on or off in the plugin settings.
 
-[![Image from Gyazo](https://i.gyazo.com/4acd5ebcd9bbffb559f900e843a54bd6.gif)](https://gyazo.com/4acd5ebcd9bbffb559f900e843a54bd6)
+![Item collection log caching](/readme/item-collection-log-caching.gif)
 
 #### Dynamic item collection log caching
 Whenever the user picks up an item, the item collection log of related emote clue item requirement status are updated,
 cached, and displayed.
 
-[![Image from Gyazo](https://i.gyazo.com/2ad018318568ac2a0e4bc92450ef4e96.gif)](https://gyazo.com/2ad018318568ac2a0e4bc92450ef4e96)
+![Status management updates](/readme/status-management-updates.gif)
 
 #### Requirement lookup
 The overview panel allows for querying and sorting the data. Moreover, the input header allows for any combination of
 requirement name, emoteClueDifficulty and completion status filtering.
 
-[![Image from Gyazo](https://i.gyazo.com/722ac8754f6146629b1b1509d7e1a276.gif)](https://gyazo.com/722ac8754f6146629b1b1509d7e1a276)
+![Requirement lookup](/readme/requirement-lookup.gif)
 
 ### Planned future updates
 - Add buttons to display EmoteClue and STASHUnit locations on the in-game world map.
