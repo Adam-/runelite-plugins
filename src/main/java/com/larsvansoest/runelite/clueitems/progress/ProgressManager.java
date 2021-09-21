@@ -72,7 +72,7 @@ public class ProgressManager
 		}
 		for (final EmoteClueItem emoteClueItem : EmoteClueItem.values())
 		{
-			this.inventoryStatusMap.put(emoteClueItem, UpdatablePanel.Status.InComplete);
+			this.setEmoteClueItemInventoryStatus(emoteClueItem, UpdatablePanel.Status.InComplete);
 		}
 		for (final StashUnit stashUnit : StashUnit.values())
 		{
