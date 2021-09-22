@@ -44,7 +44,7 @@ public class EmoteClueItemsPanel extends PluginPanel
 	private final Map<EmoteClueItem, ItemSlotPanel> itemSlotPanelMap;
 
 	private final EmoteClueItemGrid clueItemsGrid;
-	private final StashUnitGrid STASHUnitGrid;
+	private final StashUnitGrid stashUnitGrid;
 
 	/**
 	 * Creates the panel.
@@ -118,11 +118,11 @@ public class EmoteClueItemsPanel extends PluginPanel
 		this.clueItemsGrid = new EmoteClueItemGrid(palette);
 		this.clueItemsGrid.load(this.itemPanelMap.values());
 
-		this.STASHUnitGrid = new StashUnitGrid(palette);
-		this.STASHUnitGrid.load(this.stashUnitPanelMap.values());
+		this.stashUnitGrid = new StashUnitGrid(palette);
+		this.stashUnitGrid.load(this.stashUnitPanelMap.values());
 
 		final TabMenu tabMenu = new TabMenu(palette, this.clueItemsGrid, "Items", "Emote Clue Items");
-		tabMenu.addTab(this.STASHUnitGrid, "Stashes", "Stash Units", false, 1);
+		tabMenu.addTab(this.stashUnitGrid, "Stashes", "Stash Units", false, 1);
 
 		final GridBagConstraints c = new GridBagConstraints();
 		c.fill = GridBagConstraints.BOTH;
@@ -134,11 +134,30 @@ public class EmoteClueItemsPanel extends PluginPanel
 		super.add(tabMenu, c);
 		c.gridy++;
 		super.add(this.clueItemsGrid, c);
-		super.add(this.STASHUnitGrid, c);
+		super.add(this.stashUnitGrid, c);
 
 		c.gridy++;
 		c.insets = new Insets(10, 20, 0, 20);
 		super.add(new FooterPanel(palette, pluginName, pluginVersion, gitHubUrl), c);
+	}
+
+	/**
+	 * Sets all requirement progression for emoteClueItems and STASHUnits back to incomplete.
+	 */
+	public void reset()
+	{
+		for (final EmoteClueItem emoteClueItem : EmoteClueItem.values())
+		{
+			this.setEmoteClueItemQuantity(emoteClueItem, 0);
+			this.setEmoteClueItemStatus(emoteClueItem, UpdatablePanel.Status.InComplete);
+			this.setEmoteClueItemCollectionLogStatus(emoteClueItem, UpdatablePanel.Status.InComplete);
+		}
+		for (final StashUnit stashUnit : StashUnit.values())
+		{
+			this.setSTASHUnitStatus(stashUnit, false, false);
+		}
+		this.clueItemsGrid.reset();
+		this.stashUnitGrid.reset();
 	}
 
 	private void addEmoteClueItemToCollectionPanel(final ItemRequirementCollectionPanel collectionPanel, final EmoteClueItem emoteClueItem)
@@ -171,7 +190,7 @@ public class EmoteClueItemsPanel extends PluginPanel
 	 * @param emoteClueItem the {@link net.runelite.client.plugins.cluescrolls.clues.item.SingleItemRequirement} {@link EmoteClueItem} requirement containing the item sprite.
 	 * @param quantity      the item quantity the item sprite should show.
 	 */
-	public void setItemSlotStatus(final EmoteClueItem emoteClueItem, final int quantity)
+	public void setEmoteClueItemQuantity(final EmoteClueItem emoteClueItem, final int quantity)
 	{
 		final ItemSlotPanel slotPanel = this.itemSlotPanelMap.get(emoteClueItem);
 		if (slotPanel != null)
@@ -186,7 +205,7 @@ public class EmoteClueItemsPanel extends PluginPanel
 	 * @param emoteClueItem the EmoteClueItem requirement to change the status of in all corresponding {@link com.larsvansoest.runelite.clueitems.ui.components.ItemRequirementCollectionPanel}.
 	 * @param status        the new status of the EmoteClueItem requirement.
 	 */
-	public void setCollectionLogStatus(final EmoteClueItem emoteClueItem, final UpdatablePanel.Status status)
+	public void setEmoteClueItemCollectionLogStatus(final EmoteClueItem emoteClueItem, final UpdatablePanel.Status status)
 	{
 		for (final ItemRequirementCollectionPanel itemRequirementCollectionPanel : this.emoteClueItemCollectionPanelMap.get(emoteClueItem))
 		{
@@ -296,7 +315,7 @@ public class EmoteClueItemsPanel extends PluginPanel
 	 */
 	public void setSTASHUnitGridDisclaimer(final String text)
 	{
-		this.STASHUnitGrid.setDisclaimer(text);
+		this.stashUnitGrid.setDisclaimer(text);
 	}
 
 	/**
@@ -312,6 +331,6 @@ public class EmoteClueItemsPanel extends PluginPanel
 	 */
 	public void removeSTASHUnitGridDisclaimer()
 	{
-		this.STASHUnitGrid.removeDisclaimer();
+		this.stashUnitGrid.removeDisclaimer();
 	}
 }

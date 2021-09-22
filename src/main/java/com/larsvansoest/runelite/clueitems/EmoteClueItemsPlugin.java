@@ -30,11 +30,13 @@ package com.larsvansoest.runelite.clueitems;
 
 import com.google.inject.Provides;
 import com.larsvansoest.runelite.clueitems.data.EmoteClueImages;
+import com.larsvansoest.runelite.clueitems.data.EmoteClueItem;
 import com.larsvansoest.runelite.clueitems.data.StashUnit;
 import com.larsvansoest.runelite.clueitems.overlay.EmoteClueItemsOverlay;
 import com.larsvansoest.runelite.clueitems.progress.ProgressManager;
 import com.larsvansoest.runelite.clueitems.ui.EmoteClueItemsPalette;
 import com.larsvansoest.runelite.clueitems.ui.EmoteClueItemsPanel;
+import com.larsvansoest.runelite.clueitems.ui.components.UpdatablePanel;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -55,6 +57,7 @@ import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 import javax.inject.Inject;
+import javax.swing.*;
 
 /**
  * Main class of the plugin.
@@ -98,9 +101,9 @@ public class EmoteClueItemsPlugin extends Plugin
 		final EmoteClueItemsPalette emoteClueItemsPalette = EmoteClueItemsPalette.RUNELITE;
 		this.emoteClueItemsPanel = new EmoteClueItemsPanel(emoteClueItemsPalette,
 				this.itemManager,
-				this::onStashFillStatusChanged,
+				this::onStashUnitFilledChanged,
 				"Emote Clue Items",
-				"v3.0.0",
+				"v3.0.1",
 				"https://github.com/larsvansoest/emote-clue-items"
 		);
 
@@ -114,12 +117,51 @@ public class EmoteClueItemsPlugin extends Plugin
 
 		this.clientToolbar.addNavigation(this.navigationButton);
 
-		this.progressManager = new ProgressManager(this.configManager, this.emoteClueItemsPanel, this.client, this.clientThread);
+		this.progressManager = new ProgressManager(this.configManager,
+				this.client,
+				this.clientThread,
+				this::onEmoteClueItemQuantityChanged,
+				this::onEmoteClueItemInventoryStatusChanged,
+				this::onEmoteClueItemStatusChanged
+		);
+
+		this.reset();
 	}
 
-	private void onStashFillStatusChanged(final StashUnit stashUnit, final boolean filled)
+	private void reset()
+	{
+		this.progressManager.reset();
+		this.emoteClueItemsPanel.reset();
+
+		for (final StashUnit stashUnit : StashUnit.values())
+		{
+			this.emoteClueItemsPanel.turnOnSTASHFilledButton(stashUnit);
+			this.emoteClueItemsPanel.turnOffSTASHFilledButton(stashUnit, new ImageIcon(EmoteClueImages.Toolbar.CheckSquare.WAITING), "Please open your bank to log STASH progress.");
+		}
+
+		final String loginDisclaimer = "To start display of progression, please open your bank once.";
+		this.emoteClueItemsPanel.setEmoteClueItemGridDisclaimer(loginDisclaimer);
+		this.emoteClueItemsPanel.setSTASHUnitGridDisclaimer(loginDisclaimer);
+	}
+
+	private void onStashUnitFilledChanged(final StashUnit stashUnit, final boolean filled)
 	{
 		this.progressManager.setStashUnitFilled(stashUnit, filled);
+	}
+
+	private void onEmoteClueItemQuantityChanged(final EmoteClueItem emoteClueItem, final int quantity)
+	{
+		this.emoteClueItemsPanel.setEmoteClueItemQuantity(emoteClueItem, quantity);
+	}
+
+	private void onEmoteClueItemInventoryStatusChanged(final EmoteClueItem emoteClueItem, final UpdatablePanel.Status status)
+	{
+		this.emoteClueItemsPanel.setEmoteClueItemCollectionLogStatus(emoteClueItem, status);
+	}
+
+	private void onEmoteClueItemStatusChanged(final EmoteClueItem emoteClueItem, final UpdatablePanel.Status status)
+	{
+		this.emoteClueItemsPanel.setEmoteClueItemStatus(emoteClueItem, status);
 	}
 
 	@Subscribe
@@ -163,10 +205,7 @@ public class EmoteClueItemsPlugin extends Plugin
 	{
 		if (event.getGameState() == GameState.LOGIN_SCREEN)
 		{
-			this.progressManager.reset();
-			final String loginDisclaimer = "To start display of progression, please open your bank once.";
-			this.emoteClueItemsPanel.setEmoteClueItemGridDisclaimer(loginDisclaimer);
-			this.emoteClueItemsPanel.setSTASHUnitGridDisclaimer(loginDisclaimer);
+			this.reset();
 		}
 		if (event.getGameState() == GameState.LOGGED_IN)
 		{

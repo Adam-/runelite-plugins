@@ -1,7 +1,9 @@
 package com.larsvansoest.runelite.clueitems.progress;
 
-import com.larsvansoest.runelite.clueitems.data.*;
-import com.larsvansoest.runelite.clueitems.ui.EmoteClueItemsPanel;
+import com.larsvansoest.runelite.clueitems.data.EmoteClue;
+import com.larsvansoest.runelite.clueitems.data.EmoteClueAssociations;
+import com.larsvansoest.runelite.clueitems.data.EmoteClueItem;
+import com.larsvansoest.runelite.clueitems.data.StashUnit;
 import com.larsvansoest.runelite.clueitems.ui.components.UpdatablePanel;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
@@ -13,11 +15,11 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.plugins.cluescrolls.clues.item.AllRequirementsCollection;
 import net.runelite.client.plugins.cluescrolls.clues.item.ItemRequirement;
 
-import javax.swing.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 
 /**
  * Keeps track of item requirement progression. Contains inventory change and STASHUnit fill status functionality.
@@ -31,20 +33,28 @@ public class ProgressManager
 	private final StashMonitor stashMonitor;
 	private final HashMap<EmoteClueItem, UpdatablePanel.Status> inventoryStatusMap;
 	private final Map<EmoteClueItem, Map<StashUnit, Boolean>> stashFilledStatusMap;
-	private final EmoteClueItemsPanel panel;
 	private final Client client;
 	private final ClientThread clientThread;
+	private final BiConsumer<EmoteClueItem, Integer> onEmoteClueItemQuantityChanged;
+	private final BiConsumer<EmoteClueItem, UpdatablePanel.Status> onEmoteClueItemInventoryStatusChanged;
+	private final BiConsumer<EmoteClueItem, UpdatablePanel.Status> onEmoteClueItemStatusChanged;
+	
 	private boolean initialState;
 
-	public ProgressManager(final ConfigManager configManager, final EmoteClueItemsPanel panel, final Client client, final ClientThread clientThread)
+	public ProgressManager(
+			final ConfigManager configManager, final Client client, final ClientThread clientThread, final BiConsumer<EmoteClueItem, Integer> onEmoteClueItemQuantityChanged,
+			final BiConsumer<EmoteClueItem, UpdatablePanel.Status> onEmoteClueItemInventoryStatusChanged, final BiConsumer<EmoteClueItem, UpdatablePanel.Status> onEmoteClueItemStatusChanged)
 	{
-		this.panel = panel;
 		this.client = client;
 		this.clientThread = clientThread;
 		this.inventoryMonitor = new InventoryMonitor();
 		this.stashMonitor = new StashMonitor("[EmoteClueItems]", "STASHUnit fill statuses", configManager);
 		this.inventoryStatusMap = new HashMap<>(EmoteClueItem.values().length);
 		this.stashFilledStatusMap = new HashMap<>(EmoteClueAssociations.EmoteClueItemToEmoteClues.keySet().size());
+		this.onEmoteClueItemQuantityChanged = onEmoteClueItemQuantityChanged;
+		this.onEmoteClueItemInventoryStatusChanged = onEmoteClueItemInventoryStatusChanged;
+		this.onEmoteClueItemStatusChanged = onEmoteClueItemStatusChanged;
+
 		EmoteClueAssociations.EmoteClueItemToEmoteClues.forEach(((emoteClueItem, emoteClues) ->
 		{
 			final Map<StashUnit, Boolean> emoteClueStashFillStatusMap = new HashMap<>(emoteClues.length);
@@ -54,6 +64,8 @@ public class ProgressManager
 			}
 			this.stashFilledStatusMap.put(emoteClueItem, emoteClueStashFillStatusMap);
 		}));
+
+		this.reset();
 	}
 
 	/**
@@ -61,24 +73,17 @@ public class ProgressManager
 	 */
 	public void reset()
 	{
-		this.initialState = true;
 		this.inventoryMonitor.reset();
+		for (final EmoteClueItem emoteClueItem : EmoteClueItem.values())
+		{
+			this.inventoryStatusMap.put(emoteClueItem, UpdatablePanel.Status.InComplete);
+		}
 		for (final EmoteClueItem emoteClueItem : EmoteClueAssociations.EmoteClueItemToEmoteClues.keySet())
 		{
 			final Map<StashUnit, Boolean> emoteClueStashFillStatusMap = this.stashFilledStatusMap.get(emoteClueItem);
 			emoteClueStashFillStatusMap.keySet().forEach(key -> emoteClueStashFillStatusMap.put(key, false));
-			this.panel.setEmoteClueItemStatus(emoteClueItem, UpdatablePanel.Status.InComplete);
-			this.panel.setItemSlotStatus(emoteClueItem, 0);
 		}
-		for (final EmoteClueItem emoteClueItem : EmoteClueItem.values())
-		{
-			this.setEmoteClueItemInventoryStatus(emoteClueItem, UpdatablePanel.Status.InComplete);
-		}
-		for (final StashUnit stashUnit : StashUnit.values())
-		{
-			this.panel.turnOnSTASHFilledButton(stashUnit);
-			this.panel.turnOffSTASHFilledButton(stashUnit, new ImageIcon(EmoteClueImages.Toolbar.CheckSquare.WAITING), "Please open your bank to log STASH progress.");
-		}
+		this.initialState = true;
 	}
 
 	/**
@@ -132,9 +137,12 @@ public class ProgressManager
 				final int quantity = item.getQuantity();
 				final EmoteClueItem emoteClueItem = EmoteClueAssociations.ItemIdToEmoteClueItem.get(item.getId());
 
+				this.onEmoteClueItemQuantityChanged.accept(emoteClueItem, quantity);
+
 				final UpdatablePanel.Status status = quantity > 0 ? UpdatablePanel.Status.Complete : UpdatablePanel.Status.InComplete;
-				this.panel.setItemSlotStatus(emoteClueItem, quantity);
-				this.setEmoteClueItemInventoryStatus(emoteClueItem, status);
+				this.inventoryStatusMap.put(emoteClueItem, status);
+
+				this.setEmoteClueItemStatus(emoteClueItem, this.updateEmoteClueItemStatus(emoteClueItem));
 			}
 		}
 	}
@@ -157,27 +165,16 @@ public class ProgressManager
 		{
 			for (final EmoteClueItem emoteClueItem : EmoteClueAssociations.EmoteClueToEmoteClueItems.get(emoteClue))
 			{
-				this.setEmoteClueItemStashFilledStatus(emoteClueItem, stashUnit, filled);
+				this.stashFilledStatusMap.get(emoteClueItem).put(stashUnit, filled);
+				this.setEmoteClueItemStatus(emoteClueItem, this.updateEmoteClueItemStatus(emoteClueItem));
 			}
 		}
-	}
-
-	private void setEmoteClueItemStashFilledStatus(final EmoteClueItem emoteClueItem, final StashUnit stashUnit, final Boolean filled)
-	{
-		this.stashFilledStatusMap.get(emoteClueItem).put(stashUnit, filled);
-		this.setEmoteClueItemStatus(emoteClueItem, this.updateEmoteClueItemStatus(emoteClueItem));
-	}
-
-	private void setEmoteClueItemInventoryStatus(final EmoteClueItem emoteClueItem, final UpdatablePanel.Status status)
-	{
-		this.inventoryStatusMap.put(emoteClueItem, status);
-		this.setEmoteClueItemStatus(emoteClueItem, this.updateEmoteClueItemStatus(emoteClueItem));
 	}
 
 	private UpdatablePanel.Status updateEmoteClueItemStatus(final EmoteClueItem emoteClueItem)
 	{
 		final UpdatablePanel.Status inventoryStatus = this.inventoryStatusMap.get(emoteClueItem);
-		this.panel.setCollectionLogStatus(emoteClueItem, inventoryStatus);
+		this.onEmoteClueItemInventoryStatusChanged.accept(emoteClueItem, inventoryStatus);
 		if (inventoryStatus == UpdatablePanel.Status.Complete)
 		{
 			return UpdatablePanel.Status.Complete;
@@ -199,7 +196,7 @@ public class ProgressManager
 
 	private void setEmoteClueItemStatus(final EmoteClueItem emoteClueItem, final UpdatablePanel.Status status)
 	{
-		this.panel.setEmoteClueItemStatus(emoteClueItem, status);
+		this.onEmoteClueItemStatusChanged.accept(emoteClueItem, status);
 		for (final EmoteClueItem parent : emoteClueItem.getParents())
 		{
 			this.setEmoteClueItemStatus(parent, this.getParentStatus(parent));

@@ -90,4 +90,19 @@ public class FoldablePanelGrid<T extends FoldablePanel> extends DataGrid<T>
 		}
 		super.setVisible(visible);
 	}
+
+	/**
+	 * Clears all query parameters, including filter and sort buttons and displays the resulting entries.
+	 * <p>
+	 * Collapses any un-collapsed entry.
+	 */
+	@Override
+	public void reset()
+	{
+		for (final T entry : super.entries)
+		{
+			entry.fold();
+		}
+		super.reset();
+	}
 }
