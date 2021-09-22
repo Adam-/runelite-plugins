@@ -90,7 +90,7 @@ public class DataGrid<T extends JPanel> extends JPanel
 
 		this.entryList = new JPanel(new GridBagLayout());
 
-		this.paint();
+		this.reset();
 	}
 
 	/**
@@ -103,6 +103,21 @@ public class DataGrid<T extends JPanel> extends JPanel
 	public static String getToolTipText(final String format, final String keyword)
 	{
 		return String.format("<html>%s</html>", String.format(format, String.format("<b>%s</b>", keyword)));
+	}
+
+	/**
+	 * Clears all filter and sort buttons and displays the resulting entries.
+	 * <p>
+	 * Searchbar input will remain the same.
+	 */
+	public void reset()
+	{
+		this.filterButtons.values().forEach(CycleButton::reset);
+		if (Objects.nonNull(this.sortButton))
+		{
+			this.sortButton.reset();
+		}
+		this.paint();
 	}
 
 	private void paint()

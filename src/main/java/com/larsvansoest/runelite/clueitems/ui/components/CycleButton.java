@@ -146,7 +146,15 @@ public class CycleButton extends JPanel
 	}
 
 	/**
-	 * Cycle through values until value with specified stage id is reached.
+	 * Cycles through the values to reach the default button value.
+	 */
+	public void reset()
+	{
+		this.cycleToStage(0);
+	}
+
+	/**
+	 * Cycles through values until value with specified stage id is reached.
 	 *
 	 * @param id Value stage returned by {@link #addOption(javax.swing.Icon, Runnable, String)} and {@link #addOption(javax.swing.Icon, Runnable, javax.swing.Icon, Runnable, String)}.
 	 */
