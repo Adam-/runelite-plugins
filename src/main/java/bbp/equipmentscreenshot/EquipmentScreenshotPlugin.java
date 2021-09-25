@@ -753,7 +753,7 @@ public class EquipmentScreenshotPlugin extends Plugin
 		}
 
 		if (frankensteinsMonster != null)
-			imageCapture.takeScreenshot(frankensteinsMonster, "Equipment-", false, config.uploadScreenshot());
+			imageCapture.takeScreenshot(frankensteinsMonster, "Equipment-", config.notifyWhenTaken() && configManager.getConfiguration("screenshot", "notifyWhenTaken", Boolean.class), config.uploadScreenshot());
 	}
 
 	private boolean isResourcePackActive()

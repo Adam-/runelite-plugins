@@ -44,7 +44,7 @@ public interface EquipmentScreenshotConfig extends Config
 	String equipmentStats = "equipmentStats";
 
 	@ConfigItem(
-		position = 1,
+		position = 0,
 		keyName = "uploadScreenshot",
 		name = "Upload equipment screenshot",
 		description = "Uploads the equipment screenshot to Imgur or the clipboard"
@@ -52,6 +52,17 @@ public interface EquipmentScreenshotConfig extends Config
 	default ImageUploadStyle uploadScreenshot()
 	{
 		return ImageUploadStyle.CLIPBOARD;
+	}
+
+	@ConfigItem(
+		position = 1,
+		keyName = "notifyWhenTaken",
+		name = "Notify When Taken",
+		description = "Configures whether or not you are notified when a screenshot has been taken"
+	)
+	default boolean notifyWhenTaken()
+	{
+		return true;
 	}
 
 	@ConfigItem(
