@@ -112,10 +112,6 @@ public class DataGrid<T extends JPanel> extends JPanel
 	 */
 	public void reset()
 	{
-		SwingUtilities.invokeLater(() ->
-		{
-			this.searchBar.setText("");
-		});
 		this.filterButtons.values().forEach(CycleButton::reset);
 		if (Objects.nonNull(this.sortButton))
 		{
