@@ -10,7 +10,7 @@ clue scrolls. With this plugin, throwing away items may be a bit less stressful,
 emote clue items.
 
 ### 3.1.0 Patch notes
-Opening your bank to begin progression logging is no longer a requirement. Instead, the progression loggin will now start
+Opening your bank to begin progression logging is no longer a requirement. Instead, the progression logging will now start
 right after a player has logged in. A new disclaimer will inform the user that opening the bank will add its contents
 to the collection log.
 
