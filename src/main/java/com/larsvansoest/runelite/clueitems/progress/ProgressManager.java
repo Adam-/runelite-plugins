@@ -38,8 +38,8 @@ public class ProgressManager
 	private final BiConsumer<EmoteClueItem, Integer> onEmoteClueItemQuantityChanged;
 	private final BiConsumer<EmoteClueItem, UpdatablePanel.Status> onEmoteClueItemInventoryStatusChanged;
 	private final BiConsumer<EmoteClueItem, UpdatablePanel.Status> onEmoteClueItemStatusChanged;
-	
-	private boolean initialState;
+
+	private boolean bankNeverOpened;
 
 	public ProgressManager(
 			final ConfigManager configManager, final Client client, final ClientThread clientThread, final BiConsumer<EmoteClueItem, Integer> onEmoteClueItemQuantityChanged,
@@ -83,7 +83,7 @@ public class ProgressManager
 			final Map<StashUnit, Boolean> emoteClueStashFillStatusMap = this.stashFilledStatusMap.get(emoteClueItem);
 			emoteClueStashFillStatusMap.keySet().forEach(key -> emoteClueStashFillStatusMap.put(key, false));
 		}
-		this.initialState = true;
+		this.bankNeverOpened = true;
 	}
 
 	/**
@@ -93,15 +93,15 @@ public class ProgressManager
 	{
 		final int containerId = event.getContainerId();
 
-		if (this.initialState && containerId == 95)
+		if (this.bankNeverOpened && containerId == 95)
 		{
+			this.bankNeverOpened = false;
 			this.clientThread.invoke(() ->
 			{
 				final ItemContainer bankContainer = this.client.getItemContainer(InventoryID.BANK);
 				if (bankContainer != null)
 				{
 					this.handleItemChanges(this.inventoryMonitor.fetchEmoteClueItemChanges(95, bankContainer.getItems()));
-					this.initialState = false;
 				}
 			});
 		}
@@ -180,7 +180,7 @@ public class ProgressManager
 			return UpdatablePanel.Status.Complete;
 		}
 		final Map<StashUnit, Boolean> emoteClueStashFilledMap = this.stashFilledStatusMap.get(emoteClueItem);
-		if (Objects.nonNull(emoteClueStashFilledMap) && !this.initialState)
+		if (Objects.nonNull(emoteClueStashFilledMap))
 		{
 			if (this.stashFilledStatusMap.get(emoteClueItem).values().stream().allMatch(Boolean::booleanValue))
 			{

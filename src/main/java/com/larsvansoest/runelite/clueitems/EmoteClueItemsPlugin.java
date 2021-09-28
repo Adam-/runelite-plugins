@@ -42,9 +42,7 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.ScriptID;
-import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.GameStateChanged;
-import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.api.events.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -92,6 +90,8 @@ public class EmoteClueItemsPlugin extends Plugin
 	private ProgressManager progressManager;
 	private EmoteClueItemsPanel emoteClueItemsPanel;
 
+	private boolean updateStashBuiltStatusOnNextGameTick;
+
 	@Override
 	protected void startUp()
 	{
@@ -103,7 +103,7 @@ public class EmoteClueItemsPlugin extends Plugin
 				this.itemManager,
 				this::onStashUnitFilledChanged,
 				"Emote Clue Items",
-				"v3.0.1",
+				"v3.1.0",
 				"https://github.com/larsvansoest/emote-clue-items"
 		);
 
@@ -133,15 +133,16 @@ public class EmoteClueItemsPlugin extends Plugin
 		this.progressManager.reset();
 		this.emoteClueItemsPanel.reset();
 
+		final String loginDisclaimer = "To start display of progression, please login first.";
 		for (final StashUnit stashUnit : StashUnit.values())
 		{
 			this.emoteClueItemsPanel.turnOnSTASHFilledButton(stashUnit);
-			this.emoteClueItemsPanel.turnOffSTASHFilledButton(stashUnit, new ImageIcon(EmoteClueImages.Toolbar.CheckSquare.WAITING), "Please open your bank to log STASH progress.");
+			this.emoteClueItemsPanel.turnOffSTASHFilledButton(stashUnit, new ImageIcon(EmoteClueImages.Toolbar.CheckSquare.WAITING), loginDisclaimer);
 		}
-
-		final String loginDisclaimer = "To start display of progression, please open your bank once.";
 		this.emoteClueItemsPanel.setEmoteClueItemGridDisclaimer(loginDisclaimer);
 		this.emoteClueItemsPanel.setSTASHUnitGridDisclaimer(loginDisclaimer);
+
+		this.updateStashBuiltStatusOnNextGameTick = false;
 	}
 
 	private void onStashUnitFilledChanged(final StashUnit stashUnit, final boolean filled)
@@ -174,16 +175,22 @@ public class EmoteClueItemsPlugin extends Plugin
 	}
 
 	@Subscribe
+	protected void onCommandExecuted(final CommandExecuted event)
+	{
+		if (event.getCommand().equals("stashes"))
+		{
+			this.updateStashUnitBuildStatuses();
+		}
+	}
+
+	@Subscribe
 	protected void onItemContainerChanged(final ItemContainerChanged event)
 	{
 		this.progressManager.processInventoryChanges(event);
 		if (event.getContainerId() == 95)
 		{
 			this.emoteClueItemsPanel.removeEmoteClueItemGridDisclaimer();
-			this.emoteClueItemsPanel.removeSTASHUnitGridDisclaimer();
-			this.updateStashUnitBuildStatuses();
 		}
-		// TODO match on any pin-required container to unlock stash tracking.
 	}
 
 	private void updateStashUnitBuildStatuses()
@@ -210,10 +217,23 @@ public class EmoteClueItemsPlugin extends Plugin
 		if (event.getGameState() == GameState.LOGGED_IN)
 		{
 			this.progressManager.validateConfig();
+			this.updateStashBuiltStatusOnNextGameTick = true;
+			this.emoteClueItemsPanel.removeEmoteClueItemGridDisclaimer();
+			this.emoteClueItemsPanel.removeSTASHUnitGridDisclaimer();
+			this.emoteClueItemsPanel.setEmoteClueItemGridDisclaimer("To include bank items, please open your bank once.");
 		}
 	}
 
 	@Subscribe
+	public void onGameTick(final GameTick event)
+	{
+		if (this.updateStashBuiltStatusOnNextGameTick)
+		{
+			this.updateStashBuiltStatusOnNextGameTick = false;
+			this.updateStashUnitBuildStatuses();
+		}
+	}
+
 	protected void onConfigChanged(final ConfigChanged event)
 	{
 		if (event.getKey().equals("DisplayProgressPanel"))
