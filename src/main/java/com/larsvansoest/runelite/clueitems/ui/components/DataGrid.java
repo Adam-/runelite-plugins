@@ -316,11 +316,8 @@ public class DataGrid<T extends JPanel> extends JPanel
 	 */
 	public void setDisclaimer(final String text)
 	{
-		SwingUtilities.invokeLater(() ->
-		{
-			this.disclaimerPanel.setText(text);
-			this.disclaimerPanel.setVisible(true);
-		});
+		this.disclaimerPanel.setText(text);
+		this.disclaimerPanel.setVisible(true);
 	}
 
 	/**
@@ -340,9 +337,6 @@ public class DataGrid<T extends JPanel> extends JPanel
 	 */
 	public void removeDisclaimer()
 	{
-		SwingUtilities.invokeLater(() ->
-		{
-			this.disclaimerPanel.setVisible(false);
-		});
+		this.disclaimerPanel.setVisible(false);
 	}
 }
