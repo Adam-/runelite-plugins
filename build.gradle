@@ -10,7 +10,7 @@ repositories {
     mavenCentral()
 }
 
-def runeLiteVersion = '1.7.24'
+def runeLiteVersion = '1.7.25-SNAPSHOT'
 
 dependencies {
     compileOnly group: 'net.runelite', name: 'client', version: runeLiteVersion
@@ -24,7 +24,7 @@ dependencies {
 }
 
 group = 'com.example'
-version = '1.3.1'
+version = '1.3.2'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {
