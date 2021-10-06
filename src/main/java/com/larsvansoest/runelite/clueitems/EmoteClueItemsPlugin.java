@@ -106,7 +106,7 @@ public class EmoteClueItemsPlugin extends Plugin
 				this.itemManager,
 				this::onStashUnitFilledChanged,
 				"Emote Clue Items",
-				"v3.1.0",
+				"v3.1.1",
 				"https://github.com/larsvansoest/emote-clue-items"
 		);
 
