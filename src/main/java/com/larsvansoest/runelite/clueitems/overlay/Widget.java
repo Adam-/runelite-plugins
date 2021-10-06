@@ -30,9 +30,9 @@ package com.larsvansoest.runelite.clueitems.overlay;
 
 enum Widget
 {
-	BANK(12, 12),
+	BANK(12, 10),
 
-	BANK_EQUIPMENT(12, 68),
+	BANK_EQUIPMENT(12, 69),
 
 	BANK_EQUIPMENT_INVENTORY(15, 4),
 
