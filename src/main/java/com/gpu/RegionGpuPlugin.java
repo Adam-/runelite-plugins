@@ -110,6 +110,7 @@ import static org.jocl.CL.clCreateFromGLBuffer;
 	description = "GPU plugin with unique shader for locked chunks",
 	enabledByDefault = false,
 	tags = {"fog", "draw distance", "chunk", "locker"},
+	conflicts = "GPU",
 	loadInSafeMode = false
 )
 @Slf4j
