@@ -23,7 +23,7 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'tictac7x.TODO_PLUGIN_NAME'
+group = 'tictac7x.tithe'
 version = '0.1'
 sourceCompatibility = '1.8'
 

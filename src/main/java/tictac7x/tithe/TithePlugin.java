@@ -1,4 +1,4 @@
-package tictac7x.TODO_PLUGIN_NAME;
+package tictac7x.tithe;
 
 import com.google.inject.Provides;
 import javax.inject.Inject;
@@ -14,19 +14,20 @@ import net.runelite.client.plugins.PluginDescriptor;
 
 @Slf4j
 @PluginDescriptor(
-	name = "TODO_PLUGIN_NAME",
-	description = "TODO_PLUGIN_DESCRIPTION",
+	name = "Tithe Farm Improvements",
+	description = "Additions to Tithe Farm official plugin",
 	tags = {
-		"TODO_PLUGIN_TAGS",
-		"TODO_PLUGIN_TAGS"
+		"tithe",
+		"farm",
+		"bologano"
 	}
 )
-public class TODO_PLUGIN_NAME_Plugin extends Plugin {
+public class TithePlugin extends Plugin {
 	@Inject
 	private Client client;
 
 	@Inject
-	private TODO_PLUGIN_NAME_Config config;
+	private TitheConfig config;
 
 	@Override
 	protected void startUp() throws Exception {
@@ -46,7 +47,7 @@ public class TODO_PLUGIN_NAME_Plugin extends Plugin {
 	}
 
 	@Provides
-	TODO_PLUGIN_NAME_Config provideConfig(ConfigManager configManager) {
-		return configManager.getConfig(TODO_PLUGIN_NAME_Config.class);
+	TitheConfig provideConfig(ConfigManager configManager) {
+		return configManager.getConfig(TitheConfig.class);
 	}
 }
