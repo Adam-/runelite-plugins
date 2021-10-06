@@ -6,11 +6,15 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.events.GameObjectDespawned;
+import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.overlay.OverlayManager;
 
 @Slf4j
 @PluginDescriptor(
@@ -27,23 +31,40 @@ public class TithePlugin extends Plugin {
 	private Client client;
 
 	@Inject
+	private OverlayManager overlays;
+
+	@Inject
+	private ItemManager items;
+
+	@Inject
 	private TitheConfig config;
+
+	@Inject
+	private TitheOverlay overlay;
 
 	@Override
 	protected void startUp() throws Exception {
-		log.info("Example started!");
+		overlays.add(overlay);
 	}
 
 	@Override
 	protected void shutDown() throws Exception {
-		log.info("Example stopped!");
+		overlays.remove(overlay);
 	}
 
 	@Subscribe
-	public void onGameStateChanged(GameStateChanged gameStateChanged) {
-		if (gameStateChanged.getGameState() == GameState.LOGGED_IN) {
-			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Example says " + config.greeting(), null);
-		}
+	protected void onGameObjectSpawned(final GameObjectSpawned game_object) {
+		overlay.patchSpawned(game_object.getGameObject());
+	}
+
+	@Subscribe
+	protected void onGameObjectDespawned(final GameObjectDespawned game_object) {
+		overlay.patchDespawned(game_object.getGameObject());
+	}
+
+	@Subscribe
+	protected void onGameStateChanged(final GameStateChanged game_state) {
+		overlay.gameStateChanged(game_state.getGameState());
 	}
 
 	@Provides

@@ -7,12 +7,20 @@ import net.runelite.client.config.ConfigItem;
 @ConfigGroup("tictac7x.tithe")
 public interface TitheConfig extends Config {
 	@ConfigItem(
-		keyName = "greeting",
-		name = "Welcome Greeting",
-		description = "The message to show to the user when they login"
+		keyName = "watering_cans",
+		name = "Highligh Watering Cans",
+		description = "Highlight watering cans based on how much water they contain"
 	)
-	default String greeting()
-	{
-		return "Hello";
+	default boolean highlightWateringCans() {
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "farm_patches",
+		name = "Highligh Farm Patches",
+		description = "Highlight farm patches that are available to be used"
+	)
+	default boolean highlightFarmPatches() {
+		return true;
 	}
 }
