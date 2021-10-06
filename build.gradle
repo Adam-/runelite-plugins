@@ -10,7 +10,7 @@ repositories {
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.7.24'
+def runeLiteVersion = '1.7.25'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -23,7 +23,7 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'tictac7x.TODO_PLUGIN_NAME.TODO_PLUGIN_FILE'
+group = 'tictac7x.TODO_PLUGIN_NAME'
 version = '0.1'
 sourceCompatibility = '1.8'
 
