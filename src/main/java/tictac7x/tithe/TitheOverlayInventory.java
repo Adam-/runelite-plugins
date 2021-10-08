@@ -1,18 +1,17 @@
 package tictac7x.tithe;
 
+import tictac7x.Overlay;
 import net.runelite.api.Client;
 import net.runelite.api.ItemID;
-import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetInfo;
-import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-import net.runelite.client.ui.overlay.components.LineComponent;
-
 import javax.inject.Inject;
-import java.awt.*;
-import java.util.*;
+import java.awt.Graphics2D;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.util.Map;
+import java.util.HashMap;
 
 public class TitheOverlayInventory extends Overlay {
     private final Client client;

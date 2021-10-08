@@ -1,13 +1,20 @@
 package tictac7x.tithe;
 
-import net.runelite.api.*;
+import tictac7x.Overlay;
+import net.runelite.api.Client;
+import net.runelite.api.GameObject;
+import net.runelite.api.GameState;
+import net.runelite.api.Point;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
-
 import javax.inject.Inject;
-import java.util.*;
 import java.awt.Graphics2D;
 import java.awt.Dimension;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
 
 import static net.runelite.api.ObjectID.TITHE_PATCH;
 import static net.runelite.api.ObjectID.BLIGHTED_GOLOVANOVA_PLANT;
@@ -48,7 +55,6 @@ public class TitheOverlayPatches extends Overlay {
     private final Client client;
     private final TitheConfig config;
 
-    private final int TITHE_PATCH = 27383;
     private final float PLANT_BLIGHTED_TIME = 60000;
 
     private final Set<GameObject> patches = new HashSet<>();
@@ -113,17 +119,17 @@ public class TitheOverlayPatches extends Overlay {
         final int id = object.getId();
 
         return id == BLIGHTED_GOLOVANOVA_SEEDLING
-                || id == BLIGHTED_GOLOVANOVA_PLANT
-                || id == BLIGHTED_GOLOVANOVA_PLANT_27392
-                || id == BLIGHTED_GOLOVANOVA_PLANT_27394
-                || id == BLIGHTED_BOLOGANO_SEEDLING
-                || id == BLIGHTED_BOLOGANO_PLANT
-                || id == BLIGHTED_BOLOGANO_PLANT_27403
-                || id == BLIGHTED_BOLOGANO_PLANT_27405
-                || id == BLIGHTED_LOGAVANO_SEEDLING
-                || id == BLIGHTED_LOGAVANO_PLANT
-                || id == BLIGHTED_LOGAVANO_PLANT_27414
-                || id == BLIGHTED_LOGAVANO_PLANT_27416
+            || id == BLIGHTED_GOLOVANOVA_PLANT
+            || id == BLIGHTED_GOLOVANOVA_PLANT_27392
+            || id == BLIGHTED_GOLOVANOVA_PLANT_27394
+            || id == BLIGHTED_BOLOGANO_SEEDLING
+            || id == BLIGHTED_BOLOGANO_PLANT
+            || id == BLIGHTED_BOLOGANO_PLANT_27403
+            || id == BLIGHTED_BOLOGANO_PLANT_27405
+            || id == BLIGHTED_LOGAVANO_SEEDLING
+            || id == BLIGHTED_LOGAVANO_PLANT
+            || id == BLIGHTED_LOGAVANO_PLANT_27414
+            || id == BLIGHTED_LOGAVANO_PLANT_27416
         ;
     }
 
@@ -131,28 +137,28 @@ public class TitheOverlayPatches extends Overlay {
         final int id = object.getId();
 
         return isBlightedPatch(object)
-                || id == TITHE_PATCH
-                || id == GOLOVANOVA_SEEDLING
-                || id == GOLOVANOVA_SEEDLING_27385
-                || id == GOLOVANOVA_PLANT
-                || id == GOLOVANOVA_PLANT_27388
-                || id == GOLOVANOVA_PLANT_27390
-                || id == GOLOVANOVA_PLANT_27391
-                || id == GOLOVANOVA_PLANT_27393
-                || id == BOLOGANO_SEEDLING
-                || id == BOLOGANO_SEEDLING_27396
-                || id == BOLOGANO_PLANT
-                || id == BOLOGANO_PLANT_27399
-                || id == BOLOGANO_PLANT_27401
-                || id == BOLOGANO_PLANT_27402
-                || id == BOLOGANO_PLANT_27404
-                || id == LOGAVANO_SEEDLING
-                || id == LOGAVANO_SEEDLING_27407
-                || id == LOGAVANO_PLANT
-                || id == LOGAVANO_PLANT_27410
-                || id == LOGAVANO_PLANT_27412
-                || id == LOGAVANO_PLANT_27413
-                || id == LOGAVANO_PLANT_27415
+            || id == TITHE_PATCH
+            || id == GOLOVANOVA_SEEDLING
+            || id == GOLOVANOVA_SEEDLING_27385
+            || id == GOLOVANOVA_PLANT
+            || id == GOLOVANOVA_PLANT_27388
+            || id == GOLOVANOVA_PLANT_27390
+            || id == GOLOVANOVA_PLANT_27391
+            || id == GOLOVANOVA_PLANT_27393
+            || id == BOLOGANO_SEEDLING
+            || id == BOLOGANO_SEEDLING_27396
+            || id == BOLOGANO_PLANT
+            || id == BOLOGANO_PLANT_27399
+            || id == BOLOGANO_PLANT_27401
+            || id == BOLOGANO_PLANT_27402
+            || id == BOLOGANO_PLANT_27404
+            || id == LOGAVANO_SEEDLING
+            || id == LOGAVANO_SEEDLING_27407
+            || id == LOGAVANO_PLANT
+            || id == LOGAVANO_PLANT_27410
+            || id == LOGAVANO_PLANT_27412
+            || id == LOGAVANO_PLANT_27413
+            || id == LOGAVANO_PLANT_27415
         ;
     }
 }
