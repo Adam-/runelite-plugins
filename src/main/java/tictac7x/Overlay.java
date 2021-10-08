@@ -1,4 +1,4 @@
-package tictac7x.TODO_PLUGIN_NAME;
+package tictac7x;
 
 import java.util.Map;
 
