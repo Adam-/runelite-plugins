@@ -40,21 +40,26 @@ public class TithePlugin extends Plugin {
 	private TitheConfig config;
 
 	@Inject
-	private TitheOverlayPlants overlay_plants;
+	private TitheOverlayPatches overlay_plants;
 
 	@Inject
-	private TithePanelWater panel_water;
+	private TitheOverlayWater overlay_water;
+
+	@Inject
+	private TitheOverlayInventory overlay_seeds;
 
 	@Override
 	protected void startUp() throws Exception {
 		overlays.add(overlay_plants);
-		overlays.add(panel_water);
+		overlays.add(overlay_water);
+		overlays.add(overlay_seeds);
 	}
 
 	@Override
 	protected void shutDown() throws Exception {
 		overlays.remove(overlay_plants);
-		overlays.remove(panel_water);
+		overlays.remove(overlay_water);
+		overlays.remove(overlay_seeds);
 	}
 
 	@Subscribe
@@ -75,7 +80,7 @@ public class TithePlugin extends Plugin {
 	@Subscribe
 	protected void onItemContainerChanged(final ItemContainerChanged event) {
 		if (event.getContainerId() == InventoryID.INVENTORY.getId()) {
-			panel_water.onItemContainerChanged(event.getItemContainer());
+			overlay_water.onItemContainerChanged(event.getItemContainer());
 		}
 	}
 

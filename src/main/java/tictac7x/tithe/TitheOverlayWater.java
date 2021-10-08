@@ -14,7 +14,7 @@ import javax.inject.Inject;
 import java.awt.*;
 import java.util.*;
 
-public class TithePanelWater extends Overlay {
+public class TitheOverlayWater extends Overlay {
     private final Client client;
     private final ItemManager items;
     private final TitheConfig config;
@@ -27,7 +27,7 @@ public class TithePanelWater extends Overlay {
     private int water_low = 10;
 
     @Inject
-    public TithePanelWater(final Client client, final TitheConfig config, final ItemManager items) {
+    public TitheOverlayWater(final Client client, final TitheConfig config, final ItemManager items) {
         this.client = client;
         this.items = items;
         this.config = config;
