@@ -1,7 +1,11 @@
 package tictac7x;
 
 import java.util.Map;
-
+import java.awt.Color;
+import java.awt.Shape;
+import java.awt.Rectangle;
+import java.awt.Graphics2D;
+import java.awt.BasicStroke;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.widgets.Widget;
@@ -10,23 +14,17 @@ import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.components.ProgressPieComponent;
 
-import java.awt.Graphics2D;
-import java.awt.Color;
-import java.awt.Shape;
-import java.awt.BasicStroke;
-import java.awt.Rectangle;
-
 public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
     protected final int panel_background_alpha = 80;
     protected final int clickbox_stroke_width = 2;
     protected final int clickbox_fill_alpha = 30;
     protected final int pie_fill_alpha = 90;
     protected final int pie_progress = 1;
-    protected final Color color_green = new Color(0, 217, 0);
-    protected final Color color_blue = new Color(0, 153, 255);
-    protected final Color color_yellow = new Color(255, 187, 0);
-    protected final Color color_red = new Color(217, 50, 0);
-    protected final Color color_gray = new Color(200, 200, 200);
+    public static final Color color_green = new Color(0, 217, 0);
+    public static final Color color_blue = new Color(0, 153, 255);
+    public static final Color color_yellow = new Color(255, 187, 0);
+    public static final Color color_red = new Color(217, 50, 0);
+    public static final Color color_gray = new Color(200, 200, 200);
 
     protected Color getColor(final Color color, final int alpha) {
         return new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
