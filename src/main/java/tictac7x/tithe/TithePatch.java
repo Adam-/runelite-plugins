@@ -22,8 +22,8 @@ public class TithePatch extends Overlay {
     protected static final int GOLOVANOVA_PLANT_2 = 27390;
     protected static final int GOLOVANOVA_PLANT_2_WATERED = 27391;
     protected static final int GOLOVANOVA_PLANT_2_BLIGHTED = 27392;
-    protected static final int GOLOVANOVA_PLANT_3 = 27393;
-    protected static final int GOLOVANOVA_PLANT_3_BLIGHTED = 27394;
+    protected static final int GOLOVANOVA_GROWN = 27393;
+    protected static final int GOLOVANOVA_GROWN_BLIGHTED = 27394;
 
     // Bologano plants.
     protected static final int BOLOGANO_SEEDLING = 27395;
@@ -35,8 +35,8 @@ public class TithePatch extends Overlay {
     protected static final int BOLOGANO_PLANT_2 = 27401;
     protected static final int BOLOGANO_PLANT_2_WATERED = 27402;
     protected static final int BOLOGANO_PLANT_2_BLIGHTED = 27403;
-    protected static final int BOLOGANO_PLANT_3 = 27404;
-    protected static final int BOLOGANO_PLANT_3_BLIGHTED = 27405;
+    protected static final int BOLOGANO_GROWN = 27404;
+    protected static final int BOLOGANO_GROWN_BLIGHTED = 27405;
 
     // Logavano plants.
     protected static final int LOGAVANO_SEEDLING = 27406;
@@ -48,46 +48,91 @@ public class TithePatch extends Overlay {
     protected static final int LOGAVANO_PLANT_2 = 27412;
     protected static final int LOGAVANO_PLANT_2_WATERED = 27413;
     protected static final int LOGAVANO_PLANT_2_BLIGHTED = 27414;
-    protected static final int LOGAVANO_PLANT_3 = 27415;
-    protected static final int LOGAVANO_PLANT_3_BLIGHTED = 27416;
+    protected static final int LOGAVANO_GROWN = 27415;
+    protected static final int LOGAVANO_GROWN_BLIGHTED = 27416;
+
+    private enum State {
+        EMPTY,
+        SEEDLING_DRY,
+        SEEDLING_WATERED,
+        PLANT_1_DRY,
+        PLANT_1_WATERED,
+        PLANT_2_DRY,
+        PLANT_2_WATERED,
+        GROWN,
+        BLIGHTED
+    }
 
     private final TitheConfig config;
-    private GameObject state;
     private final Duration CYCLE_DURATION = Duration.ofMinutes(1);
-    private Instant cycle;
+    private final Instant cycle_start;
+    private int cycle_count = 0;
+    private GameObject patch = null;
+    private State state = State.EMPTY;
 
     public TithePatch(final GameObject seedling, final TitheConfig config) {
         this.config = config;
-        setPatchState(seedling);
+        this.cycle_start = Instant.now();
+        setPatch(seedling);
+        updateState();
     }
 
-    public void setPatchState(final GameObject patch) {
-        // Set state and reset cycle.
-        if (isSeedling(patch) || isDry(patch) || isBlighted(patch) || isGrown(patch)) {
-            this.state = patch;
-            this.cycle = Instant.now();
+    public void setPatch(final GameObject patch) {
+        if (isPatch(patch)) this.patch = patch;
 
-        // Set state, but keep the cycle.
-        } else if (isWatered(patch)) {
-            this.state = patch;
+        if (isWatered(patch)) {
+            if (state == State.SEEDLING_DRY) {
+                state = State.SEEDLING_WATERED;
+            } else if (state == State.PLANT_1_DRY) {
+                state = State.PLANT_1_WATERED;
+            } else if (state == State.PLANT_2_DRY) {
+                state = State.PLANT_2_WATERED;
+            }
         }
     }
 
     @Override
     public Dimension render(final Graphics2D graphics) {
+        updateState();
+
         final Color color = getCycleColor();
-        if (color != null) renderPie(graphics, state, getCycleColor(), (float) getCycleProgress());
+        if (color != null) renderPie(graphics, patch, getCycleColor(), (float) getCycleProgress());
         return null;
     }
 
+    private void updateState() {
+        if (state != null && getCycleDuration() >= cycle_count * CYCLE_DURATION.toMillis()) {
+            if (state == State.EMPTY) {
+                state = State.SEEDLING_DRY;
+            } else if (
+                state == State.SEEDLING_DRY
+                || state == State.PLANT_1_DRY
+                || state == State.PLANT_2_DRY
+                || state == State.GROWN
+            ) {
+                state = State.BLIGHTED;
+            } else if (state == State.SEEDLING_WATERED) {
+                state = State.PLANT_1_DRY;
+            } else if (state == State.PLANT_1_WATERED) {
+                state = State.PLANT_2_DRY;
+            } else if (state == State.PLANT_2_WATERED) {
+                state = State.GROWN;
+            } else if (state == State.BLIGHTED) {
+                state = null;
+            }
+
+            cycle_count++;
+        }
+    }
+
     private Color getCycleColor() {
-        if (config.highlightPlantsDry() && isDry(state)) {
+        if (config.highlightPlantsDry() && (state == State.SEEDLING_DRY || state == State.PLANT_1_DRY || state == State.PLANT_2_DRY)) {
             return config.getPlantsDryColor();
-        } else if (config.highlightPlantsGrown() && isGrown(state)) {
+        } else if (config.highlightPlantsGrown() && state == State.GROWN) {
             return config.getPlantsGrownColor();
-        } else if (config.highlightPlantsWatered() && isWatered(state)) {
+        } else if (config.highlightPlantsWatered() && (state == State.SEEDLING_WATERED || state == State.PLANT_1_WATERED || state == State.PLANT_2_WATERED)) {
             return config.getPlantsWateredColor();
-        } else if (config.highlightPlantsBlighted() && isBlighted(state)) {
+        } else if (config.highlightPlantsBlighted() && state == State.BLIGHTED) {
             return config.getPlantsBlightedColor();
         }
 
@@ -95,17 +140,16 @@ public class TithePatch extends Overlay {
     }
 
     private double getCycleProgress() {
-        final Duration duration = Duration.between(cycle, Instant.now());
-        return 1 - (duration.compareTo(CYCLE_DURATION) < 0 ? getCycleDuration() / CYCLE_DURATION.toMillis() : 1);
+        return 1 - ((getCycleDuration() % CYCLE_DURATION.toMillis()) / CYCLE_DURATION.toMillis());
     }
 
     protected double getCycleDuration() {
-        if (cycle != null) {
-            final Duration duration = Duration.between(cycle, Instant.now());
-            return duration.toMillis();
+        if (state == null) {
+            return CYCLE_DURATION.toMillis();
+        } else {
+            return Duration.between(cycle_start, Instant.now()).toMillis();
         }
 
-        return 0;
     }
 
     protected static boolean isSeedling(final GameObject patch) {
@@ -146,9 +190,9 @@ public class TithePatch extends Overlay {
     protected static boolean isGrown(final GameObject patch) {
         final int id = patch.getId();
         return (
-            id == GOLOVANOVA_PLANT_3
-            || id == BOLOGANO_PLANT_3
-            || id == LOGAVANO_PLANT_3
+            id == GOLOVANOVA_GROWN
+            || id == BOLOGANO_GROWN
+            || id == LOGAVANO_GROWN
         );
     }
 
@@ -158,15 +202,15 @@ public class TithePatch extends Overlay {
             id == GOLOVANOVA_SEEDLING_BLIGHTED
             || id == GOLOVANOVA_PLANT_1_BLIGHTED
             || id == GOLOVANOVA_PLANT_2_BLIGHTED
-            || id == GOLOVANOVA_PLANT_3_BLIGHTED
+            || id == GOLOVANOVA_GROWN_BLIGHTED
             || id == BOLOGANO_SEEDLING_BLIGHTED
             || id == BOLOGANO_PLANT_1_BLIGHTED
             || id == BOLOGANO_PLANT_2_BLIGHTED
-            || id == BOLOGANO_PLANT_3_BLIGHTED
+            || id == BOLOGANO_GROWN_BLIGHTED
             || id == LOGAVANO_SEEDLING_BLIGHTED
             || id == LOGAVANO_PLANT_1_BLIGHTED
             || id == LOGAVANO_PLANT_2_BLIGHTED
-            || id == LOGAVANO_PLANT_3_BLIGHTED
+            || id == LOGAVANO_GROWN_BLIGHTED
         );
     }
 

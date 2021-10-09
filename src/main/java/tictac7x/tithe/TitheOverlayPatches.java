@@ -50,7 +50,7 @@ public class TitheOverlayPatches extends Overlay {
 
             // Update patch state.
             } else if (patches_player.containsKey(location_patch)) {
-                patches_player.get(location_patch).setPatchState(patch);
+                patches_player.get(location_patch).setPatch(patch);
             }
         }
 
