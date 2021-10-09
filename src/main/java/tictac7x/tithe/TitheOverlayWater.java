@@ -69,7 +69,7 @@ public class TitheOverlayWater extends Overlay {
 
         final int water_remaining = water_current * 100 / water_total;
         final Color color =
-            water_remaining >= water_high ? color_green :
+            water_remaining >= water_high ? color_blue :
             water_remaining >= water_low ? color_yellow :
             color_red;
 
