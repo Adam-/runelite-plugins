@@ -1,3 +1,4 @@
+#intellij
 .gradle
 build
 .idea/
@@ -7,3 +8,7 @@ build
 nbactions.xml
 nb-configuration.xml
 nbproject/
+
+#vscode
+.vscode
+bin
