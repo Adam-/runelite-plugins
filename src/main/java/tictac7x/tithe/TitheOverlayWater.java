@@ -1,6 +1,10 @@
 package tictac7x.tithe;
 
 import tictac7x.Overlay;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
@@ -9,11 +13,7 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.PanelComponent;
-import java.awt.Graphics2D;
-import java.awt.Dimension;
-import java.awt.Color;
 
-import javax.inject.Inject;
 
 public class TitheOverlayWater extends Overlay {
     private final Client client;
@@ -65,6 +65,8 @@ public class TitheOverlayWater extends Overlay {
 
     @Override
     public Dimension render(final Graphics2D graphics) {
+        if (water_total == 0 || !config.showWaterAmount()) return null;
+
         final int water_remaining = water_current * 100 / water_total;
         final Color color =
             water_remaining >= water_high ? color_green :
