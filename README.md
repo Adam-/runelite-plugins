@@ -30,3 +30,9 @@ Plugin for RuneLite to improve overall experience for Tithe farm.
 
 ## Settings
 ![](./img/settings.png)
+
+<br>
+
+## Ground markers
+Ground markers to do 25 plants per run can be found from [here](./groundmarkers.txt). 
+![](./img/groundmarkers.png)
