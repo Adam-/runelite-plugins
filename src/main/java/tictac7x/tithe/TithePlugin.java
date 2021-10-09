@@ -1,5 +1,7 @@
 package tictac7x.tithe;
 
+import java.util.Set;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -23,10 +25,14 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	tags = {
 		"tithe",
 		"farm",
-		"bologano"
+		"golovanova",
+		"bologano",
+		"logavano"
 	}
 )
 public class TithePlugin extends Plugin {
+	private final Set<Integer> TITHE_FARM_REGIONS = ImmutableSet.of(6965, 6966, 6967, 7221, 7222, 7223);
+
 	@Inject
 	private Client client;
 
@@ -60,6 +66,18 @@ public class TithePlugin extends Plugin {
 		overlays.remove(overlay_plants);
 		overlays.remove(overlay_water);
 		overlays.remove(overlay_seeds);
+	}
+
+	protected boolean inTitheFarm() {
+		final int[] regions = client.getMapRegions();
+
+		for (final int region : regions) {
+			if (!TITHE_FARM_REGIONS.contains(region)) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	@Subscribe

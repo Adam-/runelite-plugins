@@ -16,6 +16,7 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 public class TitheOverlayInventory extends Overlay {
     private final Client client;
     private final ItemManager items;
+    private final TithePlugin plugin;
     private final TitheConfig config;
 
     private final int color_alpha = 60;
@@ -44,9 +45,10 @@ public class TitheOverlayInventory extends Overlay {
 
 
     @Inject
-    public TitheOverlayInventory(final Client client, final TitheConfig config, final ItemManager items) {
+    public TitheOverlayInventory(final Client client, final TithePlugin plugin, final TitheConfig config, final ItemManager items) {
         this.client = client;
         this.items = items;
+        this.plugin = plugin;
         this.config = config;
 
         setPosition(OverlayPosition.DYNAMIC);
@@ -55,6 +57,8 @@ public class TitheOverlayInventory extends Overlay {
 
     @Override
     public Dimension render(final Graphics2D graphics) {
+        if (!plugin.inTitheFarm()) return null;
+
         // Highlight seeds.
         if (config.highlightSeeds()) {
             highlightInventoryItems(client, items, graphics, seeds);

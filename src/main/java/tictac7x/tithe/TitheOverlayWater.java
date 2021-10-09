@@ -5,10 +5,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import javax.inject.Inject;
-import net.runelite.api.Client;
-import net.runelite.api.ItemContainer;
 import net.runelite.api.ItemID;
-import net.runelite.client.game.ItemManager;
+import net.runelite.api.ItemContainer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
 import net.runelite.client.ui.overlay.components.LineComponent;
@@ -16,21 +14,19 @@ import net.runelite.client.ui.overlay.components.PanelComponent;
 
 
 public class TitheOverlayWater extends Overlay {
-    private final Client client;
-    private final ItemManager items;
+    private final TithePlugin plugin;
     private final TitheConfig config;
 
     private final PanelComponent panel_water = new PanelComponent();
 
     private int water_current = 0;
     private int water_total = 0;
-    private int water_high = 80;
-    private int water_low = 10;
+    private final int WATER_HIGH = 80;
+    private final int WATER_LOW = 10;
 
     @Inject
-    public TitheOverlayWater(final Client client, final TitheConfig config, final ItemManager items) {
-        this.client = client;
-        this.items = items;
+    public TitheOverlayWater(final TithePlugin plugin, final TitheConfig config) {
+        this.plugin = plugin;
         this.config = config;
 
         setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
@@ -65,12 +61,12 @@ public class TitheOverlayWater extends Overlay {
 
     @Override
     public Dimension render(final Graphics2D graphics) {
-        if (water_total == 0 || !config.showWaterAmount()) return null;
+        if (water_total == 0 || !config.showWaterAmount() || !plugin.inTitheFarm()) return null;
 
         final int water_remaining = water_current * 100 / water_total;
         final Color color =
-            water_remaining >= water_high ? color_blue :
-            water_remaining >= water_low ? color_yellow :
+            water_remaining >= WATER_HIGH ? color_blue :
+            water_remaining >= WATER_LOW ? color_yellow :
             color_red;
 
         panel_water.getChildren().clear();

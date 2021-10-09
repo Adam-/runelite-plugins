@@ -19,15 +19,16 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 
 public class TitheOverlayPatches extends Overlay {
     private final Client client;
+    private final TithePlugin plugin;
     private final TitheConfig config;
 
     private final Set<GameObject> patches_all = new HashSet<>();
     private final Map<LocalPoint, TithePatch> patches_player = new HashMap<>();
 
-
     @Inject
-    public TitheOverlayPatches(final Client client, final TitheConfig config) {
+    public TitheOverlayPatches(final Client client, final TithePlugin plugin, final TitheConfig config) {
         this.client = client;
+        this.plugin = plugin;
         this.config = config;
 
         setPosition(OverlayPosition.DYNAMIC);
@@ -82,6 +83,7 @@ public class TitheOverlayPatches extends Overlay {
 
     @Override
     public Dimension render(final Graphics2D graphics) {
+        if (!plugin.inTitheFarm()) return null;
         renderPlants(graphics);
 
         if (config.highlightPatchesOnHover()) {

@@ -1,5 +1,5 @@
 # Tithe Farm Improvements
-Plugin for RuneLite to improve overall experience while doing farming in Tithe farm.
+Plugin for RuneLite to improve overall experience for Tithe farm.
 
 ## Plants progress
 * Show progress of dry plants
