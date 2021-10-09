@@ -10,6 +10,7 @@ import static com.herblorerecipes.util.Utils.KEY_UNF_IDENTIFIER;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.event.KeyEvent;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
@@ -21,6 +22,7 @@ import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.client.config.Keybind;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -51,18 +53,20 @@ public class HerbloreRecipesOverlay extends Overlay
 	private final TooltipManager tooltipManager;
 	private final ItemManager itemManager;
 	private final HerbloreRecipesConfig config;
+	private final HerbloreRecipesPlugin plugin;
 	private final HerbloreRecipesCacheLoader tooltipTextCache;
 
 	private final StringBuilder stringBuilder = new StringBuilder();
 
 	@Inject
-	HerbloreRecipesOverlay(Client client, TooltipManager tooltipManager, ItemManager itemManager, HerbloreRecipesConfig config)
+	HerbloreRecipesOverlay(Client client, TooltipManager tooltipManager, ItemManager itemManager, HerbloreRecipesConfig config, HerbloreRecipesPlugin plugin)
 	{
 		setPosition(OverlayPosition.DYNAMIC);
 		this.client = client;
 		this.tooltipManager = tooltipManager;
 		this.itemManager = itemManager;
 		this.config = config;
+		this.plugin = plugin;
 		this.tooltipTextCache = new HerbloreRecipesCacheLoader(config);
 	}
 
@@ -119,19 +123,33 @@ public class HerbloreRecipesOverlay extends Overlay
 					case WidgetID.INVENTORY_GROUP_ID:
 						if (config.showOverlayInInv())
 						{
-							renderHerbloreOverlay(menuEntry, widgetId);
+							conditionalRender(menuEntry, widgetId);
 						}
 						break;
 					case WidgetID.BANK_GROUP_ID:
 						if (config.showOverlayInBank())
 						{
-							renderHerbloreOverlay(menuEntry, widgetId);
+							conditionalRender(menuEntry, widgetId);
 						}
 						break;
 				}
 				break;
 		}
 		return null;
+	}
+
+	private void conditionalRender(MenuEntry menuEntry, int widgetId) {
+		if (config.useModifierKey())
+		{
+			if ((config.modifierKey().getKeyCode() != KeyEvent.VK_UNDEFINED || config.modifierKey().getModifiers() != 0) && plugin.isModifierKeyPressed())
+			{
+				renderHerbloreOverlay(menuEntry, widgetId);
+			}
+		}
+		else if (!config.useModifierKey())
+		{
+			renderHerbloreOverlay(menuEntry, widgetId);
+		}
 	}
 
 	private Optional<ItemContainer> getContainer(int widgetId)

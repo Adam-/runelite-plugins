@@ -11,6 +11,7 @@ import net.runelite.api.Client;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -30,21 +31,31 @@ public class HerbloreRecipesPlugin extends Plugin
 	private HerbloreRecipesConfig config;
 
 	@Inject
+	private KeyManager keyManager;
+
+	@Inject
+	private HerbloreRecipesKeyListener inputListener;
+
+	@Inject
 	private OverlayManager overlayManager;
 
 	@Inject
 	private HerbloreRecipesOverlay herbloreRecipesOverlay;
 
+	private boolean modifierKeyPressed;
+
 	@Override
 	protected void startUp() throws Exception
 	{
 		overlayManager.add(herbloreRecipesOverlay);
+		keyManager.registerKeyListener(inputListener);
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
 		overlayManager.remove(herbloreRecipesOverlay);
+		keyManager.unregisterKeyListener(inputListener);
 	}
 
 	@Provides
@@ -62,5 +73,15 @@ public class HerbloreRecipesPlugin extends Plugin
 		{
 			HerbloreRecipesCacheLoader.clearCache();
 		}
+	}
+
+	public void setModifierKeyPressed(boolean modifierKeyPressed)
+	{
+		this.modifierKeyPressed = modifierKeyPressed;
+	}
+
+	public boolean isModifierKeyPressed()
+	{
+		return modifierKeyPressed;
 	}
 }
