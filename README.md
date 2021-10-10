@@ -2,10 +2,10 @@
 Plugin for RuneLite to improve overall experience for Tithe farm.
 
 ## Plants progress
-* Show progress of dry plants
-* Show progress of watered plants
-* Show progress of grown plants
-* Show progress of blighted plants
+* Show progress of dry plants with game-tick precision
+* Show progress of watered plants with game-tick precision
+* Show progress of grown plants with game-tick precision
+* Show progress of blighted plants with game-tick precision
 * Highlight hovered farm patch
 
 ![](./img/plants.png)
