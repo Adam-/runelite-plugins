@@ -24,42 +24,39 @@
  */
 package com.playeroutline;
 
-import com.google.inject.Provides;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 import javax.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.config.ConfigManager;
-import net.runelite.client.plugins.Plugin;
-import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.api.Client;
+import net.runelite.client.ui.overlay.Overlay;
+import net.runelite.client.ui.overlay.OverlayLayer;
+import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.ui.overlay.OverlayPriority;
+import net.runelite.client.ui.overlay.outline.ModelOutlineRenderer;
 
-@Slf4j
-@PluginDescriptor(
-	name = "Player Outline",
-	description = "A simple plugin that outlines the player allowing you to see the player behind objects.",
-	tags = "highlight, player, outline, color"
-)
-public class PlayerOutlinePlugin extends Plugin
+public class PlayerOutlineOverlay extends Overlay
 {
+
+	private final Client client;
+	private final PlayerOutlineConfig config;
+	private final ModelOutlineRenderer modelOutlineRenderer;
+
 	@Inject
-	PlayerOutlineOverlay playerOutlineOverlay;
-	@Inject
-	private OverlayManager overlayManager;
+	public PlayerOutlineOverlay(Client client, PlayerOutlineConfig config, ModelOutlineRenderer modelOutlineRenderer)
+	{
+		this.client = client;
+		this.config = config;
+		this.modelOutlineRenderer = modelOutlineRenderer;
+		setPosition(OverlayPosition.DYNAMIC);
+		setLayer(OverlayLayer.ABOVE_SCENE);
+		setPriority(OverlayPriority.HIGH);
+	}
 
 	@Override
-	protected void startUp()
+	public Dimension render(Graphics2D graphics)
 	{
-		overlayManager.add(playerOutlineOverlay);
+		modelOutlineRenderer.drawOutline(client.getLocalPlayer(), config.borderWidth(), config.playerOutlineColor(), config.outlineFeather());
+		return null;
 	}
 
-	@Override
-	protected void shutDown()
-	{
-		overlayManager.remove(playerOutlineOverlay);
-	}
-
-	@Provides
-	PlayerOutlineConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(PlayerOutlineConfig.class);
-	}
 }
