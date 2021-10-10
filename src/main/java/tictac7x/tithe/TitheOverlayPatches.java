@@ -1,6 +1,7 @@
 package tictac7x.tithe;
 
 import tictac7x.Overlay;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -50,14 +51,16 @@ public class TitheOverlayPatches extends Overlay {
 
             // Update patch state.
             } else if (patches_player.containsKey(location_patch)) {
-                patches_player.get(location_patch).setPatch(patch);
+                patches_player.get(location_patch).setCyclePatch(patch);
             }
         }
 
         // Seedling.
         if (TithePatch.isSeedling(patch)) {
+            System.out.println("SEEDLING");
             // Check if player is doing seed planting animation.
             if (client.getLocalPlayer().getAnimation() == AnimationID.FARMING_PLANT_SEED) {
+                System.out.println("ANIMATING");
                 // Check if player is next to the patch.
                 if (
                     location_player.getX() + 256 >= location_patch.getX() &&
@@ -65,9 +68,16 @@ public class TitheOverlayPatches extends Overlay {
                     location_player.getY() + 256 >= location_patch.getY() &&
                     location_player.getY() - 256 <= location_patch.getY()
                 ) {
+                    System.out.println("CLOSE");
                     patches_player.put(location_patch, new TithePatch(patch, config));
                 }
             }
+        }
+    }
+
+    protected void onGameTick() {
+        for (final TithePatch patch : patches_player.values()) {
+            patch.onGameTick();
         }
     }
 

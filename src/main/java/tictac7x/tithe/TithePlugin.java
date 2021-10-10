@@ -43,26 +43,26 @@ public class TithePlugin extends Plugin {
 	private TitheConfig config;
 
 	@Inject
-	private TitheOverlayPatches overlay_plants;
+	private TitheOverlayPatches overlay_patches;
 
 	@Inject
 	private TitheOverlayWater overlay_water;
 
 	@Inject
-	private TitheOverlayInventory overlay_seeds;
+	private TitheOverlayInventory overlay_inventory;
 
 	@Override
 	protected void startUp() throws Exception {
-		overlays.add(overlay_plants);
+		overlays.add(overlay_patches);
 		overlays.add(overlay_water);
-		overlays.add(overlay_seeds);
+		overlays.add(overlay_inventory);
 	}
 
 	@Override
 	protected void shutDown() throws Exception {
-		overlays.remove(overlay_plants);
+		overlays.remove(overlay_patches);
 		overlays.remove(overlay_water);
-		overlays.remove(overlay_seeds);
+		overlays.remove(overlay_inventory);
 	}
 
 	protected boolean inTitheFarm() {
@@ -79,17 +79,17 @@ public class TithePlugin extends Plugin {
 
 	@Subscribe
 	protected void onGameObjectSpawned(final GameObjectSpawned event) {
-		overlay_plants.onGameObjectSpawned(event.getGameObject());
+		overlay_patches.onGameObjectSpawned(event.getGameObject());
 	}
 
 	@Subscribe
 	protected void onGameObjectDespawned(final GameObjectDespawned event) {
-		overlay_plants.onGameObjectDespawned(event.getGameObject());
+		overlay_patches.onGameObjectDespawned(event.getGameObject());
 	}
 
 	@Subscribe
 	protected void onGameStateChanged(final GameStateChanged event) {
-		overlay_plants.onGameStateChanged(event.getGameState());
+		overlay_patches.onGameStateChanged(event.getGameState());
 	}
 
 	@Subscribe
@@ -97,6 +97,11 @@ public class TithePlugin extends Plugin {
 		if (event.getContainerId() == InventoryID.INVENTORY.getId()) {
 			overlay_water.onItemContainerChanged(event.getItemContainer());
 		}
+	}
+
+	@Subscribe
+	protected void onGameTick(final GameTick event) {
+		overlay_patches.onGameTick();
 	}
 
 	@Provides

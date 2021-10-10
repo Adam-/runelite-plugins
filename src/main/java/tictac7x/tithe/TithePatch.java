@@ -1,8 +1,7 @@
 package tictac7x.tithe;
 
 import tictac7x.Overlay;
-import java.time.Instant;
-import java.time.Duration;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -51,6 +50,9 @@ public class TithePatch extends Overlay {
     protected static final int LOGAVANO_GROWN = 27415;
     protected static final int LOGAVANO_GROWN_BLIGHTED = 27416;
 
+    // One plant cycle duration in game ticks.
+    private final double DURATION_CYCLE_GAME_TICKS = 100;
+
     private enum State {
         EMPTY,
         SEEDLING_DRY,
@@ -64,31 +66,37 @@ public class TithePatch extends Overlay {
     }
 
     private final TitheConfig config;
-    private final Duration CYCLE_DURATION = Duration.ofMinutes(1);
-    private final Instant cycle_start;
-    private int cycle_count = 0;
-    private GameObject patch = null;
-    private State state = State.EMPTY;
+    private GameObject cycle_patch;
+    private State cycle_state;
+    private int cycle_ticks;
 
     public TithePatch(final GameObject seedling, final TitheConfig config) {
         this.config = config;
-        this.cycle_start = Instant.now();
-        setPatch(seedling);
-        updateState();
+        this.cycle_patch = seedling;
+
+        // First state can't be anything else than dry seedling.
+        this.cycle_state = State.SEEDLING_DRY;
+
+        // -1, because the cycle would be 99 ticks otherwise.
+        this.cycle_ticks = -1;
     }
 
-    public void setPatch(final GameObject patch) {
-        if (isPatch(patch)) this.patch = patch;
+    public void setCyclePatch(final GameObject cycle_patch) {
+        if (isPatch(cycle_patch)) this.cycle_patch = cycle_patch;
 
-        if (isWatered(patch)) {
-            if (state == State.SEEDLING_DRY) {
-                state = State.SEEDLING_WATERED;
-            } else if (state == State.PLANT_1_DRY) {
-                state = State.PLANT_1_WATERED;
-            } else if (state == State.PLANT_2_DRY) {
-                state = State.PLANT_2_WATERED;
+        if (isWatered(cycle_patch)) {
+            if (cycle_state == State.SEEDLING_DRY) {
+                cycle_state = State.SEEDLING_WATERED;
+            } else if (cycle_state == State.PLANT_1_DRY) {
+                cycle_state = State.PLANT_1_WATERED;
+            } else if (cycle_state == State.PLANT_2_DRY) {
+                cycle_state = State.PLANT_2_WATERED;
             }
         }
+    }
+
+    public void onGameTick() {
+        cycle_ticks++;
     }
 
     @Override
@@ -96,43 +104,41 @@ public class TithePatch extends Overlay {
         updateState();
 
         final Color color = getCycleColor();
-        if (color != null) renderPie(graphics, patch, getCycleColor(), (float) getCycleProgress());
+        if (color != null) renderPie(graphics, cycle_patch, getCycleColor(), (float) getCycleProgress());
         return null;
     }
 
     private void updateState() {
-        if (state != null && getCycleDuration() >= cycle_count * CYCLE_DURATION.toMillis()) {
-            if (state == State.EMPTY) {
-                state = State.SEEDLING_DRY;
-            } else if (
-                state == State.SEEDLING_DRY
-                || state == State.PLANT_1_DRY
-                || state == State.PLANT_2_DRY
-                || state == State.GROWN
+        if (cycle_state != State.EMPTY && cycle_ticks == DURATION_CYCLE_GAME_TICKS) {
+            if (
+                cycle_state == State.SEEDLING_DRY
+                || cycle_state == State.PLANT_1_DRY
+                || cycle_state == State.PLANT_2_DRY
+                || cycle_state == State.GROWN
             ) {
-                state = State.BLIGHTED;
-            } else if (state == State.SEEDLING_WATERED) {
-                state = State.PLANT_1_DRY;
-            } else if (state == State.PLANT_1_WATERED) {
-                state = State.PLANT_2_DRY;
-            } else if (state == State.PLANT_2_WATERED) {
-                state = State.GROWN;
-            } else if (state == State.BLIGHTED) {
-                state = null;
+                cycle_state = State.BLIGHTED;
+            } else if (cycle_state == State.SEEDLING_WATERED) {
+                cycle_state = State.PLANT_1_DRY;
+            } else if (cycle_state == State.PLANT_1_WATERED) {
+                cycle_state = State.PLANT_2_DRY;
+            } else if (cycle_state == State.PLANT_2_WATERED) {
+                cycle_state = State.GROWN;
+            } else if (cycle_state == State.BLIGHTED) {
+                cycle_state = State.EMPTY;
             }
 
-            cycle_count++;
+            cycle_ticks = 0;
         }
     }
 
     private Color getCycleColor() {
-        if (config.highlightPlantsDry() && (state == State.SEEDLING_DRY || state == State.PLANT_1_DRY || state == State.PLANT_2_DRY)) {
+        if (config.highlightPlantsDry() && (cycle_state == State.SEEDLING_DRY || cycle_state == State.PLANT_1_DRY || cycle_state == State.PLANT_2_DRY)) {
             return config.getPlantsDryColor();
-        } else if (config.highlightPlantsGrown() && state == State.GROWN) {
+        } else if (config.highlightPlantsGrown() && cycle_state == State.GROWN) {
             return config.getPlantsGrownColor();
-        } else if (config.highlightPlantsWatered() && (state == State.SEEDLING_WATERED || state == State.PLANT_1_WATERED || state == State.PLANT_2_WATERED)) {
+        } else if (config.highlightPlantsWatered() && (cycle_state == State.SEEDLING_WATERED || cycle_state == State.PLANT_1_WATERED || cycle_state == State.PLANT_2_WATERED)) {
             return config.getPlantsWateredColor();
-        } else if (config.highlightPlantsBlighted() && state == State.BLIGHTED) {
+        } else if (config.highlightPlantsBlighted() && cycle_state == State.BLIGHTED) {
             return config.getPlantsBlightedColor();
         }
 
@@ -140,16 +146,7 @@ public class TithePatch extends Overlay {
     }
 
     private double getCycleProgress() {
-        return 1 - ((getCycleDuration() % CYCLE_DURATION.toMillis()) / CYCLE_DURATION.toMillis());
-    }
-
-    protected double getCycleDuration() {
-        if (state == null) {
-            return CYCLE_DURATION.toMillis();
-        } else {
-            return Duration.between(cycle_start, Instant.now()).toMillis();
-        }
-
+        return 1 - (cycle_ticks / DURATION_CYCLE_GAME_TICKS);
     }
 
     protected static boolean isSeedling(final GameObject patch) {
