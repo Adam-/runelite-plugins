@@ -93,6 +93,7 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
     protected void highlightInventoryItem(final Client client, final ItemManager items, final Graphics2D graphics, final int item_id, final Color color) {
         try {
             final Widget inventory = client.getWidget(WidgetInfo.INVENTORY);
+            if (inventory.isHidden()) return;
 
             for (final WidgetItem item : inventory.getWidgetItems()) {
                 if (item.getId() == item_id) {
@@ -108,6 +109,7 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
     protected void highlightInventoryItems(final Client client, final ItemManager items, final Graphics2D graphics, Map<Integer, Color> items_to_highlight) {
         try {
             final Widget inventory = client.getWidget(WidgetInfo.INVENTORY);
+            if (inventory.isHidden()) return;
 
             for (final WidgetItem item : inventory.getWidgetItems()) {
                 final int id = item.getId();
