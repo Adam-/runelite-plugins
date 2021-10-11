@@ -1,4 +1,4 @@
-## Emote Clue Items v3.1.1 [![Plugin Installs](http://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/installs/plugin/emote-clue-items&label=Active%20installs)](https://runelite.net/plugin-hub/Lars%20van%20Soest)
+## Emote Clue Items v3.2.0 [![Plugin Installs](http://img.shields.io/endpoint?url=https://i.pluginhub.info/shields/installs/plugin/emote-clue-items&label=Active%20installs)](https://runelite.net/plugin-hub/Lars%20van%20Soest)
 
 Emote Clue Items is a RuneLite plugin which highlights items required for emote clue steps and provides a user-friendly
 item collection log with STASHUnit integration.
@@ -9,16 +9,11 @@ Maintaining bank space can be quite cumbersome, especially when you are not sure
 clue scrolls. With this plugin, throwing away items may be a bit less stressful, as this plugin aims to highlight all
 emote clue items.
 
-### 3.1.0 Patch notes
-Opening your bank to begin progression logging is no longer a requirement. Instead, the progression logging will now start
-right after a player has logged in. A new disclaimer will inform the user that opening the bank will add its contents
-to the collection log.
+### 3.2.0 Patch notes
 
-### New in 3.0.0: STASHUnit integration
-
-With the release of 3.0.0, Emote Clue Items supports STASHUnits. Users are now able to select which STASHUnits are
-filled, and are provided with an elaborate overview. The overview provides a plethora of details, such a collection log
-of items required to fill the STASHUnit, construction requirements and much more.
+Item highlighting now supports STASH unit filtering. Moreover, items in STASH units are not highlighted in the player's
+inventory. The filter is enabled by default and can be disabled in the plugin's settings. After filling a stash unit,
+with this feature, to encourage bank space preservation, future duplicate items can be recognised more easily.
 
 #### Filling stashes now updates the emote clue item requirement status
 

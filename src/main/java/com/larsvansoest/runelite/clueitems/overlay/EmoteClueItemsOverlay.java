@@ -29,9 +29,8 @@
 package com.larsvansoest.runelite.clueitems.overlay;
 
 import com.larsvansoest.runelite.clueitems.EmoteClueItemsConfig;
-import com.larsvansoest.runelite.clueitems.data.EmoteClueAssociations;
-import com.larsvansoest.runelite.clueitems.data.EmoteClueDifficulty;
-import com.larsvansoest.runelite.clueitems.data.EmoteClueImages;
+import com.larsvansoest.runelite.clueitems.data.*;
+import com.larsvansoest.runelite.clueitems.progress.ProgressManager;
 import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.WidgetItemOverlay;
@@ -40,6 +39,8 @@ import net.runelite.client.ui.overlay.components.ImageComponent;
 import javax.inject.Inject;
 import java.awt.*;
 import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * Extends {@link WidgetItemOverlay}. Scans and marks items required for emote clue scroll steps.
@@ -51,14 +52,18 @@ public class EmoteClueItemsOverlay extends WidgetItemOverlay
 {
 	private final EmoteClueItemsConfig config;
 	private final ItemManager itemManager;
+	private final ProgressManager progressManager;
 	// Single object allocations, re-used every sequential iteration.
 	private final WidgetData widgetData;
 	private final Point point;
+	private int x;
+	private int y;
 
 	@Inject
-	public EmoteClueItemsOverlay(final ItemManager itemManager, final EmoteClueItemsConfig config)
+	public EmoteClueItemsOverlay(final ItemManager itemManager, final EmoteClueItemsConfig config, final ProgressManager progressManager)
 	{
 		this.itemManager = itemManager;
+		this.progressManager = progressManager;
 
 		this.config = config;
 		this.widgetData = new WidgetData();
@@ -75,21 +80,36 @@ public class EmoteClueItemsOverlay extends WidgetItemOverlay
 		final WidgetContext widgetContext = this.widgetData.getWidgetContext();
 
 		// Filter unsupported and turned off interfaces.
-		if (widgetContext == null || widgetContainer == null || !this.interfaceGroupSelected(widgetContainer))
+		if (Objects.isNull(widgetContext) || Objects.isNull(widgetContainer) || !this.interfaceGroupSelected(widgetContainer))
 		{
 			return;
 		}
-		final int item = this.itemManager.canonicalize(itemId);
+
+		final EmoteClueItem emoteClueItem = EmoteClueAssociations.ItemIdToEmoteClueItem.get(this.itemManager.canonicalize(itemId));
+
+		// Filter items not required for emote clues.
+		if (Objects.isNull(emoteClueItem))
+		{
+			return;
+		}
+
+		Stream<EmoteClue> emoteClues = Arrays.stream(EmoteClueAssociations.EmoteClueItemToEmoteClues.get(emoteClueItem));
+		if (this.config.filterInStash())
+		{
+			emoteClues = emoteClues.filter(emoteClue -> !this.progressManager.getStashUnitFilled(emoteClue.getStashUnit()));
+		}
 
 		final Rectangle bounds = itemWidget.getCanvasBounds();
-		final int x = bounds.x + bounds.width + this.getXOffset(widgetContainer, widgetContext);
-		int y = bounds.y;
-		y = this.renderClueItemDetection(graphics, EmoteClueDifficulty.Beginner, Component.Ribbon.BEGINNER, item, x, y);
-		y = this.renderClueItemDetection(graphics, EmoteClueDifficulty.Easy, Component.Ribbon.EASY, item, x, y);
-		y = this.renderClueItemDetection(graphics, EmoteClueDifficulty.Medium, Component.Ribbon.MEDIUM, item, x, y);
-		y = this.renderClueItemDetection(graphics, EmoteClueDifficulty.Hard, Component.Ribbon.HARD, item, x, y);
-		y = this.renderClueItemDetection(graphics, EmoteClueDifficulty.Elite, Component.Ribbon.ELITE, item, x, y);
-		this.renderClueItemDetection(graphics, EmoteClueDifficulty.Master, Component.Ribbon.MASTER, item, x, y);
+		this.x = bounds.x + bounds.width + this.getXOffset(widgetContainer, widgetContext);
+		this.y = bounds.y;
+
+		emoteClues.map(EmoteClue::getEmoteClueDifficulty).distinct().map(RibbonComponent::ofDifficulty).forEach(ribbon ->
+		{
+			this.point.setLocation(this.x, this.y);
+			ribbon.setPreferredLocation(this.point);
+			ribbon.render(graphics);
+			this.y += ribbon.getBounds().getHeight() + 1;
+		});
 	}
 
 	private boolean interfaceGroupSelected(final WidgetContainer widgetContainer)
@@ -127,37 +147,31 @@ public class EmoteClueItemsOverlay extends WidgetItemOverlay
 		return widgetContainer == WidgetContainer.Equipment ? -10 : widgetContext == WidgetContext.Default ? -1 : -5;
 	}
 
-	private int renderClueItemDetection(
-			final Graphics2D graphics, final EmoteClueDifficulty emoteClueDifficulty, final ImageComponent component, final int id, final int x, final int y)
+	private static final class RibbonComponent
 	{
-		return Arrays
-				.stream(EmoteClueAssociations.DifficultyToEmoteClues.get(emoteClueDifficulty))
-				.anyMatch(emoteClue -> Arrays.stream(emoteClue.getItemRequirements()).anyMatch(itemRequirement -> itemRequirement.fulfilledBy(id))) ? (int) (y + this
-				.renderRibbon(graphics, component, x, y)
-				.getHeight()) + 1 : y;
-	}
+		static final ImageComponent BEGINNER = new ImageComponent(EmoteClueImages.Ribbon.BEGINNER);
+		static final ImageComponent EASY = new ImageComponent(EmoteClueImages.Ribbon.EASY);
+		static final ImageComponent MEDIUM = new ImageComponent(EmoteClueImages.Ribbon.MEDIUM);
+		static final ImageComponent HARD = new ImageComponent(EmoteClueImages.Ribbon.HARD);
+		static final ImageComponent ELITE = new ImageComponent(EmoteClueImages.Ribbon.ELITE);
+		static final ImageComponent MASTER = new ImageComponent(EmoteClueImages.Ribbon.MASTER);
 
-	private Rectangle renderRibbon(final Graphics2D graphics, final ImageComponent ribbon, final int x, final int y)
-	{
-		this.point.setLocation(x, y);
-		ribbon.setPreferredLocation(this.point);
-		ribbon.render(graphics);
-		return ribbon.getBounds();
-	}
-
-	static class Component
-	{
-		static final class Ribbon
+		public static ImageComponent ofDifficulty(final EmoteClueDifficulty difficulty)
 		{
-			static final ImageComponent BEGINNER = new ImageComponent(EmoteClueImages.Ribbon.BEGINNER);
-			static final ImageComponent EASY = new ImageComponent(EmoteClueImages.Ribbon.EASY);
-			static final ImageComponent MEDIUM = new ImageComponent(EmoteClueImages.Ribbon.MEDIUM);
-			static final ImageComponent HARD = new ImageComponent(EmoteClueImages.Ribbon.HARD);
-			static final ImageComponent ELITE = new ImageComponent(EmoteClueImages.Ribbon.ELITE);
-			static final ImageComponent MASTER = new ImageComponent(EmoteClueImages.Ribbon.MASTER);
-
-			private Ribbon()
+			switch (difficulty)
 			{
+				case Beginner:
+					return BEGINNER;
+				case Easy:
+					return EASY;
+				case Medium:
+					return MEDIUM;
+				case Hard:
+					return HARD;
+				case Elite:
+					return ELITE;
+				default:
+					return MASTER;
 			}
 		}
 	}

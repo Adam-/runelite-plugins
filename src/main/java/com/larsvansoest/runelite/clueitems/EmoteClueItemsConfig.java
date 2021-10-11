@@ -47,8 +47,17 @@ public interface EmoteClueItemsConfig extends Config
 {
 	@ConfigSection(name = "Interface Selection",
 	               description = "Toggle highlighting per interface type.",
-	               position = 0)
+	               position = 1)
 	String Section_selectInterface = "selectInterface";
+
+	@ConfigItem(keyName = "FilterInStash",
+	            name = "Filter items in STASH",
+	            description = "Do not highlight items already in STASH units.",
+	            position = 0)
+	default boolean filterInStash()
+	{
+		return true;
+	}
 
 	@ConfigItem(keyName = "HighlightBank",
 	            name = "Bank",

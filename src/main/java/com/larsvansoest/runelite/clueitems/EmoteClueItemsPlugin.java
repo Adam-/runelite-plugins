@@ -98,15 +98,12 @@ public class EmoteClueItemsPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		this.overlay = new EmoteClueItemsOverlay(this.itemManager, this.config);
-		this.overlayManager.add(this.overlay);
-
 		final EmoteClueItemsPalette emoteClueItemsPalette = EmoteClueItemsPalette.RUNELITE;
 		this.emoteClueItemsPanel = new EmoteClueItemsPanel(emoteClueItemsPalette,
 				this.itemManager,
 				this::onStashUnitFilledChanged,
 				"Emote Clue Items",
-				"v3.1.1",
+				"v3.2.0",
 				"https://github.com/larsvansoest/emote-clue-items"
 		);
 
@@ -127,6 +124,9 @@ public class EmoteClueItemsPlugin extends Plugin
 				this::onEmoteClueItemInventoryStatusChanged,
 				this::onEmoteClueItemStatusChanged
 		);
+
+		this.overlay = new EmoteClueItemsOverlay(this.itemManager, this.config, this.progressManager);
+		this.overlayManager.add(this.overlay);
 
 		this.reset();
 	}
