@@ -30,7 +30,7 @@ package com.larsvansoest.runelite.clueitems.ui.clues;
 
 import com.larsvansoest.runelite.clueitems.data.*;
 import com.larsvansoest.runelite.clueitems.ui.EmoteClueItemsPalette;
-import com.larsvansoest.runelite.clueitems.ui.components.ItemRequirementCollectionPanel;
+import com.larsvansoest.runelite.clueitems.ui.components.ItemCollectionPanel;
 import com.larsvansoest.runelite.clueitems.ui.components.RequirementPanel;
 import com.larsvansoest.runelite.clueitems.ui.stashes.StashUnitPanel;
 import lombok.Getter;
@@ -54,7 +54,7 @@ public class EmoteClueItemPanel extends RequirementPanel
 	@Getter
 	private final int quantity;
 	private final ArrayList<StashUnitPanel> stashUnitPanels;
-	private ItemRequirementCollectionPanel itemCollectionPanel;
+	private ItemCollectionPanel itemCollectionPanel;
 
 	/**
 	 * Creates the panel.
@@ -66,7 +66,7 @@ public class EmoteClueItemPanel extends RequirementPanel
 	{
 		super(palette, emoteClueItem.getCollectiveName(), 160, 20);
 
-		final EmoteClue[] emoteClues = EmoteClueAssociations.EmoteClueItemToEmoteClues.get(emoteClueItem);
+		final EmoteClue[] emoteClues = EmoteClueAssociations.EmoteClueItemParentToEmoteClues.get(emoteClueItem);
 
 		this.stashUnitPanels = new ArrayList<>();
 		this.difficulties = Arrays.stream(emoteClues).map(EmoteClue::getEmoteClueDifficulty).distinct().toArray(EmoteClueDifficulty[]::new);
@@ -77,12 +77,12 @@ public class EmoteClueItemPanel extends RequirementPanel
 	}
 
 	/**
-	 * Specify the {@link com.larsvansoest.runelite.clueitems.ui.components.ItemRequirementCollectionPanel} containing all items required to complete the {@link com.larsvansoest.runelite.clueitems.data.EmoteClueItem} requirement.
+	 * Specify the {@link ItemCollectionPanel} containing all items required to complete the {@link com.larsvansoest.runelite.clueitems.data.EmoteClueItem} requirement.
 	 *
 	 * @param itemCollectionPanel Item collection panel displaying items required to complete the {@link com.larsvansoest.runelite.clueitems.data.EmoteClueItem} requirement.
 	 * @param displayModes        Specify when the panel should be displayed.
 	 */
-	public void setItemCollectionPanel(final ItemRequirementCollectionPanel itemCollectionPanel, final DisplayMode... displayModes)
+	public void setItemCollectionPanel(final ItemCollectionPanel itemCollectionPanel, final DisplayMode... displayModes)
 	{
 		if (Objects.nonNull(this.itemCollectionPanel))
 		{
@@ -91,7 +91,7 @@ public class EmoteClueItemPanel extends RequirementPanel
 		final Runnable onHeaderMousePressed = itemCollectionPanel.getOnHeaderMousePressed();
 		itemCollectionPanel.setOnHeaderMousePressed(() ->
 		{
-			this.stashUnitPanels.stream().map(StashUnitPanel::getItemCollectionPanel).filter(Objects::nonNull).forEach(ItemRequirementCollectionPanel::fold);
+			this.stashUnitPanels.stream().map(StashUnitPanel::getItemCollectionPanel).filter(Objects::nonNull).forEach(ItemCollectionPanel::fold);
 			onHeaderMousePressed.run();
 		});
 		this.itemCollectionPanel = itemCollectionPanel;
@@ -106,7 +106,7 @@ public class EmoteClueItemPanel extends RequirementPanel
 	 */
 	public void addStashUnitPanel(final StashUnitPanel stashUnitPanel, final DisplayMode... displayModes)
 	{
-		final ItemRequirementCollectionPanel stashUnitItemCollectionPanel = stashUnitPanel.getItemCollectionPanel();
+		final ItemCollectionPanel stashUnitItemCollectionPanel = stashUnitPanel.getItemCollectionPanel();
 		final Runnable onHeaderMousePressed = stashUnitItemCollectionPanel.getOnHeaderMousePressed();
 		stashUnitItemCollectionPanel.setOnHeaderMousePressed(() ->
 		{

@@ -57,7 +57,7 @@ public class ItemCollectionPanel extends RequirementPanel
 	public ItemCollectionPanel(final EmoteClueItemsPalette palette, final String name, final int slotRowSize)
 	{
 		super(palette, name, 160, 20);
-		super.setStatus(Status.Unknown);
+		super.setStatus(Status.InComplete);
 		super.addLeft(new JLabel(new ImageIcon(EmoteClueImages.Toolbar.Requirement.INVENTORY)), new Insets(2, 4, 2, 0), 0, 0, DisplayMode.All);
 
 		this.itemSlotBackGround = palette.getFoldContentColor();

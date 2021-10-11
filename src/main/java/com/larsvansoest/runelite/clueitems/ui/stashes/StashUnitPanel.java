@@ -40,7 +40,7 @@ public class StashUnitPanel extends RequirementPanel
 	private Color headerColorBeforeTurnOff;
 	private boolean filledButtonTurnedOn;
 	@Getter
-	private ItemRequirementCollectionPanel itemCollectionPanel;
+	private ItemCollectionPanel itemCollectionPanel;
 
 	/**
 	 * Creates the panel.
@@ -94,12 +94,12 @@ public class StashUnitPanel extends RequirementPanel
 	}
 
 	/**
-	 * Specify the {@link com.larsvansoest.runelite.clueitems.ui.components.ItemRequirementCollectionPanel} containing all items required to fill the {@link com.larsvansoest.runelite.clueitems.data.StashUnit}.
+	 * Specify the {@link ItemCollectionPanel} containing all items required to fill the {@link com.larsvansoest.runelite.clueitems.data.StashUnit}.
 	 *
 	 * @param itemCollectionPanel Item collection panel displaying items required to fill the {@link com.larsvansoest.runelite.clueitems.data.StashUnit}.
 	 * @param displayModes        Specify when the panel should be displayed.
 	 */
-	public void setItemCollectionPanel(final ItemRequirementCollectionPanel itemCollectionPanel, final DisplayMode... displayModes)
+	public void setItemCollectionPanel(final ItemCollectionPanel itemCollectionPanel, final DisplayMode... displayModes)
 	{
 		if (Objects.nonNull(this.itemCollectionPanel))
 		{

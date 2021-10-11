@@ -99,12 +99,21 @@ public class EmoteClueItemsPlugin extends Plugin
 	protected void startUp()
 	{
 		final EmoteClueItemsPalette emoteClueItemsPalette = EmoteClueItemsPalette.RUNELITE;
+
 		this.emoteClueItemsPanel = new EmoteClueItemsPanel(emoteClueItemsPalette,
 				this.itemManager,
 				this::onStashUnitFilledChanged,
 				"Emote Clue Items",
 				"v3.2.0",
 				"https://github.com/larsvansoest/emote-clue-items"
+		);
+
+		this.progressManager = new ProgressManager(this.configManager,
+				this.client,
+				this.clientThread,
+				this::onEmoteClueItemQuantityChanged,
+				this::onEmoteClueItemInventoryStatusChanged,
+				this::onEmoteClueItemStatusChanged
 		);
 
 		this.navigationButton = NavigationButton
@@ -116,14 +125,6 @@ public class EmoteClueItemsPlugin extends Plugin
 				.build();
 
 		this.clientToolbar.addNavigation(this.navigationButton);
-
-		this.progressManager = new ProgressManager(this.configManager,
-				this.client,
-				this.clientThread,
-				this::onEmoteClueItemQuantityChanged,
-				this::onEmoteClueItemInventoryStatusChanged,
-				this::onEmoteClueItemStatusChanged
-		);
 
 		this.overlay = new EmoteClueItemsOverlay(this.itemManager, this.config, this.progressManager);
 		this.overlayManager.add(this.overlay);
