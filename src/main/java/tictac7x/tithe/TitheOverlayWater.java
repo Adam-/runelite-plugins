@@ -32,27 +32,29 @@ public class TitheOverlayWater extends Overlay {
 
     @Override
     public Dimension render(final Graphics2D graphics) {
-        if (!config.showWaterAmount() || !plugin.inTitheFarm()) return null;
+        if (plugin.inTitheFarm() && config.showWaterAmount()) {
+            final int water_remaining = getWaterRemaining();
+            final int water_total = getWaterTotal();
 
-        final int water_remaining = getWaterRemaining();
-        final int water_total = getWaterTotal();
+            final int water_remaining_percentage = water_remaining * 100 / water_total;
+            final Color color =
+                    water_remaining_percentage >= WATER_HIGH || water_remaining > 75 ? color_blue :
+                            water_remaining_percentage >= WATER_LOW ? color_yellow :
+                                    color_red;
 
-        final int water_remaining_percentage = water_remaining * 100 / water_total;
-        final Color color =
-            water_remaining_percentage >= WATER_HIGH || water_remaining > 75 ? color_blue :
-            water_remaining_percentage >= WATER_LOW ? color_yellow :
-            color_red;
+            panel_water.getChildren().clear();
+            panel_water.getChildren().add(
+                    LineComponent.builder()
+                            .left("Water:")
+                            .right(water_remaining + "/" + water_total)
+                            .build()
+            );
+            panel_water.setBackgroundColor(getColor(color, panel_background_alpha));
 
-        panel_water.getChildren().clear();
-        panel_water.getChildren().add(
-            LineComponent.builder()
-                .left("Water:")
-                .right(water_remaining + "/" + water_total)
-                .build()
-        );
-        panel_water.setBackgroundColor(getColor(color, panel_background_alpha));
+            return panel_water.render(graphics);
+        }
 
-        return panel_water.render(graphics);
+        return null;
     }
 
     public int getWaterRemaining() {

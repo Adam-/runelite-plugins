@@ -45,29 +45,29 @@ public class TitheOverlayInventory extends Overlay {
 
     @Override
     public Dimension render(final Graphics2D graphics) {
-        if (!plugin.inTitheFarm()) return null;
+        if (plugin.inTitheFarm()) {
+            // Highlight seeds.
+            if (config.highlightSeeds()) {
+                highlightInventoryItems(client, graphics, seeds);
+            }
 
-        // Highlight seeds.
-        if (config.highlightSeeds()) {
-            highlightInventoryItems(client, graphics, seeds);
-        }
+            // Highlight watering cans.
+            if (config.highlightWaterCans()) {
+                // Highlight regular watering cans.
+                highlightInventoryItems(client, graphics, watering_cans);
 
-        // Highlight watering cans.
-        if (config.highlightWaterCans()) {
-            // Highlight regular watering cans.
-            highlightInventoryItems(client, graphics, watering_cans);
+                // Gricoller's can empty.
+                if (config.getGricollersCanCharges() == 0) {
+                    highlightInventoryItem(client, graphics, ItemID.GRICOLLERS_CAN, Overlay.color_red);
 
-            // Gricoller's can empty.
-            if (config.getGricollersCanCharges() == 0) {
-                highlightInventoryItem(client, graphics, ItemID.GRICOLLERS_CAN, Overlay.color_red);
+                    // Gricoller's can has enough charges for 1 run (25 plants).
+                } else if (config.getGricollersCanCharges() < 75) {
+                    highlightInventoryItem(client, graphics, ItemID.GRICOLLERS_CAN, Overlay.color_yellow);
 
-            // Gricoller's can has enough charges for 1 run (25 plants).
-            } else if (config.getGricollersCanCharges() < 75) {
-                highlightInventoryItem(client, graphics, ItemID.GRICOLLERS_CAN, Overlay.color_yellow);
-
-            // Gricoller's can has charges for multiple runs.
-            } else {
-                highlightInventoryItem(client, graphics, ItemID.GRICOLLERS_CAN, Overlay.color_blue);
+                    // Gricoller's can has charges for multiple runs.
+                } else {
+                    highlightInventoryItem(client, graphics, ItemID.GRICOLLERS_CAN, Overlay.color_blue);
+                }
             }
         }
 

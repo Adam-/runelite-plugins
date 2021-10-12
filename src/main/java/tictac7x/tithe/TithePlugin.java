@@ -52,6 +52,7 @@ public class TithePlugin extends Plugin {
 	private WateringCansRegular watering_cans;
 	private WateringCanGricollers gricollers_can;
 	private TitheOverlayPatches overlay_patches;
+	private TitheOverlayPlants overlay_plants;
 	private TitheOverlayWater overlay_water;
 	private TitheOverlayInventory overlay_inventory;
 
@@ -62,24 +63,27 @@ public class TithePlugin extends Plugin {
 			gricollers_can = new WateringCanGricollers(this, config, watering_cans, client, configs);
 			overlay_inventory = new TitheOverlayInventory(this, config, client);
 			overlay_patches = new TitheOverlayPatches(this, config, client);
+			overlay_plants = new TitheOverlayPlants(this, config, client);
 			overlay_water = new TitheOverlayWater(this, config, watering_cans, gricollers_can);
 		}
 
-		overlays.add(overlay_patches);
 		overlays.add(overlay_water);
+		overlays.add(overlay_plants);
+		overlays.add(overlay_patches);
 		overlays.add(overlay_inventory);
 	}
 
 	@Override
 	protected void shutDown() {
-		overlays.remove(overlay_patches);
 		overlays.remove(overlay_water);
+		overlays.remove(overlay_plants);
+		overlays.remove(overlay_patches);
 		overlays.remove(overlay_inventory);
 	}
 
 	@Subscribe
 	public void onGameObjectSpawned(final GameObjectSpawned event) {
-		overlay_patches.onGameObjectSpawned(event.getGameObject());
+		overlay_plants.onGameObjectSpawned(event.getGameObject());
 		gricollers_can.onGameObjectSpawned(event.getGameObject());
 	}
 
@@ -93,7 +97,7 @@ public class TithePlugin extends Plugin {
 	public void onGameTick(final GameTick event) {
 		watering_cans.onGameTick();
 		gricollers_can.onGameTick();
-		overlay_patches.onGameTick();
+		overlay_plants.onGameTick();
 	}
 
 	@Subscribe
@@ -119,6 +123,6 @@ public class TithePlugin extends Plugin {
 	}
 
 	public Map<LocalPoint, TithePlant> getPlayerPlants() {
-		return overlay_patches.plants;
+		return overlay_plants.plants;
 	}
 }
