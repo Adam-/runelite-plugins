@@ -1,18 +1,13 @@
 package tictac7x.tithe;
 
+import net.runelite.api.*;
 import tictac7x.Overlay;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import net.runelite.api.Point;
-import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.GameObject;
-import net.runelite.api.AnimationID;
+
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -22,10 +17,9 @@ public class TitheOverlayPatches extends Overlay {
     private final TithePlugin plugin;
     private final TitheConfig config;
 
-    private final Set<GameObject> patches_all = new HashSet<>();
-    public final Map<LocalPoint, TithePatch> patches_player = new HashMap<>();
-
     private LocalPoint location_player_planting_seed;
+
+    public final Map<LocalPoint, TithePlant> plants = new HashMap<>();
 
     public TitheOverlayPatches(final TithePlugin plugin, final TitheConfig config, final Client client) {
         this.plugin = plugin;
@@ -38,21 +32,20 @@ public class TitheOverlayPatches extends Overlay {
 
     protected void onGameObjectSpawned(final GameObject game_object) {
         // Game object is some sort of tithe patch.
-        if (TithePatch.isPatch(game_object)) {
+        if (TithePlant.isPatch(game_object)) {
             final LocalPoint location_patch = game_object.getLocalLocation();
-            patches_all.add(game_object);
 
             // Empty patch, plant completed.
-            if (game_object.getId() == TithePatch.TITHE_EMPTY_PATCH) {
-                patches_player.remove(location_patch);
+            if (game_object.getId() == TithePlant.TITHE_EMPTY_PATCH) {
+                plants.remove(location_patch);
 
             // Update plant state.
-            } else if (patches_player.containsKey(location_patch)) {
-                patches_player.get(location_patch).setCyclePatch(game_object);
+            } else if (plants.containsKey(location_patch)) {
+                plants.get(location_patch).setCyclePatch(game_object);
             }
 
             // Seedling.
-            if (TithePatch.isSeedling(game_object)) {
+            if (TithePlant.isSeedling(game_object)) {
                 // Check if player is next to the patch where player performed seed planting animation.
                 if (
                     location_player_planting_seed != null
@@ -61,7 +54,7 @@ public class TitheOverlayPatches extends Overlay {
                     && location_player_planting_seed.getY() + 512 >= location_patch.getY()
                     && location_player_planting_seed.getY() - 512 <= location_patch.getY()
                 ) {
-                    patches_player.put(location_patch, new TithePatch(game_object, config));
+                    plants.put(location_patch, new TithePlant(game_object, config));
                 }
             }
         }
@@ -74,18 +67,8 @@ public class TitheOverlayPatches extends Overlay {
         }
 
         // Update plants progress.
-        for (final TithePatch patch : patches_player.values()) {
+        for (final TithePlant patch : plants.values()) {
             patch.onGameTick();
-        }
-    }
-
-    protected void onGameObjectDespawned(final GameObject object) {
-        patches_all.remove(object);
-    }
-
-    protected void onGameStateChanged(final GameState game_state) {
-        if (game_state == GameState.LOADING) {
-            patches_all.clear();
         }
     }
 
@@ -102,32 +85,20 @@ public class TitheOverlayPatches extends Overlay {
     }
 
     private void renderPlants(final Graphics2D graphics) {
-        for (TithePatch plant : patches_player.values()) {
+        for (TithePlant plant : plants.values()) {
             plant.render(graphics);
         }
     }
 
     private void renderHighlightedPatch(final Graphics2D graphics) {
-        final Point cursor = client.getMouseCanvasPosition();
-        int distance_min = Integer.MAX_VALUE;
-        GameObject patch_hover = null;
+        MenuEntry[] menu_entries = client.getMenuEntries();
+        if (menu_entries.length != 0) {
+            MenuEntry entry = menu_entries[menu_entries.length - 1];
+            final TileObject object = findTileObject(client, entry.getParam0(), entry.getParam1(), entry.getIdentifier());
 
-        // Find the closest patch that is hovered.
-        for (final GameObject patch : patches_all) {
-            // On screen.
-            if (patch.getClickbox() != null && client.getLocalPlayer() != null) {
-                final int distance = patch.getLocalLocation().distanceTo(client.getLocalPlayer().getLocalLocation());
-
-                if (patch.getClickbox().contains(cursor.getX(), cursor.getY()) && distance < distance_min) {
-                    distance_min = distance;
-                    patch_hover = patch;
-                }
+            if (object != null && TithePlant.isPatch(object)) {
+                renderTile(graphics, object, config.getPatchesColor());
             }
-        }
-
-        // Highlight only the closest patch.
-        if (patch_hover != null) {
-            renderTile(graphics, patch_hover,config.getPatchesColor());
         }
     }
 }

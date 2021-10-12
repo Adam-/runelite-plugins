@@ -63,7 +63,7 @@ public class WateringCanGricollers {
 
     public void onGameObjectSpawned(final GameObject game_object) {
         // Game object is some sort of tithe patch.
-        if (TithePatch.isWatered(game_object)) {
+        if (TithePlant.isWatered(game_object)) {
             final LocalPoint location_plant = game_object.getLocalLocation();
 
             // Watered plant is player owned.

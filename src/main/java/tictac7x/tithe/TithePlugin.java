@@ -2,13 +2,16 @@ package tictac7x.tithe;
 
 import java.util.Map;
 import java.util.Set;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
+import com.google.common.collect.ImmutableSet;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.coords.LocalPoint;
-import net.runelite.api.events.*;
+import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.GameObjectSpawned;
+import net.runelite.api.events.GameTick;
+import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
@@ -81,16 +84,6 @@ public class TithePlugin extends Plugin {
 	}
 
 	@Subscribe
-	public void onGameObjectDespawned(final GameObjectDespawned event) {
-		overlay_patches.onGameObjectDespawned(event.getGameObject());
-	}
-
-	@Subscribe
-	public void onGameStateChanged(final GameStateChanged event) {
-		overlay_patches.onGameStateChanged(event.getGameState());
-	}
-
-	@Subscribe
 	public void onItemContainerChanged(final ItemContainerChanged event) {
 		watering_cans.onItemContainerChanged(event);
 		gricollers_can.onItemContainerChanged(event);
@@ -125,7 +118,7 @@ public class TithePlugin extends Plugin {
 		return true;
 	}
 
-	public Map<LocalPoint, TithePatch> getPlayerPlants() {
-		return overlay_patches.patches_player;
+	public Map<LocalPoint, TithePlant> getPlayerPlants() {
+		return overlay_patches.plants;
 	}
 }

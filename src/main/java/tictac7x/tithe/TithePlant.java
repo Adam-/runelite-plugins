@@ -1,16 +1,13 @@
 package tictac7x.tithe;
 
 import tictac7x.Overlay;
-
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.time.Duration;
-import java.time.Instant;
-
+import net.runelite.api.TileObject;
 import net.runelite.api.GameObject;
 
-public class TithePatch extends Overlay {
+public class TithePlant extends Overlay {
     // Tithe empty patch.
     protected static final int TITHE_EMPTY_PATCH = 27383;
 
@@ -73,7 +70,7 @@ public class TithePatch extends Overlay {
     private State cycle_state;
     private int cycle_ticks;
 
-    public TithePatch(final GameObject seedling, final TitheConfig config) {
+    public TithePlant(final GameObject seedling, final TitheConfig config) {
         this.config = config;
         this.cycle_patch = seedling;
 
@@ -152,12 +149,12 @@ public class TithePatch extends Overlay {
         return -1 + (cycle_ticks / DURATION_CYCLE_GAME_TICKS);
     }
 
-    protected static boolean isSeedling(final GameObject patch) {
+    protected static boolean isSeedling(final TileObject patch) {
         final int id = patch.getId();
         return id == GOLOVANOVA_SEEDLING || id == BOLOGANO_SEEDLING || id == LOGAVANO_SEEDLING;
     }
 
-    protected static boolean isDry(final GameObject patch) {
+    protected static boolean isDry(final TileObject patch) {
         final int id = patch.getId();
         return (
             id == GOLOVANOVA_SEEDLING
@@ -172,7 +169,7 @@ public class TithePatch extends Overlay {
         );
     }
 
-    protected static boolean isWatered(final GameObject patch) {
+    protected static boolean isWatered(final TileObject patch) {
         final int id = patch.getId();
         return (
             id == GOLOVANOVA_SEEDLING_WATERED
@@ -187,7 +184,7 @@ public class TithePatch extends Overlay {
         );
     }
 
-    protected static boolean isGrown(final GameObject patch) {
+    protected static boolean isGrown(final TileObject patch) {
         final int id = patch.getId();
         return (
             id == GOLOVANOVA_GROWN
@@ -196,7 +193,7 @@ public class TithePatch extends Overlay {
         );
     }
 
-    protected static boolean isBlighted(final GameObject patch) {
+    protected static boolean isBlighted(final TileObject patch) {
         final int id = patch.getId();
         return (
             id == GOLOVANOVA_SEEDLING_BLIGHTED
@@ -214,11 +211,11 @@ public class TithePatch extends Overlay {
         );
     }
 
-    protected static boolean isEmptyPatch(final GameObject patch) {
+    protected static boolean isEmptyPatch(final TileObject patch) {
         return patch.getId() == TITHE_EMPTY_PATCH;
     }
 
-    protected static boolean isPatch(final GameObject patch) {
+    protected static boolean isPatch(final TileObject patch) {
         return isDry(patch) || isWatered(patch) || isGrown(patch) || isBlighted(patch) || isEmptyPatch(patch);
     }
 }
