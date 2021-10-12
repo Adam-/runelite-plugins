@@ -8,10 +8,15 @@ import java.awt.Graphics2D;
 import java.awt.BasicStroke;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
+import net.runelite.api.Scene;
+import net.runelite.api.TileObject;
+import net.runelite.api.WallObject;
+import net.runelite.api.DecorativeObject;
+import net.runelite.api.GroundObject;
+import net.runelite.api.Tile;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.api.widgets.WidgetItem;
-import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.components.ProgressPieComponent;
 
 public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
@@ -19,6 +24,7 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
     protected final int clickbox_stroke_width = 2;
     protected final int clickbox_fill_alpha = 30;
     protected final int pie_fill_alpha = 90;
+    protected final int inventory_highlight_alpha = 60;
     protected final int pie_progress = 1;
     public static final Color color_green = new Color(0, 217, 0);
     public static final Color color_blue = new Color(0, 153, 255);
@@ -26,31 +32,31 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
     public static final Color color_red = new Color(217, 50, 0);
     public static final Color color_gray = new Color(200, 200, 200);
 
-    protected Color getColor(final Color color, final int alpha) {
+    public Color getColor(final Color color, final int alpha) {
         return new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
     }
 
-    protected void renderClickbox(final Graphics2D graphics, final GameObject object, final Color color) {
+    public void renderClickbox(final Graphics2D graphics, final GameObject object, final Color color) {
         renderClickbox(graphics, object, color, clickbox_stroke_width);
     }
 
-    protected void renderClickbox(final Graphics2D graphics, final GameObject object, final Color color, final int stroke_width) {
+    public void renderClickbox(final Graphics2D graphics, final GameObject object, final Color color, final int stroke_width) {
         renderClickbox(graphics, object, color, stroke_width, clickbox_fill_alpha);
     }
 
-    protected void renderClickbox(final Graphics2D graphics, final GameObject object, final Color color, final int stroke_width, final int fill_alpha) {
+    public void renderClickbox(final Graphics2D graphics, final GameObject object, final Color color, final int stroke_width, final int fill_alpha) {
         renderShape(graphics, object.getClickbox(), color, stroke_width, fill_alpha);
     }
 
-    protected void renderTile(final Graphics2D graphics, final GameObject object, final Color color) {
+    public void renderTile(final Graphics2D graphics, final TileObject object, final Color color) {
         renderTile(graphics, object, color, clickbox_stroke_width);
     }
 
-    protected void renderTile(final Graphics2D graphics, final GameObject object, final Color color, final int stroke_width) {
+    public void renderTile(final Graphics2D graphics, final TileObject object, final Color color, final int stroke_width) {
         renderTile(graphics, object, color, stroke_width, clickbox_fill_alpha);
     }
 
-    protected void renderTile(final Graphics2D graphics, final GameObject object, final Color color, final int stroke_width, final int fill_alpha) {
+    public void renderTile(final Graphics2D graphics, final TileObject object, final Color color, final int stroke_width, final int fill_alpha) {
         renderShape(graphics, object.getCanvasTilePoly(), color, stroke_width, fill_alpha);
     }
 
@@ -67,30 +73,30 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
         } catch (Exception exception) {}
     }
 
-    protected void renderPie(final Graphics2D graphics, final GameObject object, final Color color) {
+    public void renderPie(final Graphics2D graphics, final GameObject object, final Color color) {
         renderPie(graphics, object, color, pie_progress);
     }
 
-    protected void renderPie(final Graphics2D graphics, final GameObject object, final Color color, final float progress) {
+    public void renderPie(final Graphics2D graphics, final GameObject object, final Color color, final float progress) {
         renderPie(graphics, object, color, progress, pie_fill_alpha);
     }
 
-    protected void renderPie(final Graphics2D graphics, final GameObject object, final Color color, final float progress, final int fill_alpha) {
+    public void renderPie(final Graphics2D graphics, final GameObject object, final Color color, final float progress, final int fill_alpha) {
         try {
             final ProgressPieComponent progressPieComponent = new ProgressPieComponent();
             progressPieComponent.setPosition(object.getCanvasLocation());
             progressPieComponent.setProgress(progress);
             progressPieComponent.setBorderColor(color);
-            progressPieComponent.setFill(new Color(color.getRed(), color.getGreen(), color.getBlue(), fill_alpha));
+            progressPieComponent.setFill(getColor(color, fill_alpha));
             progressPieComponent.render(graphics);
         } catch (Exception exception) {}
     }
 
-    protected void highlightInventoryItem(final Client client, final ItemManager items, final Graphics2D graphics, final int item_id) {
-        highlightInventoryItem(client, items, graphics, item_id, getColor(color_green, 80));
+    public void highlightInventoryItem(final Client client, final Graphics2D graphics, final int item_id) {
+        highlightInventoryItem(client, graphics, item_id, getColor(color_green, inventory_highlight_alpha));
     }
 
-    protected void highlightInventoryItem(final Client client, final ItemManager items, final Graphics2D graphics, final int item_id, final Color color) {
+    public void highlightInventoryItem(final Client client, final Graphics2D graphics, final int item_id, final Color color) {
         try {
             final Widget inventory = client.getWidget(WidgetInfo.INVENTORY);
             if (inventory.isHidden()) return;
@@ -98,15 +104,14 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
             for (final WidgetItem item : inventory.getWidgetItems()) {
                 if (item.getId() == item_id) {
                     final Rectangle bounds = item.getCanvasBounds(false);
-                    graphics.setColor(color);
+                    graphics.setColor(getColor(color, inventory_highlight_alpha));
                     graphics.fill(bounds);
-                    graphics.drawImage(items.getImage(item_id, item.getQuantity(), true), (int) bounds.getX(), (int) bounds.getY(), null);
                 }
             }
         } catch (Exception exception) {}
     }
 
-    protected void highlightInventoryItems(final Client client, final ItemManager items, final Graphics2D graphics, Map<Integer, Color> items_to_highlight) {
+    public void highlightInventoryItems(final Client client, final Graphics2D graphics, Map<Integer, Color> items_to_highlight) {
         try {
             final Widget inventory = client.getWidget(WidgetInfo.INVENTORY);
             if (inventory.isHidden()) return;
@@ -116,12 +121,43 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
 
                 if (items_to_highlight.containsKey(id)) {
                     final Rectangle bounds = item.getCanvasBounds();
-                    graphics.setColor(items_to_highlight.get(id));
+                    graphics.setColor(getColor(items_to_highlight.get(id), inventory_highlight_alpha));
                     graphics.fill(bounds);
                     graphics.draw(bounds);
                 }
             }
 
         } catch (Exception exception) {}
+    }
+
+    public TileObject findTileObject(final Client client, final int x, final int y, final int id) {
+        final Scene scene = client.getScene();
+        final Tile[][][] tiles = scene.getTiles();
+        final Tile tile = tiles[client.getPlane()][x][y];
+
+        if (tile != null) {
+            for (GameObject game_object : tile.getGameObjects()) {
+                if (game_object != null && game_object.getId() == id) {
+                    return game_object;
+                }
+            }
+
+            final WallObject wall_object = tile.getWallObject();
+            if (wall_object != null && wall_object.getId() == id) {
+                return wall_object;
+            }
+
+            final DecorativeObject decorative_object = tile.getDecorativeObject();
+            if (decorative_object != null && decorative_object.getId() == id) {
+                return decorative_object;
+            }
+
+            final GroundObject ground_object = tile.getGroundObject();
+            if (ground_object != null && ground_object.getId() == id) {
+                return ground_object;
+            }
+        }
+
+        return null;
     }
 }
