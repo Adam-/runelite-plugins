@@ -31,6 +31,7 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
     public static final Color color_yellow = new Color(255, 187, 0);
     public static final Color color_red = new Color(217, 50, 0);
     public static final Color color_gray = new Color(200, 200, 200);
+    public static final Color color_orange = new Color(243, 145, 30);
 
     public Color getColor(final Color color, final int alpha) {
         return new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
@@ -70,7 +71,7 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
             // Area fill.
             graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), fill_alpha));
             graphics.fill(shape);
-        } catch (Exception exception) {}
+        } catch (Exception ignored) {}
     }
 
     public void renderPie(final Graphics2D graphics, final GameObject object, final Color color) {
@@ -89,7 +90,7 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
             progressPieComponent.setBorderColor(color);
             progressPieComponent.setFill(getColor(color, fill_alpha));
             progressPieComponent.render(graphics);
-        } catch (Exception exception) {}
+        } catch (Exception ignored) {}
     }
 
     public void highlightInventoryItem(final Client client, final Graphics2D graphics, final int item_id) {
@@ -108,7 +109,7 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
                     graphics.fill(bounds);
                 }
             }
-        } catch (Exception exception) {}
+        } catch (Exception ignored) {}
     }
 
     public void highlightInventoryItems(final Client client, final Graphics2D graphics, Map<Integer, Color> items_to_highlight) {
@@ -127,36 +128,38 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
                 }
             }
 
-        } catch (Exception exception) {}
+        } catch (Exception ignored) {}
     }
 
     public TileObject findTileObject(final Client client, final int x, final int y, final int id) {
-        final Scene scene = client.getScene();
-        final Tile[][][] tiles = scene.getTiles();
-        final Tile tile = tiles[client.getPlane()][x][y];
+        try {
+            final Scene scene = client.getScene();
+            final Tile[][][] tiles = scene.getTiles();
+            final Tile tile = tiles[client.getPlane()][x][y];
 
-        if (tile != null) {
-            for (GameObject game_object : tile.getGameObjects()) {
-                if (game_object != null && game_object.getId() == id) {
-                    return game_object;
+            if (tile != null) {
+                for (GameObject game_object : tile.getGameObjects()) {
+                    if (game_object != null && game_object.getId() == id) {
+                        return game_object;
+                    }
+                }
+
+                final WallObject wall_object = tile.getWallObject();
+                if (wall_object != null && wall_object.getId() == id) {
+                    return wall_object;
+                }
+
+                final DecorativeObject decorative_object = tile.getDecorativeObject();
+                if (decorative_object != null && decorative_object.getId() == id) {
+                    return decorative_object;
+                }
+
+                final GroundObject ground_object = tile.getGroundObject();
+                if (ground_object != null && ground_object.getId() == id) {
+                    return ground_object;
                 }
             }
-
-            final WallObject wall_object = tile.getWallObject();
-            if (wall_object != null && wall_object.getId() == id) {
-                return wall_object;
-            }
-
-            final DecorativeObject decorative_object = tile.getDecorativeObject();
-            if (decorative_object != null && decorative_object.getId() == id) {
-                return decorative_object;
-            }
-
-            final GroundObject ground_object = tile.getGroundObject();
-            if (ground_object != null && ground_object.getId() == id) {
-                return ground_object;
-            }
-        }
+        } catch (Exception ignored) {}
 
         return null;
     }
