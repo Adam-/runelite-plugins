@@ -85,14 +85,14 @@ public class TitheOverlayPoints extends Overlay {
 
             // Total points.
             panel.getChildren().add(LineComponent.builder()
-                .left("Total").leftColor(color_orange)
+                .left("Points:").leftColor(color_orange)
                 .right((points_total - points_added) + (points_added > 0 ? " +" + points_added : "")).rightColor(color_orange)
                 .build()
             );
 
             // Fruits.
             panel.getChildren().add(LineComponent.builder()
-                .left("Fruits").leftColor(color_gray)
+                .left("Fruits:").leftColor(color_gray)
                 .right((fruits_sack + fruits_inventory) + "/" + TITHE_FARM_SACK_TOTAL)
                 .rightColor(
                     fruits_possible == TITHE_FARM_SACK_TOTAL ? color_green :
