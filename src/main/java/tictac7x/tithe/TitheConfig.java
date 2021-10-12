@@ -7,8 +7,10 @@ import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigSection;
 
-@ConfigGroup("tictac7x.tithe")
+@ConfigGroup(TitheConfig.group)
 public interface TitheConfig extends Config {
+	String group = "tictac7x.tithe";
+
 	@ConfigSection(
 		position = 1,
 		name = "Farming patches",
@@ -168,5 +170,18 @@ public interface TitheConfig extends Config {
 		)
 		default boolean showWaterAmount() {
 		return true;
+	}
+
+		String gricollers_can_charges = "gricollers_can_charges";
+		@ConfigItem(
+			position = 2,
+			keyName = gricollers_can_charges,
+			name = "Gricoller's can charges",
+			description = "Hold amount of charges left in Gricoller's can",
+			section = section_water,
+			hidden = false
+		)
+		default int getGricollersCanCharges() {
+			return 0;
 	}
 }

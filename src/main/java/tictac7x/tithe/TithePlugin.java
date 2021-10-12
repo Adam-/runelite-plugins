@@ -1,12 +1,13 @@
 package tictac7x.tithe;
 
+import java.util.Map;
 import java.util.Set;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.InventoryID;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -28,7 +29,10 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	}
 )
 public class TithePlugin extends Plugin {
-	private final Set<Integer> TITHE_FARM_REGIONS = ImmutableSet.of(6965, 6966, 6967, 7221, 7222, 7223);
+	private final Set<Integer> TITHE_FARM_REGIONS = ImmutableSet.of(6966, 6967, 7222, 7223);
+
+	@Inject
+	private TitheConfig config;
 
 	@Inject
 	private Client client;
@@ -40,32 +44,76 @@ public class TithePlugin extends Plugin {
 	private ItemManager items;
 
 	@Inject
-	private TitheConfig config;
+	private ConfigManager configs;
 
-	@Inject
+	private WateringCansRegular watering_cans;
+	private WateringCanGricollers gricollers_can;
 	private TitheOverlayPatches overlay_patches;
-
-	@Inject
 	private TitheOverlayWater overlay_water;
-
-	@Inject
 	private TitheOverlayInventory overlay_inventory;
 
 	@Override
-	protected void startUp() throws Exception {
+	protected void startUp() {
+		if (watering_cans == null) {
+			watering_cans = new WateringCansRegular(client);
+			gricollers_can = new WateringCanGricollers(this, config, watering_cans, client, configs);
+			overlay_inventory = new TitheOverlayInventory(this, config, client);
+			overlay_patches = new TitheOverlayPatches(this, config, client);
+			overlay_water = new TitheOverlayWater(this, config, watering_cans, gricollers_can);
+		}
+
 		overlays.add(overlay_patches);
 		overlays.add(overlay_water);
 		overlays.add(overlay_inventory);
 	}
 
 	@Override
-	protected void shutDown() throws Exception {
+	protected void shutDown() {
 		overlays.remove(overlay_patches);
 		overlays.remove(overlay_water);
 		overlays.remove(overlay_inventory);
 	}
 
-	protected boolean inTitheFarm() {
+	@Subscribe
+	public void onGameObjectSpawned(final GameObjectSpawned event) {
+		overlay_patches.onGameObjectSpawned(event.getGameObject());
+		gricollers_can.onGameObjectSpawned(event.getGameObject());
+	}
+
+	@Subscribe
+	public void onGameObjectDespawned(final GameObjectDespawned event) {
+		overlay_patches.onGameObjectDespawned(event.getGameObject());
+	}
+
+	@Subscribe
+	public void onGameStateChanged(final GameStateChanged event) {
+		overlay_patches.onGameStateChanged(event.getGameState());
+	}
+
+	@Subscribe
+	public void onItemContainerChanged(final ItemContainerChanged event) {
+		watering_cans.onItemContainerChanged(event);
+		gricollers_can.onItemContainerChanged(event);
+	}
+
+	@Subscribe
+	public void onGameTick(final GameTick event) {
+		watering_cans.onGameTick();
+		gricollers_can.onGameTick();
+		overlay_patches.onGameTick();
+	}
+
+	@Subscribe
+	public void onChatMessage(final ChatMessage event) {
+		gricollers_can.onChatMessage(event);
+	}
+
+	@Provides
+	TitheConfig provideConfig(final ConfigManager configs) {
+		return configs.getConfig(tictac7x.tithe.TitheConfig.class);
+	}
+
+	public boolean inTitheFarm() {
 		final int[] regions = client.getMapRegions();
 
 		for (final int region : regions) {
@@ -77,35 +125,7 @@ public class TithePlugin extends Plugin {
 		return true;
 	}
 
-	@Subscribe
-	protected void onGameObjectSpawned(final GameObjectSpawned event) {
-		overlay_patches.onGameObjectSpawned(event.getGameObject());
-	}
-
-	@Subscribe
-	protected void onGameObjectDespawned(final GameObjectDespawned event) {
-		overlay_patches.onGameObjectDespawned(event.getGameObject());
-	}
-
-	@Subscribe
-	protected void onGameStateChanged(final GameStateChanged event) {
-		overlay_patches.onGameStateChanged(event.getGameState());
-	}
-
-	@Subscribe
-	protected void onItemContainerChanged(final ItemContainerChanged event) {
-		if (event.getContainerId() == InventoryID.INVENTORY.getId()) {
-			overlay_water.onItemContainerChanged(event.getItemContainer());
-		}
-	}
-
-	@Subscribe
-	protected void onGameTick(final GameTick event) {
-		overlay_patches.onGameTick();
-	}
-
-	@Provides
-	TitheConfig provideConfig(ConfigManager configManager) {
-		return configManager.getConfig(TitheConfig.class);
+	public Map<LocalPoint, TithePatch> getPlayerPlants() {
+		return overlay_patches.patches_player;
 	}
 }

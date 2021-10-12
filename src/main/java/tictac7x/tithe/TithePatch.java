@@ -5,6 +5,9 @@ import tictac7x.Overlay;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.time.Duration;
+import java.time.Instant;
+
 import net.runelite.api.GameObject;
 
 public class TithePatch extends Overlay {
@@ -77,7 +80,7 @@ public class TithePatch extends Overlay {
         // First state can't be anything else than dry seedling.
         this.cycle_state = State.SEEDLING_DRY;
 
-        // -1, because the cycle would be 99 ticks otherwise.
+        // -1, because the first cycle would be 99 ticks otherwise.
         this.cycle_ticks = -1;
     }
 
@@ -146,7 +149,7 @@ public class TithePatch extends Overlay {
     }
 
     private double getCycleProgress() {
-        return 1 - (cycle_ticks / DURATION_CYCLE_GAME_TICKS);
+        return -1 + (cycle_ticks / DURATION_CYCLE_GAME_TICKS);
     }
 
     protected static boolean isSeedling(final GameObject patch) {

@@ -2,13 +2,12 @@ package tictac7x.tithe;
 
 import tictac7x.Overlay;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import javax.inject.Inject;
 import net.runelite.api.Point;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -24,58 +23,57 @@ public class TitheOverlayPatches extends Overlay {
     private final TitheConfig config;
 
     private final Set<GameObject> patches_all = new HashSet<>();
-    private final Map<LocalPoint, TithePatch> patches_player = new HashMap<>();
+    public final Map<LocalPoint, TithePatch> patches_player = new HashMap<>();
 
-    @Inject
-    public TitheOverlayPatches(final Client client, final TithePlugin plugin, final TitheConfig config) {
-        this.client = client;
+    private LocalPoint location_player_planting_seed;
+
+    public TitheOverlayPatches(final TithePlugin plugin, final TitheConfig config, final Client client) {
         this.plugin = plugin;
         this.config = config;
+        this.client = client;
 
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.UNDER_WIDGETS);
     }
 
-    protected void onGameObjectSpawned(final GameObject patch) {
-        if (client.getLocalPlayer() == null) return;
-        final LocalPoint location_player = client.getLocalPlayer().getLocalLocation();
-        final LocalPoint location_patch = patch.getLocalLocation();
+    protected void onGameObjectSpawned(final GameObject game_object) {
+        // Game object is some sort of tithe patch.
+        if (TithePatch.isPatch(game_object)) {
+            final LocalPoint location_patch = game_object.getLocalLocation();
+            patches_all.add(game_object);
 
-        // All patches.
-        if (TithePatch.isPatch(patch)) {
-            patches_all.add(patch);
-
-            // Empty patch.
-            if (patch.getId() == TithePatch.TITHE_EMPTY_PATCH) {
+            // Empty patch, plant completed.
+            if (game_object.getId() == TithePatch.TITHE_EMPTY_PATCH) {
                 patches_player.remove(location_patch);
 
-            // Update patch state.
+            // Update plant state.
             } else if (patches_player.containsKey(location_patch)) {
-                patches_player.get(location_patch).setCyclePatch(patch);
+                patches_player.get(location_patch).setCyclePatch(game_object);
             }
-        }
 
-        // Seedling.
-        if (TithePatch.isSeedling(patch)) {
-            System.out.println("SEEDLING");
-            // Check if player is doing seed planting animation.
-            if (client.getLocalPlayer().getAnimation() == AnimationID.FARMING_PLANT_SEED) {
-                System.out.println("ANIMATING");
-                // Check if player is next to the patch.
+            // Seedling.
+            if (TithePatch.isSeedling(game_object)) {
+                // Check if player is next to the patch where player performed seed planting animation.
                 if (
-                    location_player.getX() + 256 >= location_patch.getX() &&
-                    location_player.getX() - 256 <= location_patch.getX() &&
-                    location_player.getY() + 256 >= location_patch.getY() &&
-                    location_player.getY() - 256 <= location_patch.getY()
+                    location_player_planting_seed != null
+                    && location_player_planting_seed.getX() + 512 >= location_patch.getX()
+                    && location_player_planting_seed.getX() - 512 <= location_patch.getX()
+                    && location_player_planting_seed.getY() + 512 >= location_patch.getY()
+                    && location_player_planting_seed.getY() - 512 <= location_patch.getY()
                 ) {
-                    System.out.println("CLOSE");
-                    patches_player.put(location_patch, new TithePatch(patch, config));
+                    patches_player.put(location_patch, new TithePatch(game_object, config));
                 }
             }
         }
     }
 
     protected void onGameTick() {
+        // Save local point where player did seed planting animation.
+        if (client.getLocalPlayer() != null && client.getLocalPlayer().getAnimation() == AnimationID.FARMING_PLANT_SEED) {
+            location_player_planting_seed = client.getLocalPlayer().getLocalLocation();
+        }
+
+        // Update plants progress.
         for (final TithePatch patch : patches_player.values()) {
             patch.onGameTick();
         }
