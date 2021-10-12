@@ -83,7 +83,7 @@ public class WateringCanGricollers {
     }
 
     private void updateGricollersCanCharges(final double percentage) {
-        updateGricollersCanCharges((int) percentage * CHARGES_TOTAL / 100);
+        updateGricollersCanCharges((int) (percentage * CHARGES_TOTAL / 100));
     }
 
     private void updateGricollersCanCharges(final int charges) {
