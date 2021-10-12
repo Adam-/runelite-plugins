@@ -4,6 +4,7 @@ import tictac7x.Overlay;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import net.runelite.api.Client;
+import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.TileObject;
 import net.runelite.client.ui.overlay.OverlayLayer;
@@ -27,12 +28,16 @@ public class TitheOverlayPatches extends Overlay {
     public Dimension render(final Graphics2D graphics) {
         if (plugin.inTitheFarm() && config.highlightPatchesOnHover()) {
             final MenuEntry[] menu_entries = client.getMenuEntries();
-            if (menu_entries.length != 0) {
-                final MenuEntry entry = menu_entries[menu_entries.length - 1];
-                final TileObject object = findTileObject(client, entry.getParam0(), entry.getParam1(), entry.getIdentifier());
+
+            for (final MenuEntry menu_entry : menu_entries) {
+                final MenuAction menu_option = MenuAction.of(menu_entry.getType());
+                if (menu_option == MenuAction.CANCEL || menu_option == MenuAction.WALK) continue;
+
+                final TileObject object = findTileObject(client, menu_entry.getParam0(), menu_entry.getParam1(), menu_entry.getIdentifier());
 
                 if (object != null && TithePlant.isPatch(object)) {
                     renderTile(graphics, object, config.getPatchesColor());
+                    break;
                 }
             }
         }

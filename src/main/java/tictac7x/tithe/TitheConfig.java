@@ -23,8 +23,7 @@ public interface TitheConfig extends Config {
 			name = "Highlight dry plants",
 			description = "Highlight dry plants that need to be watered",
 			section = section_patches
-		)
-		default boolean highlightPlantsDry() {
+		) default boolean highlightPlantsDry() {
 			return true;
 		}
 
@@ -34,8 +33,7 @@ public interface TitheConfig extends Config {
 			name = "Dry plants color",
 			description = "Color of the dry plants progress",
 			section = section_patches
-		)
-		default Color getPlantsDryColor() {
+		) default Color getPlantsDryColor() {
 			return Overlay.color_red;
 		}
 
@@ -45,8 +43,7 @@ public interface TitheConfig extends Config {
 			name = "Highlight watered plants",
 			description = "Highlight watered plants",
 			section = section_patches
-		)
-		default boolean highlightPlantsWatered() {
+		) default boolean highlightPlantsWatered() {
 			return true;
 		}
 
@@ -56,8 +53,7 @@ public interface TitheConfig extends Config {
 			name = "Watered plants color",
 			description = "Color of the watered plants progress",
 			section = section_patches
-		)
-		default Color getPlantsWateredColor() {
+		) default Color getPlantsWateredColor() {
 			return Overlay.color_blue;
 		}
 
@@ -67,8 +63,7 @@ public interface TitheConfig extends Config {
 			name = "Highlight grown plants",
 			description = "Highlight grown plants",
 			section = section_patches
-		)
-		default boolean highlightPlantsGrown() {
+		) default boolean highlightPlantsGrown() {
 			return true;
 		}
 
@@ -78,8 +73,7 @@ public interface TitheConfig extends Config {
 			name = "Grown plants color",
 			description = "Color of the grown plants progress",
 			section = section_patches
-		)
-		default Color getPlantsGrownColor() {
+		) default Color getPlantsGrownColor() {
 			return Overlay.color_red;
 		}
 
@@ -89,8 +83,7 @@ public interface TitheConfig extends Config {
 			name = "Highlight blighted plants",
 			description = "Highlight blighted plants",
 			section = section_patches
-		)
-		default boolean highlightPlantsBlighted() {
+		) default boolean highlightPlantsBlighted() {
 			return true;
 		}
 
@@ -100,8 +93,7 @@ public interface TitheConfig extends Config {
 			name = "Blighted plants color",
 			description = "Color of the blighted plants progress",
 			section = section_patches
-		)
-		default Color getPlantsBlightedColor() {
+		) default Color getPlantsBlightedColor() {
 			return Overlay.color_gray;
 		}
 
@@ -111,8 +103,7 @@ public interface TitheConfig extends Config {
 			name = "Highlight farm patches",
 			description = "Highlight farm patches on hover",
 			section = section_patches
-		)
-		default boolean highlightPatchesOnHover() {
+		) default boolean highlightPatchesOnHover() {
 			return true;
 		}
 
@@ -122,8 +113,7 @@ public interface TitheConfig extends Config {
 			name = "Farm patches color",
 			description = "Color of the highlighted farm patches on hover",
 			section = section_patches
-		)
-		default Color getPatchesColor() {
+		) default Color getPatchesColor() {
 			return Overlay.color_gray;
 		}
 
@@ -139,8 +129,7 @@ public interface TitheConfig extends Config {
 			name = "Highlight seeds",
 			description = "Highlight seeds",
 			section = section_inventory
-		)
-		default boolean highlightSeeds() {
+		) default boolean highlightSeeds() {
 			return true;
 		}
 
@@ -150,10 +139,9 @@ public interface TitheConfig extends Config {
 			name = "Highlight watering cans",
 			description = "Highlight watering cans based on how much water they contain",
 			section = section_inventory
-		)
-		default boolean highlightWaterCans() {
-		return true;
-	}
+		) default boolean highlightWaterCans() {
+			return true;
+		}
 
 	@ConfigSection(
 		position = 3,
@@ -167,10 +155,9 @@ public interface TitheConfig extends Config {
 			name = "Show amount of water",
 			description = "Show total and available amount of water in watering cans",
 			section = section_water
-		)
-		default boolean showWaterAmount() {
-		return true;
-	}
+		) default boolean showWaterAmount() {
+			return true;
+		}
 
 		String gricollers_can_charges = "gricollers_can_charges";
 		@ConfigItem(
@@ -179,9 +166,24 @@ public interface TitheConfig extends Config {
 			name = "Gricoller's can charges",
 			description = "Hold amount of charges left in Gricoller's can",
 			section = section_water,
-			hidden = false
-		)
-		default int getGricollersCanCharges() {
+			hidden = true
+		) default int getGricollersCanCharges() {
 			return 0;
-	}
+		}
+
+	@ConfigSection(
+		position = 4,
+		name = "Points",
+		description = "Show custom information about tithe farm points"
+	) String section_points = "points";
+
+		@ConfigItem(
+			position = 1,
+			keyName = "points",
+			name = "Show custom points widget",
+			description = "Show total, earned points and harvested fruits.",
+			section = section_points
+		) default boolean showCustomPoints() {
+			return true;
+		}
 }

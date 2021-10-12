@@ -7,15 +7,16 @@ import com.google.common.collect.ImmutableSet;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.GameObjectSpawned;
-import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
-import net.runelite.client.config.ConfigManager;
-import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
+import net.runelite.client.game.ItemManager;
+import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.config.ConfigManager;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 
@@ -23,13 +24,8 @@ import net.runelite.client.ui.overlay.OverlayManager;
 @PluginDescriptor(
 	name = "Tithe Farm Improvements",
 	description = "Additions to Tithe Farm official plugin",
-	tags = {
-		"tithe",
-		"farm",
-		"golovanova",
-		"bologano",
-		"logavano"
-	}
+	tags = { "tithe", "farm", "farmer", "golovanova", "bologano", "logavano", "gricoller" },
+	conflicts = "Tithe Farm"
 )
 public class TithePlugin extends Plugin {
 	private final Set<Integer> TITHE_FARM_REGIONS = ImmutableSet.of(6966, 6967, 7222, 7223);
@@ -49,26 +45,29 @@ public class TithePlugin extends Plugin {
 	@Inject
 	private ConfigManager configs;
 
-	private WateringCansRegular watering_cans;
+	private WateringCansRegular   watering_cans;
 	private WateringCanGricollers gricollers_can;
-	private TitheOverlayPatches overlay_patches;
-	private TitheOverlayPlants overlay_plants;
-	private TitheOverlayWater overlay_water;
+	private TitheOverlayWater     overlay_water;
+	private TitheOverlayPlants    overlay_plants;
+	private TitheOverlayPoints    overlay_points;
+	private TitheOverlayPatches   overlay_patches;
 	private TitheOverlayInventory overlay_inventory;
 
 	@Override
 	protected void startUp() {
 		if (watering_cans == null) {
-			watering_cans = new WateringCansRegular(client);
-			gricollers_can = new WateringCanGricollers(this, config, watering_cans, client, configs);
+			watering_cans     = new WateringCansRegular(client);
+			gricollers_can    = new WateringCanGricollers(this, config, watering_cans, client, configs);
+			overlay_water     = new TitheOverlayWater(this, config, watering_cans, gricollers_can);
+			overlay_plants    = new TitheOverlayPlants(this, config, client);
+			overlay_points    = new TitheOverlayPoints(this, config, client);
+			overlay_patches   = new TitheOverlayPatches(this, config, client);
 			overlay_inventory = new TitheOverlayInventory(this, config, client);
-			overlay_patches = new TitheOverlayPatches(this, config, client);
-			overlay_plants = new TitheOverlayPlants(this, config, client);
-			overlay_water = new TitheOverlayWater(this, config, watering_cans, gricollers_can);
 		}
 
 		overlays.add(overlay_water);
 		overlays.add(overlay_plants);
+		overlays.add(overlay_points);
 		overlays.add(overlay_patches);
 		overlays.add(overlay_inventory);
 	}
@@ -77,8 +76,10 @@ public class TithePlugin extends Plugin {
 	protected void shutDown() {
 		overlays.remove(overlay_water);
 		overlays.remove(overlay_plants);
+		overlays.remove(overlay_points);
 		overlays.remove(overlay_patches);
 		overlays.remove(overlay_inventory);
+		overlay_points.shutDown();
 	}
 
 	@Subscribe
@@ -91,6 +92,7 @@ public class TithePlugin extends Plugin {
 	public void onItemContainerChanged(final ItemContainerChanged event) {
 		watering_cans.onItemContainerChanged(event);
 		gricollers_can.onItemContainerChanged(event);
+		overlay_points.onItemContainerChanged(event);
 	}
 
 	@Subscribe
@@ -103,6 +105,11 @@ public class TithePlugin extends Plugin {
 	@Subscribe
 	public void onChatMessage(final ChatMessage event) {
 		gricollers_can.onChatMessage(event);
+	}
+
+	@Subscribe
+	public void onVarbitChanged(final VarbitChanged event) {
+		overlay_points.onVarbitChanged(event);
 	}
 
 	@Provides
