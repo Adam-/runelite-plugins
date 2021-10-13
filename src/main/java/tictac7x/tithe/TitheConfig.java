@@ -34,7 +34,7 @@ public interface TitheConfig extends Config {
 			description = "Color of the dry plants progress",
 			section = section_patches
 		) default Color getPlantsDryColor() {
-			return Overlay.color_red;
+			return new Color(255, 0, 0);
 		}
 
 		@ConfigItem(
@@ -54,7 +54,7 @@ public interface TitheConfig extends Config {
 			description = "Color of the watered plants progress",
 			section = section_patches
 		) default Color getPlantsWateredColor() {
-			return Overlay.color_blue;
+			return new Color(0, 255, 0);
 		}
 
 		@ConfigItem(
@@ -74,7 +74,7 @@ public interface TitheConfig extends Config {
 			description = "Color of the grown plants progress",
 			section = section_patches
 		) default Color getPlantsGrownColor() {
-			return Overlay.color_red;
+			return Overlay.color_yellow;
 		}
 
 		@ConfigItem(
@@ -140,6 +140,16 @@ public interface TitheConfig extends Config {
 			description = "Highlight watering cans based on how much water they contain",
 			section = section_inventory
 		) default boolean highlightWaterCans() {
+			return true;
+		}
+
+		@ConfigItem(
+			position = 3,
+			keyName = "farmer_outfit",
+			name = "Highlight farmer outfit",
+			description = "Highlight farmer outfit when you only have fruits in inventory",
+			section = section_inventory
+		) default boolean highlightFarmersOutfit() {
 			return true;
 		}
 

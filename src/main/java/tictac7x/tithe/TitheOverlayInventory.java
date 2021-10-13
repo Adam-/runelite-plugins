@@ -8,6 +8,8 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import net.runelite.api.Client;
 import net.runelite.api.ItemID;
+import net.runelite.api.InventoryID;
+import net.runelite.api.ItemContainer;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
@@ -32,6 +34,13 @@ public class TitheOverlayInventory extends Overlay {
         put(ItemID.WATERING_CAN2, Overlay.color_yellow);
         put(ItemID.WATERING_CAN1, Overlay.color_yellow);
         put(ItemID.WATERING_CAN,  Overlay.color_red);
+    }};
+
+    private final Map<Integer, Color> farmers_outfit = new HashMap<Integer, Color>(){{
+        put(ItemID.FARMERS_STRAWHAT, color_red);
+        put(ItemID.FARMERS_JACKET, color_red);
+        put(ItemID.FARMERS_BORO_TROUSERS, color_red);
+        put(ItemID.FARMERS_BOOTS, color_red);
     }};
 
     public TitheOverlayInventory(final TithePlugin plugin, final TitheConfig config, final Client client) {
@@ -67,6 +76,20 @@ public class TitheOverlayInventory extends Overlay {
                     // Gricoller's can has charges for multiple runs.
                 } else {
                     highlightInventoryItem(client, graphics, ItemID.GRICOLLERS_CAN, Overlay.color_blue);
+                }
+            }
+
+            // Highlight farmers outfit.
+            if (config.highlightFarmersOutfit()) {
+                final ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
+
+                if (
+                    plugin.countPlayerPlantsNotBlighted() == 0 && inventory != null
+                    && inventory.count(ItemID.GOLOVANOVA_SEED) == 0
+                    && inventory.count(ItemID.BOLOGANO_SEED) == 0
+                    && inventory.count(ItemID.LOGAVANO_SEED) == 0
+                ) {
+                    highlightInventoryItems(client, graphics, farmers_outfit);
                 }
             }
         }
