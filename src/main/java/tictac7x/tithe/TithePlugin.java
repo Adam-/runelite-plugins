@@ -134,10 +134,9 @@ public class TithePlugin extends Plugin {
 	}
 
 	public int countPlayerPlantsNotBlighted() {
-		return (int) getPlayerPlants().values().stream().filter(
-			plant ->
-				plant.cycle_state != TithePlant.State.BLIGHTED &&
-				plant.cycle_state != TithePlant.State.EMPTY
+		return (int) getPlayerPlants().values().stream().filter(plant ->
+			plant.cycle_state != TithePlant.State.BLIGHTED &&
+			plant.cycle_state != TithePlant.State.EMPTY
 		).count();
 	}
 }

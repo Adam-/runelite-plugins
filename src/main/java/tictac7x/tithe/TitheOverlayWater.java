@@ -38,16 +38,16 @@ public class TitheOverlayWater extends Overlay {
 
             final int water_remaining_percentage = water_remaining * 100 / water_total;
             final Color color =
-                    water_remaining_percentage >= WATER_HIGH || water_remaining > 75 ? color_blue :
-                            water_remaining_percentage >= WATER_LOW ? color_yellow :
-                                    color_red;
+                water_remaining_percentage >= WATER_HIGH || water_remaining > 75 ? color_blue :
+                water_remaining_percentage >= WATER_LOW ? color_yellow :
+                color_red;
 
             panel_water.getChildren().clear();
             panel_water.getChildren().add(
-                    LineComponent.builder()
-                            .left("Water:")
-                            .right(water_remaining + "/" + water_total)
-                            .build()
+                LineComponent.builder()
+                    .left("Water:")
+                    .right(water_remaining + "/" + water_total)
+                    .build()
             );
             panel_water.setBackgroundColor(getColor(color, panel_background_alpha));
 

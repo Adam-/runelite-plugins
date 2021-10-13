@@ -1,13 +1,12 @@
 package tictac7x.tithe;
 
-import net.runelite.api.coords.LocalPoint;
-import net.runelite.api.coords.WorldPoint;
 import tictac7x.Overlay;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import net.runelite.api.TileObject;
 import net.runelite.api.GameObject;
+import net.runelite.api.coords.WorldPoint;
 
 public class TithePlant extends Overlay {
     // Tithe empty patch.
