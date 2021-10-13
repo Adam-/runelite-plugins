@@ -26,6 +26,7 @@ public class TitheOverlayPoints extends Overlay {
     private final static int TITHE_FARM_POINTS = Varbits.TITHE_FARM_POINTS.getId();
     private final static int TITHE_FARM_SACK = Varbits.TITHE_FARM_SACK_AMOUNT.getId();
     private final static int TITHE_FARM_SACK_TOTAL = 100;
+    private final static int TITHE_FARM_POINTS_BREAK = 74;
 
     private int points_total = 0;
     private int fruits_sack = 0;
@@ -47,7 +48,7 @@ public class TitheOverlayPoints extends Overlay {
         }
     }
 
-    public void onVarbitChanged(final VarbitChanged event) {
+    public void onVarbitChanged() {
         final int points = client.getVarbitValue(TITHE_FARM_POINTS);
         final int sack = client.getVarbitValue(TITHE_FARM_SACK);
 
@@ -74,19 +75,19 @@ public class TitheOverlayPoints extends Overlay {
     public Dimension render(final Graphics2D graphics) {
         final Widget widget_tithe = client.getWidget(WidgetInfo.TITHE_FARM);
 
-        if (config.showCustomPoints()) {
+        if (plugin.inTitheFarm() && config.showCustomPoints()) {
             if (widget_tithe != null && !widget_tithe.isHidden()) widget_tithe.setHidden(true);
 
             final int fruits = fruits_sack + fruits_inventory;
-            final int fruits_possible = fruits + seeds_inventory;
-            final int points_added = Math.max(0, fruits - 74);
+            final int fruits_possible = fruits + seeds_inventory + plugin.countPlayerPlantsNotBlighted();
+            final int points_added = Math.max(0, fruits - TITHE_FARM_POINTS_BREAK);
 
             panel.getChildren().clear();
 
             // Total points.
             panel.getChildren().add(LineComponent.builder()
                 .left("Points:").leftColor(color_orange)
-                .right((points_total - points_added) + (points_added > 0 ? " +" + points_added : "")).rightColor(color_orange)
+                .right((points_total - Math.max(0, fruits_sack - TITHE_FARM_POINTS_BREAK)) + (points_added > 0 ? " + " + points_added : "")).rightColor(color_orange)
                 .build()
             );
 

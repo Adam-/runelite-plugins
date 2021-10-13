@@ -1,16 +1,16 @@
 package tictac7x.tithe;
 
-import net.runelite.api.ItemID;
 import net.runelite.api.Client;
+import net.runelite.api.ItemID;
 import net.runelite.api.GameObject;
 import net.runelite.api.InventoryID;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.config.ConfigManager;
-
 
 public class WateringCanGricollers {
     public static final int CHARGES_TOTAL = 1000;
@@ -65,9 +65,11 @@ public class WateringCanGricollers {
         // Game object is some sort of tithe patch.
         if (TithePlant.isWatered(game_object)) {
             final LocalPoint location_plant = game_object.getLocalLocation();
+            final WorldPoint location_player = client.getLocalPlayer() != null ? client.getLocalPlayer().getWorldLocation() : null;
 
-            // Watered plant is player owned.
-            if (plugin.getPlayerPlants().containsKey(location_plant)) {
+            // Watered plant is player owned and player is near it.
+            if (plugin.getPlayerPlants().containsKey(location_plant) && TithePlant.isPlayerNear(game_object, location_player)) {
+
                 // If remaining water charges didn't change, Gricollers can was used.
                 if (inventory.getWaterRemaining() == inventory_water_remaining) {
                     updateGricollersCanCharges(config.getGricollersCanCharges() - 1);

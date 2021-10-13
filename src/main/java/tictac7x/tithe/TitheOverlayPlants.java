@@ -3,12 +3,13 @@ package tictac7x.tithe;
 import tictac7x.Overlay;
 import java.util.Map;
 import java.util.HashMap;
-import java.awt.Graphics2D;
 import java.awt.Dimension;
-import net.runelite.api.AnimationID;
+import java.awt.Graphics2D;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
+import net.runelite.api.AnimationID;
 import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
@@ -17,7 +18,7 @@ public class TitheOverlayPlants extends Overlay {
     private final TithePlugin plugin;
     private final TitheConfig config;
 
-    private LocalPoint location_player_planting_seed;
+    private WorldPoint location_player_planting_seed;
     public final Map<LocalPoint, TithePlant> plants = new HashMap<>();
 
     public TitheOverlayPlants(final TithePlugin plugin, final TitheConfig config, final Client client) {
@@ -43,18 +44,9 @@ public class TitheOverlayPlants extends Overlay {
                 plants.get(location_patch).setCyclePatch(game_object);
             }
 
-            // Seedling.
-            if (TithePlant.isSeedling(game_object)) {
-                // Check if player is next to the patch where player performed seed planting animation.
-                if (
-                    location_player_planting_seed != null
-                    && location_player_planting_seed.getX() + 512 >= location_patch.getX()
-                    && location_player_planting_seed.getX() - 512 <= location_patch.getX()
-                    && location_player_planting_seed.getY() + 512 >= location_patch.getY()
-                    && location_player_planting_seed.getY() - 512 <= location_patch.getY()
-                ) {
-                    plants.put(location_patch, new TithePlant(game_object, config));
-                }
+            // GameObject is seedling and player is next to the seedling.
+            if (TithePlant.isSeedling(game_object) && TithePlant.isPlayerNear(game_object, location_player_planting_seed)) {
+                plants.put(location_patch, new TithePlant(game_object, config));
             }
         }
     }
@@ -62,7 +54,7 @@ public class TitheOverlayPlants extends Overlay {
     public void onGameTick() {
         // Save local point where player did seed planting animation.
         if (client.getLocalPlayer() != null && client.getLocalPlayer().getAnimation() == AnimationID.FARMING_PLANT_SEED) {
-            location_player_planting_seed = client.getLocalPlayer().getLocalLocation();
+            location_player_planting_seed = client.getLocalPlayer().getWorldLocation();
         }
 
         // Update plants progress.

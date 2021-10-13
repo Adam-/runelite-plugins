@@ -1,5 +1,7 @@
 package tictac7x.tithe;
 
+import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldPoint;
 import tictac7x.Overlay;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -53,7 +55,7 @@ public class TithePlant extends Overlay {
     // One plant cycle duration in game ticks.
     private final double DURATION_CYCLE_GAME_TICKS = 100;
 
-    private enum State {
+    public enum State {
         EMPTY,
         SEEDLING_DRY,
         SEEDLING_WATERED,
@@ -67,7 +69,7 @@ public class TithePlant extends Overlay {
 
     private final TitheConfig config;
     private GameObject cycle_patch;
-    private State cycle_state;
+    public State cycle_state;
     private int cycle_ticks;
 
     public TithePlant(final GameObject seedling, final TitheConfig config) {
@@ -149,12 +151,12 @@ public class TithePlant extends Overlay {
         return -1 + (cycle_ticks / DURATION_CYCLE_GAME_TICKS);
     }
 
-    protected static boolean isSeedling(final TileObject patch) {
+    public static boolean isSeedling(final TileObject patch) {
         final int id = patch.getId();
         return id == GOLOVANOVA_SEEDLING || id == BOLOGANO_SEEDLING || id == LOGAVANO_SEEDLING;
     }
 
-    protected static boolean isDry(final TileObject patch) {
+    public static boolean isDry(final TileObject patch) {
         final int id = patch.getId();
         return (
             id == GOLOVANOVA_SEEDLING
@@ -169,7 +171,7 @@ public class TithePlant extends Overlay {
         );
     }
 
-    protected static boolean isWatered(final TileObject patch) {
+    public static boolean isWatered(final TileObject patch) {
         final int id = patch.getId();
         return (
             id == GOLOVANOVA_SEEDLING_WATERED
@@ -184,7 +186,7 @@ public class TithePlant extends Overlay {
         );
     }
 
-    protected static boolean isGrown(final TileObject patch) {
+    public static boolean isGrown(final TileObject patch) {
         final int id = patch.getId();
         return (
             id == GOLOVANOVA_GROWN
@@ -193,7 +195,7 @@ public class TithePlant extends Overlay {
         );
     }
 
-    protected static boolean isBlighted(final TileObject patch) {
+    public static boolean isBlighted(final TileObject patch) {
         final int id = patch.getId();
         return (
             id == GOLOVANOVA_SEEDLING_BLIGHTED
@@ -211,11 +213,22 @@ public class TithePlant extends Overlay {
         );
     }
 
-    protected static boolean isEmptyPatch(final TileObject patch) {
+    public static boolean isEmptyPatch(final TileObject patch) {
         return patch.getId() == TITHE_EMPTY_PATCH;
     }
 
-    protected static boolean isPatch(final TileObject patch) {
+    public static boolean isPatch(final TileObject patch) {
         return isDry(patch) || isWatered(patch) || isGrown(patch) || isBlighted(patch) || isEmptyPatch(patch);
+    }
+
+    public static boolean isPlayerNear(final GameObject plant, final WorldPoint location_player) {
+        return (
+            plant != null
+            && location_player != null
+            && location_player.getX() + 2 >= plant.getWorldLocation().getX()
+            && location_player.getX() - 2 <= plant.getWorldLocation().getX()
+            && location_player.getY() + 2 >= plant.getWorldLocation().getY()
+            && location_player.getY() - 2 <= plant.getWorldLocation().getY()
+        );
     }
 }

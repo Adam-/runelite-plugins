@@ -109,7 +109,7 @@ public class TithePlugin extends Plugin {
 
 	@Subscribe
 	public void onVarbitChanged(final VarbitChanged event) {
-		overlay_points.onVarbitChanged(event);
+		overlay_points.onVarbitChanged();
 	}
 
 	@Provides
@@ -131,5 +131,13 @@ public class TithePlugin extends Plugin {
 
 	public Map<LocalPoint, TithePlant> getPlayerPlants() {
 		return overlay_plants.plants;
+	}
+
+	public int countPlayerPlantsNotBlighted() {
+		return (int) getPlayerPlants().values().stream().filter(
+			plant ->
+				plant.cycle_state != TithePlant.State.BLIGHTED &&
+				plant.cycle_state != TithePlant.State.EMPTY
+		).count();
 	}
 }
