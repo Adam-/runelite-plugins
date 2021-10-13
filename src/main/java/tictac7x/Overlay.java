@@ -26,10 +26,10 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
     protected final int pie_fill_alpha = 90;
     protected final int inventory_highlight_alpha = 60;
     protected final int pie_progress = 1;
-    public static final Color color_green = new Color(0, 217, 0);
+    public static final Color color_green = new Color(0, 255, 0);
     public static final Color color_blue = new Color(0, 153, 255);
     public static final Color color_yellow = new Color(255, 187, 0);
-    public static final Color color_red = new Color(217, 50, 0);
+    public static final Color color_red = new Color(255, 50, 0);
     public static final Color color_gray = new Color(200, 200, 200);
     public static final Color color_orange = new Color(243, 145, 30);
 
