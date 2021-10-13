@@ -34,7 +34,7 @@ public interface TitheConfig extends Config {
 			description = "Color of the dry plants progress",
 			section = section_patches
 		) default Color getPlantsDryColor() {
-			return new Color(255, 0, 0);
+			return Overlay.color_red;
 		}
 
 		@ConfigItem(
@@ -54,7 +54,7 @@ public interface TitheConfig extends Config {
 			description = "Color of the watered plants progress",
 			section = section_patches
 		) default Color getPlantsWateredColor() {
-			return new Color(0, 255, 0);
+			return Overlay.color_green;
 		}
 
 		@ConfigItem(
