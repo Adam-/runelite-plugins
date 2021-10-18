@@ -8,6 +8,7 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.ObjectArrays;
 import com.google.common.util.concurrent.Runnables;
+import com.google.gson.Gson;
 import com.google.inject.Provides;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -167,6 +168,9 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	@Inject
 	private BankTagLayoutsConfig config;
+
+	@Inject
+	public Gson gson;
 
 	// The current indexes for where each widget should appear in the custom bank layout. Should be ignored if there is not tab active.
 	private final Map<Integer, Widget> indexToWidget = new HashMap<>();

@@ -29,13 +29,12 @@ public class InventorySetupsAdapter {
         }
         try
         {
-            final Gson gson = new Gson();
             Type type = new TypeToken<ArrayList<InventorySetup>>()
             {
 
             }.getType();
 
-            return ((List<InventorySetup>) gson.fromJson(storedSetups, type)).stream().filter(s -> s.getName().equals(name)).findAny().orElse(null);
+            return ((List<InventorySetup>) plugin.gson.fromJson(storedSetups, type)).stream().filter(s -> s.getName().equals(name)).findAny().orElse(null);
         }
         catch (Exception e)
         {
