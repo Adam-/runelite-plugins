@@ -2,22 +2,26 @@ package tictac7x.tithe;
 
 import java.util.Map;
 import java.util.Set;
-import com.google.inject.Provides;
-import com.google.common.collect.ImmutableSet;
 import javax.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import lombok.extern.slf4j.Slf4j;
+import com.google.inject.Provides;
 import net.runelite.api.events.GameTick;
-import net.runelite.api.coords.LocalPoint;
-import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.VarbitChanged;
-import net.runelite.api.events.GameObjectSpawned;
-import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.plugins.Plugin;
+import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.WidgetLoaded;
 import net.runelite.client.game.ItemManager;
+import net.runelite.api.events.VarbitChanged;
+import com.google.common.collect.ImmutableSet;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.api.events.GameObjectSpawned;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 @Slf4j
@@ -35,6 +39,9 @@ public class TithePlugin extends Plugin {
 
 	@Inject
 	private Client client;
+
+	@Inject
+	private ClientThread client_thread;
 
 	@Inject
 	private OverlayManager overlays;
@@ -79,7 +86,7 @@ public class TithePlugin extends Plugin {
 		overlays.remove(overlay_points);
 		overlays.remove(overlay_patches);
 		overlays.remove(overlay_inventory);
-		overlay_points.shutDown();
+		client_thread.invokeLater(() -> overlay_points.shutDown());
 	}
 
 	@Subscribe
@@ -110,6 +117,30 @@ public class TithePlugin extends Plugin {
 	@Subscribe
 	public void onVarbitChanged(final VarbitChanged event) {
 		overlay_points.onVarbitChanged();
+	}
+
+	@Subscribe
+	public void onWidgetLoaded(final WidgetLoaded event) {
+		if (event.getGroupId() == WidgetInfo.TITHE_FARM.getGroupId()) {
+			if (config.showCustomPoints()) {
+				overlay_points.hideNativePoints();
+			} else {
+				overlay_points.showNativePoints();
+			}
+		}
+	}
+
+	@Subscribe
+	public void onConfigChanged(final ConfigChanged event) {
+		if (event.getGroup().equals(config.group) && event.getKey().equals(config.points)) {
+			client_thread.invokeLater(() -> {
+				if (config.showCustomPoints()) {
+					overlay_points.hideNativePoints();
+				} else {
+					overlay_points.showNativePoints();
+				}
+			});
+		}
 	}
 
 	@Provides

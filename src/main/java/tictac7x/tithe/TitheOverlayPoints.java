@@ -41,11 +41,18 @@ public class TitheOverlayPoints extends Overlay {
         setLayer(OverlayLayer.ABOVE_WIDGETS);
     }
 
-    public void shutDown() {
+    public void showNativePoints() {
         final Widget widget_tithe = client.getWidget(WidgetInfo.TITHE_FARM);
-        if (widget_tithe != null && widget_tithe.isHidden()) {
-            widget_tithe.setHidden(false);
-        }
+        if (widget_tithe != null) widget_tithe.setHidden(false);
+    }
+
+    public void hideNativePoints() {
+        final Widget widget_tithe = client.getWidget(WidgetInfo.TITHE_FARM);
+        if (widget_tithe != null) widget_tithe.setHidden(true);
+    }
+
+    public void shutDown() {
+        showNativePoints();
     }
 
     public void onVarbitChanged() {
@@ -73,11 +80,7 @@ public class TitheOverlayPoints extends Overlay {
 
     @Override
     public Dimension render(final Graphics2D graphics) {
-        final Widget widget_tithe = client.getWidget(WidgetInfo.TITHE_FARM);
-
         if (plugin.inTitheFarm() && config.showCustomPoints()) {
-            if (widget_tithe != null && !widget_tithe.isHidden()) widget_tithe.setHidden(true);
-
             final int fruits = fruits_sack + fruits_inventory;
             final int fruits_possible = fruits + seeds_inventory + plugin.countPlayerPlantsNotBlighted();
             final int points_added = Math.max(0, fruits - TITHE_FARM_POINTS_BREAK);
@@ -103,8 +106,6 @@ public class TitheOverlayPoints extends Overlay {
             );
 
             return panel.render(graphics);
-        } else {
-            if (widget_tithe != null && widget_tithe.isHidden()) widget_tithe.setHidden(false);
         }
 
         return null;

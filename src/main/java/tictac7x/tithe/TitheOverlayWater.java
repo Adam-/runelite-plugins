@@ -36,7 +36,7 @@ public class TitheOverlayWater extends Overlay {
             final int water_remaining = getWaterRemaining();
             final int water_total = getWaterTotal();
 
-            final int water_remaining_percentage = water_remaining * 100 / water_total;
+            final int water_remaining_percentage = water_total > 0 ? water_remaining * 100 / water_total : 0;
             final Color color =
                 water_remaining_percentage >= WATER_HIGH || water_remaining > 75 ? color_blue :
                 water_remaining_percentage >= WATER_LOW ? color_yellow :

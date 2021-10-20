@@ -187,9 +187,10 @@ public interface TitheConfig extends Config {
 		description = "Show custom information about tithe farm points"
 	) String section_points = "points";
 
+		String points = "points";
 		@ConfigItem(
 			position = 1,
-			keyName = "points",
+			keyName = points,
 			name = "Show custom points widget",
 			description = "Show total, earned points and harvested fruits.",
 			section = section_points
