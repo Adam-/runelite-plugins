@@ -44,9 +44,9 @@ class InventoryMonitor
 
 	public InventoryMonitor()
 	{
-		this.inventoryTracker = new ItemTracker(28);
-		this.bankTracker = new ItemTracker(816);
-		this.equipmentTracker = new ItemTracker(13);
+		this.inventoryTracker = new ItemTracker();
+		this.bankTracker = new ItemTracker();
+		this.equipmentTracker = new ItemTracker();
 		this.collectionLog = new HashMap<>(EmoteClueAssociations.ItemIdToEmoteClueItem.keySet().size());
 		this.reset();
 	}
