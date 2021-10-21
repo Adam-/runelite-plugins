@@ -36,20 +36,17 @@ import java.util.List;
 
 class ItemTracker
 {
-	private final Item[] items;
+	private final ArrayList<Item> items;
 
-	public ItemTracker(final int capacity)
+	public ItemTracker()
 	{
-		this.items = new Item[capacity];
+		this.items = new ArrayList<>();
 		this.reset();
 	}
 
 	public void reset()
 	{
-		for (int i = 0; i < this.items.length; i++)
-		{
-			this.items[i] = new Item(-1, 0);
-		}
+		this.items.clear();
 	}
 
 	public List<Item> writeDeltas(
@@ -59,9 +56,14 @@ class ItemTracker
 		final ArrayList<Item> deltas = new ArrayList<>();
 		for (int i = 0; i < items.length; i++)
 		{
-			final Item previousItem = this.items[i];
+			if (this.items.size() == i)
+			{
+				this.items.add(new Item(-1, 0));
+			}
+
+			final Item previousItem = this.items.get(i);
 			final Item currentItem = items[i];
-			this.items[i] = currentItem;
+			this.items.set(i, currentItem);
 
 			final int currentItemId = currentItem.getId();
 			final int currentQuantity = currentItem.getQuantity();
