@@ -1,4 +1,4 @@
-# Tithe Farm Improvements
+# Tithe Farm Improvements - v0.1
 Plugin for RuneLite to improve overall experience for Tithe farm.
 
 ## Plants progress
