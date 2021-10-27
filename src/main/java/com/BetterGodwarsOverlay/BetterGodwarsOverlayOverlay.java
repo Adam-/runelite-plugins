@@ -1,7 +1,6 @@
 package com.BetterGodwarsOverlay;
 
 import net.runelite.api.Client;
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
@@ -47,9 +46,7 @@ public class BetterGodwarsOverlayOverlay extends OverlayPanel
 		for (BetterGodwarsOverlayGods gods : BetterGodwarsOverlayGods.values())
 		{
 
-			LocalPoint localLocation = LocalPoint.fromWorld(client, gods.getLocation());
-
-			if (localLocation == null)
+			if (godwars == null)
 			{
 				continue;
 			}
