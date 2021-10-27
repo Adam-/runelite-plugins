@@ -9,7 +9,7 @@ import net.runelite.client.config.ConfigSection;
 
 @ConfigGroup(TitheConfig.group)
 public interface TitheConfig extends Config {
-	String group = "tictac7x.tithe";
+	String group = "tictac7x-tithe";
 
 	@ConfigSection(
 		position = 1,
