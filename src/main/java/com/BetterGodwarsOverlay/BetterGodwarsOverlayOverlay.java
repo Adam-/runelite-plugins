@@ -57,7 +57,7 @@ public class BetterGodwarsOverlayOverlay extends OverlayPanel
 				.left(config.shortGodNames() ? gods.getName().substring(0, 2) : gods.getName())
 				.right(Integer.toString(killcounts))
 				.leftColor(config.godNameColor())
-				.rightColor(killcounts >= config.highLightOnKC() ? Color.GREEN : Color.WHITE)
+				.rightColor(killcounts >= config.highlightOnKC() ? config.highlightOnKCColor() : Color.WHITE)
 				.build());
 		}
 

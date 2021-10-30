@@ -37,8 +37,17 @@ public interface BetterGodwarsOverlayConfig extends Config
 		description = "Enter the KC required for room entry and it will highlight it green when you have enough",
 		position = 3
 	)
-	default int highLightOnKC()
+	default int highlightOnKC()
 	{
 		return 40;
+	}
+
+	@ConfigItem(keyName = "highlightOnKCColour",
+		name = "Killcount Highlight Colour",
+		description = "Change the colour of the killcount highlight displayed on the overlay",
+		position = 4)
+	default Color highlightOnKCColor()
+	{
+		return Color.GREEN;
 	}
 }
