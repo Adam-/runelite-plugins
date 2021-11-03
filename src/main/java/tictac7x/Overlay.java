@@ -6,15 +6,15 @@ import java.awt.Shape;
 import java.awt.Rectangle;
 import java.awt.Graphics2D;
 import java.awt.BasicStroke;
-import net.runelite.api.Client;
-import net.runelite.api.GameObject;
-import net.runelite.api.Scene;
-import net.runelite.api.TileObject;
-import net.runelite.api.WallObject;
-import net.runelite.api.DecorativeObject;
-import net.runelite.api.GroundObject;
 import net.runelite.api.Tile;
+import net.runelite.api.Scene;
+import net.runelite.api.Client;
+import net.runelite.api.TileObject;
+import net.runelite.api.GameObject;
+import net.runelite.api.WallObject;
+import net.runelite.api.GroundObject;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.DecorativeObject;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.ui.overlay.components.ProgressPieComponent;
@@ -37,16 +37,28 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
         return new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
     }
 
-    public void renderClickbox(final Graphics2D graphics, final GameObject object, final Color color) {
+    public void renderClickbox(final Graphics2D graphics, final TileObject object, final Color color) {
         renderClickbox(graphics, object, color, clickbox_stroke_width);
     }
 
-    public void renderClickbox(final Graphics2D graphics, final GameObject object, final Color color, final int stroke_width) {
+    public void renderClickbox(final Graphics2D graphics, final TileObject object, final Color color, final int stroke_width) {
         renderClickbox(graphics, object, color, stroke_width, clickbox_fill_alpha);
     }
 
-    public void renderClickbox(final Graphics2D graphics, final GameObject object, final Color color, final int stroke_width, final int fill_alpha) {
+    public void renderClickbox(final Graphics2D graphics, final TileObject object, final Color color, final int stroke_width, final int fill_alpha) {
         renderShape(graphics, object.getClickbox(), color, stroke_width, fill_alpha);
+    }
+
+    public void renderItem(final Graphics2D graphics, final Tile item, final Color color) {
+        renderItem(graphics, item, color, clickbox_stroke_width);
+    }
+
+    public void renderItem(final Graphics2D graphics, final Tile item, final Color color, final int stroke_width) {
+        renderItem(graphics, item, color, stroke_width, clickbox_fill_alpha);
+    }
+
+    public void renderItem(final Graphics2D graphics, final Tile item, final Color color, final int stroke_width, final int fill_alpha) {
+        renderShape(graphics, item.getItemLayer().getCanvasTilePoly(), color, stroke_width, fill_alpha);
     }
 
     public void renderTile(final Graphics2D graphics, final TileObject object, final Color color) {
@@ -65,8 +77,8 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
         try {
             // Area border.
             graphics.setColor(color);
-            graphics.draw(shape);
             graphics.setStroke(new BasicStroke(stroke_width));
+            graphics.draw(shape);
 
             // Area fill.
             graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), fill_alpha));

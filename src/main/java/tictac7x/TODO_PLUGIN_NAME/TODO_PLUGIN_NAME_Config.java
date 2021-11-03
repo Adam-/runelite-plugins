@@ -4,7 +4,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
-@ConfigGroup("tictac7x.TODO_PLUGIN_NAME")
+@ConfigGroup("tictac7x-TODO_PLUGIN_NAME")
 public interface TODO_PLUGIN_NAME_Config extends Config {
 	@ConfigItem(
 		keyName = "greeting",
