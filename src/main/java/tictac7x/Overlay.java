@@ -21,7 +21,7 @@ import net.runelite.client.ui.overlay.components.ProgressPieComponent;
 
 public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
     protected final int panel_background_alpha = 80;
-    protected final int clickbox_stroke_width = 2;
+    protected final int clickbox_stroke_width = 1;
     protected final int clickbox_fill_alpha = 30;
     protected final int pie_fill_alpha = 90;
     protected final int inventory_highlight_alpha = 60;
@@ -73,7 +73,15 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
         renderShape(graphics, object.getCanvasTilePoly(), color, stroke_width, fill_alpha);
     }
 
-    private void renderShape(final Graphics2D graphics, final Shape shape, final Color color, final int stroke_width, final int fill_alpha) {
+    public void renderShape(final Graphics2D graphics, final Shape shape, final Color color) {
+        renderShape(graphics, shape, color, clickbox_stroke_width);
+    }
+
+    public void renderShape(final Graphics2D graphics, final Shape shape, final Color color, final int stroke_width) {
+        renderShape(graphics, shape, color, stroke_width, clickbox_fill_alpha);
+    }
+
+    public void renderShape(final Graphics2D graphics, final Shape shape, final Color color, final int stroke_width, final int fill_alpha) {
         try {
             // Area border.
             graphics.setColor(color);
