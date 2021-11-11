@@ -35,8 +35,8 @@ import net.runelite.api.events.FocusChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.MenuShouldLeftClick;
-import net.runelite.api.events.ScriptCallbackEvent;
 import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
@@ -490,12 +490,13 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		return inventorySetup;
 	}
 
-	@Subscribe(priority = -1f) // "Bank Tags" plugin also sets the scroll bar height; run after it.
-	public void onScriptCallbackEvent(ScriptCallbackEvent event)
-	{
-		if (!"bankScrollbarHeight".equals(event.getEventName())) {
+	@Subscribe(priority = -1f) // "Bank Tags" plugin also sets the scroll bar height; run after it. We also need to run after "Inventory Setups" to get the bank title it sets.
+	public void onScriptPreFired(ScriptPreFired event) {
+		if (event.getScriptId() != ScriptID.BANKMAIN_FINISHBUILDING) {
 			return;
 		}
+
+		updateInventorySetupShown();
 
 		LayoutableThing layoutable = getCurrentLayoutableThing();
 		if (layoutable == null) {
@@ -503,7 +504,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 
 		Layout layout = getBankOrder(layoutable);
-
 		if (layout == null) {
 			return;
 		}
@@ -513,17 +513,14 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 		int height = getYForIndex(max.get()) + BANK_ITEM_HEIGHT + 12;
 
-		int[] intStack = client.getIntStack();
-		int intStackSize = client.getIntStackSize();
-
-		intStack[intStackSize - 1] = height;
+		// This is prior to bankmain_finishbuilding running, so the arguments are still on the stack. Overwrite
+		// argument int12 (7 from the end) which is the height passed to if_setscrollsize
+		client.getIntStack()[client.getIntStackSize() - 7] = height;
 	}
 
 	@Subscribe(priority = -1f) // I want to run after the Bank Tags plugin does, since it will interfere with the layout-ing if hiding tab separators is enabled.
 	public void onScriptPostFired(ScriptPostFired event) {
 		if (event.getScriptId() == ScriptID.BANKMAIN_BUILD) {
-			updateInventorySetupShown();
-
 			LayoutableThing layoutable = getCurrentLayoutableThing();
 			if (layoutable == null || layoutable != lastLayoutable) {
 				cancelLayoutPreview();

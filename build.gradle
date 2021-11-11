@@ -10,7 +10,7 @@ repositories {
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.8.2-SNAPSHOT'
+def runeLiteVersion = '1.8.3-SNAPSHOT'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -27,7 +27,7 @@ dependencies {
 }
 
 group = 'com.banktaglayouts'
-version = '1.4.7'
+version = '1.4.8'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {
