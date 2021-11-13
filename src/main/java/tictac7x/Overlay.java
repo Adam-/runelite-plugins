@@ -21,8 +21,8 @@ import net.runelite.client.ui.overlay.components.ProgressPieComponent;
 
 public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
     protected final int panel_background_alpha = 80;
-    protected final int clickbox_stroke_width = 1;
-    protected final int clickbox_fill_alpha = 30;
+    public static final int clickbox_stroke_width = 1;
+    public static final int clickbox_fill_alpha = 30;
     protected final int pie_fill_alpha = 90;
     protected final int inventory_highlight_alpha = 60;
     protected final int pie_progress = 1;
@@ -182,5 +182,9 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
         } catch (Exception ignored) {}
 
         return null;
+    }
+
+    public int getAlphaFromPercentage(final int percentage) {
+        return percentage * 255 / 100;
     }
 }
