@@ -54,9 +54,17 @@ public class FakeItemOverlay extends Overlay {
 
         Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
         if (bankItemContainer == null) return null;
-        int scrollY = bankItemContainer.getScrollY();
+		int scrollY = bankItemContainer.getScrollY();
         Point canvasLocation = bankItemContainer.getCanvasLocation();
-        Rectangle bankItemArea = new Rectangle(canvasLocation.getX() + 51 - 6, canvasLocation.getY(), bankItemContainer.getWidth() - 51 + 6, bankItemContainer.getHeight());
+
+		int yOffset = 0;
+		Widget widget = bankItemContainer;
+        while (widget.getParent() != null) {
+			yOffset += widget.getRelativeY();
+        	widget = widget.getParent();
+		}
+
+		Rectangle bankItemArea = new Rectangle(canvasLocation.getX() + 51 - 6, yOffset, bankItemContainer.getWidth() - 51 + 6, bankItemContainer.getHeight());
 
         graphics.clip(bankItemArea);
 
@@ -73,7 +81,7 @@ public class FakeItemOverlay extends Overlay {
 			int fakeItemId = fakeItem.getItemId();
 
 			int x = BankTagLayoutsPlugin.getXForIndex(fakeItem.index) + canvasLocation.getX() + dragDeltaX;
-			int y = BankTagLayoutsPlugin.getYForIndex(fakeItem.index) + canvasLocation.getY() - scrollY + dragDeltaY;
+			int y = BankTagLayoutsPlugin.getYForIndex(fakeItem.index) + yOffset - scrollY + dragDeltaY;
 			if (y + BankTagLayoutsPlugin.BANK_ITEM_HEIGHT > bankItemArea.getMinY() && y < bankItemArea.getMaxY())
 			{
 				if (fakeItem.isLayoutPlaceholder())
