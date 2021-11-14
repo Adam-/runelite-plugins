@@ -1,4 +1,4 @@
-# TODO_PLUGIN_NAME v0.1
+# TODO_PLUGIN_NAME - v0.1
 TODO_PLUGIN_DESCRIPTION
 
 ## How to start writing a new plugin

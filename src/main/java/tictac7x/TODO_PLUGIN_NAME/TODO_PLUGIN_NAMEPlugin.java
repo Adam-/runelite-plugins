@@ -14,16 +14,16 @@ import net.runelite.client.plugins.PluginDescriptor;
 	description = "TODO_PLUGIN_DESCRIPTION",
 	tags = { "TODO_PLUGIN_TAGS"	}
 )
-public class TODO_PLUGIN_NAME_Plugin extends Plugin {
+public class TODO_PLUGIN_NAMEPlugin extends Plugin {
 	@Inject
 	private Client client;
 
 	@Inject
-	private TODO_PLUGIN_NAME_Config config;
+	private TODO_PLUGIN_NAMEConfig config;
 
 	@Provides
-	TODO_PLUGIN_NAME_Config provideConfig(ConfigManager configManager) {
-		return configManager.getConfig(TODO_PLUGIN_NAME_Config.class);
+    TODO_PLUGIN_NAMEConfig provideConfig(ConfigManager configManager) {
+		return configManager.getConfig(TODO_PLUGIN_NAMEConfig.class);
 	}
 
 	@Override

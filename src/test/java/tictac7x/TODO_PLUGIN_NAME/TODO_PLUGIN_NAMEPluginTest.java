@@ -3,9 +3,9 @@ package tictac7x.TODO_PLUGIN_NAME;
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
-public class TODO_PLUGIN_NAME_PluginTest {
+public class TODO_PLUGIN_NAMEPluginTest {
 	public static void main(String[] args) throws Exception {
-		ExternalPluginManager.loadBuiltin(tictac7x.TODO_PLUGIN_NAME.TODO_PLUGIN_NAME_Plugin.class);
+		ExternalPluginManager.loadBuiltin(TODO_PLUGIN_NAMEPlugin.class);
 		RuneLite.main(args);
 	}
 }
