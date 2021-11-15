@@ -19,7 +19,7 @@ import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.ui.overlay.components.ProgressPieComponent;
 
-public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
+public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPanel {
     protected final int panel_background_alpha = 80;
     public static final int clickbox_stroke_width = 1;
     public static final int clickbox_fill_alpha = 30;
@@ -35,6 +35,14 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
 
     public Color getColor(final Color color, final int alpha) {
         return new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
+    }
+
+    public Color getPanelBackgroundColor(final Color color) {
+        return getColor(color, panel_background_alpha);
+    }
+
+    public int getAlphaFromPercentage(final int percentage) {
+        return percentage * 255 / 100;
     }
 
     public void renderClickbox(final Graphics2D graphics, final TileObject object, final Color color) {
@@ -182,9 +190,5 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.Overlay {
         } catch (Exception ignored) {}
 
         return null;
-    }
-
-    public int getAlphaFromPercentage(final int percentage) {
-        return percentage * 255 / 100;
     }
 }
