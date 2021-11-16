@@ -21,17 +21,18 @@ import net.runelite.client.ui.overlay.components.ProgressPieComponent;
 
 public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPanel {
     protected final int panel_background_alpha = 80;
+    public static final int color_alpha = 140;
     public static final int clickbox_stroke_width = 1;
-    public static final int clickbox_fill_alpha = 30;
+    public static final int clickbox_fill_alpha = 100;
     protected final int pie_fill_alpha = 90;
     protected final int inventory_highlight_alpha = 60;
     protected final int pie_progress = 1;
-    public static final Color color_red    = new Color(255, 0, 0);
-    public static final Color color_green  = new Color(0, 255, 0);
-    public static final Color color_blue   = new Color(0, 150, 255);
-    public static final Color color_yellow = new Color(255, 180, 0);
-    public static final Color color_orange = new Color(255, 120, 30);
-    public static final Color color_gray   = new Color(200, 200, 200);
+    public static final Color color_red    = new Color(255, 0, 0, color_alpha);
+    public static final Color color_green  = new Color(0, 255, 0, color_alpha);
+    public static final Color color_blue   = new Color(0, 150, 255, color_alpha);
+    public static final Color color_yellow = new Color(255, 180, 0, color_alpha);
+    public static final Color color_orange = new Color(255, 120, 30, color_alpha);
+    public static final Color color_gray   = new Color(200, 200, 200, color_alpha);
 
     public Color getColor(final Color color, final int alpha) {
         return new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
@@ -97,7 +98,7 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPane
             graphics.draw(shape);
 
             // Area fill.
-            graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), fill_alpha));
+            graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha() * fill_alpha / 255));
             graphics.fill(shape);
         } catch (Exception ignored) {}
     }
