@@ -41,6 +41,9 @@ Coming Soon:
 
 ## Changes
 
+#### 2.2
+* Fix issue where malformed mistake-state file would cause plugin to not load
+
 #### 2.1
 * Add config for toggling mistake overhead text
 

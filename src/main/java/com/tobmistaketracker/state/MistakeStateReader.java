@@ -1,6 +1,7 @@
 package com.tobmistaketracker.state;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.http.api.RuneLiteAPI;
@@ -38,9 +39,12 @@ public class MistakeStateReader {
             try (BufferedReader reader = Files.newBufferedReader(mistakeStateFilePath);
                  JsonReader jsonReader = new JsonReader(reader)) {
                 MistakeStateManager mistakeStateManager = GSON.fromJson(jsonReader, MistakeStateManager.class);
+                if (mistakeStateManager == null) {
+                    return new MistakeStateManager(mistakeStateWriter);
+                }
                 mistakeStateManager.setMistakeStateWriter(mistakeStateWriter);
                 return mistakeStateManager;
-            } catch (IOException e) {
+            } catch (IOException | JsonSyntaxException e) {
                 log.error("Unable to read mistake state from " + mistakeStateFilePath, e);
             }
         }
