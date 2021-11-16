@@ -35,11 +35,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Named;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.ItemID;
-import net.runelite.api.MenuAction;
-import net.runelite.api.Tile;
+import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
@@ -210,7 +206,7 @@ public class DeathIndicatorPlugin extends Plugin
 		{
 			Tile[][][] tiles = client.getScene().getTiles();
 			Tile tile = tiles[client.getPlane()][localPoint.getSceneX()][localPoint.getSceneY()];
-			if (tile == null || tile.getGroundItems() == null || tile.getGroundItems().isEmpty())
+			if (tile == null)
 			{
 				reset = true;
 			}
