@@ -181,6 +181,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
     private Widget cancelLayoutPreviewButton = null;
 
 	private LayoutableThing lastLayoutable = null;
+	private int lastHeight = Integer.MAX_VALUE;
 
 	final AntiDragPluginUtil antiDrag = new AntiDragPluginUtil(this);
 	private final LayoutGenerator layoutGenerator = new LayoutGenerator(this);
@@ -284,7 +285,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	{
 	    if (CONFIG_GROUP.equals(event.getGroup())) {
 			if ("layoutEnabledByDefault".equals(event.getKey())) {
-				clientThread.invokeLater(this::applyCustomBankTagItemPositions);
+				clientThread.invokeLater(() -> applyCustomBankTagItemPositions());
 			} else if ("showAutoLayoutButton".equals(event.getKey())) {
 				clientThread.invokeLater(this::updateButton);
 			} else if ("useWithInventorySetups".equals(event.getKey())) {
@@ -508,10 +509,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			return;
 		}
 
-		Optional<Integer> max = layout.getAllUsedIndexes().stream().max(Integer::compare);
-		if (!max.isPresent()) return; // This will result in the minimum height.
-
-		int height = getYForIndex(max.get()) + BANK_ITEM_HEIGHT + 12;
+		int maxIndex = layout.getAllUsedIndexes().stream().max(Integer::compare).orElse(0);
+		int height = getYForIndex(maxIndex) + BANK_ITEM_HEIGHT;
 
 		// This is prior to bankmain_finishbuilding running, so the arguments are still on the stack. Overwrite
 		// argument int12 (7 from the end) which is the height passed to if_setscrollsize
@@ -522,11 +521,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	public void onScriptPostFired(ScriptPostFired event) {
 		if (event.getScriptId() == ScriptID.BANKMAIN_BUILD) {
 			LayoutableThing layoutable = getCurrentLayoutableThing();
-			if (layoutable == null || layoutable != lastLayoutable) {
+			if (layoutable == null || !layoutable.equals(lastLayoutable)) {
 				cancelLayoutPreview();
 			}
 
-			applyCustomBankTagItemPositions();
+			applyCustomBankTagItemPositions(false);
 
 			lastLayoutable = layoutable;
 
@@ -718,6 +717,10 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	private void applyCustomBankTagItemPositions() {
+		applyCustomBankTagItemPositions(true);
+	}
+
+	private void applyCustomBankTagItemPositions(boolean setScroll) {
         fakeItems.clear();
 
 		LayoutableThing layoutable = getCurrentLayoutableThing();
@@ -762,6 +765,16 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 
 		setItemPositions(indexToWidget);
+
+		// Necessary as applyCustomBankTagItemPositions can be called after an item's layout position is changed. This doesn't fire BANKMAIN_BUILD, so our PreScriptFired subscriber doesn't change the scrollbar height, and the item's movement can change the height of the layout if it is moved below the last row or if it is the last item in the layout and is alone on its own row and was moved upwards.
+		int maxIndex = layout.getAllUsedIndexes().stream().max(Integer::compare).orElse(0);
+		int height = getYForIndex(maxIndex) + BANK_ITEM_HEIGHT + 8;
+		if (setScroll && layoutable.equals(lastLayoutable) && height != lastHeight)
+		{
+			resizeBankContainerScrollbar(height, lastHeight);
+		}
+		lastHeight = height;
+
 		saveLayout(layoutable, layout);
 		log.debug("saved tag " + layoutable);
 	}
@@ -1541,6 +1554,21 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		public boolean isInventorySetup() {
 			return !isBankTab;
 		}
+	}
+
+	private void resizeBankContainerScrollbar(int height, int lastHeight) {
+		Widget container = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+
+		container.setScrollHeight(height); // This change requires the script below to run to take effect.
+
+		int itemContainerScroll = (height > lastHeight) ? height : container.getScrollY();
+
+		clientThread.invokeLater(() ->
+				client.runScript(ScriptID.UPDATE_SCROLLBAR,
+					WidgetInfo.BANK_SCROLLBAR.getId(),
+					WidgetInfo.BANK_ITEM_CONTAINER.getId(),
+					itemContainerScroll)
+		);
 	}
 
 	public String itemName(Integer itemId) {
