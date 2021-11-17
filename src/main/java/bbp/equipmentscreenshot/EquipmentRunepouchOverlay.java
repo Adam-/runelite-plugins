@@ -34,7 +34,7 @@ import net.runelite.api.Varbits;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.game.ItemManager;
 
-import net.runelite.client.plugins.runepouch.Runes;
+import net.runelite.client.game.RunepouchRune;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.OverlayUtil;
 
@@ -83,7 +83,7 @@ class EquipmentRunepouchOverlay
 
 			Varbits runeVarbit = RUNE_VARBITS[i];
 			int runeId = client.getVar(runeVarbit);
-			Runes rune = Runes.getRune(runeId);
+			RunepouchRune rune = RunepouchRune.getRune(runeId);
 			if (rune == null)
 				continue;
 
@@ -104,7 +104,7 @@ class EquipmentRunepouchOverlay
 		}
 	}
 
-	private BufferedImage getRuneImage(Runes rune)
+	private BufferedImage getRuneImage(RunepouchRune rune)
 	{
 		BufferedImage runeImg = rune.getImage();
 		if (runeImg != null)
