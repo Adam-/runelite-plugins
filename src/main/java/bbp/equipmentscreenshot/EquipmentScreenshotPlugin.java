@@ -240,6 +240,88 @@ public class EquipmentScreenshotPlugin extends Plugin
 			add(ItemID.TOKTZXILUL).
 			build();
 
+	private static final Map<Integer, Double> WEIGHT_REDUCING_EQUIPMENT = new ImmutableMap.Builder<Integer, Double>().
+			//item ids here are for the *worn* items, not inventory items
+			put(ItemID.SPOTTED_CAPE_10073, 2.267).
+			put(ItemID.SPOTTIER_CAPE_10074, 4.535).
+			put(ItemID.BOOTS_OF_LIGHTNESS_89, 4.535).
+			put(ItemID.PENANCE_GLOVES_10554, 4.535).
+			//untested exact weights
+			put(ItemID.AGILITY_CAPE_13340, 4d).
+			put(ItemID.AGILITY_CAPET_13341, 4d).
+			put(ItemID.MAX_CAPE_13342, 4d).
+			//vanilla graceful
+			put(ItemID.GRACEFUL_HOOD_11851, 3d).
+			put(ItemID.GRACEFUL_CAPE_11853, 4d).
+			put(ItemID.GRACEFUL_TOP_11855, 5d).
+			put(ItemID.GRACEFUL_LEGS_11857, 6d).
+			put(ItemID.GRACEFUL_GLOVES_11859, 3d).
+			put(ItemID.GRACEFUL_BOOTS_11861, 4d).
+			//Arceuus graceful
+			put(ItemID.GRACEFUL_HOOD_13580, 3d).
+			put(ItemID.GRACEFUL_CAPE_13582, 4d).
+			put(ItemID.GRACEFUL_TOP_13584, 5d).
+			put(ItemID.GRACEFUL_LEGS_13586, 6d).
+			put(ItemID.GRACEFUL_GLOVES_13588, 3d).
+			put(ItemID.GRACEFUL_BOOTS_13590, 4d).
+			//Piscarilius graceful
+			put(ItemID.GRACEFUL_HOOD_13592, 3d).
+			put(ItemID.GRACEFUL_CAPE_13594, 4d).
+			put(ItemID.GRACEFUL_TOP_13596, 5d).
+			put(ItemID.GRACEFUL_LEGS_13598, 6d).
+			put(ItemID.GRACEFUL_GLOVES_13600, 3d).
+			put(ItemID.GRACEFUL_BOOTS_13602, 4d).
+			//Lovakengj graceful
+			put(ItemID.GRACEFUL_HOOD_13604, 3d).
+			put(ItemID.GRACEFUL_CAPE_13606, 4d).
+			put(ItemID.GRACEFUL_TOP_13608, 5d).
+			put(ItemID.GRACEFUL_LEGS_13610, 6d).
+			put(ItemID.GRACEFUL_GLOVES_13612, 3d).
+			put(ItemID.GRACEFUL_BOOTS_13614, 4d).
+			//Shayzien graceful
+			put(ItemID.GRACEFUL_HOOD_13616, 3d).
+			put(ItemID.GRACEFUL_CAPE_13618, 4d).
+			put(ItemID.GRACEFUL_TOP_13620, 5d).
+			put(ItemID.GRACEFUL_LEGS_13622, 6d).
+			put(ItemID.GRACEFUL_GLOVES_13624, 3d).
+			put(ItemID.GRACEFUL_BOOTS_13626, 4d).
+			//Hosidius graceful
+			put(ItemID.GRACEFUL_HOOD_13628, 3d).
+			put(ItemID.GRACEFUL_CAPE_13630, 4d).
+			put(ItemID.GRACEFUL_TOP_13632, 5d).
+			put(ItemID.GRACEFUL_LEGS_13634, 6d).
+			put(ItemID.GRACEFUL_GLOVES_13636, 3d).
+			put(ItemID.GRACEFUL_BOOTS_13638, 4d).
+			//Kourend graceful
+			put(ItemID.GRACEFUL_HOOD_13668, 3d).
+			put(ItemID.GRACEFUL_CAPE_13670, 4d).
+			put(ItemID.GRACEFUL_TOP_13672, 5d).
+			put(ItemID.GRACEFUL_LEGS_13674, 6d).
+			put(ItemID.GRACEFUL_GLOVES_13676, 3d).
+			put(ItemID.GRACEFUL_BOOTS_13678, 4d).
+			//Brimhaven graceful
+			put(ItemID.GRACEFUL_HOOD_21063, 3d).
+			put(ItemID.GRACEFUL_CAPE_21066, 4d).
+			put(ItemID.GRACEFUL_TOP_21069, 5d).
+			put(ItemID.GRACEFUL_LEGS_21072, 6d).
+			put(ItemID.GRACEFUL_GLOVES_21075, 3d).
+			put(ItemID.GRACEFUL_BOOTS_21078, 4d).
+			//Sepulchre graceful
+			put(ItemID.GRACEFUL_HOOD_24745, 3d).
+			put(ItemID.GRACEFUL_CAPE_24748, 4d).
+			put(ItemID.GRACEFUL_TOP_24751, 5d).
+			put(ItemID.GRACEFUL_LEGS_24754, 6d).
+			put(ItemID.GRACEFUL_GLOVES_24757, 3d).
+			put(ItemID.GRACEFUL_BOOTS_24760, 4d).
+			//Trailblazer graceful
+			put(ItemID.GRACEFUL_HOOD_25071, 3d).
+			put(ItemID.GRACEFUL_CAPE_25074, 4d).
+			put(ItemID.GRACEFUL_TOP_25077, 5d).
+			put(ItemID.GRACEFUL_LEGS_25080, 6d).
+			put(ItemID.GRACEFUL_GLOVES_25083, 3d).
+			put(ItemID.GRACEFUL_BOOTS_25086, 4d).
+			build();
+
 	private static final String MENU_TARGET = "Equipment";
 	private static final String TAKE_SCREENSHOT = "Screenshot";
 	private static final WidgetMenuOption FIXED_EQUIPMENT_TAB_SCREENSHOT = new WidgetMenuOption(TAKE_SCREENSHOT,
@@ -554,7 +636,13 @@ public class EquipmentScreenshotPlugin extends Plugin
 					if (itemManager.getItemStats(itemId, false) != null &&
 							!itemManager.getItemComposition(itemId).isStackable())
 					{
-						preciseWeight += itemManager.getItemStats(itemId, false).getWeight();
+						if (WEIGHT_REDUCING_EQUIPMENT.containsKey(itemId))
+						{
+							preciseWeight -= WEIGHT_REDUCING_EQUIPMENT.get(itemId);
+						}
+						else {
+							preciseWeight += itemManager.getItemStats(itemId, false).getWeight();
+						}
 					}
 				}
 
