@@ -33,9 +33,10 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPane
     public static final Color color_yellow = new Color(255, 180, 0, color_alpha);
     public static final Color color_orange = new Color(255, 120, 30, color_alpha);
     public static final Color color_gray   = new Color(200, 200, 200, color_alpha);
+    public static final Color color_white   = new Color(255, 255, 255, color_alpha);
 
     public Color getColor(final Color color, final int alpha) {
-        return new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
+        return color == null ? null : new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
     }
 
     public Color getPanelBackgroundColor(final Color color) {
@@ -103,21 +104,21 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPane
         } catch (Exception ignored) {}
     }
 
-    public void renderPie(final Graphics2D graphics, final GameObject object, final Color color) {
+    public void renderPie(final Graphics2D graphics, final TileObject object, final Color color) {
         renderPie(graphics, object, color, pie_progress);
     }
 
-    public void renderPie(final Graphics2D graphics, final GameObject object, final Color color, final float progress) {
-        renderPie(graphics, object, color, progress, pie_fill_alpha);
+    public void renderPie(final Graphics2D graphics, final TileObject object, final Color color, final float progress) {
+        renderPie(graphics, object, color, progress, 0);
     }
 
-    public void renderPie(final Graphics2D graphics, final GameObject object, final Color color, final float progress, final int fill_alpha) {
+    public void renderPie(final Graphics2D graphics, final TileObject object, final Color color, final float progress, final int offset) {
         try {
             final ProgressPieComponent progressPieComponent = new ProgressPieComponent();
-            progressPieComponent.setPosition(object.getCanvasLocation());
+            progressPieComponent.setPosition(object.getCanvasLocation(offset));
             progressPieComponent.setProgress(progress);
-            progressPieComponent.setBorderColor(color);
-            progressPieComponent.setFill(getColor(color, fill_alpha));
+            progressPieComponent.setBorderColor(darkenColor(color));
+            progressPieComponent.setFill(color);
             progressPieComponent.render(graphics);
         } catch (Exception ignored) {}
     }
@@ -191,5 +192,17 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPane
         } catch (Exception ignored) {}
 
         return null;
+    }
+
+    public Color darkenColor(final Color color) {
+        if (color == null) return null;
+        final float factor = 0.8f;
+
+        int a = color.getAlpha();
+        int r = Math.round(color.getRed() * factor);
+        int g = Math.round(color.getGreen() * factor);
+        int b = Math.round(color.getBlue() * factor);
+
+        return new Color(Math.min(r, 255), Math.min(g, 255), Math.min(b, 255), a);
     }
 }
