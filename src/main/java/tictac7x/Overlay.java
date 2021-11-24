@@ -24,7 +24,6 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPane
     public static final int color_alpha = 140;
     public static final int clickbox_stroke_width = 1;
     public static final int clickbox_fill_alpha = 100;
-    protected final int pie_fill_alpha = 90;
     protected final int inventory_highlight_alpha = 60;
     protected final int pie_progress = 1;
     public static final Color color_red    = new Color(255, 0, 0, color_alpha);
@@ -48,58 +47,26 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPane
     }
 
     public void renderClickbox(final Graphics2D graphics, final TileObject object, final Color color) {
-        renderClickbox(graphics, object, color, clickbox_stroke_width);
-    }
-
-    public void renderClickbox(final Graphics2D graphics, final TileObject object, final Color color, final int stroke_width) {
-        renderClickbox(graphics, object, color, stroke_width, clickbox_fill_alpha);
-    }
-
-    public void renderClickbox(final Graphics2D graphics, final TileObject object, final Color color, final int stroke_width, final int fill_alpha) {
-        renderShape(graphics, object.getClickbox(), color, stroke_width, fill_alpha);
+        renderShape(graphics, object.getClickbox(), color);
     }
 
     public void renderItem(final Graphics2D graphics, final Tile item, final Color color) {
-        renderItem(graphics, item, color, clickbox_stroke_width);
-    }
-
-    public void renderItem(final Graphics2D graphics, final Tile item, final Color color, final int stroke_width) {
-        renderItem(graphics, item, color, stroke_width, clickbox_fill_alpha);
-    }
-
-    public void renderItem(final Graphics2D graphics, final Tile item, final Color color, final int stroke_width, final int fill_alpha) {
-        renderShape(graphics, item.getItemLayer().getCanvasTilePoly(), color, stroke_width, fill_alpha);
+        renderShape(graphics, item.getItemLayer().getCanvasTilePoly(), color);
     }
 
     public void renderTile(final Graphics2D graphics, final TileObject object, final Color color) {
-        renderTile(graphics, object, color, clickbox_stroke_width);
-    }
-
-    public void renderTile(final Graphics2D graphics, final TileObject object, final Color color, final int stroke_width) {
-        renderTile(graphics, object, color, stroke_width, clickbox_fill_alpha);
-    }
-
-    public void renderTile(final Graphics2D graphics, final TileObject object, final Color color, final int stroke_width, final int fill_alpha) {
-        renderShape(graphics, object.getCanvasTilePoly(), color, stroke_width, fill_alpha);
+        renderShape(graphics, object.getCanvasTilePoly(), color);
     }
 
     public void renderShape(final Graphics2D graphics, final Shape shape, final Color color) {
-        renderShape(graphics, shape, color, clickbox_stroke_width);
-    }
-
-    public void renderShape(final Graphics2D graphics, final Shape shape, final Color color, final int stroke_width) {
-        renderShape(graphics, shape, color, stroke_width, clickbox_fill_alpha);
-    }
-
-    public void renderShape(final Graphics2D graphics, final Shape shape, final Color color, final int stroke_width, final int fill_alpha) {
         try {
             // Area border.
-            graphics.setColor(color);
-            graphics.setStroke(new BasicStroke(stroke_width));
+            graphics.setColor(darkenColor(color));
+            graphics.setStroke(new BasicStroke(clickbox_stroke_width));
             graphics.draw(shape);
 
             // Area fill.
-            graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha() * fill_alpha / 255));
+            graphics.setColor(color);
             graphics.fill(shape);
         } catch (Exception ignored) {}
     }
