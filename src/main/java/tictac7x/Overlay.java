@@ -83,7 +83,7 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPane
         try {
             final ProgressPieComponent progressPieComponent = new ProgressPieComponent();
             progressPieComponent.setPosition(object.getCanvasLocation(offset));
-            progressPieComponent.setProgress(progress);
+            progressPieComponent.setProgress(-progress);
             progressPieComponent.setBorderColor(darkenColor(color));
             progressPieComponent.setFill(color);
             progressPieComponent.render(graphics);
