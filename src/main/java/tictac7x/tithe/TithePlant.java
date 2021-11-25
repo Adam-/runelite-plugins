@@ -133,13 +133,13 @@ public class TithePlant extends Overlay {
     }
 
     private Color getCycleColor() {
-        if (config.highlightPlantsDry() && (cycle_state == State.SEEDLING_DRY || cycle_state == State.PLANT_1_DRY || cycle_state == State.PLANT_2_DRY)) {
+        if (cycle_state == State.SEEDLING_DRY || cycle_state == State.PLANT_1_DRY || cycle_state == State.PLANT_2_DRY) {
             return config.getPlantsDryColor();
-        } else if (config.highlightPlantsGrown() && cycle_state == State.GROWN) {
+        } else if (cycle_state == State.GROWN) {
             return config.getPlantsGrownColor();
-        } else if (config.highlightPlantsWatered() && (cycle_state == State.SEEDLING_WATERED || cycle_state == State.PLANT_1_WATERED || cycle_state == State.PLANT_2_WATERED)) {
+        } else if (cycle_state == State.SEEDLING_WATERED || cycle_state == State.PLANT_1_WATERED || cycle_state == State.PLANT_2_WATERED) {
             return config.getPlantsWateredColor();
-        } else if (config.highlightPlantsBlighted() && cycle_state == State.BLIGHTED) {
+        } else if (cycle_state == State.BLIGHTED) {
             return config.getPlantsBlightedColor();
         }
 

@@ -26,7 +26,7 @@ public class TitheOverlayPatches extends Overlay {
 
     @Override
     public Dimension render(final Graphics2D graphics) {
-        if (plugin.inTitheFarm() && config.highlightPatchesOnHover()) {
+        if (plugin.inTitheFarm()) {
             final MenuEntry[] menu_entries = client.getMenuEntries();
 
             for (final MenuEntry menu_entry : menu_entries) {
@@ -36,7 +36,7 @@ public class TitheOverlayPatches extends Overlay {
                 final TileObject object = findTileObject(client, menu_entry.getParam0(), menu_entry.getParam1(), menu_entry.getIdentifier());
 
                 if (object != null && TithePlant.isPatch(object)) {
-                    renderTile(graphics, object, config.getPatchesColor());
+                    renderTile(graphics, object, config.getPatchesHighlightOnHoverColor());
                     break;
                 }
             }

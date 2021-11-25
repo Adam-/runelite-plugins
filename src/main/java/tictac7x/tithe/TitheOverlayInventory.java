@@ -18,30 +18,9 @@ public class TitheOverlayInventory extends Overlay {
     private final TithePlugin plugin;
     private final TitheConfig config;
 
-    private final Map<Integer, Color> seeds = new HashMap<Integer, Color>(){{
-        put(ItemID.GOLOVANOVA_SEED, Overlay.color_green);
-        put(ItemID.BOLOGANO_SEED,   Overlay.color_green);
-        put(ItemID.LOGAVANO_SEED,   Overlay.color_green);
-    }};
-
-    private final Map<Integer, Color> watering_cans = new HashMap<Integer, Color>(){{
-        put(ItemID.WATERING_CAN8, Overlay.color_blue);
-        put(ItemID.WATERING_CAN7, Overlay.color_yellow);
-        put(ItemID.WATERING_CAN6, Overlay.color_yellow);
-        put(ItemID.WATERING_CAN5, Overlay.color_yellow);
-        put(ItemID.WATERING_CAN4, Overlay.color_yellow);
-        put(ItemID.WATERING_CAN3, Overlay.color_yellow);
-        put(ItemID.WATERING_CAN2, Overlay.color_yellow);
-        put(ItemID.WATERING_CAN1, Overlay.color_yellow);
-        put(ItemID.WATERING_CAN,  Overlay.color_red);
-    }};
-
-    private final Map<Integer, Color> farmers_outfit = new HashMap<Integer, Color>(){{
-        put(ItemID.FARMERS_STRAWHAT, color_red);
-        put(ItemID.FARMERS_JACKET, color_red);
-        put(ItemID.FARMERS_BORO_TROUSERS, color_red);
-        put(ItemID.FARMERS_BOOTS, color_red);
-    }};
+    private final Map<Integer, Color> seeds = new HashMap<>();
+    private final Map<Integer, Color> watering_cans = new HashMap<>();
+    private final Map<Integer, Color> farmers_outfit = new HashMap<>();
 
     public TitheOverlayInventory(final TithePlugin plugin, final TitheConfig config, final Client client) {
         this.plugin = plugin;
@@ -50,47 +29,59 @@ public class TitheOverlayInventory extends Overlay {
 
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_WIDGETS);
+
+        seeds.put(ItemID.GOLOVANOVA_SEED, config.getHighlightSeedsColor());
+        seeds.put(ItemID.BOLOGANO_SEED,   config.getHighlightSeedsColor());
+        seeds.put(ItemID.LOGAVANO_SEED,   config.getHighlightSeedsColor());
+
+        watering_cans.put(ItemID.WATERING_CAN8, getColor(color_blue, alpha_normal));
+        watering_cans.put(ItemID.WATERING_CAN7, getColor(color_yellow, alpha_normal));
+        watering_cans.put(ItemID.WATERING_CAN6, getColor(color_yellow, alpha_normal));
+        watering_cans.put(ItemID.WATERING_CAN5, getColor(color_yellow, alpha_normal));
+        watering_cans.put(ItemID.WATERING_CAN4, getColor(color_yellow, alpha_normal));
+        watering_cans.put(ItemID.WATERING_CAN3, getColor(color_yellow, alpha_normal));
+        watering_cans.put(ItemID.WATERING_CAN2, getColor(color_yellow, alpha_normal));
+        watering_cans.put(ItemID.WATERING_CAN1, getColor(color_yellow, alpha_normal));
+        watering_cans.put(ItemID.WATERING_CAN,  getColor(color_red, alpha_normal));
+
+        farmers_outfit.put(ItemID.FARMERS_STRAWHAT, getColor(color_red, alpha_normal));
+        farmers_outfit.put(ItemID.FARMERS_JACKET, getColor(color_red, alpha_normal));
+        farmers_outfit.put(ItemID.FARMERS_BORO_TROUSERS, getColor(color_red, alpha_normal));
+        farmers_outfit.put(ItemID.FARMERS_BOOTS, getColor(color_red, alpha_normal));
     }
 
     @Override
     public Dimension render(final Graphics2D graphics) {
         if (plugin.inTitheFarm()) {
             // Highlight seeds.
-            if (config.highlightSeeds()) {
-                highlightInventoryItems(client, graphics, seeds);
-            }
+            highlightInventoryItems(client, graphics, seeds);
 
-            // Highlight watering cans.
-            if (config.highlightWaterCans()) {
-                // Highlight regular watering cans.
-                highlightInventoryItems(client, graphics, watering_cans);
+            // Highlight regular watering cans.
+            highlightInventoryItems(client, graphics, watering_cans);
 
-                // Gricoller's can empty.
-                if (config.getGricollersCanCharges() == 0) {
-                    highlightInventoryItem(client, graphics, ItemID.GRICOLLERS_CAN, Overlay.color_red);
+            // Gricoller's can empty.
+            if (config.getGricollersCanCharges() == 0) {
+                highlightInventoryItem(client, graphics, ItemID.GRICOLLERS_CAN, getColor(color_red, alpha_normal));
 
-                    // Gricoller's can has enough charges for 1 run (25 plants).
-                } else if (config.getGricollersCanCharges() < 75) {
-                    highlightInventoryItem(client, graphics, ItemID.GRICOLLERS_CAN, Overlay.color_yellow);
+                // Gricoller's can has enough charges for 1 run (25 plants).
+            } else if (config.getGricollersCanCharges() < 75) {
+                highlightInventoryItem(client, graphics, ItemID.GRICOLLERS_CAN, getColor(color_yellow, alpha_normal));
 
-                    // Gricoller's can has charges for multiple runs.
-                } else {
-                    highlightInventoryItem(client, graphics, ItemID.GRICOLLERS_CAN, Overlay.color_blue);
-                }
+                // Gricoller's can has charges for multiple runs.
+            } else {
+                highlightInventoryItem(client, graphics, ItemID.GRICOLLERS_CAN, getColor(color_blue, alpha_normal));
             }
 
             // Highlight farmers outfit.
-            if (config.highlightFarmersOutfit()) {
-                final ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
+            final ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
 
-                if (
-                    plugin.countPlayerPlantsNotBlighted() == 0 && inventory != null
-                    && inventory.count(ItemID.GOLOVANOVA_SEED) == 0
-                    && inventory.count(ItemID.BOLOGANO_SEED) == 0
-                    && inventory.count(ItemID.LOGAVANO_SEED) == 0
-                ) {
-                    highlightInventoryItems(client, graphics, farmers_outfit);
-                }
+            if (
+                plugin.countPlayerPlantsNotBlighted() == 0 && inventory != null
+                && inventory.count(ItemID.GOLOVANOVA_SEED) == 0
+                && inventory.count(ItemID.BOLOGANO_SEED) == 0
+                && inventory.count(ItemID.LOGAVANO_SEED) == 0
+            ) {
+                highlightInventoryItems(client, graphics, farmers_outfit);
             }
         }
 
