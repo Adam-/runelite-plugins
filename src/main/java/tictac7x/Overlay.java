@@ -21,20 +21,20 @@ import net.runelite.client.ui.overlay.components.ProgressPieComponent;
 
 public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPanel {
     protected final int panel_background_alpha = 80;
-    public static final int color_alpha = 140;
     public static final int clickbox_stroke_width = 1;
-    public static final int clickbox_fill_alpha = 100;
     protected final int inventory_highlight_alpha = 60;
     protected final int pie_progress = 1;
-    public static final Color color_red    = new Color(255, 0, 0, color_alpha);
-    public static final Color color_green  = new Color(0, 255, 0, color_alpha);
-    public static final Color color_blue   = new Color(0, 150, 255, color_alpha);
-    public static final Color color_yellow = new Color(255, 180, 0, color_alpha);
-    public static final Color color_orange = new Color(255, 120, 30, color_alpha);
-    public static final Color color_gray   = new Color(200, 200, 200, color_alpha);
-    public static final Color color_white   = new Color(255, 255, 255, color_alpha);
+    public static final Color color_red    = new Color(255, 0, 0);
+    public static final Color color_green  = new Color(0, 255, 0);
+    public static final Color color_blue   = new Color(0, 150, 255);
+    public static final Color color_yellow = new Color(255, 180, 0);
+    public static final Color color_orange = new Color(255, 120, 30);
+    public static final Color color_gray   = new Color(200, 200, 200);
+    public static final Color color_white   = new Color(255, 255, 255);
+    public static final int alpha_vibrant = 140;
+    public static final int alpha_normal = 80;
 
-    public Color getColor(final Color color, final int alpha) {
+    public static Color getColor(final Color color, final int alpha) {
         return color == null ? null : new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
     }
 
