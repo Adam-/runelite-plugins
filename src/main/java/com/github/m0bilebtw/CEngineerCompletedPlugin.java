@@ -231,4 +231,14 @@ public class CEngineerCompletedPlugin extends Plugin
 	{
 		return configManager.getConfig(CEngineerCompletedConfig.class);
 	}
+
+// Disabled - fires continuously while spinner arrow is held - when this is avoidable, can enable
+//	@Subscribe
+//	public void onConfigChanged(ConfigChanged event) {
+//		if (CEngineerCompletedConfig.GROUP.equals(event.getGroup())) {
+//			if ("announcementVolume".equals(event.getKey())) {
+//				soundEngine.playClip(Sound.LEVEL_UP);
+//			}
+//		}
+//	}
 }

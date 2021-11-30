@@ -2,12 +2,9 @@ package com.github.m0bilebtw;
 
 import lombok.extern.slf4j.Slf4j;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.sound.sampled.*;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +12,9 @@ import java.io.InputStream;
 @Singleton
 @Slf4j
 public class SoundEngine {
+
+    @Inject
+    private CEngineerCompletedConfig config;
 
     private static final long CLIP_MTIME_UNLOADED = -2;
 
@@ -58,6 +58,13 @@ public class SoundEngine {
                 return;
             }
         }
+
+        // User configurable volume
+        FloatControl volume = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+        float gain = 20f * (float) Math.log10(config.announcementVolume() / 100f);
+        gain = Math.min(gain, volume.getMaximum());
+        gain = Math.max(gain, volume.getMinimum());
+        volume.setValue(gain);
 
         // From RuneLite base client Notifier class:
         // Using loop instead of start + setFramePosition prevents the clip
