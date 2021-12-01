@@ -967,7 +967,7 @@ public final class EmoteClue implements TextClueScroll, LocationClueScroll
 					"Shrug in the Shayzien war tent. Equip a blue mystic robe bottom, a rune kiteshield and any bob shirt.",
 					"Shayzien war tent",
 					SHAYZIEN_WAR_TENT,
-					new WorldPoint(1555, 3537, 0),
+					new WorldPoint(1487, 3635, 0),
 					SHRUG,
 					EmoteClueItem.MYSTIC_ROBE_BOTTOM,
 					EmoteClueItem.RUNE_KITESHIELD,
@@ -1178,7 +1178,7 @@ public final class EmoteClue implements TextClueScroll, LocationClueScroll
 					EmoteClueItem.MIND_SHIELD
 			),
 			new EmoteClue(Medium,
-					"Yawn in the centre of Arceuus library. Nod your head before you talk to me. Equip blue dragonhide vambraces, adamant boots and an adamant dagger.",
+					"Yawn in the centre of the Arceuus Library. Nod your head before you talk to me. Equip blue dragonhide vambraces, adamant boots and an adamant dagger.",
 					"Arceuus library",
 					ENTRANCE_OF_THE_ARCEUUS_LIBRARY,
 					new WorldPoint(1632, 3807, 0),
@@ -1238,7 +1238,7 @@ public final class EmoteClue implements TextClueScroll, LocationClueScroll
 					new WorldPoint(1714, 3467, 0),
 					SALUTE,
 					EmoteClueItem.ANY_FARMERS_STRAWHAT,
-					EmoteClueItem.SHAYZIEN_PLATEBODY_5,
+					EmoteClueItem.SHAYZIEN_BODY_5,
 					EmoteClueItem.PYROMANCER_ROBE
 			)
 	);
