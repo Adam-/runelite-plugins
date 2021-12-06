@@ -10,7 +10,6 @@ import net.runelite.api.InventoryID;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
-import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -37,8 +36,10 @@ public class TitheOverlayPoints extends Overlay {
         this.plugin = plugin;
         this.config = config;
         this.client = client;
-        setPosition(OverlayPosition.TOP_RIGHT);
+
+        setPosition(OverlayPosition.TOP_LEFT);
         setLayer(OverlayLayer.ABOVE_WIDGETS);
+        makePanelResizeable(panelComponent, panel);
     }
 
     public void showNativePoints() {
@@ -89,7 +90,7 @@ public class TitheOverlayPoints extends Overlay {
 
             // Total points.
             panel.getChildren().add(LineComponent.builder()
-                .left("Points:").leftColor(color_orange)
+                .left("Points:").leftColor(color_gray)
                 .right((points_total - Math.max(0, fruits_sack - TITHE_FARM_POINTS_BREAK)) + (points_added > 0 ? " + " + points_added : "")).rightColor(color_orange)
                 .build()
             );
@@ -105,7 +106,9 @@ public class TitheOverlayPoints extends Overlay {
                 .build()
             );
 
-            return panel.render(graphics);
+            panelComponent.getChildren().clear();
+            panelComponent.getChildren().add(panel);
+            return super.render(graphics);
         }
 
         return null;

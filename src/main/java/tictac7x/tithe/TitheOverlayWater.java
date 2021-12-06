@@ -15,7 +15,7 @@ public class TitheOverlayWater extends Overlay {
     private final WateringCansRegular watering_cans;
     private final WateringCanGricollers gricollers_can;
 
-    private final PanelComponent panel_water = new PanelComponent();
+    private final PanelComponent panel = new PanelComponent();
 
     private static final int WATER_HIGH = 80;
     private static final int WATER_LOW = 10;
@@ -28,6 +28,7 @@ public class TitheOverlayWater extends Overlay {
 
         setPosition(OverlayPosition.ABOVE_CHATBOX_RIGHT);
         setPriority(OverlayPriority.HIGH);
+        makePanelResizeable(panelComponent, panel);
     }
 
     @Override
@@ -42,16 +43,20 @@ public class TitheOverlayWater extends Overlay {
                 water_remaining_percentage >= WATER_LOW ? color_yellow :
                 color_red;
 
-            panel_water.getChildren().clear();
-            panel_water.getChildren().add(
+            panel.getChildren().clear();
+            panel.getChildren().add(
                 LineComponent.builder()
                     .left("Water:")
                     .right(water_remaining + "/" + water_total)
                     .build()
             );
-            panel_water.setBackgroundColor(getColor(color, panel_background_alpha));
 
-            return panel_water.render(graphics);
+            panel.setBackgroundColor(getColor(color, panel_background_alpha));
+
+            panelComponent.getChildren().clear();
+            panelComponent.getChildren().add(panel);
+
+            return super.render(graphics);
         }
 
         return null;
