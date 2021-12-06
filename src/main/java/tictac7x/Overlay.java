@@ -17,6 +17,8 @@ import net.runelite.api.widgets.Widget;
 import net.runelite.api.DecorativeObject;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.api.widgets.WidgetItem;
+import net.runelite.client.ui.overlay.components.PanelComponent;
+import net.runelite.client.ui.overlay.components.ComponentOrientation;
 import net.runelite.client.ui.overlay.components.ProgressPieComponent;
 
 public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPanel {
@@ -167,5 +169,10 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPane
         final int b = Math.round(color.getBlue() * factor);
 
         return new Color(Math.min(r, 255), Math.min(g, 255), Math.min(b, 255), a);
+    }
+
+    public void makePanelResizeable(final PanelComponent parent, final PanelComponent child) {
+        child.setBackgroundColor(null);
+        parent.setBorder(new Rectangle(0,0,0,0));
     }
 }
