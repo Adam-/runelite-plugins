@@ -22,7 +22,6 @@ import net.runelite.client.ui.overlay.components.ProgressPieComponent;
 public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPanel {
     protected final int panel_background_alpha = 80;
     public static final int clickbox_stroke_width = 1;
-    protected final int inventory_highlight_alpha = 60;
     protected final int pie_progress = 1;
     public static final Color color_red    = new Color(255, 0, 0);
     public static final Color color_green  = new Color(0, 255, 0);
@@ -33,6 +32,10 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPane
     public static final Color color_white   = new Color(255, 255, 255);
     public static final int alpha_vibrant = 140;
     public static final int alpha_normal = 80;
+
+    private boolean isValidColor(final Color color) {
+        return (color != null && color.getAlpha() > 0);
+    }
 
     public static Color getColor(final Color color, final int alpha) {
         return color == null ? null : new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
@@ -59,6 +62,8 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPane
     }
 
     public void renderShape(final Graphics2D graphics, final Shape shape, final Color color) {
+        if (!isValidColor(color)) return;
+
         try {
             // Area border.
             graphics.setColor(darkenColor(color));
@@ -80,6 +85,8 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPane
     }
 
     public void renderPie(final Graphics2D graphics, final TileObject object, final Color color, final float progress, final int offset) {
+        if (!isValidColor(color)) return;
+
         try {
             final ProgressPieComponent progressPieComponent = new ProgressPieComponent();
             progressPieComponent.setPosition(object.getCanvasLocation(offset));
@@ -91,18 +98,20 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPane
     }
 
     public void highlightInventoryItem(final Client client, final Graphics2D graphics, final int item_id) {
-        highlightInventoryItem(client, graphics, item_id, getColor(color_green, inventory_highlight_alpha));
+        highlightInventoryItem(client, graphics, item_id, getColor(color_green, alpha_normal));
     }
 
     public void highlightInventoryItem(final Client client, final Graphics2D graphics, final int item_id, final Color color) {
+        if (!isValidColor(color)) return;
+
         try {
             final Widget inventory = client.getWidget(WidgetInfo.INVENTORY);
-            if (inventory.isHidden()) return;
+            if (inventory == null || inventory.isHidden()) return;
 
             for (final WidgetItem item : inventory.getWidgetItems()) {
                 if (item.getId() == item_id) {
                     final Rectangle bounds = item.getCanvasBounds(false);
-                    graphics.setColor(getColor(color, inventory_highlight_alpha));
+                    graphics.setColor(color);
                     graphics.fill(bounds);
                 }
             }
@@ -110,22 +119,9 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPane
     }
 
     public void highlightInventoryItems(final Client client, final Graphics2D graphics, Map<Integer, Color> items_to_highlight) {
-        try {
-            final Widget inventory = client.getWidget(WidgetInfo.INVENTORY);
-            if (inventory.isHidden()) return;
-
-            for (final WidgetItem item : inventory.getWidgetItems()) {
-                final int id = item.getId();
-
-                if (items_to_highlight.containsKey(id)) {
-                    final Rectangle bounds = item.getCanvasBounds();
-                    graphics.setColor(getColor(items_to_highlight.get(id), inventory_highlight_alpha));
-                    graphics.fill(bounds);
-                    graphics.draw(bounds);
-                }
-            }
-
-        } catch (Exception ignored) {}
+        for (final int item_id : items_to_highlight.keySet()) {
+            highlightInventoryItem(client, graphics, item_id, items_to_highlight.get(item_id));
+        }
     }
 
     public TileObject findTileObject(final Client client, final int x, final int y, final int id) {
@@ -162,13 +158,13 @@ public abstract class Overlay extends net.runelite.client.ui.overlay.OverlayPane
     }
 
     public Color darkenColor(final Color color) {
-        if (color == null) return null;
+        if (!isValidColor(color)) return null;
         final float factor = 0.8f;
 
-        int a = color.getAlpha();
-        int r = Math.round(color.getRed() * factor);
-        int g = Math.round(color.getGreen() * factor);
-        int b = Math.round(color.getBlue() * factor);
+        final int a = color.getAlpha();
+        final int r = Math.round(color.getRed() * factor);
+        final int g = Math.round(color.getGreen() * factor);
+        final int b = Math.round(color.getBlue() * factor);
 
         return new Color(Math.min(r, 255), Math.min(g, 255), Math.min(b, 255), a);
     }
