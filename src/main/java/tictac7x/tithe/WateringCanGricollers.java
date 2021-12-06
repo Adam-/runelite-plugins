@@ -4,7 +4,6 @@ import net.runelite.api.Client;
 import net.runelite.api.ItemID;
 import net.runelite.api.GameObject;
 import net.runelite.api.InventoryID;
-import net.runelite.api.ItemContainer;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
@@ -12,58 +11,86 @@ import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.config.ConfigManager;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class WateringCanGricollers {
-    public static final int CHARGES_TOTAL = 1000;
+    private final int CHARGES_TOTAL = 1000;
+    private final Pattern regex_check = Pattern.compile("Watering can charges remaining: (.*)%");
+    private final String can_filled = "You fill the watering can from the water barrel.";
+    private final String can_full = "Gricoller's can is already full.";
 
     private final TithePlugin plugin;
     private final TitheConfig config;
-    private final WateringCansRegular inventory;
+    private final WateringCansRegular watering_cans;
     private final Client client;
     private final ConfigManager configs;
 
-    private Integer inventory_water_remaining = null;
-    private Integer water_remaining = null;
-    private Integer water_total = null;
+    private int inventory_water_remaining = 0;
+    private int water_remaining = 0;
+    private boolean can_in_inventory = false;
 
-    public WateringCanGricollers(final TithePlugin plugin, final TitheConfig config, final WateringCansRegular inventory, final Client client, final ConfigManager configs) {
+    public WateringCanGricollers(final TithePlugin plugin, final TitheConfig config, final WateringCansRegular watering_cans, final Client client, final ConfigManager configs) {
         this.plugin = plugin;
         this.config = config;
-        this.inventory = inventory;
+        this.watering_cans = watering_cans;
         this.client = client;
         this.configs = configs;
+
+        this.water_remaining = config.getGricollersCanCharges();
     }
 
     public int getWaterRemaining() {
-        return water_remaining != null ? water_remaining : 0;
+        return can_in_inventory ? water_remaining : 0;
     }
 
     public int getWaterTotal() {
-        return water_total != null ? water_total : 0;
+        return can_in_inventory ? CHARGES_TOTAL : 0;
     }
 
     public void onChatMessage(final ChatMessage event) {
-        // Player checked Gricollers can charges.
-        if (event.getType() == ChatMessageType.GAMEMESSAGE && event.getMessage().contains("Watering can charges remaining:")) {
-            updateGricollersCanCharges(Double.parseDouble(event.getMessage().split(":")[1].replace("%", "")));
+        if (!plugin.inTitheFarm()) return;
+        final Matcher matches;
 
-        // Player fills a watering can.
-        } else if (event.getType() == ChatMessageType.SPAM && event.getMessage().equals("You fill the watering can from the water barrel.")) {
-            // Gricoller's can was filled.
-            if (inventory_water_remaining == inventory.getWaterRemaining()) {
-                updateGricollersCanCharges(CHARGES_TOTAL);
-            }
+        // Player checked Gricollers can charges.
+        if (event.getType() == ChatMessageType.GAMEMESSAGE && (matches = regex_check.matcher(event.getMessage())).matches() && inventory_water_remaining == watering_cans.getWaterRemaining()) {
+            updateGricollersCanCharges(Double.parseDouble(matches.group(1)));
+
+        // Gricoller's can full.
+        } else if (event.getType() == ChatMessageType.GAMEMESSAGE && event.getMessage().equals(can_full)) {
+            updateGricollersCanCharges(CHARGES_TOTAL);
+
+        // Gricoller's can filled.
+        } else if (
+            event.getType() == ChatMessageType.SPAM && event.getMessage().equals(can_filled)
+        ) {
+            // Game message arrives before inventory is changed, so we need to wait 100ms to check if inventory didn't change in the meantime.
+            new Thread(() -> {
+                try {
+                    final int inventory_water_remaining = this.inventory_water_remaining;
+                    Thread.sleep(100);
+
+                    // Regular cans amount of water didn't change, which means Gricoller's can was filled.
+                    if (watering_cans.getWaterRemaining() == inventory_water_remaining) {
+                        updateGricollersCanCharges(CHARGES_TOTAL);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }).start();
         }
     }
 
     public void onItemContainerChanged(final ItemContainerChanged event) {
-        if (event.getContainerId() == InventoryID.INVENTORY.getId()) {
-            updateWaterCharges();
+        if (plugin.inTitheFarm() && event.getContainerId() == InventoryID.INVENTORY.getId()) {
+            this.can_in_inventory = event.getItemContainer().count(ItemID.GRICOLLERS_CAN) == 1;
+            this.inventory_water_remaining = this.watering_cans.getWaterRemaining();
         }
     }
 
     public void onGameObjectSpawned(final GameObject game_object) {
         // Game object is some sort of tithe patch.
-        if (TithePlant.isWatered(game_object)) {
+        if (plugin.inTitheFarm() && TithePlant.isWatered(game_object)) {
             final LocalPoint location_plant = game_object.getLocalLocation();
             final WorldPoint location_player = client.getLocalPlayer() != null ? client.getLocalPlayer().getWorldLocation() : null;
 
@@ -71,16 +98,10 @@ public class WateringCanGricollers {
             if (plugin.getPlayerPlants().containsKey(location_plant) && TithePlant.isPlayerNear(game_object, location_player)) {
 
                 // If remaining water charges didn't change, Gricollers can was used.
-                if (inventory.getWaterRemaining() == inventory_water_remaining) {
-                    updateGricollersCanCharges(config.getGricollersCanCharges() - 1);
+                if (watering_cans.getWaterRemaining() == inventory_water_remaining) {
+                    updateGricollersCanCharges(water_remaining - 1);
                 }
             }
-        }
-    }
-
-    public void onGameTick() {
-        if (water_remaining == null) {
-            updateWaterCharges();
         }
     }
 
@@ -90,20 +111,6 @@ public class WateringCanGricollers {
 
     private void updateGricollersCanCharges(final int charges) {
         configs.setConfiguration(config.group, config.gricollers_can_charges, charges);
-        updateWaterCharges();
-    }
-
-    private void updateWaterCharges() {
-        final ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
-
-        if (inventory != null) {
-            this.inventory_water_remaining = this.inventory.getWaterRemaining();
-            this.water_remaining = inventory.count(ItemID.GRICOLLERS_CAN) * config.getGricollersCanCharges();
-            this.water_total = inventory.count(ItemID.GRICOLLERS_CAN) * CHARGES_TOTAL;
-        } else {
-            this.inventory_water_remaining = null;
-            this.water_remaining = null;
-            this.water_total = null;
-        }
+        water_remaining = charges;
     }
 }

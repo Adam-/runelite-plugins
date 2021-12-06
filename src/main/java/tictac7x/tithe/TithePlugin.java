@@ -6,33 +6,30 @@ import javax.inject.Inject;
 import net.runelite.api.Client;
 import lombok.extern.slf4j.Slf4j;
 import com.google.inject.Provides;
-import net.runelite.api.events.GameTick;
+import net.runelite.api.GameState;
+import net.runelite.api.events.*;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.widgets.WidgetInfo;
-import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.WidgetLoaded;
 import net.runelite.client.game.ItemManager;
-import net.runelite.api.events.VarbitChanged;
 import com.google.common.collect.ImmutableSet;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 @Slf4j
 @PluginDescriptor(
 	name = "Tithe Farm Improvements",
-	description = "Additions to Tithe Farm official plugin",
+	description = "Improve overall experience for Tithe farm",
 	tags = { "tithe", "farm", "farmer", "golovanova", "bologano", "logavano", "gricoller" },
 	conflicts = "Tithe Farm"
 )
 public class TithePlugin extends Plugin {
-	private final Set<Integer> TITHE_FARM_REGIONS = ImmutableSet.of(6966, 6967, 7222, 7223);
+	private final Set<Integer> REGIONS = ImmutableSet.of(6966, 6967, 7222, 7223);
+	private boolean in_tithe_farm;
 
 	@Inject
 	private TitheConfig config;
@@ -52,24 +49,30 @@ public class TithePlugin extends Plugin {
 	@Inject
 	private ConfigManager configs;
 
+	@Provides
+	TitheConfig provideConfig(final ConfigManager configs) {
+		return configs.getConfig(tictac7x.tithe.TitheConfig.class);
+	}
+
 	private WateringCansRegular   watering_cans;
 	private WateringCanGricollers gricollers_can;
 	private TitheOverlayWater     overlay_water;
 	private TitheOverlayPlants    overlay_plants;
 	private TitheOverlayPoints    overlay_points;
 	private TitheOverlayPatches   overlay_patches;
+
 	private TitheOverlayInventory overlay_inventory;
 
 	@Override
 	protected void startUp() {
 		if (watering_cans == null) {
-			watering_cans     = new WateringCansRegular(client);
+			watering_cans     = new WateringCansRegular();
 			gricollers_can    = new WateringCanGricollers(this, config, watering_cans, client, configs);
 			overlay_water     = new TitheOverlayWater(this, config, watering_cans, gricollers_can);
 			overlay_plants    = new TitheOverlayPlants(this, config, client);
 			overlay_points    = new TitheOverlayPoints(this, config, client);
 			overlay_patches   = new TitheOverlayPatches(this, config, client);
-			overlay_inventory = new TitheOverlayInventory(this, config, client);
+			overlay_inventory = new TitheOverlayInventory(this, config, gricollers_can, client);
 		}
 
 		overlays.add(overlay_water);
@@ -104,8 +107,6 @@ public class TithePlugin extends Plugin {
 
 	@Subscribe
 	public void onGameTick(final GameTick event) {
-		watering_cans.onGameTick();
-		gricollers_can.onGameTick();
 		overlay_plants.onGameTick();
 	}
 
@@ -143,21 +144,28 @@ public class TithePlugin extends Plugin {
 		}
 	}
 
-	@Provides
-	TitheConfig provideConfig(final ConfigManager configs) {
-		return configs.getConfig(tictac7x.tithe.TitheConfig.class);
+	@Subscribe
+	public void onGameStateChanged(final GameStateChanged event) {
+		if (event.getGameState() == GameState.LOADING) {
+			updateInTitheFarm();
+		}
 	}
 
 	public boolean inTitheFarm() {
+		return in_tithe_farm;
+	}
+
+	private void updateInTitheFarm() {
 		final int[] regions = client.getMapRegions();
 
 		for (final int region : regions) {
-			if (!TITHE_FARM_REGIONS.contains(region)) {
-				return false;
+			if (REGIONS.contains(region)) {
+				in_tithe_farm = true;
+				return;
 			}
 		}
 
-		return true;
+		in_tithe_farm = false;
 	}
 
 	public Map<LocalPoint, TithePlant> getPlayerPlants() {

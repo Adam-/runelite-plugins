@@ -23,8 +23,8 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'tictac7x.tithe'
-version = '0.2'
+group = 'tictac7x-tithe'
+version = '0.3'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {

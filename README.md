@@ -1,5 +1,5 @@
-# Tithe Farm Improvements - v0.2
-Plugin for RuneLite to improve overall experience for Tithe farm.
+# Tithe Farm Improvements - v0.3
+Improve overall experience for Tithe farm.
 
 ## Plants progress
 * Shows progress of dry plants with game-tick precision
