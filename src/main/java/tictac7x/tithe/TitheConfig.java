@@ -18,7 +18,7 @@ public interface TitheConfig extends Config {
 		@ConfigItem(
 			position = 1,
 			keyName = "plants_dry",
-			name = "Highlight dry plants",
+			name = "Dry plants",
 			description = "Highlight dry plants that need to be watered.",
 			section = section_patches
 		) default Color getPlantsDryColor() {
@@ -29,7 +29,7 @@ public interface TitheConfig extends Config {
 		@ConfigItem(
 			position = 2,
 			keyName = "plants_watered",
-			name = "Highlight watered plants",
+			name = "Watered plants",
 			description = "Highlight watered plants",
 			section = section_patches
 		) default Color getPlantsWateredColor() {
@@ -40,7 +40,7 @@ public interface TitheConfig extends Config {
 		@ConfigItem(
 			position = 3,
 			keyName = "plants_grown",
-			name = "Highlight grown plants",
+			name = "Grown plants",
 			description = "Highlight grown plants",
 			section = section_patches
 		) default Color getPlantsGrownColor() {
@@ -51,7 +51,7 @@ public interface TitheConfig extends Config {
 		@ConfigItem(
 			position = 4,
 			keyName = "plants_blighted",
-			name = "Highlight blighted plants",
+			name = "Blighted plants",
 			description = "Highlight blighted plants",
 			section = section_patches
 		) default Color getPlantsBlightedColor() {
@@ -62,7 +62,7 @@ public interface TitheConfig extends Config {
 		@ConfigItem(
 			position = 5,
 			keyName = "farm_patches_hover",
-			name = "Highlight farm patches",
+			name = "Farm patches",
 			description = "Highlight farm patches on hover",
 			section = section_patches
 		) default Color getPatchesHighlightOnHoverColor() {
@@ -79,7 +79,7 @@ public interface TitheConfig extends Config {
 		@ConfigItem(
 			position = 1,
 			keyName = "seeds",
-			name = "Highlight seeds",
+			name = "Seeds",
 			description = "Highlight seeds",
 			section = section_inventory
 		) default Color getHighlightSeedsColor() {
@@ -90,7 +90,7 @@ public interface TitheConfig extends Config {
 		@ConfigItem(
 			position = 2,
 			keyName = "farmer_outfit",
-			name = "Highlight farmer outfit",
+			name = "Farmer outfit",
 			description = "Highlight farmer outfit when you only have fruits in inventory",
 			section = section_inventory
 		) default Color getHighlightFarmersOutfitColor() {
