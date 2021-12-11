@@ -461,7 +461,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 					WidgetInfo.TO_GROUP(menuEntry.getParam1()) == WidgetID.BANK_GROUP_ID &&
 					menuEntry.getOption().equals("Release")
 				) {
-					menuEntry.setType(MenuAction.CC_OP.getId());
+					menuEntry.setType(MenuAction.CC_OP);
 				}
 			}
 		}
@@ -1085,35 +1085,29 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		boolean isLayoutPlaceholder = fakeItems.stream()
 			.filter(fakeItem -> fakeItem.getIndex() == index && fakeItem.isLayoutPlaceholder()).findAny().isPresent();
 
-		MenuEntry newEntry;
-
 		int itemCount = layout.countItemsWithId(itemIdAtIndex);
 		if (itemCount > 1 && !isLayoutPlaceholder) {
-			newEntry = new MenuEntry();
-			newEntry.setOption(REMOVE_DUPLICATE_ITEM);
-			newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor));
-			newEntry.setType(MenuAction.RUNELITE_OVERLAY.getId());
-			newEntry.setParam0(index);
-			insertMenuEntry(newEntry, client.getMenuEntries(), false);
+			client.createMenuEntry(-1)
+				.setOption(REMOVE_DUPLICATE_ITEM)
+				.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor))
+				.setType(MenuAction.RUNELITE_OVERLAY)
+				.setParam0(index);
 		}
 
-		newEntry = new MenuEntry();
-		newEntry.setOption(DUPLICATE_ITEM);
-		newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor));
-		newEntry.setType(MenuAction.RUNELITE_OVERLAY.getId());
-		newEntry.setParam0(index);
-		insertMenuEntry(newEntry, client.getMenuEntries(), false);
+		client.createMenuEntry(-1)
+			.setOption(DUPLICATE_ITEM)
+			.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor))
+			.setType(MenuAction.RUNELITE_OVERLAY)
+			.setParam0(index);
 
 		if (!isRealItem) return; // layout placeholders already have "remove-layout" menu option which does the same thing as remove-duplicate-item.
 	}
 
 	private void addEntry(String menuTarget, String menuOption) {
-		MenuEntry newEntry;
-		newEntry = new MenuEntry();
-		newEntry.setOption(menuOption);
-		newEntry.setTarget(ColorUtil.wrapWithColorTag(menuTarget, itemTooltipColor));
-		newEntry.setType(MenuAction.RUNELITE.getId());
-		insertMenuEntry(newEntry, client.getMenuEntries(), true);
+		client.createMenuEntry(-1)
+			.setOption(menuOption)
+			.setTarget(ColorUtil.wrapWithColorTag(menuTarget, itemTooltipColor))
+			.setType(MenuAction.RUNELITE);
 	}
 
 	private void addFakeItemMenuEntries(MenuEntryAdded menuEntryAdded) {
@@ -1130,7 +1124,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		int itemIdAtIndex = layout.getItemAtIndex(index);
 
 		if (itemIdAtIndex != -1 && !indexToWidget.containsKey(index)) {
-			MenuEntry newEntry;
+//			MenuEntry newEntry;
 //			newEntry = new MenuEntry();
 //			newEntry.setOption(REMOVE_FROM_TAG_MENU_OPTION + " (" + tabInterface.getActiveTab().getTag() + ")");
 //			newEntry.setType(MenuAction.CC_OP_LOW_PRIORITY.getId());
@@ -1139,16 +1133,15 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 //			newEntry.setParam0(entry.getKey());
 //			insertMenuEntry(newEntry, client.getMenuEntries(), true);
 
-			newEntry = new MenuEntry();
-			newEntry.setOption(REMOVE_FROM_LAYOUT_MENU_OPTION);
 			boolean preventPlaceholderMenuBug =
 				config.preventVanillaPlaceholderMenuBug() &&
-				client.getDraggedWidget() != null
-			;
-			newEntry.setType((preventPlaceholderMenuBug ? MenuAction.CC_OP : MenuAction.RUNELITE_OVERLAY).getId());
-			newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor));
-			newEntry.setParam0(index);
-			insertMenuEntry(newEntry, client.getMenuEntries(), false);
+				client.getDraggedWidget() != null;
+
+			client.createMenuEntry(-1)
+				.setOption(REMOVE_FROM_LAYOUT_MENU_OPTION)
+				.setType((preventPlaceholderMenuBug ? MenuAction.CC_OP : MenuAction.RUNELITE_OVERLAY))
+				.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor))
+				.setParam0(index);
 		}
 	}
 
@@ -1665,7 +1658,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		for (MenuEntry entry : menuEntries)
 		{
 		    // checking the type is kinda hacky because really both preview auto layout entries should have the runelite id... but it works.
-			if (entry.getOption().equals(PREVIEW_AUTO_LAYOUT) && entry.getType() != MenuAction.RUNELITE.getId())
+			if (entry.getOption().equals(PREVIEW_AUTO_LAYOUT) && entry.getType() != MenuAction.RUNELITE)
 			{
 				event.setForceRightClick(true);
 				return;
