@@ -1104,7 +1104,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	private void addEntry(String menuTarget, String menuOption) {
-		client.createMenuEntry(-1)
+		client.createMenuEntry(client.getMenuEntries().length - 1)
 			.setOption(menuOption)
 			.setTarget(ColorUtil.wrapWithColorTag(menuTarget, itemTooltipColor))
 			.setType(MenuAction.RUNELITE);
@@ -1124,22 +1124,13 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		int itemIdAtIndex = layout.getItemAtIndex(index);
 
 		if (itemIdAtIndex != -1 && !indexToWidget.containsKey(index)) {
-//			MenuEntry newEntry;
-//			newEntry = new MenuEntry();
-//			newEntry.setOption(REMOVE_FROM_TAG_MENU_OPTION + " (" + tabInterface.getActiveTab().getTag() + ")");
-//			newEntry.setType(MenuAction.CC_OP_LOW_PRIORITY.getId());
-//			newEntry.setTarget(ColorUtil.wrapWithColorTag(itemName(entry.getKey()), itemTooltipColor));
-//			newEntry.setType(MenuAction.RUNELITE.getId());
-//			newEntry.setParam0(entry.getKey());
-//			insertMenuEntry(newEntry, client.getMenuEntries(), true);
-
 			boolean preventPlaceholderMenuBug =
 				config.preventVanillaPlaceholderMenuBug() &&
 				client.getDraggedWidget() != null;
 
 			client.createMenuEntry(-1)
 				.setOption(REMOVE_FROM_LAYOUT_MENU_OPTION)
-				.setType((preventPlaceholderMenuBug ? MenuAction.CC_OP : MenuAction.RUNELITE_OVERLAY))
+				.setType(preventPlaceholderMenuBug ? MenuAction.CC_OP : MenuAction.RUNELITE_OVERLAY)
 				.setTarget(ColorUtil.wrapWithColorTag(itemName(itemIdAtIndex), itemTooltipColor))
 				.setParam0(index);
 		}
@@ -1201,19 +1192,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			}
 		}
 		return index;
-	}
-
-	private void insertMenuEntry(MenuEntry newEntry, MenuEntry[] entries, boolean after)
-	{
-		MenuEntry[] newMenu = ObjectArrays.concat(entries, newEntry);
-
-		if (after)
-		{
-			int menuEntryCount = newMenu.length;
-			ArrayUtils.swap(newMenu, menuEntryCount - 1, menuEntryCount - 2);
-		}
-
-		client.setMenuEntries(newMenu);
 	}
 
 	// TODO do I actually want to remove variant items from the tag? What if I'm just removing one of the layout items, and do not actually want to remove it from the tag? That seems very reasonable.
