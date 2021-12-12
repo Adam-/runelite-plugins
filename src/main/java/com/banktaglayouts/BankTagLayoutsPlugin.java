@@ -1104,7 +1104,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	private void addEntry(String menuTarget, String menuOption) {
-		client.createMenuEntry(client.getMenuEntries().length - 1)
+		client.createMenuEntry(-2)
 			.setOption(menuOption)
 			.setTarget(ColorUtil.wrapWithColorTag(menuTarget, itemTooltipColor))
 			.setType(MenuAction.RUNELITE);
