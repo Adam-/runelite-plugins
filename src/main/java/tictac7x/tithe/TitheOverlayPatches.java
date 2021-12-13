@@ -30,7 +30,7 @@ public class TitheOverlayPatches extends Overlay {
             final MenuEntry[] menu_entries = client.getMenuEntries();
 
             for (final MenuEntry menu_entry : menu_entries) {
-                final MenuAction menu_option = MenuAction.of(menu_entry.getType());
+                final MenuAction menu_option = menu_entry.getType();
                 if (menu_option == MenuAction.CANCEL || menu_option == MenuAction.WALK) continue;
 
                 final TileObject object = findTileObject(client, menu_entry.getParam0(), menu_entry.getParam1(), menu_entry.getIdentifier());

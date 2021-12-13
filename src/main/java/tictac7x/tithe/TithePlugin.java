@@ -22,7 +22,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Tithe Farm Improvements",
+	name = "Tithe Farm Improved",
 	description = "Improve overall experience for Tithe farm",
 	tags = { "tithe", "farm", "farmer", "golovanova", "bologano", "logavano", "gricoller" },
 	conflicts = "Tithe Farm"
