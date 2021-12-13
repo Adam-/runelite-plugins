@@ -386,9 +386,9 @@ public class EquipmentScreenshotPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		menuManager.addManagedCustomMenu(FIXED_EQUIPMENT_TAB_SCREENSHOT);
-		menuManager.addManagedCustomMenu(RESIZABLE_EQUIPMENT_TAB_SCREENSHOT);
-		menuManager.addManagedCustomMenu(BOTTOM_LINE_INVENTORY_SCREENSHOT);
+		menuManager.addManagedCustomMenu(FIXED_EQUIPMENT_TAB_SCREENSHOT, null);
+		menuManager.addManagedCustomMenu(RESIZABLE_EQUIPMENT_TAB_SCREENSHOT, null);
+		menuManager.addManagedCustomMenu(BOTTOM_LINE_INVENTORY_SCREENSHOT, null);
 		clientThread.invokeLater(this::createButton);
 		useResourcePack = false;
 		dartID = 0;
