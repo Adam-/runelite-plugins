@@ -82,11 +82,11 @@ class EquipmentBlowpipeOverlay
 		{
 			if (dartMat == -1)
 			{
-				dartImage = ImageUtil.getResourceStreamFromClass(EquipmentBlowpipeOverlay.class, "Dragon_bar.png");
+				dartImage = ImageUtil.loadImageResource(EquipmentBlowpipeOverlay.class, "Dragon_bar.png");
 			}
 			else if (dartMat == -2)
 			{
-				dartImage = ImageUtil.getResourceStreamFromClass(EquipmentBlowpipeOverlay.class, "Black_bar.png");
+				dartImage = ImageUtil.loadImageResource(EquipmentBlowpipeOverlay.class, "Black_bar.png");
 			}
 			else if (itemManager.getImage(dartMat) != null)
 			{
