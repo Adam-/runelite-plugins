@@ -77,32 +77,40 @@ public interface BankTagLayoutsConfig extends Config {
         return false;
     }
 
-	@ConfigItem(
-		keyName = "autoLayoutDuplicatesEnabled",
-		name = "Auto-layout: Create duplicates",
-		description = "Whether or not to create duplicates when there are multiple of the same item when using auto-layout.",
-		position = 8
-	)
-	default boolean autoLayoutDuplicatesEnabled() {
-		return true;
-	}
+    @ConfigItem(
+            keyName = "autoLayoutAlternateStyle",
+            name = "Auto-layout: Pretty Sort",
+            description = "Organizes the auto layout to look like an inventory and equipment grid.",
+            position = 8
+    )
+    default boolean autoLayoutAlternateStyle() { return true; }
 
-	@ConfigItem(
-		keyName = "autoLayoutDuplicateLimit",
-		name = "Auto-layout: Duplicate limit",
-		description = "The maximum number of items in a row to create duplicates for with auto-layout. Set to 28 to create duplicates for every item. To disable duplicate creation, toggle the \"Auto-layout: Create duplicates\" option off.",
-		position = 9
-	)
-	default int autoLayoutDuplicateLimit() {
-		return 4;
-	}
+    @ConfigItem(
+            keyName = "autoLayoutDuplicatesEnabled",
+            name = "Auto-layout: Create duplicates",
+            description = "Whether or not to create duplicates when there are multiple of the same item when using auto-layout.",
+            position = 9
+    )
+    default boolean autoLayoutDuplicatesEnabled() {
+        return true;
+    }
 
-	@ConfigItem(
-		keyName = "preventVanillaPlaceholderMenuBug",
-		name = "Prevent placeholder menu bug",
-		description = "Prevents bug in the vanilla client that can prevent item withdrawal and inadvertent placeholder removal. See https://github.com/geheur/bank-tag-custom-layouts/issues/33 for more info.",
-		position = 10
-	)
-	default boolean preventVanillaPlaceholderMenuBug() { return true; }
+    @ConfigItem(
+            keyName = "autoLayoutDuplicateLimit",
+            name = "Auto-layout: Duplicate limit",
+            description = "The maximum number of items in a row to create duplicates for with auto-layout. Set to 28 to create duplicates for every item. To disable duplicate creation, toggle the \"Auto-layout: Create duplicates\" option off.",
+            position = 10
+    )
+    default int autoLayoutDuplicateLimit() {
+        return 4;
+    }
+
+    @ConfigItem(
+            keyName = "preventVanillaPlaceholderMenuBug",
+            name = "Prevent placeholder menu bug",
+            description = "Prevents bug in the vanilla client that can prevent item withdrawal and inadvertent placeholder removal. See https://github.com/geheur/bank-tag-custom-layouts/issues/33 for more info.",
+            position = 11
+    )
+    default boolean preventVanillaPlaceholderMenuBug() { return true; }
 
 }
