@@ -9,22 +9,14 @@ import com.google.common.collect.Multimap;
 import com.google.common.util.concurrent.Runnables;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
+import com.jogamp.common.util.VersionNumber;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.Point;
-import net.runelite.api.events.ClientTick;
-import net.runelite.api.events.CommandExecuted;
-import net.runelite.api.events.DraggingWidgetChanged;
-import net.runelite.api.events.FocusChanged;
-import net.runelite.api.events.MenuEntryAdded;
-import net.runelite.api.events.MenuOptionClicked;
-import net.runelite.api.events.MenuShouldLeftClick;
-import net.runelite.api.events.ScriptPostFired;
-import net.runelite.api.events.ScriptPreFired;
-import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.events.*;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetID;
@@ -60,19 +52,12 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.MouseEvent;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.io.InputStream;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
@@ -288,6 +273,34 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 	}
 
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged gameStateChanged) {
+		GameState gameState = gameStateChanged.getGameState();
+		if (gameState == GameState.LOGGED_IN) {
+			checkVersionUpgrade();
+		}
+	}
+
+	private void onVersionUpgraded(VersionNumber previousVersion, VersionNumber newVersion) {
+		chatMessage("The Bank layouts plugin has a new Auto-layout mode. Switch to the Presets layout style to try it out.");
+	}
+
+	private void checkVersionUpgrade() {
+		try {
+			InputStream is = BankTagLayoutsPlugin.class.getResourceAsStream("/version.txt");
+			Properties props = new Properties();
+			props.load(is);
+			VersionNumber buildVersion = new VersionNumber(props.getProperty("version"));
+			VersionNumber previousVersion = new VersionNumber(configManager.getConfiguration("bank_tag_layouts", "version"));
+			if (buildVersion.compareTo(previousVersion) > 0) {
+				onVersionUpgraded(previousVersion, buildVersion);
+			}
+			configManager.setConfiguration("bank_tag_layouts", "version", buildVersion);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	private void handlePotentialTagRename(ConfigChanged event) {
 		Set<String> oldTags = new HashSet<>(Text.fromCSV(event.getOldValue()));
 		Set<String> newTags = new HashSet<>(Text.fromCSV(event.getNewValue()));
@@ -402,7 +415,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			Layout currentLayout = getBankOrderNonPreview(currentLayoutableThing);
 			if (currentLayout == null) currentLayout = Layout.emptyLayout();
 
-			previewLayout = layoutGenerator.basicInventorySetupsLayout(inventorySetup, currentLayout, getAutoLayoutDuplicateLimit());
+			previewLayout = layoutGenerator.basicInventorySetupsLayout(inventorySetup, currentLayout, getAutoLayoutDuplicateLimit(), config.autoLayoutStyle());
 		}
 
 		hideLayoutPreviewButtons(false);
@@ -461,8 +474,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		sawMenuEntryAddedThisClientTick = false;
 	}
 
-	private List<RunepouchRune> getRunePouchContents() {
-		List<RunepouchRune> runes = new ArrayList<>(0);
+	private List<Integer> getRunePouchContents() {
+		List<Integer> runes = new ArrayList<>(0);
 		for (int i = 0; i < AMOUNT_VARBITS.length; i++)
 		{
 			int amount = client.getVar(AMOUNT_VARBITS[i]);
@@ -472,7 +485,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			int runeId = client.getVar(RUNE_VARBITS[i]);
 			RunepouchRune rune = RunepouchRune.getRune(runeId);
 			if (rune != null) {
-				runes.add(rune);
+				runes.add(rune.getItemId());
 			}
 		}
 		return runes;
@@ -1418,7 +1431,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 				// Inventory setups by default have an equipment and inventory order, so lay it out automatically if this
 				// is the first time viewing the setup with bank tag layouts.
 				InventorySetup inventorySetup = inventorySetupsAdapter.getInventorySetup(layoutable.name);
-				return layoutGenerator.basicInventorySetupsLayout(inventorySetup, Layout.emptyLayout(), getAutoLayoutDuplicateLimit());
+				return layoutGenerator.basicInventorySetupsLayout(inventorySetup, Layout.emptyLayout(), getAutoLayoutDuplicateLimit(), config.autoLayoutStyle());
 			}
 
 			configuration = "";

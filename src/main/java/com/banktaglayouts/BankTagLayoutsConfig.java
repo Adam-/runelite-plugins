@@ -116,7 +116,7 @@ public interface BankTagLayoutsConfig extends Config {
             position = 1,
             section = autoLayout
     )
-    default LayoutStyles autoLayoutStyle() { return LayoutStyles.Presets; }
+    default LayoutStyles autoLayoutStyle() { return LayoutStyles.ZigZag; }
 
     @ConfigItem(
             keyName = "autoLayoutDuplicatesEnabled",

@@ -12,8 +12,11 @@ import java.util.stream.Collectors;
 
 import net.runelite.api.EquipmentInventorySlot;
 import net.runelite.api.ItemID;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.ItemVariationMapping;
 import net.runelite.client.game.RunepouchRune;
+import net.runelite.http.api.item.ItemEquipmentStats;
+import net.runelite.http.api.item.ItemStats;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -21,18 +24,18 @@ public class LayoutGenerator {
 
     private final BankTagLayoutsPlugin plugin;
 
-    public Layout generateLayout(List<Integer> equippedItems, List<Integer> inventory, List<RunepouchRune> runePouch, Layout currentLayout, int duplicateLimit, BankTagLayoutsConfig.LayoutStyles layoutStyle) {
+    public Layout generateLayout(List<Integer> equippedItems, List<Integer> inventory, List<Integer> runePouch, Layout currentLayout, int duplicateLimit, BankTagLayoutsConfig.LayoutStyles layoutStyle) {
         switch (layoutStyle){
             case ZigZag:
                 return zigzagLayout(equippedItems, inventory, Collections.emptyList(), Collections.emptyList(), currentLayout, duplicateLimit);
             case Presets:
-                return presetsLayout(equippedItems, inventory, runePouch, Collections.emptyList(), currentLayout, duplicateLimit);
+                return presetsLayout(equippedItems, inventory, runePouch, Collections.emptyList(), currentLayout, false);
             default:
-                return Layout.emptyLayout();
+                throw new IllegalArgumentException("Please supply a layout style to this method.");
         }
     }
 
-    public Layout presetsLayout(List<Integer> equippedItems, List<Integer> inventory, List<RunepouchRune> runePouch, List<Integer> additionalItems, Layout currentLayout, int duplicateLimit) {
+    public Layout presetsLayout(List<Integer> equippedItems, List<Integer> inventory, List<Integer> runePouch, List<Integer> additionalItems, Layout currentLayout, boolean fromInventorySetup) {
         Layout previewLayout = Layout.emptyLayout();
 
         // lay out equipped items.
@@ -46,14 +49,25 @@ public class LayoutGenerator {
         previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.HEAD.getSlotIdx()), 1);
         previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.CAPE.getSlotIdx()), 8);
         previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.AMULET.getSlotIdx()), 9);
-        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.AMMO.getSlotIdx()), 10);
         previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.WEAPON.getSlotIdx()), 16);
         previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.BODY.getSlotIdx()), 17);
         previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.SHIELD.getSlotIdx()), 18);
-        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.LEGS.getSlotIdx()), 25);
-        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.GLOVES.getSlotIdx()), 32);
-        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.BOOTS.getSlotIdx()), 33);
-        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.RING.getSlotIdx()), 34);
+
+        if (fromInventorySetup) {
+            previewLayout.putItem(equippedItems.get(10), 10);
+            previewLayout.putItem(equippedItems.get(6), 25);
+            previewLayout.putItem(equippedItems.get(7), 32);
+            previewLayout.putItem(equippedItems.get(8), 33);
+            previewLayout.putItem(equippedItems.get(9), 34);
+        } else {
+            previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.AMMO.getSlotIdx()), 10);
+            previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.LEGS.getSlotIdx()), 25);
+            previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.GLOVES.getSlotIdx()), 32);
+            previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.BOOTS.getSlotIdx()), 33);
+            previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.RING.getSlotIdx()), 34);
+        }
+
+
 
         int invRow = 0;
         int invCol = 4;
@@ -67,12 +81,11 @@ public class LayoutGenerator {
                 invCol++;
             }
         }
-        log.debug("TEST");
         boolean hasPouch = inventory.stream().anyMatch(Predicate.isEqual(ItemID.RUNE_POUCH)) || inventory.stream().anyMatch(Predicate.isEqual(ItemID.RUNE_POUCH_L));
         if (hasPouch) {
             int c = 0;
-            for (RunepouchRune r : runePouch) {
-                previewLayout.putItem(r.getItemId(), c + (40));
+            for (Integer r : runePouch) {
+                previewLayout.putItem(r, c + (40));
                 c++;
             }
         }
@@ -86,7 +99,7 @@ public class LayoutGenerator {
         // If the item is in an invalid spot move it to a valid spot in the sandbox area
         for (Map.Entry<Integer, Integer> e: currentLayout.allPairs()) {
             if (!indexInAllowedSpace(inventory, e.getKey())) {
-                if (inventory.contains(e.getValue()) || equippedItems.contains(e.getValue()) || (hasPouch && runePouch.stream().map(RunepouchRune::getItemId).collect(Collectors.toList()).contains(e.getValue()))) {
+                if (inventory.contains(e.getValue()) || equippedItems.contains(e.getValue()) || (hasPouch && runePouch.contains(e.getValue()))) {
                     continue;
                 }
                 int index = 0;
@@ -98,6 +111,18 @@ public class LayoutGenerator {
                     previewLayout.putItem(e.getValue(), index);
                 }
             }
+        }
+
+        // Add additional items
+        for (Integer i: additionalItems) {
+            if (previewLayout.countItemsWithId(i) > 0) {
+                continue;
+            }
+            int index = 0;
+            while (!indexInAllowedSpace(inventory, index) || (previewLayout.getItemAtIndex(index) > 0)) {
+                index++;
+            }
+            previewLayout.putItem(i, index);
         }
 
         return previewLayout;
@@ -114,13 +139,13 @@ public class LayoutGenerator {
         }
         // 1 means the inventory spaces are occupied
         int[][] mask = {
-                {1, 1, 1, 1, 0, 0, 0, 0},
-                {1, 1, 1, 1, 0, 0, 0, 0},
-                {1, 1, 1, 1, 0, 0, 0, 0},
-                {1, 1, 1, 1, 0, 0, 0, 0},
-                {1, 1, 1, 1, 0, 0, 0, 0},
-                {1, 1, 1, 1, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0, 0, 0, 0},
+                {1, 1, 1, 1, 1, 1, 1, 1},
+                {1, 1, 1, 1, 1, 1, 1, 1},
+                {1, 1, 1, 1, 1, 1, 1, 1},
+                {1, 1, 1, 1, 1, 1, 1, 1},
+                {1, 1, 1, 1, 1, 1, 1, 1},
+                {1, 1, 1, 1, 1, 1, 1, 1},
+                {0, 0, 0, 0, 1, 1, 1, 1},
         };
         for (int x = 0; x < inventoryHeight; x++) {
             if (x == 6) {
@@ -270,12 +295,19 @@ public class LayoutGenerator {
 
     // TODO opening inventory setups panel closes auto-layout preview.
 
-    public Layout basicInventorySetupsLayout(InventorySetup inventorySetup, Layout currentLayout, int duplicateLimit) {
+    public Layout basicInventorySetupsLayout(InventorySetup inventorySetup, Layout currentLayout, int duplicateLimit, BankTagLayoutsConfig.LayoutStyles layoutStyle) {
         List<Integer> equippedGear = inventorySetup.getEquipment() == null ? Collections.emptyList() : inventorySetup.getEquipment().stream().map(isi -> isi.getId()).filter(id -> id != -1).collect(Collectors.toList());
         List<Integer> inventory = inventorySetup.getInventory() == null ? Collections.emptyList() : inventorySetup.getInventory().stream().map(isi -> isi.getId()).filter(id -> id != -1).collect(Collectors.toList());
         List<Integer> runePouchRunes = inventorySetup.getRune_pouch() == null ? Collections.emptyList() : inventorySetup.getRune_pouch().stream().map(isi -> isi.getId()).filter(id -> id != -1).collect(Collectors.toList());
         List<Integer> additionalItems = inventorySetup.getAdditionalFilteredItems() == null ? Collections.emptyList() : inventorySetup.getAdditionalFilteredItems().entrySet().stream().map(isi -> isi.getValue().getId()).filter(id -> id != -1).collect(Collectors.toList());
 
-        return zigzagLayout(equippedGear, inventory, runePouchRunes, additionalItems, currentLayout, duplicateLimit);
+        switch (layoutStyle){
+            case ZigZag:
+                return zigzagLayout(equippedGear, inventory, runePouchRunes, additionalItems, currentLayout, duplicateLimit);
+            case Presets:
+                return presetsLayout(equippedGear, inventory, runePouchRunes, additionalItems, currentLayout, true);
+            default:
+                throw new IllegalArgumentException("Please supply a layout style to this method.");
+        }
     }
 }
