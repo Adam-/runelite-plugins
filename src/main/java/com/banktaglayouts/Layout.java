@@ -60,7 +60,8 @@ public class Layout {
     }
 
     public void putItem(int itemId, int index) {
-        if (itemId == -1) {
+        if (itemId == -1 || itemId == 0) {
+            layoutMap.remove(index);
             return;
         }
         layoutMap.put(index, itemId);

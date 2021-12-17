@@ -864,7 +864,7 @@ public class BankLayoutTest
     @Test
 	public void testLayoutGeneratorWithDuplicateItems() {
 		LayoutGenerator layoutGenerator = new LayoutGenerator(plugin);
-		Layout layout = layoutGenerator.generateLayout(Arrays.asList(GAMES_NECKLACE_8.id, RUNE_PLATEBODY.id), Arrays.asList(GAMES_NECKLACE_8.id, MAGIC_LOGS.id, MAGIC_LOGS.id), Collections.emptyList(), Layout.emptyLayout(), 28, false);
+		Layout layout = layoutGenerator.generateLayout(Arrays.asList(GAMES_NECKLACE_8.id, RUNE_PLATEBODY.id), Arrays.asList(GAMES_NECKLACE_8.id, MAGIC_LOGS.id, MAGIC_LOGS.id), Collections.emptyList(), Layout.emptyLayout(), 28, BankTagLayoutsConfig.LayoutStyles.ZigZag);
 		checkLayout(layout, 0, GAMES_NECKLACE_8);
 		checkLayout(layout, 8, RUNE_PLATEBODY);
 		checkLayout(layout, 16, GAMES_NECKLACE_8);
@@ -886,7 +886,7 @@ public class BankLayoutTest
 			MAGIC_LOGS.id,
 			MAGIC_LOGS.id,
 			MAGIC_LOGS.id,
-			GAMES_NECKLACE_8.id),Collections.emptyList(), Layout.emptyLayout(), 3, false);
+			GAMES_NECKLACE_8.id),Collections.emptyList(), Layout.emptyLayout(), 3, BankTagLayoutsConfig.LayoutStyles.ZigZag);
 		checkLayout(layout, 0, GAMES_NECKLACE_8);
 		checkLayout(layout, 8, MAGIC_LOGS);
 		checkLayout(layout, 1, MAGIC_LOGS);
@@ -909,7 +909,7 @@ public class BankLayoutTest
 			MAGIC_LOGS.id,
 			MAGIC_LOGS.id,
 			MAGIC_LOGS.id
-			), Collections.emptyList(), Layout.emptyLayout(), 3, false);
+			), Collections.emptyList(), Layout.emptyLayout(), 3, BankTagLayoutsConfig.LayoutStyles.ZigZag);
 		checkLayout(layout, 0, MAGIC_LOGS);
 		assertEquals(1, layout.allPairs().size());
 	}
@@ -918,13 +918,13 @@ public class BankLayoutTest
 	public void testLayoutGeneratorWithEmptyInventory() {
 		LayoutGenerator layoutGenerator = new LayoutGenerator(plugin);
 
-		Layout layout = layoutGenerator.generateLayout(Collections.emptyList(), Arrays.asList(),Collections.emptyList(), Layout.emptyLayout(), 3, false);
+		Layout layout = layoutGenerator.generateLayout(Collections.emptyList(), Arrays.asList(),Collections.emptyList(), Layout.emptyLayout(), 3, BankTagLayoutsConfig.LayoutStyles.ZigZag);
 		assertEquals(0, layout.allPairs().size());
 
-		layout = layoutGenerator.generateLayout(Collections.emptyList(), Arrays.asList(-1),Collections.emptyList(), Layout.emptyLayout(), 3, false);
+		layout = layoutGenerator.generateLayout(Collections.emptyList(), Arrays.asList(-1),Collections.emptyList(), Layout.emptyLayout(), 3, BankTagLayoutsConfig.LayoutStyles.ZigZag);
 		assertEquals(0, layout.allPairs().size());
 
-		layout = layoutGenerator.generateLayout(Collections.emptyList(), Collections.nCopies(28, -1),Collections.emptyList(), Layout.emptyLayout(), 3, false);
+		layout = layoutGenerator.generateLayout(Collections.emptyList(), Collections.nCopies(28, -1),Collections.emptyList(), Layout.emptyLayout(), 3, BankTagLayoutsConfig.LayoutStyles.ZigZag);
 		assertEquals(0, layout.allPairs().size());
 	}
 
@@ -943,7 +943,7 @@ public class BankLayoutTest
 			MAGIC_LOGS.id,
 			MAGIC_LOGS.id,
 			MAGIC_LOGS.id
-		),Collections.emptyList(), initialLayout, 3, false);
+		),Collections.emptyList(), initialLayout, 3, BankTagLayoutsConfig.LayoutStyles.ZigZag);
 		checkLayout(layout, 0, MAGIC_LOGS);
 		checkLayout(layout, 8, MAGIC_LOGS);
 		checkLayout(layout, 1, MAGIC_LOGS);
@@ -962,7 +962,7 @@ public class BankLayoutTest
 		Layout layout = layoutGenerator.generateLayout(Collections.emptyList(), Arrays.asList(
 			GAMES_NECKLACE_8.id,
 			GAMES_NECKLACE_6.id
-		),Collections.emptyList(), initialLayout, 3, false);
+		),Collections.emptyList(), initialLayout, 3, BankTagLayoutsConfig.LayoutStyles.ZigZag);
 		checkLayout(layout, 0, GAMES_NECKLACE_8);
 		checkLayout(layout, 8, GAMES_NECKLACE_6);
 		System.out.println("layout: " + layout);

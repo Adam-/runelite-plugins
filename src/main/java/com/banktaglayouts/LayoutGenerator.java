@@ -1,17 +1,17 @@
 package com.banktaglayouts;
 
 import com.banktaglayouts.invsetupsstuff.InventorySetup;
-import java.util.AbstractMap;
+
+import java.util.*;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import net.runelite.api.EquipmentInventorySlot;
+import net.runelite.api.ItemID;
 import net.runelite.client.game.ItemVariationMapping;
 import net.runelite.client.game.RunepouchRune;
 
@@ -21,35 +21,36 @@ public class LayoutGenerator {
 
     private final BankTagLayoutsPlugin plugin;
 
-    public Layout generateLayout(List<Integer> equippedItems, List<Integer> inventory, List<RunepouchRune> runePouch, Layout currentLayout, int duplicateLimit, boolean alternateLayoutStyle) {
-        if(alternateLayoutStyle) {
-            return prettyLayout(equippedItems, inventory, runePouch, Collections.emptyList(), currentLayout, duplicateLimit);
+    public Layout generateLayout(List<Integer> equippedItems, List<Integer> inventory, List<RunepouchRune> runePouch, Layout currentLayout, int duplicateLimit, BankTagLayoutsConfig.LayoutStyles layoutStyle) {
+        switch (layoutStyle){
+            case ZigZag:
+                return zigzagLayout(equippedItems, inventory, Collections.emptyList(), Collections.emptyList(), currentLayout, duplicateLimit);
+            case Presets:
+                return presetsLayout(equippedItems, inventory, runePouch, Collections.emptyList(), currentLayout, duplicateLimit);
+            default:
+                return Layout.emptyLayout();
         }
-        return flatLayout(equippedItems, inventory, Collections.emptyList(), Collections.emptyList(), currentLayout, duplicateLimit);
     }
 
-    public Layout prettyLayout(List<Integer> equippedItems, List<Integer> inventory, List<RunepouchRune> runePouch, List<Integer> additionalItems, Layout currentLayout, int duplicateLimit) {
+    public Layout presetsLayout(List<Integer> equippedItems, List<Integer> inventory, List<RunepouchRune> runePouch, List<Integer> additionalItems, Layout currentLayout, int duplicateLimit) {
         Layout previewLayout = Layout.emptyLayout();
-
-        System.out.println(equippedItems);
-        System.out.println(runePouch.stream().map(RunepouchRune::getItemId).collect(Collectors.toList()));
 
         // lay out equipped items.
         equippedItems = equippedItems.stream()
                 .map(itemId -> plugin.itemManager.canonicalize(itemId)) // Weight reducing items have different ids when equipped; this fixes that.
                 .collect(Collectors.toList());
 
-        previewLayout.putItem(equippedItems.get(0), EquipmentSlots.HEAD.index);
-        previewLayout.putItem(equippedItems.get(1), EquipmentSlots.CAPE.index);
-        previewLayout.putItem(equippedItems.get(2), EquipmentSlots.NECK.index);
-        previewLayout.putItem(equippedItems.get(13), EquipmentSlots.AMMO.index);
-        previewLayout.putItem(equippedItems.get(3), EquipmentSlots.WEAPON.index);
-        previewLayout.putItem(equippedItems.get(4), EquipmentSlots.CHEST.index);
-        previewLayout.putItem(equippedItems.get(5), EquipmentSlots.OFFHAND.index);
-        previewLayout.putItem(equippedItems.get(7), EquipmentSlots.LEGS.index);
-        previewLayout.putItem(equippedItems.get(9), EquipmentSlots.GLOVES.index);
-        previewLayout.putItem(equippedItems.get(10), EquipmentSlots.BOOTS.index);
-        previewLayout.putItem(equippedItems.get(12), EquipmentSlots.RING.index);
+        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.HEAD.getSlotIdx()), 1);
+        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.CAPE.getSlotIdx()), 8);
+        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.AMULET.getSlotIdx()), 9);
+        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.AMMO.getSlotIdx()), 10);
+        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.WEAPON.getSlotIdx()), 16);
+        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.BODY.getSlotIdx()), 17);
+        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.SHIELD.getSlotIdx()), 18);
+        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.LEGS.getSlotIdx()), 25);
+        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.GLOVES.getSlotIdx()), 32);
+        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.BOOTS.getSlotIdx()), 33);
+        previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.RING.getSlotIdx()), 34);
 
         int invRow = 0;
         int invCol = 4;
@@ -63,19 +64,77 @@ public class LayoutGenerator {
                 invCol++;
             }
         }
+        log.debug("TEST");
+        boolean hasPouch = inventory.stream().anyMatch(Predicate.isEqual(ItemID.RUNE_POUCH)) || inventory.stream().anyMatch(Predicate.isEqual(ItemID.RUNE_POUCH_L)) || currentLayout.countItemsWithId(ItemID.RUNE_POUCH) > 0 || currentLayout.countItemsWithId(ItemID.RUNE_POUCH_L) > 0;
+        if (hasPouch) {
+            int c = 0;
+            for (RunepouchRune r : runePouch) {
+                previewLayout.putItem(r.getItemId(), c + (40));
+                c++;
+            }
+        }
 
-        if (inventory.stream().anyMatch(Predicate.isEqual(12791))) {
-            int c = 7;
-            for (RunepouchRune r: runePouch) {
-                previewLayout.putItem(r.getItemId(), c + (7 * width));
-                c--;
+        // If the item is in a safe spot copy it over from the old layout
+        for (Map.Entry<Integer, Integer> e: currentLayout.allPairs()) {
+            if (indexInAllowedSpace(inventory, e.getKey())) {
+                previewLayout.putItem(e.getValue(), e.getKey());
+            }
+        }
+        // If the item is in an invalid spot move it to a valid spot in the sandbox area
+        for (Map.Entry<Integer, Integer> e: currentLayout.allPairs()) {
+            if (!indexInAllowedSpace(inventory, e.getKey())) {
+                if (inventory.contains(e.getValue()) || equippedItems.contains(e.getValue()) || (hasPouch && runePouch.stream().map(RunepouchRune::getItemId).collect(Collectors.toList()).contains(e.getValue()))) {
+                    continue;
+                }
+                int index = 0;
+                while (!indexInAllowedSpace(inventory, index) || (previewLayout.getItemAtIndex(index) > 0)) {
+                    index++;
+                }
+
+                if (!layoutContainsItem(e.getValue(), previewLayout)) {
+                    previewLayout.putItem(e.getValue(), index);
+                }
             }
         }
 
         return previewLayout;
     }
 
-    public Layout flatLayout(List<Integer> equippedItems, List<Integer> inventory, List<Integer> runePouch, List<Integer> additionalItems, Layout currentLayout, int duplicateLimit) {
+    private boolean indexInAllowedSpace(List<Integer> inventory, int index) {
+        int inventoryHeight = 0;
+        int c = 1;
+        for (Integer i : inventory) {
+            if (i > 0) {
+                inventoryHeight = (int) (Math.ceil(c / 4.0));
+            }
+            c++;
+        }
+        // 1 means the inventory spaces are occupied
+        int[][] mask = {
+                {1, 1, 1, 1, 0, 0, 0, 0},
+                {1, 1, 1, 1, 0, 0, 0, 0},
+                {1, 1, 1, 1, 0, 0, 0, 0},
+                {1, 1, 1, 1, 0, 0, 0, 0},
+                {1, 1, 1, 1, 0, 0, 0, 0},
+                {1, 1, 1, 1, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0},
+        };
+        for (int x = 0; x < inventoryHeight; x++) {
+            if (x == 6) {
+                mask[x] = new int[]{0, 0, 0, 0, 1, 1, 1, 1};
+            } else {
+                mask[x] = new int[]{1, 1, 1, 1, 1, 1, 1, 1};
+            }
+        }
+        int[] flatMask = Arrays.stream(mask).flatMapToInt(Arrays::stream).toArray();
+        if (index >= flatMask.length) {
+            return true;
+        }
+        boolean b = flatMask[index] == 0;
+        return b;
+    }
+
+    public Layout zigzagLayout(List<Integer> equippedItems, List<Integer> inventory, List<Integer> runePouch, List<Integer> additionalItems, Layout currentLayout, int duplicateLimit) {
         Layout previewLayout = Layout.emptyLayout();
         List<Integer> displacedItems = new ArrayList<>();
 
@@ -218,25 +277,6 @@ public class LayoutGenerator {
         List<Integer> runePouchRunes = inventorySetup.getRune_pouch() == null ? Collections.emptyList() : inventorySetup.getRune_pouch().stream().map(isi -> isi.getId()).filter(id -> id != -1).collect(Collectors.toList());
         List<Integer> additionalItems = inventorySetup.getAdditionalFilteredItems() == null ? Collections.emptyList() : inventorySetup.getAdditionalFilteredItems().entrySet().stream().map(isi -> isi.getValue().getId()).filter(id -> id != -1).collect(Collectors.toList());
 
-        return flatLayout(equippedGear, inventory, runePouchRunes, additionalItems, currentLayout, duplicateLimit);
-    }
-
-
-    private enum EquipmentSlots {
-        HEAD(1),
-        CAPE(8),
-        NECK(9),
-        AMMO(10),
-        WEAPON(16),
-        CHEST(17),
-        OFFHAND(18),
-        LEGS(25),
-        GLOVES(32),
-        BOOTS(33),
-        RING(34);
-        final public int index;
-        EquipmentSlots(int index) {
-            this.index = index;
-        }
+        return zigzagLayout(equippedGear, inventory, runePouchRunes, additionalItems, currentLayout, duplicateLimit);
     }
 }

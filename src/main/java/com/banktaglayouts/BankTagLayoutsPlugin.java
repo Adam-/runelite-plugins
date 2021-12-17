@@ -53,7 +53,6 @@ import net.runelite.client.plugins.banktags.tabs.TabInterface;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.Text;
-import org.apache.commons.lang3.ArrayUtils;
 
 import javax.inject.Inject;
 import java.awt.*;
@@ -166,14 +165,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private final Map<Integer, Widget> indexToWidget = new HashMap<>();
 
 	// Copied from the rune pouch plugin
-	private static final Varbits[] AMOUNT_VARBITS =
-			{
-					Varbits.RUNE_POUCH_AMOUNT1, Varbits.RUNE_POUCH_AMOUNT2, Varbits.RUNE_POUCH_AMOUNT3
-			};
-	private static final Varbits[] RUNE_VARBITS =
-			{
-					Varbits.RUNE_POUCH_RUNE1, Varbits.RUNE_POUCH_RUNE2, Varbits.RUNE_POUCH_RUNE3
-			};
+	private static final Varbits[] AMOUNT_VARBITS = {Varbits.RUNE_POUCH_AMOUNT1, Varbits.RUNE_POUCH_AMOUNT2, Varbits.RUNE_POUCH_AMOUNT3};
+	private static final Varbits[] RUNE_VARBITS = {Varbits.RUNE_POUCH_RUNE1, Varbits.RUNE_POUCH_RUNE2, Varbits.RUNE_POUCH_RUNE3};
 
 	private Widget showLayoutPreviewButton = null;
 	private Widget applyLayoutPreviewButton = null;
@@ -402,7 +395,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			Layout currentLayout = getBankOrderNonPreview(currentLayoutableThing);
 			if (currentLayout == null) currentLayout = Layout.emptyLayout();
 
-			previewLayout = layoutGenerator.generateLayout(equippedGear, inventory, getRunePouchContents(), currentLayout, getAutoLayoutDuplicateLimit(), config.autoLayoutAlternateStyle());
+			previewLayout = layoutGenerator.generateLayout(equippedGear, inventory, getRunePouchContents(), currentLayout, getAutoLayoutDuplicateLimit(), config.autoLayoutStyle());
 		} else {
 			InventorySetup inventorySetup = inventorySetupsAdapter.getInventorySetup(currentLayoutableThing.name);
 
@@ -472,14 +465,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		List<RunepouchRune> runes = new ArrayList<>(0);
 		for (int i = 0; i < AMOUNT_VARBITS.length; i++)
 		{
-			Varbits amountVarbit = AMOUNT_VARBITS[i];
-
-			int amount = client.getVar(amountVarbit);
+			int amount = client.getVar(AMOUNT_VARBITS[i]);
 			if (amount <= 0) {
 				continue;
 			}
-			Varbits runeVarbit = RUNE_VARBITS[i];
-			int runeId = client.getVar(runeVarbit);
+			int runeId = client.getVar(RUNE_VARBITS[i]);
 			RunepouchRune rune = RunepouchRune.getRune(runeId);
 			if (rune != null) {
 				runes.add(rune);
