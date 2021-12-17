@@ -68,7 +68,7 @@ public class LayoutGenerator {
             }
         }
         log.debug("TEST");
-        boolean hasPouch = inventory.stream().anyMatch(Predicate.isEqual(ItemID.RUNE_POUCH)) || inventory.stream().anyMatch(Predicate.isEqual(ItemID.RUNE_POUCH_L)) || currentLayout.countItemsWithId(ItemID.RUNE_POUCH) > 0 || currentLayout.countItemsWithId(ItemID.RUNE_POUCH_L) > 0;
+        boolean hasPouch = inventory.stream().anyMatch(Predicate.isEqual(ItemID.RUNE_POUCH)) || inventory.stream().anyMatch(Predicate.isEqual(ItemID.RUNE_POUCH_L));
         if (hasPouch) {
             int c = 0;
             for (RunepouchRune r : runePouch) {
