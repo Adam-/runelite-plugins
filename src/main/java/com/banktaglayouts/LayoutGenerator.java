@@ -39,7 +39,10 @@ public class LayoutGenerator {
         equippedItems = equippedItems.stream()
                 .map(itemId -> plugin.itemManager.canonicalize(itemId)) // Weight reducing items have different ids when equipped; this fixes that.
                 .collect(Collectors.toList());
-
+        // if the player hasn't equipped anything since launching the game this array will not come back with the expected -1 values. so we will just add them in ourselves.
+        while (equippedItems.size() < 14) {
+            equippedItems.add(-1);
+        }
         previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.HEAD.getSlotIdx()), 1);
         previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.CAPE.getSlotIdx()), 8);
         previewLayout.putItem(equippedItems.get(EquipmentInventorySlot.AMULET.getSlotIdx()), 9);
