@@ -127,11 +127,7 @@ public class LayoutGenerator {
             }
         }
         int[] flatMask = Arrays.stream(mask).flatMapToInt(Arrays::stream).toArray();
-        if (index >= flatMask.length) {
-            return true;
-        }
-        boolean b = flatMask[index] == 0;
-        return b;
+        return index >= 56 || flatMask[index] == 0;
     }
 
     public Layout zigzagLayout(List<Integer> equippedItems, List<Integer> inventory, List<Integer> runePouch, List<Integer> additionalItems, Layout currentLayout, int duplicateLimit) {
