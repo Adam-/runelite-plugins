@@ -877,7 +877,7 @@ public class RegionGpuPlugin extends Plugin implements DrawCallbacks
 
 	private boolean instanceRegionUnlocked()
 	{
-		if (client.getMapRegions() != null && client.getMapRegions().length > 0 && client.getGameState() == GameState.LOGGED_IN)
+		if (client.getMapRegions() != null && client.getMapRegions().length > 0 && (client.getGameState() == GameState.LOGGED_IN || client.getGameState() == GameState.LOADING))
 		{
 			for (int i = 0; i < client.getMapRegions().length; i++)
 			{
@@ -899,7 +899,7 @@ public class RegionGpuPlugin extends Plugin implements DrawCallbacks
 			loadedLockedRegions[i] = 0;
 		}
 
-		if (client.getMapRegions() != null && client.getMapRegions().length > 0 && client.getGameState() == GameState.LOGGED_IN)
+		if (client.getMapRegions() != null && client.getMapRegions().length > 0 && (client.getGameState() == GameState.LOGGED_IN || client.getGameState() == GameState.LOADING))
 		{
 			for (int i = 0; i < client.getMapRegions().length; i++)
 			{
