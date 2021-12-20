@@ -10,13 +10,66 @@ import com.google.common.util.concurrent.Runnables;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import com.jogamp.common.util.VersionNumber;
+import java.awt.Color;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.event.MouseEvent;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.IntPredicate;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.*;
+import net.runelite.api.ChatMessageType;
+import net.runelite.api.Client;
+import net.runelite.api.GameState;
+import net.runelite.api.InventoryID;
+import net.runelite.api.Item;
+import net.runelite.api.ItemComposition;
+import net.runelite.api.ItemContainer;
+import net.runelite.api.ItemID;
+import net.runelite.api.KeyCode;
+import net.runelite.api.MenuAction;
+import net.runelite.api.MenuEntry;
+import net.runelite.api.MessageNode;
 import net.runelite.api.Point;
-import net.runelite.api.events.*;
+import net.runelite.api.ScriptEvent;
+import net.runelite.api.ScriptID;
+import net.runelite.api.Varbits;
+import net.runelite.api.events.ClientTick;
+import net.runelite.api.events.CommandExecuted;
+import net.runelite.api.events.DraggingWidgetChanged;
+import net.runelite.api.events.FocusChanged;
+import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.MenuEntryAdded;
+import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.events.MenuShouldLeftClick;
+import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.ScriptPreFired;
+import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetID;
@@ -46,34 +99,11 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.Text;
 
-import javax.inject.Inject;
-import java.awt.*;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.StringSelection;
-import java.awt.datatransfer.UnsupportedFlavorException;
-import java.awt.event.MouseEvent;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.IntPredicate;
-import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import static net.runelite.client.plugins.banktags.BankTagsPlugin.ICON_SEARCH;
-import static net.runelite.client.plugins.banktags.BankTagsPlugin.TAG_TABS_CONFIG;
-
-
 @Slf4j
 @PluginDescriptor(
-		name = "Bank Tag Layouts",
-		description = "Right click a bank tag tabs and click \"Enable layout\", select the tag tab, then drag items in the tag to reposition them.",
-		tags = {"bank", "tag", "layout"}
+	name = "Bank Tag Layouts",
+	description = "Right click a bank tag tabs and click \"Enable layout\", select the tag tab, then drag items in the tag to reposition them.",
+	tags = {"bank", "tag", "layout"}
 )
 @PluginDependency(BankTagsPlugin.class)
 public class BankTagLayoutsPlugin extends Plugin implements MouseListener
@@ -282,22 +312,47 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	}
 
 	private void onVersionUpgraded(VersionNumber previousVersion, VersionNumber newVersion) {
-		chatMessage("The Bank layouts plugin has a new Auto-layout mode. Switch to the Presets layout style to try it out.");
+		if (previousVersion.compareTo(new VersionNumber(1, 4, 10)) < 0)
+		{
+			clientThread.invokeLater(() -> {
+				chatMessage(ColorUtil.wrapWithColorTag("Bank Tag Layouts ", Color.RED) + "new version: " + newVersion);
+				chatMessage(" - " + "New Auto-layout mode \"Presets\" shows your gear and inventory in a prettier way. You can switch to it in the plugin's config.");
+			});
+		}
 	}
 
 	private void checkVersionUpgrade() {
-		try {
-			InputStream is = BankTagLayoutsPlugin.class.getResourceAsStream("/version.txt");
+		try (InputStream is = BankTagLayoutsPlugin.class.getResourceAsStream("/version.txt"))
+		{
 			Properties props = new Properties();
-			props.load(is);
+
+			try
+			{
+				props.load(is);
+			}
+			catch (IOException e)
+			{
+				log.error("unable to load version number", e);
+				return;
+			}
+
 			VersionNumber buildVersion = new VersionNumber(props.getProperty("version"));
-			VersionNumber previousVersion = new VersionNumber(configManager.getConfiguration("bank_tag_layouts", "version"));
-			if (buildVersion.compareTo(previousVersion) > 0) {
+			String previousVersionString = configManager.getConfiguration(CONFIG_GROUP, "version");
+			// This is a best guess - they could have had the plugin installed previously but if they don't have any layouts set they probably don't use it.
+			boolean assumeFreshInstall =
+				previousVersionString == null
+				&& configManager.getConfigurationKeys(CONFIG_GROUP + "." + LAYOUT_CONFIG_KEY_PREFIX).size() == 0
+				&& configManager.getConfigurationKeys(CONFIG_GROUP + "." + INVENTORY_SETUPS_LAYOUT_CONFIG_KEY_PREFIX).size() == 0;
+			VersionNumber previousVersion = new VersionNumber(previousVersionString);
+			System.out.println(previousVersion + " " + buildVersion + " " + assumeFreshInstall);
+			if (buildVersion.compareTo(previousVersion) > 0 && !assumeFreshInstall)
+			{
 				onVersionUpgraded(previousVersion, buildVersion);
 			}
-			configManager.setConfiguration("bank_tag_layouts", "version", buildVersion);
-		} catch (IOException e) {
-			e.printStackTrace();
+			configManager.setConfiguration(CONFIG_GROUP, "version", buildVersion);
+		}
+		catch (IOException e) {
+			log.error("unable to close version file.", e);
 		}
 	}
 
@@ -335,6 +390,15 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	@Subscribe
 	public void onCommandExecuted(CommandExecuted commandExecuted) {
 		if (!log.isDebugEnabled()) return;
+
+		if ("clearversion".equals(commandExecuted.getCommand())) {
+			configManager.unsetConfiguration(CONFIG_GROUP, "version");
+			System.out.println("cleared version number.");
+		}
+		if ("checkversion".equals(commandExecuted.getCommand())) {
+			System.out.println("checking version number");
+			checkVersionUpgrade();
+		}
 
 		if ("itemname".equals(commandExecuted.getCommand())) {
 			String[] arguments = commandExecuted.getArguments();
@@ -408,7 +472,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			Layout currentLayout = getBankOrderNonPreview(currentLayoutableThing);
 			if (currentLayout == null) currentLayout = Layout.emptyLayout();
 
-			previewLayout = layoutGenerator.generateLayout(equippedGear, inventory, getRunePouchContents(), currentLayout, getAutoLayoutDuplicateLimit(), config.autoLayoutStyle());
+			previewLayout = layoutGenerator.generateLayout(equippedGear, inventory, getRunePouchContents(), Collections.emptyList(), currentLayout, getAutoLayoutDuplicateLimit(), config.autoLayoutStyle());
 		} else {
 			InventorySetup inventorySetup = inventorySetupsAdapter.getInventorySetup(currentLayoutableThing.name);
 
@@ -1447,14 +1511,14 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 		exportString += layout;
 
-		List<String> tabNames = Text.fromCSV(MoreObjects.firstNonNull(configManager.getConfiguration(BankTagsPlugin.CONFIG_GROUP, TAG_TABS_CONFIG), ""));
+		List<String> tabNames = Text.fromCSV(MoreObjects.firstNonNull(configManager.getConfiguration(BankTagsPlugin.CONFIG_GROUP, BankTagsPlugin.TAG_TABS_CONFIG), ""));
 		if (!tabNames.contains(tagName)) {
 			chatErrorMessage("Couldn't export layout-ed tag tab - tag tab doesn't see to exist?");
 		}
 
 		List<String> data = new ArrayList<>();
 		data.add(tagName);
-		String tagTabIconItemId = configManager.getConfiguration(BankTagsPlugin.CONFIG_GROUP, ICON_SEARCH + tagName);
+		String tagTabIconItemId = configManager.getConfiguration(BankTagsPlugin.CONFIG_GROUP, BankTagsPlugin.ICON_SEARCH + tagName);
 		if (tagTabIconItemId == null) {
 			tagTabIconItemId = "" + ItemID.SPADE;
 		}

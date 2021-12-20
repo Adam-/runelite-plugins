@@ -7,27 +7,11 @@ import net.runelite.client.config.ConfigSection;
 
 @ConfigGroup("banktaglayouts")
 public interface BankTagLayoutsConfig extends Config {
-    @ConfigSection(
-            name = "Settings",
-            description = "General Configuration",
-            position = 0
-    )
-    String settings = "settings";
-
-
-    @ConfigSection(
-            name = "Auto-layout",
-            description = "Auto-layout lays out your tab automatically using items from your equipment and inventory.",
-            position = 1
-    )
-    String autoLayout = "autoLayout";
-
     @ConfigItem(
             keyName = "layoutEnabledByDefault",
             name = "Enable layout by default",
             description = "When opening a tag tab without layout enabled, automatically enable layout on the tab.",
-            position = 1,
-            section = settings
+            position = 1
     )
     default boolean layoutEnabledByDefault() {
         return false;
@@ -37,8 +21,7 @@ public interface BankTagLayoutsConfig extends Config {
             keyName = "showLayoutPlaceholders",
             name = "Show Layout Placeholders",
             description = "Show the location of items that are in the layout and in the tag, but not in your bank.",
-            position = 2,
-            section = settings
+            position = 2
     )
     default boolean showLayoutPlaceholders()
     {
@@ -49,8 +32,7 @@ public interface BankTagLayoutsConfig extends Config {
             keyName = "warnForAccidentalBankReorder",
             name = "Bank reorder warning",
             description = "Warns you know when you reorder items in your actual bank and not in a layout.",
-            position = 3,
-            section = settings
+            position = 3
     )
     default boolean warnForAccidentalBankReorder() {
         return true;
@@ -60,63 +42,60 @@ public interface BankTagLayoutsConfig extends Config {
             keyName = "tutorialMessage",
             name = "Layout enable tutorial message",
             description = "Lets you know how to enable layouts if you drag an item in a tag tab without layout enabled, and do not currently have any layout-ed bank tag tabs.",
-            position = 4,
-            section = settings
+            position = 4
     )
     default boolean tutorialMessage() {
         return true;
     }
 
-    @ConfigItem(
-            keyName = "showAutoLayoutButton",
-            name = "Auto Layout button",
-            description = "Disabling this hides the auto layout button and adds auto layout to the menu where you import tags.",
-            position = 5,
-            section = autoLayout
-    )
-    default boolean showAutoLayoutButton() {
-        return true;
-    }
+	@ConfigItem(
+		keyName = "useWithInventorySetups",
+		name = "Use with Inventory Setups",
+		description = "Allows laying out of filters applied by the Inventory Setups plugin.",
+		position = 6
+	)
+	default boolean useWithInventorySetups() {
+		return true;
+	}
 
-    @ConfigItem(
-            keyName = "useWithInventorySetups",
-            name = "Use with Inventory Setups",
-            description = "Allows laying out of filters applied by the Inventory Setups plugin.",
-            position = 6,
-            section = settings
-    )
-    default boolean useWithInventorySetups() {
-        return true;
-    }
+	@ConfigItem(
+		keyName = "shiftModifierForExtraBankItemOptions",
+		name = "Require Shift key for extra bank item options",
+		description = "When enabled, the menu entries for adding duplicate items aren't shown unless shift is held when right-clicking",
+		position = 7
+	)
+	default boolean shiftModifierForExtraBankItemOptions() {
+		return false;
+	}
 
-    @ConfigItem(
-            keyName = "shiftModifierForExtraBankItemOptions",
-            name = "Require Shift key for extra bank item options",
-            description = "When enabled, the menu entries for adding duplicate items aren't shown unless shift is held when right-clicking",
-            position = 7,
-            section = settings
-    )
-    default boolean shiftModifierForExtraBankItemOptions() {
-        return false;
-    }
+	@ConfigItem(
+		keyName = "preventVanillaPlaceholderMenuBug",
+		name = "Prevent placeholder menu bug",
+		description = "Prevents bug in the vanilla client that can prevent item withdrawal and inadvertent placeholder removal. See https://github.com/geheur/bank-tag-custom-layouts/issues/33 for more info.",
+		position = 11
+	)
+	default boolean preventVanillaPlaceholderMenuBug() { return true; }
 
-    @ConfigItem(
-            keyName = "preventVanillaPlaceholderMenuBug",
-            name = "Prevent placeholder menu bug",
-            description = "Prevents bug in the vanilla client that can prevent item withdrawal and inadvertent placeholder removal. See https://github.com/geheur/bank-tag-custom-layouts/issues/33 for more info.",
-            position = 11,
-            section = settings
-    )
-    default boolean preventVanillaPlaceholderMenuBug() { return true; }
+	@ConfigSection(
+		name = "Auto-layout",
+		description = "Auto-layout lays out your tab automatically using items from your equipment and inventory.",
+		position = 100
+	)
+	String autoLayout = "autoLayout";
 
-    @ConfigItem(
+	enum LayoutStyles {
+		ZIGZAG,
+		PRESETS,
+	}
+
+	@ConfigItem(
             keyName = "autoLayoutStyle",
             name = "Auto-layout style",
             description = "The method auto-layout will choose.",
             position = 1,
             section = autoLayout
     )
-    default LayoutStyles autoLayoutStyle() { return LayoutStyles.ZigZag; }
+    default LayoutStyles autoLayoutStyle() { return LayoutStyles.ZIGZAG; }
 
     @ConfigItem(
             keyName = "autoLayoutDuplicatesEnabled",
@@ -140,8 +119,14 @@ public interface BankTagLayoutsConfig extends Config {
         return 4;
     }
 
-    enum LayoutStyles {
-        ZigZag,
-        Presets
-    }
+	@ConfigItem(
+		keyName = "showAutoLayoutButton",
+		name = "Auto Layout button",
+		description = "Disabling this hides the auto layout button and adds auto layout to the menu where you import tags.",
+		position = 4,
+		section = autoLayout
+	)
+	default boolean showAutoLayoutButton() {
+		return true;
+	}
 }
