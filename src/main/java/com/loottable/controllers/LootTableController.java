@@ -56,13 +56,14 @@ public class LootTableController {
             if (menuEntry.getOption().equals("Attack")) {
                 int widgetId = menuEntry.getParam1();
                 String monsterName = menuEntry.getTarget();
-                final MenuEntry lootTableMenuEntry = new MenuEntry();
-                lootTableMenuEntry.setOption(LOOT_TABLE_MENU_OPTION);
-                lootTableMenuEntry.setTarget(monsterName);
-                lootTableMenuEntry.setIdentifier(menuEntry.getIdentifier());
-                lootTableMenuEntry.setParam1(widgetId);
-                lootTableMenuEntry.setType(MenuAction.RUNELITE.getId());
-                client.setMenuEntries(ArrayUtils.addAll(menuEntries, lootTableMenuEntry));     
+
+                client.createMenuEntry(-1)
+					.setOption(LOOT_TABLE_MENU_OPTION)
+					.setTarget(monsterName)
+					.setIdentifier(menuEntry.getIdentifier())
+					.setParam1(widgetId)
+					.setType(MenuAction.RUNELITE);
+                break;
             }
         }
     }
