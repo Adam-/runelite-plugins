@@ -314,10 +314,13 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private void onVersionUpgraded(VersionNumber previousVersion, VersionNumber newVersion) {
 		if (previousVersion.compareTo(new VersionNumber(1, 4, 10)) < 0)
 		{
-			clientThread.invokeLater(() -> {
-				chatMessage(ColorUtil.wrapWithColorTag("Bank Tag Layouts ", Color.RED) + "new version: " + newVersion);
-				chatMessage(" - " + "New Auto-layout mode \"Presets\" shows your gear and inventory in a prettier way. You can switch to it in the plugin's config.");
-			});
+			if (config.updateMessages())
+			{
+				clientThread.invokeLater(() -> {
+					chatMessage(ColorUtil.wrapWithColorTag("Bank Tag Layouts ", Color.RED) + "new version: " + newVersion);
+					chatMessage(" - " + "New Auto-layout mode \"Presets\" shows your gear and inventory in a prettier way. You can switch to it in the plugin's config.");
+				});
+			}
 		}
 	}
 
