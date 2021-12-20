@@ -344,7 +344,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 				&& configManager.getConfigurationKeys(CONFIG_GROUP + "." + LAYOUT_CONFIG_KEY_PREFIX).size() == 0
 				&& configManager.getConfigurationKeys(CONFIG_GROUP + "." + INVENTORY_SETUPS_LAYOUT_CONFIG_KEY_PREFIX).size() == 0;
 			VersionNumber previousVersion = new VersionNumber(previousVersionString);
-			System.out.println(previousVersion + " " + buildVersion + " " + assumeFreshInstall);
 			if (buildVersion.compareTo(previousVersion) > 0 && !assumeFreshInstall)
 			{
 				onVersionUpgraded(previousVersion, buildVersion);
@@ -992,6 +991,9 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	public MouseEvent mousePressed(MouseEvent mouseEvent) {
 		mouseIsPressed = true;
 		if (mouseEvent.getButton() != MouseEvent.BUTTON1 || !hasLayoutEnabled(getCurrentLayoutableThing()) || !config.showLayoutPlaceholders() || client.isMenuOpen()) return mouseEvent;
+		if (isShowingPreview() && applyLayoutPreviewButton != null && applyLayoutPreviewButton.contains(client.getMouseCanvasPosition())) {
+			return mouseEvent;
+		}
 		int index = getIndexForMousePosition(true);
 		FakeItem fakeItem = fakeItems.stream().filter(fake -> fake.index == index).findAny().orElse(null);
 		if (fakeItem != null) {
