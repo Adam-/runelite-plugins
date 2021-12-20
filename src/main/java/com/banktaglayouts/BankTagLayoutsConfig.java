@@ -76,6 +76,14 @@ public interface BankTagLayoutsConfig extends Config {
 	)
 	default boolean preventVanillaPlaceholderMenuBug() { return true; }
 
+	@ConfigItem(
+		keyName = "updateMessages",
+		name = "Plugin update message",
+		description = "Show a message about new features when the plugin updates.",
+		position = 12
+	)
+	default boolean updateMessages() { return true; }
+
 	@ConfigSection(
 		name = "Auto-layout",
 		description = "Auto-layout lays out your tab automatically using items from your equipment and inventory.",
