@@ -104,7 +104,7 @@ public class HerbloreRecipesOverlay extends Overlay
 			return null;
 		}
 
-		final MenuAction action = MenuAction.of(menuEntry.getType());
+		final MenuAction action = menuEntry.getType();
 		final int widgetId = menuEntry.getParam1();
 		final int groupId = WidgetInfo.TO_GROUP(widgetId);
 
