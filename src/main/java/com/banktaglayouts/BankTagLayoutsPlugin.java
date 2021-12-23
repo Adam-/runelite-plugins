@@ -69,6 +69,7 @@ import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.MenuShouldLeftClick;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.ScriptPreFired;
+import net.runelite.api.events.WidgetClosed;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
@@ -517,6 +518,15 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	@Subscribe
 	public void onClientTick(ClientTick clientTick) {
+		if (checkInventorySetup + 1 == client.getGameCycle()) {
+			updateInventorySetupShown();
+		}
+
+		Widget widget = client.getWidget(WidgetInfo.BANK_CONTAINER);
+		if (widget == null || widget.isHidden()) {
+			return;
+		}
+
 		// This fixes a vanilla bug where it's possible open a placeholder's right-click menu while trying to withdraw an item - see https://github.com/geheur/bank-tag-custom-layouts/issues/33 for more info.
 		// I would do this in onMenuEntryAdded but client.getDraggedOnWidget() does not feel trustworthy at that point in the client tick - it is often null when it shouldn't bee - consistently and circumventable, but this makes me not trust the return value.
 		if (
@@ -557,26 +567,35 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		return runes;
 	}
 
-	private String lastBankTitle = null;
 	private String inventorySetup = null;
-	private String updateInventorySetupShown() {
+	private void updateInventorySetupShown() {
 		Widget bankTitleBar = client.getWidget(WidgetInfo.BANK_TITLE_BAR);
-		if (bankTitleBar != null) {
+		String newSetup = null;
+		if (bankTitleBar != null)
+		{
 			String bankTitle = bankTitleBar.getText();
-			if (!Objects.equals(lastBankTitle, bankTitle)) {
-				// example:
-				//			Inventory Setup <col=ff0000>tob - Equipment</col> (76.5M)
-				Matcher matcher = Pattern.compile("Inventory Setup <col=ff0000>(?<setup>.*) - (?<subfilter>.*)</col>.*").matcher(bankTitle);
-				if (matcher.matches()) {
-					inventorySetup = matcher.group("setup");
-				} else {
-					inventorySetup = null;
-				}
-
-				lastBankTitle = bankTitle;
+			Matcher matcher = Pattern.compile("Inventory Setup <col=ff0000>(?<setup>.*) - (?<subfilter>.*)</col>.*").matcher(bankTitle);
+			if (matcher.matches())
+			{
+				newSetup = matcher.group("setup");
 			}
 		}
-		return inventorySetup;
+
+		if (!Objects.equals(inventorySetup, newSetup)) {
+			System.out.println("setup changed: " + newSetup);
+		}
+
+		inventorySetup = newSetup;
+	}
+
+	int checkInventorySetup = 0;
+
+	@Subscribe
+	public void onWidgetClosed(WidgetClosed widgetClosed) {
+		if (widgetClosed.getGroupId() == WidgetID.BANK_GROUP_ID) {
+			System.out.println(client.getGameCycle() + " updated widgetclosed");
+			checkInventorySetup = client.getGameCycle();
+		}
 	}
 
 	@Subscribe(priority = -1f) // "Bank Tags" plugin also sets the scroll bar height; run after it. We also need to run after "Inventory Setups" to get the bank title it sets.
@@ -910,7 +929,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 
 	LayoutableThing getCurrentLayoutableThing() {
 		boolean isBankTag = tabInterface.isActive();
-		if (!isBankTag && !(config.useWithInventorySetups() && inventorySetup != null)) {
+		if (!isBankTag && !(inventorySetup != null && config.useWithInventorySetups())) {
 			return null;
 		}
 		String name = isBankTag ? tabInterface.getActiveTab().getTag() : inventorySetup;
@@ -1067,6 +1086,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	@Subscribe
 	public void onMenuEntryAdded(MenuEntryAdded menuEntryAdded)
 	{
+		Widget widget = client.getWidget(WidgetInfo.BANK_CONTAINER);
+		if (widget == null || widget.isHidden()) {
+			return;
+		}
+
 		if (!sawMenuEntryAddedThisClientTick) {
 			sawMenuEntryAddedThisClientTick = true;
 
@@ -1289,6 +1313,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
+		Widget widget = client.getWidget(WidgetInfo.BANK_CONTAINER);
+		if (widget == null || widget.isHidden()) {
+			return;
+		}
+
 		// This fixes a vanilla bug where it's possible to release a placeholder without clicking "Release" - see https://github.com/geheur/bank-tag-custom-layouts/issues/33 for more info.
 		if (
 				config.preventVanillaPlaceholderMenuBug() &&
@@ -1723,6 +1752,11 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	@Subscribe
 	public void onMenuShouldLeftClick(MenuShouldLeftClick event)
 	{
+		Widget widget = client.getWidget(WidgetInfo.BANK_CONTAINER);
+		if (widget == null || widget.isHidden()) {
+			return;
+		}
+
 		MenuEntry[] menuEntries = client.getMenuEntries();
 		for (MenuEntry entry : menuEntries)
 		{
