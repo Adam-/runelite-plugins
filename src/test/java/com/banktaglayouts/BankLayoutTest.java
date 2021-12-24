@@ -968,4 +968,19 @@ public class BankLayoutTest
 		System.out.println("layout: " + layout);
 		assertEquals(2, layout.allPairs().size());
 	}
+
+	@Test
+	public void testNameEscaping() {
+		String name = "&:&cerberus: ghost skip&";
+		String escapedName = BankTagLayoutsPlugin.LayoutableThing.inventorySetup(name).configKey().substring(BankTagLayoutsPlugin.INVENTORY_SETUPS_LAYOUT_CONFIG_KEY_PREFIX.length());
+		assertEquals("&amp;&#58;&amp;cerberus&#58; ghost skip&amp;", escapedName);
+//		String unescapedName = BankTagLayoutsPlugin.unescapeCharactersInConfigKey(escapedName);
+//		assertEquals(name, unescapedName);
+		/*
+	static String unescapeCharactersInConfigKey(String s)
+	{
+		return s.replaceAll("&#58;", ":").replaceAll("&amp;", "&");
+	}
+		 */
+	}
 }
