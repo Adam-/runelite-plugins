@@ -318,9 +318,20 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			if (config.updateMessages())
 			{
 				clientThread.invokeLater(() -> {
-					chatMessage(ColorUtil.wrapWithColorTag("Bank Tag Layouts ", Color.RED) + "new version: " + newVersion);
+					chatMessage(ColorUtil.wrapWithColorTag("Bank Tag Layouts ", Color.RED) + "new version: " + "1.4.10");
 					chatMessage(" - " + "New Auto-layout mode \"Presets\" shows your gear and inventory in a prettier way. You can switch to it in the plugin's config.");
 				});
+			}
+		}
+		if (previousVersion.compareTo(new VersionNumber(1, 4, 11)) < 0)
+		{
+			String prefix = CONFIG_GROUP + "." + INVENTORY_SETUPS_LAYOUT_CONFIG_KEY_PREFIX;
+			for (String key : configManager.getConfigurationKeys(prefix))
+			{
+				String inventorySetupName = key.substring(prefix.length());
+				String layoutString = configManager.getConfiguration(CONFIG_GROUP, INVENTORY_SETUPS_LAYOUT_CONFIG_KEY_PREFIX + inventorySetupName);
+				String escapedKey = LayoutableThing.inventorySetup(inventorySetupName).configKey();
+				configManager.setConfiguration(CONFIG_GROUP, escapedKey, layoutString);
 			}
 		}
 	}
@@ -1635,7 +1646,16 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 
 		public String configKey() {
-			return (isBankTab ? LAYOUT_CONFIG_KEY_PREFIX : INVENTORY_SETUPS_LAYOUT_CONFIG_KEY_PREFIX) + name;
+			if (isBankTab) {
+				return LAYOUT_CONFIG_KEY_PREFIX + name;
+			} else {
+				return INVENTORY_SETUPS_LAYOUT_CONFIG_KEY_PREFIX + escapeColonCharactersInInventorySetupName(name);
+			}
+		}
+
+		static String escapeColonCharactersInInventorySetupName(String s)
+		{
+			return s.replaceAll("&", "&amp;").replaceAll(":", "&#58;");
 		}
 
 		public boolean isBankTab() {
