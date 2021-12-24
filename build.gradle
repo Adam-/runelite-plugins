@@ -27,9 +27,19 @@ dependencies {
 }
 
 group = 'com.banktaglayouts'
-version = '1.4.9'
+version = '1.5.1'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
+}
+
+task createProperties(dependsOn: processResources) {
+	doLast {
+		new File("$buildDir/resources/main/version.txt").text = "version=$project.version"
+	}
+}
+
+classes {
+	dependsOn createProperties
 }
