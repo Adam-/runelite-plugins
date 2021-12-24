@@ -21,9 +21,9 @@ dependencies {
 	testImplementation 'junit:junit:4.12'
 	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
 
-	testCompile group: 'org.mockito', name: 'mockito-core', version: '3.8.0'
-	testCompile group: 'org.mockito', name: 'mockito-inline', version: '3.8.0'
-	testCompile group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.1.0'
+	testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.8.0'
+	testImplementation group: 'org.mockito', name: 'mockito-inline', version: '3.8.0'
+	testImplementation group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.1.0'
 }
 
 group = 'com.banktaglayouts'
