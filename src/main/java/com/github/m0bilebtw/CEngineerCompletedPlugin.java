@@ -5,6 +5,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -56,6 +58,10 @@ public class CEngineerCompletedPlugin extends Plugin
 	private static final Pattern COMBAT_TASK_REGEX = Pattern.compile("Congratulations, you've completed an? (?:\\w+) combat task:.*");
 	private static final Pattern QUEST_REGEX = Pattern.compile("Congratulations, you've completed a quest:.*");
 	private static final String C_ENGINEER = "C Engineer";
+
+    private static final int ID_OBJECT_LUMCASTLE_GROUND_LEVEL_STAIRCASE = 16671;
+    private static final int WORLD_POINT_LUMCASTLE_STAIRCASE_NORTH_X = 3204;
+    private static final int WORLD_POINT_LUMCASTLE_STAIRCASE_NORTH_Y = 3229;
 
 	private final Map<Skill, Integer> oldExperience = new EnumMap<>(Skill.class);
 	private final Map<Varbits, Integer> oldAchievementDiaries = new EnumMap<>(Varbits.class);
@@ -211,6 +217,21 @@ public class CEngineerCompletedPlugin extends Plugin
 					client.addChatMessage(ChatMessageType.PUBLICCHAT, C_ENGINEER, "Achievement diary: completed.", null);
 				}
 				soundEngine.playClip(Sound.ACHIEVEMENT_DIARY);
+			}
+		}
+	}
+
+	@Subscribe
+	public void onMenuOptionClicked(MenuOptionClicked menuOptionClicked) {
+		if (config.easterEggs() && menuOptionClicked.getId() == ID_OBJECT_LUMCASTLE_GROUND_LEVEL_STAIRCASE &&
+				menuOptionClicked.getMenuOption().equals("Climb-up")) {
+			WorldPoint wp = WorldPoint.fromLocal(client, LocalPoint.fromScene(menuOptionClicked.getParam0(), menuOptionClicked.getParam1()));
+			if (wp.getX() == WORLD_POINT_LUMCASTLE_STAIRCASE_NORTH_X && wp.getY() == WORLD_POINT_LUMCASTLE_STAIRCASE_NORTH_Y) {
+				// Now we know this is the northern staircase only in lumbridge castle ground floor
+				if (config.showChatMessages()) {
+					client.addChatMessage(ChatMessageType.PUBLICCHAT, C_ENGINEER, "Please do not use the northern staircase, use the southern one instead.", null);
+				}
+				soundEngine.playClip(Sound.EASTER_EGG_STAIRCASE);
 			}
 		}
 	}

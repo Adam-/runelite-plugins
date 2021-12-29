@@ -102,4 +102,14 @@ public interface CEngineerCompletedConfig extends Config {
     default int announcementVolume() {
         return 100;
     }
+
+    @ConfigItem(
+            keyName = "easterEggs",
+            name = "Easter eggs",
+            description = "Should C Engineer comment on your gameplay?",
+            position = 20
+    )
+    default boolean easterEggs() {
+        return true;
+    }
 }

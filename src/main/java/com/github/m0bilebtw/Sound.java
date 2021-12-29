@@ -6,7 +6,8 @@ public enum Sound {
     COLLECTION_LOG_SLOT("/ColLogSlotCompleted_r1.wav"),
     COMBAT_TASK("/CombatTaskCompleted_r1.wav"),
     ACHIEVEMENT_DIARY("/AchieveDiaryCompleted_r1.wav"),
-    DEATH("/DyingHCIMCompleted_r1.wav");
+    DEATH("/DyingHCIMCompleted_r1.wav"),
+    EASTER_EGG_STAIRCASE("/QuestCompleted_r1.wav") /* TODO change placeholder sound for file C sent on discord */ ;
 
     private final String resourceName;
 
