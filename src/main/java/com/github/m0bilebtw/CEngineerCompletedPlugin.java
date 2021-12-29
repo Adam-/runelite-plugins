@@ -68,6 +68,7 @@ public class CEngineerCompletedPlugin extends Plugin
 	private final Map<Varbits, Integer> oldAchievementDiaries = new EnumMap<>(Varbits.class);
 
 	private int lastLoginTick = -1;
+	private int lastGEOfferTick = -1;
 
 	@Override
 	protected void startUp() throws Exception
@@ -233,6 +234,27 @@ public class CEngineerCompletedPlugin extends Plugin
 				soundEngine.playClip(Sound.EASTER_EGG_STAIRCASE);
 			}
 		}
+	}
+
+	@Subscribe
+	public void onGrandExchangeOfferChanged(GrandExchangeOfferChanged offerEvent) {
+		if (lastLoginTick == -1 || client.getTickCount() - lastLoginTick < 3) {
+			return; // Ignoring offer change as likely simply because user just logged in
+		}
+
+		final GrandExchangeOffer offer = offerEvent.getOffer();
+		if (config.easterEggs() && offer.getItemId() == ItemID.TWISTED_BOW && offer.getPrice() == 1 && offer.getState() == GrandExchangeOfferState.SELLING) {
+			// selling tbow 1gp, not changed from login, not cancelled, not sold - now just check ticks to avoid double detection because we get sent each offer twice
+			if (lastGEOfferTick == -1 || client.getTickCount() - lastGEOfferTick > 4) {
+				if (config.showChatMessages()) {
+					client.addChatMessage(ChatMessageType.PUBLICCHAT, C_ENGINEER, "Are you stupid? Did you just try to sell a twisted bow for 1gp?", null);
+				}
+				soundEngine.playClip(Sound.EASTER_EGG_TWISTED_BOW_1GP);
+			}
+		}
+
+		// save tick so that next time we get an offer, we can check it isn't the duplicate of this offer
+		lastGEOfferTick = client.getTickCount();
 	}
 
 	private boolean isAchievementDiaryCompleted(Varbits diary, int value) {
