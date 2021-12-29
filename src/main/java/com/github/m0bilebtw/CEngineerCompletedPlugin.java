@@ -54,6 +54,7 @@ public class CEngineerCompletedPlugin extends Plugin
 			Varbits.DIARY_WESTERN_EASY, Varbits.DIARY_WESTERN_MEDIUM, Varbits.DIARY_WESTERN_HARD, Varbits.DIARY_WESTERN_ELITE,
 			Varbits.DIARY_WILDERNESS_EASY, Varbits.DIARY_WILDERNESS_MEDIUM, Varbits.DIARY_WILDERNESS_HARD, Varbits.DIARY_WILDERNESS_ELITE
 	};
+	private static final Pattern STRAY_DOG_GIVEN_BONES_REGEX = Pattern.compile("You give the dog some nice.*bones.*");
 	private static final Pattern COLLECTION_LOG_ITEM_REGEX = Pattern.compile("New item added to your collection log:.*");
 	private static final Pattern COMBAT_TASK_REGEX = Pattern.compile("Congratulations, you've completed an? (?:\\w+) combat task:.*");
 	private static final Pattern QUEST_REGEX = Pattern.compile("Congratulations, you've completed a quest:.*");
@@ -192,6 +193,12 @@ public class CEngineerCompletedPlugin extends Plugin
 				client.addChatMessage(ChatMessageType.PUBLICCHAT, C_ENGINEER, "Combat task: completed.", null);
 			}
 			soundEngine.playClip(Sound.COMBAT_TASK);
+
+		} else if (config.easterEggs() && STRAY_DOG_GIVEN_BONES_REGEX.matcher(chatMessage.getMessage()).matches()) {
+			if (config.showChatMessages()) {
+				client.addChatMessage(ChatMessageType.PUBLICCHAT, C_ENGINEER, "I love you.", null);
+			}
+			soundEngine.playClip(Sound.EASTER_EGG_STRAYDOG_BONE);
 		}
 	}
 

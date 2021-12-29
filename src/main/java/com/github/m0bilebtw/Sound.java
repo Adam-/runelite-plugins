@@ -7,7 +7,8 @@ public enum Sound {
     COMBAT_TASK("/CombatTaskCompleted_r1.wav"),
     ACHIEVEMENT_DIARY("/AchieveDiaryCompleted_r1.wav"),
     DEATH("/DyingHCIMCompleted_r1.wav"),
-    EASTER_EGG_STAIRCASE("/QuestCompleted_r1.wav") /* TODO change placeholder sound for file C sent on discord */ ;
+    EASTER_EGG_STAIRCASE("/QuestCompleted_r1.wav") /* TODO change placeholder sound for file C sent on discord */ ,
+    EASTER_EGG_STRAYDOG_BONE("/QuestCompleted_r1.wav") /* TODO change placeholder sound for file C sent on discord */ ;
 
     private final String resourceName;
 

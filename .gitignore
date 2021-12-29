@@ -7,3 +7,4 @@ build
 nbactions.xml
 nb-configuration.xml
 nbproject/
+src/main/resources/easter_egg_notes.txt
