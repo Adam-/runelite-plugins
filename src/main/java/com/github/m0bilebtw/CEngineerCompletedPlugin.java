@@ -67,13 +67,13 @@ public class CEngineerCompletedPlugin extends Plugin
 	private final Map<Skill, Integer> oldExperience = new EnumMap<>(Skill.class);
 	private final Map<Varbits, Integer> oldAchievementDiaries = new EnumMap<>(Varbits.class);
 
-	private int ticksSinceLogin = 0;
-	private boolean resetTicks = false;
+	private int lastLoginTick = -1;
 
 	@Override
 	protected void startUp() throws Exception
 	{
 		clientThread.invoke(this::setupOldMaps);
+		lastLoginTick = -1;
 	}
 
 	@Override
@@ -101,6 +101,7 @@ public class CEngineerCompletedPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
+		log.debug("GAME STATE " + event.getGameState());
 		switch(event.getGameState())
 		{
 			case LOGIN_SCREEN:
@@ -110,23 +111,14 @@ public class CEngineerCompletedPlugin extends Plugin
 				oldExperience.clear();
 				oldAchievementDiaries.clear();
 			case CONNECTION_LOST:
-				resetTicks = true;
-				// set to 0 here in-case of race condition with varbits changing before this handler is called
+				// set to -1 here in-case of race condition with varbits changing before this handler is called
 				// when game state becomes LOGGED_IN
-				ticksSinceLogin = 0;
+				lastLoginTick = -1;
 				break;
 			case LOGGED_IN:
-				if (resetTicks) {
-					resetTicks = false;
-					ticksSinceLogin = 0;
-				}
+				lastLoginTick = client.getTickCount();
+				break;
 		}
-	}
-
-	@Subscribe
-	public void onGameTick(GameTick tick)
-	{
-		ticksSinceLogin++;
 	}
 
 	@Subscribe
@@ -209,8 +201,8 @@ public class CEngineerCompletedPlugin extends Plugin
 		// completed gets updated to the true value and tricks the plugin into thinking they only just finished it.
 		// To avoid this behaviour, we make sure the current tick count is sufficiently high that we've already passed
 		// the initial wave of varbit changes from logging in.
-		if (ticksSinceLogin < 8) {
-			return;
+		if (lastLoginTick == -1 || client.getTickCount() - lastLoginTick < 8) {
+			return; // Ignoring varbit change as only just logged in
 		}
 
 		// Apparently I can't check if it's a particular varbit using the names from Varbits enum, so this is the way
