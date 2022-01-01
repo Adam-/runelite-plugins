@@ -7,10 +7,10 @@ public enum Sound {
     COMBAT_TASK("/CombatTaskCompleted_r1.wav"),
     ACHIEVEMENT_DIARY("/AchieveDiaryCompleted_r1.wav"),
     DEATH("/DyingHCIMCompleted_r1.wav"),
-    EASTER_EGG_STAIRCASE("/QuestCompleted_r1.wav") /* TODO change placeholder sound for file C sent on discord */ ,
-    EASTER_EGG_STRAYDOG_BONE("/QuestCompleted_r1.wav") /* TODO change placeholder sound for file C sent on discord */ ,
-    EASTER_EGG_TWISTED_BOW_1GP("/QuestCompleted_r1.wav") /* TODO change placeholder sound for file C sent on discord */ ,
-    EASTER_EGG_ZULRAH_PB("/QuestCompleted_r1.wav") /* TODO change placeholder sound for file C sent on discord */ ;
+    EASTER_EGG_STAIRCASE("/Staircase_r1.wav"),
+    EASTER_EGG_STRAYDOG_BONE("/ILoveYou_r1.wav"),
+    EASTER_EGG_TWISTED_BOW_1GP("/TwistedBow1GP_r1.wav"),
+    EASTER_EGG_ZULRAH_PB("/ZulrahPB_r1.wav");
 
     private final String resourceName;
 
