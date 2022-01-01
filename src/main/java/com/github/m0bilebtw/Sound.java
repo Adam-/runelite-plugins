@@ -9,7 +9,8 @@ public enum Sound {
     DEATH("/DyingHCIMCompleted_r1.wav"),
     EASTER_EGG_STAIRCASE("/QuestCompleted_r1.wav") /* TODO change placeholder sound for file C sent on discord */ ,
     EASTER_EGG_STRAYDOG_BONE("/QuestCompleted_r1.wav") /* TODO change placeholder sound for file C sent on discord */ ,
-    EASTER_EGG_TWISTED_BOW_1GP("/QuestCompleted_r1.wav") /* TODO change placeholder sound for file C sent on discord */ ;
+    EASTER_EGG_TWISTED_BOW_1GP("/QuestCompleted_r1.wav") /* TODO change placeholder sound for file C sent on discord */ ,
+    EASTER_EGG_ZULRAH_PB("/QuestCompleted_r1.wav") /* TODO change placeholder sound for file C sent on discord */ ;
 
     private final String resourceName;
 

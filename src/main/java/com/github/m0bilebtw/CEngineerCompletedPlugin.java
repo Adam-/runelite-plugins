@@ -17,6 +17,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import javax.inject.Inject;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -54,11 +55,16 @@ public class CEngineerCompletedPlugin extends Plugin
 			Varbits.DIARY_WESTERN_EASY, Varbits.DIARY_WESTERN_MEDIUM, Varbits.DIARY_WESTERN_HARD, Varbits.DIARY_WESTERN_ELITE,
 			Varbits.DIARY_WILDERNESS_EASY, Varbits.DIARY_WILDERNESS_MEDIUM, Varbits.DIARY_WILDERNESS_HARD, Varbits.DIARY_WILDERNESS_ELITE
 	};
+
+	// Killcount and new pb patterns from runelite/ChatCommandsPlugin
+	private static final Pattern KILLCOUNT_PATTERN = Pattern.compile("Your (?:completion count for |subdued |completed )?(.+?) (?:(?:kill|harvest|lap|completion) )?(?:count )?is: <col=ff0000>(\\d+)</col>");
+	private static final Pattern NEW_PB_PATTERN = Pattern.compile("(?i)(?:(?:Fight |Lap |Challenge |Corrupted challenge )?duration:|Subdued in) <col=[0-9a-f]{6}>(?<pb>[0-9:]+(?:\\.[0-9]+)?)</col> \\(new personal best\\)");
 	private static final Pattern STRAY_DOG_GIVEN_BONES_REGEX = Pattern.compile("You give the dog some nice.*bones.*");
 	private static final Pattern COLLECTION_LOG_ITEM_REGEX = Pattern.compile("New item added to your collection log:.*");
 	private static final Pattern COMBAT_TASK_REGEX = Pattern.compile("Congratulations, you've completed an? (?:\\w+) combat task:.*");
 	private static final Pattern QUEST_REGEX = Pattern.compile("Congratulations, you've completed a quest:.*");
 	private static final String C_ENGINEER = "C Engineer";
+	private static final String ZULRAH = "Zulrah";
 
     private static final int ID_OBJECT_LUMCASTLE_GROUND_LEVEL_STAIRCASE = 16671;
     private static final int WORLD_POINT_LUMCASTLE_STAIRCASE_NORTH_X = 3204;
@@ -69,6 +75,7 @@ public class CEngineerCompletedPlugin extends Plugin
 
 	private int lastLoginTick = -1;
 	private int lastGEOfferTick = -1;
+	private int lastZulrahKillTick = -1;
 
 	@Override
 	protected void startUp() throws Exception
@@ -192,6 +199,21 @@ public class CEngineerCompletedPlugin extends Plugin
 				client.addChatMessage(ChatMessageType.PUBLICCHAT, C_ENGINEER, "I love you.", null);
 			}
 			soundEngine.playClip(Sound.EASTER_EGG_STRAYDOG_BONE);
+
+		} else if (config.easterEggs()) { /* check for zulrah kc and then pb same kill */
+			Matcher matcher = KILLCOUNT_PATTERN.matcher(chatMessage.getMessage());
+			if (matcher.find() && ZULRAH.equals(matcher.group(1))) {
+				// tick count used to prevent re-announcing if user gets pb on non-zulrah boss after killing zulrah
+				lastZulrahKillTick = client.getTickCount();
+			}
+			matcher = NEW_PB_PATTERN.matcher(chatMessage.getMessage());
+			if (matcher.find() && client.getTickCount() - lastZulrahKillTick < 2) {
+				// Player just got pb, and last zulrah kill was within a tick from now, already checked config.easterEggs()
+				if (config.showChatMessages()) {
+					client.addChatMessage(ChatMessageType.PUBLICCHAT, C_ENGINEER, "Gz on the new personal best! Last time I got a pb here, I died on my HCIM!", null);
+				}
+				soundEngine.playClip(Sound.EASTER_EGG_ZULRAH_PB);
+			}
 		}
 	}
 
