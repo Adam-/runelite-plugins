@@ -11,7 +11,7 @@ public enum BetterGodwarsOverlayGods
 	BANDOS("Bandos", BetterGodwarsOverlayVarbits.GWD_BANDOS_KC),
 	SARADOMIN("Saradomin", BetterGodwarsOverlayVarbits.GWD_SARADOMIN_KC),
 	ZAMORAK("Zamorak", BetterGodwarsOverlayVarbits.GWD_ZAMORAK_KC),
-	ZAROS("Zaros", BetterGodwarsOverlayVarbits.GWD_ZAROS_KC);
+	ZAROS("Ancient", BetterGodwarsOverlayVarbits.GWD_ZAROS_KC);
 
 	@Getter
 	private final String name;
