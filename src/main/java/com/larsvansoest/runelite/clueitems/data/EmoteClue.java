@@ -48,6 +48,10 @@ import static net.runelite.client.plugins.cluescrolls.clues.item.ItemRequirement
  * Data set vendored from RuneLite source. Replaces original {@link ItemRequirement} objects with {@link EmoteClueItem} entries to use in the {@link EmoteClueItemsPlugin}.
  * <p>
  * Source: https://github.com/runelite/runelite/tree/master/runelite-client/src/main/java/net/runelite/client/plugins/cluescrolls/clues
+ * </p>
+ * <p>
+ * Maintained up to 5df5abd.
+ * </p>
  *
  * @since 2.0.0
  */

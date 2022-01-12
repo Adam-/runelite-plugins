@@ -6,6 +6,12 @@ import net.runelite.client.plugins.cluescrolls.clues.emote.STASHUnit;
 
 /**
  * Contains and wraps all {@link net.runelite.client.plugins.cluescrolls.clues.emote.STASHUnit} used by {@link net.runelite.client.plugins.cluescrolls.clues.EmoteClue}, integrated in vendored {@link com.larsvansoest.runelite.clueitems.data.EmoteClue} class.
+ * <p>
+ * Source https://github.com/runelite/runelite/blob/master/runelite-client/src/main/java/net/runelite/client/plugins/cluescrolls/clues/emote/STASHUnit.java
+ * </p>
+ * <p>
+ * Maintained up to b7cbdcdf
+ * </p>
  *
  * @author Lars van Soest
  * @since 3.0.0

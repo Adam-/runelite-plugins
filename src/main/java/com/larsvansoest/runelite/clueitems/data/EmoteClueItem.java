@@ -41,8 +41,6 @@ import java.util.List;
 
 /**
  * Contains and wraps all {@link ItemRequirement} used by {@link EmoteClue}, integrated in vendored {@link com.larsvansoest.runelite.clueitems.data.EmoteClue} class.
- * <p>
- * Maintained up to <a href="https://github.com/runelite/runelite/commits/master/runelite-client/src/main/java/net/runelite/client/plugins/cluescrolls/clues/EmoteClue.java">5df5abd</a>.
  *
  * @author Lars van Soest
  * @since 2.0.0
