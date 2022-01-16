@@ -592,10 +592,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 			}
 		}
 
-		if (!Objects.equals(inventorySetup, newSetup)) {
-			System.out.println("setup changed: " + newSetup);
-		}
-
 		inventorySetup = newSetup;
 	}
 
@@ -604,7 +600,6 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	@Subscribe
 	public void onWidgetClosed(WidgetClosed widgetClosed) {
 		if (widgetClosed.getGroupId() == WidgetID.BANK_GROUP_ID) {
-			System.out.println(client.getGameCycle() + " updated widgetclosed");
 			checkInventorySetup = client.getGameCycle();
 		}
 	}
