@@ -101,11 +101,6 @@ public class FakeItemOverlay extends Overlay {
 					boolean showQuantity = itemManager.getItemComposition(fakeItemId).isStackable() || fakeItem.quantity != 1;
 					BufferedImage image = itemManager.getImage(fakeItemId, fakeItem.quantity, showQuantity);
 					graphics.drawImage(image, x, y, image.getWidth(), image.getHeight(), null);
-
-					if (log.isDebugEnabled()) {
-						graphics.setColor(Color.PINK);
-						graphics.drawString("Dup", x, y + 33);
-					}
 				}
 			}
 		}

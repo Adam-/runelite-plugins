@@ -206,7 +206,6 @@ public class LayoutGenerator {
 			int currentItemAtIndex = currentLayout.getItemAtIndex(j);
 			if (currentItemAtIndex == -1) {
 				Integer itemId = displacedItems.remove(0);
-				log.debug(itemId + " goes to " + j);
 				previewLayout.putItem(itemId, j);
 			}
 

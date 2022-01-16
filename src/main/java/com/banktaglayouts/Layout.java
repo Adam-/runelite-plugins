@@ -32,7 +32,6 @@ public class Layout {
                 if (index >= 0) {
                     layout.putItem(itemId, index);
                 } else {
-//                    log.debug("Removed item " + itemName(itemId) + " (" + itemId + ") due to it having a negative index (" + index + ")");
                     log.debug("Removed item " + itemId + " due to it having a negative index (" + index + ")");
                 }
             } catch (NumberFormatException e) {
