@@ -1422,7 +1422,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		for (Widget bankItem : bankItems) {
 			int nonPlaceholderId = getNonPlaceholderId(bankItem.getItemId());
 			if (itemShouldBeTreatedAsHavingVariants(nonPlaceholderId)) {
-				int variationBaseId = ItemVariationMapping.map(nonPlaceholderId);
+				int variationBaseId = getVariationBaseId(nonPlaceholderId);
 				variantItemsInBank.put(variationBaseId, bankItem);
 			}
 		}
@@ -1431,7 +1431,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		for (Map.Entry<Integer, Integer> pair : layout.allPairs()) {
 			int nonPlaceholderId = getNonPlaceholderId(pair.getValue());
 			if (itemShouldBeTreatedAsHavingVariants(nonPlaceholderId)) {
-				int variationBaseId = ItemVariationMapping.map(nonPlaceholderId);
+				int variationBaseId = getVariationBaseId(nonPlaceholderId);
 				variantItemsInLayout.put(variationBaseId, pair.getValue());
 			}
 		}
@@ -1473,6 +1473,35 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 		}
 	}
 
+	private int getVariationBaseId(int nonPlaceholderId)
+	{
+		int runeliteBaseId = ItemVariationMapping.map(nonPlaceholderId);
+		if (runeliteBaseId == 713) {
+			ItemComposition itemComposition = itemManager.getItemComposition(nonPlaceholderId);
+			int iconId = itemComposition.getInventoryModel();
+			if (iconId == 37162) { // beginner
+				return nonPlaceholderId; // All share the same id.
+			}
+			else if (iconId == 37202) { // easy
+				return 2677; // Lowest id of this clue type.
+			}
+			else if (iconId == 37152) { // medium
+				return 2801; // Lowest id of this clue type.
+			}
+			else if (iconId == 37181) { // hard
+				return 2722; // Lowest id of this clue type.
+			}
+			else if (iconId == 37167) { // elite
+				return 12073; // Lowest id of this clue type.
+			}
+			else if (iconId == 37183) { // master
+				return nonPlaceholderId; // All share the same id.
+			}
+			// this is either a (likely unobtainable) pink skirt or a sote quest item. I don't care how either of these items are handled.
+		}
+		return runeliteBaseId;
+	}
+
 	@FunctionalInterface
 	private interface functionalinterfacetrashname {
 		int getIndex(Collection<Integer> itemIds, int itemId);
@@ -1501,7 +1530,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	/**
 	 */
 	private boolean itemHasVariants(int nonPlaceholderItemId) {
-		return ItemVariationMapping.getVariations(ItemVariationMapping.map(nonPlaceholderItemId)).size() > 1;
+		return ItemVariationMapping.getVariations(getVariationBaseId(nonPlaceholderItemId)).size() > 1;
 	}
 
 	/**
