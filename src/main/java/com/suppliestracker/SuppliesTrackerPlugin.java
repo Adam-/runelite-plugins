@@ -66,7 +66,6 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.ObjectID;
 import net.runelite.api.Player;
 import net.runelite.api.Projectile;
-import net.runelite.api.ProjectileID;
 import net.runelite.api.VarPlayer;
 import net.runelite.api.Varbits;
 import net.runelite.api.coords.WorldPoint;
@@ -89,6 +88,8 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.http.api.item.ItemPrice;
+import static net.runelite.api.GraphicID.CANNONBALL;
+import static net.runelite.api.GraphicID.GRANITE_CANNONBALL;
 
 @PluginDescriptor(
 	name = "Supplies Used Tracker",
@@ -1132,7 +1133,7 @@ public class SuppliesTrackerPlugin extends Plugin
 	{
 		Projectile projectile = event.getProjectile();
 
-		if ((projectile.getId() == ProjectileID.CANNONBALL || projectile.getId() == ProjectileID.GRANITE_CANNONBALL) && cannonPosition != null)
+		if ((projectile.getId() == CANNONBALL || projectile.getId() == GRANITE_CANNONBALL) && cannonPosition != null)
 		{
 			WorldPoint projectileLoc = WorldPoint.fromLocal(client, projectile.getX1(), projectile.getY1(), client.getPlane());
 
