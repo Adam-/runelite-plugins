@@ -60,7 +60,6 @@ import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.LinkBrowser;
 import net.runelite.client.util.Text;
 import static net.runelite.client.util.Text.sanitize;
-import net.runelite.http.api.chat.ChatClient;
 
 @PluginDescriptor(
 		name = RegionLockerPlugin.PLUGIN_NAME,
