@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -101,6 +102,10 @@ public class RegionLockerPlugin extends Plugin
 	@Setter(AccessLevel.PACKAGE)
 	private boolean blockKeyPressed = false;
 
+	@Setter(AccessLevel.PACKAGE)
+	@Getter
+	private int hoveredRegion = -1;
+
 	private RegionLocker regionLocker;
 
 	@Provides
@@ -154,31 +159,10 @@ public class RegionLockerPlugin extends Plugin
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
 		Widget map = client.getWidget(WidgetInfo.WORLD_MAP_VIEW);
-		if (!(unlockKeyPressed || blockKeyPressed) || map == null) return;
+		if (!(unlockKeyPressed || blockKeyPressed) || hoveredRegion == -1 || map == null) return;
 
-		RenderOverview ro = client.getRenderOverview();
-		Float pixelsPerTile = ro.getWorldMapZoom();
-
-		Rectangle worldMapRect = map.getBounds();
-		int widthInTiles = (int) Math.ceil(worldMapRect.getWidth() / pixelsPerTile);
-		int heightInTiles = (int) Math.ceil(worldMapRect.getHeight() / pixelsPerTile);
-
-		Point worldMapPosition = ro.getWorldMapPosition();
-
-		int yTileMin = worldMapPosition.getY() - heightInTiles / 2;
-
-		Point mousePos = client.getMouseCanvasPosition();
-
-		int tx = (int) ((mousePos.getX() - worldMapRect.getX()) / pixelsPerTile);
-		int ty = (int) ((mousePos.getY() - worldMapRect.getX() - worldMapRect.height) / pixelsPerTile);
-
-		int x = tx - widthInTiles / 2 + worldMapPosition.getX();
-		int y = -ty + yTileMin;
-
-		int regionId = ((x >> 6) << 8) | (y >> 6);
-
-		if (unlockKeyPressed) regionLocker.addRegion(regionId);
-		if (blockKeyPressed) regionLocker.blockRegion(regionId);
+		if (unlockKeyPressed) regionLocker.addRegion(hoveredRegion);
+		if (blockKeyPressed) regionLocker.blockRegion(hoveredRegion);
 	}
 
 	private void setKeys()
