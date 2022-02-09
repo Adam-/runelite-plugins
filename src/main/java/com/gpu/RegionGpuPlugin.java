@@ -933,7 +933,12 @@ public class RegionGpuPlugin extends Plugin implements DrawCallbacks
 			for (int i = 0; i < client.getMapRegions().length; i++)
 			{
 				int region = client.getMapRegions()[i];
-				if (RegionLocker.hasRegion(region))
+
+				if(RegionLocker.invertShader && !RegionLocker.hasRegion(region))
+				{
+					loadedLockedRegions[i] = region;
+				}
+				else if (!RegionLocker.invertShader && RegionLocker.hasRegion(region))
 				{
 					loadedLockedRegions[i] = region;
 				}
