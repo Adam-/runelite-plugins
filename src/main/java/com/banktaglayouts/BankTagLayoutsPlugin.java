@@ -1530,7 +1530,7 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	/**
 	 */
 	private boolean itemHasVariants(int nonPlaceholderItemId) {
-		return ItemVariationMapping.getVariations(getVariationBaseId(nonPlaceholderItemId)).size() > 1;
+		return ItemVariationMapping.getVariations(ItemVariationMapping.map(nonPlaceholderItemId)).size() > 1;
 	}
 
 	/**
