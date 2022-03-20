@@ -327,4 +327,13 @@ public interface RegionLockerConfig extends Config
 	{
 		return Keybind.CTRL;
 	}
+
+	@ConfigItem(
+			keyName = "invertShader",
+			name = "Invert chunk shader",
+			description = "True = unlocked chunks are shaded",
+			position = 37,
+			section = environmentSettings
+	)
+	default boolean invertShader() { return false; }
 }
