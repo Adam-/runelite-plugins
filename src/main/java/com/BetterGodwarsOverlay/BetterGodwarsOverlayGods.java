@@ -3,6 +3,7 @@ package com.BetterGodwarsOverlay;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+
 @RequiredArgsConstructor
 public enum BetterGodwarsOverlayGods
 {
@@ -18,5 +19,6 @@ public enum BetterGodwarsOverlayGods
 
 	@Getter
 	private final BetterGodwarsOverlayVarbits killCountVarbit;
+
 
 }

@@ -36,6 +36,8 @@ public class BetterGodwarsOverlayOverlay extends OverlayPanel
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		boolean[] hideGods = {config.hideArmadyl(), config.hideBandos(), config.hideSaradomin(), config.hideZamorak(), config.hideAncient()};
+		int i = 0;
 		//hide original overlay
 		final Widget godwars = client.getWidget(WidgetInfo.GWD_KC);
 		if (godwars != null)
@@ -51,14 +53,24 @@ public class BetterGodwarsOverlayOverlay extends OverlayPanel
 				continue;
 			}
 
-			final int killcounts = client.getVarbitValue(gods.getKillCountVarbit().getId());
+			if (hideGods[i])
+			{
 
-			panelComponent.getChildren().add(LineComponent.builder()
-				.left(config.shortGodNames() ? gods.getName().substring(0, 2) : gods.getName())
-				.right(Integer.toString(killcounts))
-				.leftColor(config.godNameColor())
-				.rightColor(killcounts >= config.highlightOnKC() ? config.highlightOnKCColor() : Color.WHITE)
-				.build());
+			}
+			else
+			{
+
+				final int killcounts = client.getVarbitValue(gods.getKillCountVarbit().getId());
+
+				panelComponent.getChildren().add(LineComponent.builder()
+					.left(config.shortGodNames() ? gods.getName().substring(0, 2) : gods.getName())
+					.right(Integer.toString(killcounts))
+					.leftColor(config.godNameColor())
+					.rightColor(killcounts >= config.highlightOnKC() ? config.highlightOnKCColor() : Color.WHITE)
+					.build());
+
+			}
+			i++;
 		}
 
 		return super.render(graphics);

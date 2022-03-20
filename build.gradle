@@ -10,7 +10,7 @@ repositories {
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.8.9'
+def runeLiteVersion = '1.8.14'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -24,8 +24,8 @@ dependencies {
 }
 
 group = 'com.BetterGodwarsOverlay'
-version = '1.0.3'
-sourceCompatibility = '1.8'
+version = '1.0.4'
+sourceCompatibility = '1.8.14'
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
