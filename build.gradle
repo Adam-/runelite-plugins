@@ -4,12 +4,12 @@ plugins {
 
 repositories {
 	maven {
-		url = 'http://repo.runelite.net'
+		url = 'https://repo.runelite.net'
 	}
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.8.11'
+def runeLiteVersion = '1.8.15-SNAPSHOT'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -22,6 +22,12 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion, {
 		exclude group: 'ch.qos.logback', module: 'logback-classic'
 	}
+	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
+
+	testCompileOnly 'org.projectlombok:lombok:1.18.20'
+	testAnnotationProcessor 'org.projectlombok:lombok:1.18.20'
+
+	//compileOnly group: 'net.runelite', name: 'jogl-rl', version: runeLiteVersion
 }
 
 group = 'com.regionlocker'
