@@ -31,7 +31,7 @@ import com.jogamp.nativewindow.NativeWindowFactory;
 import com.jogamp.nativewindow.awt.AWTGraphicsConfiguration;
 import com.jogamp.nativewindow.awt.JAWTWindow;
 import com.jogamp.opengl.GL;
-import com.jogamp.opengl.DebugGL4;
+//import com.jogamp.opengl.DebugGL4;
 import static com.jogamp.opengl.GL.GL_ARRAY_BUFFER;
 import static com.jogamp.opengl.GL.GL_DYNAMIC_DRAW;
 import static com.jogamp.opengl.GL2ES2.GL_STREAM_DRAW;
@@ -438,7 +438,7 @@ public class RegionGpuPlugin extends Plugin implements DrawCallbacks
 					{
 						try
 						{
-							gl = new DebugGL4(gl);
+							// gl = new DebugGL4(gl);
 						}
 						catch (NoClassDefFoundError ex)
 						{
