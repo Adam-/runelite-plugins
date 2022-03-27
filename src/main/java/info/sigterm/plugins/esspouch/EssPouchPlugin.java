@@ -100,7 +100,7 @@ public class EssPouchPlugin extends Plugin
 		.put("thirty-seven", 37)
 		.put("thirty-eight", 38)
 		.put("thirty-nine", 39)
-		.put("fourty", 40)
+		.put("forty", 40)
 		.build();
 
 	@Inject
