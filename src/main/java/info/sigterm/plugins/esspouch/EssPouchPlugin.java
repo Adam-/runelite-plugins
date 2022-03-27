@@ -58,7 +58,7 @@ public class EssPouchPlugin extends Plugin
 {
 	private static final int INVENTORY_SIZE = 28;
 
-	private static final Pattern POUCH_CHECK_MESSAGE = Pattern.compile("^There (?:is|are) ([a-z]+)(?: pure| daeyalt| guardian)? essences? in this pouch\\.$");
+	private static final Pattern POUCH_CHECK_MESSAGE = Pattern.compile("^There (?:is|are) ([a-z-]+)(?: pure| daeyalt| guardian)? essences? in this pouch\\.$");
 	private static final ImmutableMap<String, Integer> TEXT_TO_NUMBER = ImmutableMap.<String, Integer>builder()
 		.put("no", 0)
 		.put("one", 1)
@@ -100,7 +100,7 @@ public class EssPouchPlugin extends Plugin
 		.put("thirty-seven", 37)
 		.put("thirty-eight", 38)
 		.put("thirty-nine", 39)
-		.put("fourty", 40)
+		.put("forty", 40)
 		.build();
 
 	@Inject
@@ -199,12 +199,15 @@ public class EssPouchPlugin extends Plugin
 				case ItemID.MEDIUM_POUCH:
 				case ItemID.LARGE_POUCH:
 				case ItemID.GIANT_POUCH:
+				case ItemID.COLOSSAL_POUCH:
 					Pouch pouch = Pouch.forItem(item.getId());
 					pouch.degrade(false);
 					break;
 				case ItemID.MEDIUM_POUCH_5511:
 				case ItemID.LARGE_POUCH_5513:
 				case ItemID.GIANT_POUCH_5515:
+				case ItemID.COLOSSAL_POUCH_26786:
+				case ItemID.COLOSSAL_POUCH_26906:
 					pouch = Pouch.forItem(item.getId());
 					pouch.degrade(true);
 					break;
