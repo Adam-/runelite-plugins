@@ -43,14 +43,19 @@ public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
 
         Color color = config.itemOverlayColor();
 
-        BufferedImage outline = itemManager.getItemOutline(itemId, widgetItem.getQuantity(), color);
-
         Rectangle bounds = widgetItem.getCanvasBounds();
 
-        ImageComponent imageComponent = new ImageComponent(outline);
-        imageComponent.setPreferredLocation(new Point(bounds.x, bounds.y));
-
-        imageComponent.render(graphics);
+        if (config.itemOverlayMode() == ItemOverlaySetting.OUTLINE) {
+            BufferedImage outline = itemManager.getItemOutline(itemId, widgetItem.getQuantity(), color);
+            ImageComponent imageComponent = new ImageComponent(outline);
+            imageComponent.setPreferredLocation(new Point(bounds.x, bounds.y));
+            imageComponent.render(graphics);
+        } else {
+            graphics.setColor(color);
+            graphics.draw(bounds);
+            graphics.setColor(new Color(color.getRed(), color.getBlue(), color.getGreen(), 20));
+            graphics.fill(bounds);
+        }
 
         if (config.itemOverlayTextMode() == HighlightOverlayTextSetting.NONE) return;
 
@@ -71,7 +76,7 @@ public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
                 bounds.y - textHeight
             ));
         }
-        
+
         textComponent.setColor(color);
         textComponent.setText(step.getTooltip());
 

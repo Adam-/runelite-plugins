@@ -13,7 +13,6 @@ public class ObjectManager
 
     public void add(GameObject object)
     {
-        System.out.println("ObjectManager add: " + object.getId());
         gameObjects.put(object.getId(), object);
     }
 
