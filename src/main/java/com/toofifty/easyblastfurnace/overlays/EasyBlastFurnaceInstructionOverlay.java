@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
 import com.toofifty.easyblastfurnace.EasyBlastFurnacePlugin;
+import com.toofifty.easyblastfurnace.methods.Method;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
 import lombok.Setter;
 import net.runelite.api.MenuAction;
@@ -28,13 +29,16 @@ public class EasyBlastFurnaceInstructionOverlay extends OverlayPanel
     @Setter
     private MethodStep step;
 
+    @Setter
+    private Method method;
+
     @Inject
     EasyBlastFurnaceInstructionOverlay(EasyBlastFurnacePlugin plugin)
     {
         super(plugin);
         this.plugin = plugin;
 
-        getMenuEntries().add(new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY_CONFIG, OverlayManager.OPTION_CONFIGURE, "Perfect Blast Furnace overlay"));
+        getMenuEntries().add(new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY_CONFIG, OverlayManager.OPTION_CONFIGURE, "Easy Blast Furnace overlay"));
     }
 
     @Override
@@ -43,9 +47,12 @@ public class EasyBlastFurnaceInstructionOverlay extends OverlayPanel
         if (!plugin.isEnabled()) return null;
         if (!config.showStepOverlay()) return null;
 
-        String tooltip = step != null ? step.getTooltip() : "Withdraw an ore from the bank to start";
+        String tooltip = step != null ? step.getTooltip() : "Withdraw an ore from the bank to start. You can start a hybrid method by also withdrawing gold ore.";
 
         panelComponent.getChildren().add(TitleComponent.builder().text("Easy Blast Furnace").build());
+        if (method != null) {
+            panelComponent.getChildren().add(LineComponent.builder().left("Method:").leftColor(TOOLTIP_COLOR).right(method.getName()).rightColor(config.itemOverlayColor()).build());
+        }
         panelComponent.getChildren().add(LineComponent.builder().left(tooltip).leftColor(TOOLTIP_COLOR).build());
 
         return super.render(graphics);

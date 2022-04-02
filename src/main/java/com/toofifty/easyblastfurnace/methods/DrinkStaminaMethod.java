@@ -20,18 +20,6 @@ public class DrinkStaminaMethod extends Method
     private final MethodStep getMoreStaminaPotions = new ItemStep(ItemID.COAL_BAG_12019, "Get more stamina potions! Check settings to disable this");
 
     @Override
-    public MethodStep[] getPrerequisiteSteps()
-    {
-        return new MethodStep[0];
-    }
-
-    @Override
-    public MethodStep[] getSteps()
-    {
-        return new MethodStep[0];
-    }
-
-    @Override
     public MethodStep next(BlastFurnaceState state)
     {
         if (!state.needsStaminaDose() && state.getInventoryQuantity(new int[]{
@@ -40,13 +28,13 @@ public class DrinkStaminaMethod extends Method
             ItemID.STAMINA_POTION2,
             ItemID.STAMINA_POTION3,
         }) > 0) {
-            return depositAllIntoBank;
+            return depositInventory;
         }
 
         if (!state.isBankOpen() || !state.needsStaminaDose()) return null;
 
         if (state.getFreeInventorySlots() == 0) {
-            return depositAllIntoBank;
+            return depositInventory;
         }
 
         if (state.getInventoryQuantity(ItemID.STAMINA_POTION1) > 0) {
@@ -82,5 +70,11 @@ public class DrinkStaminaMethod extends Method
         }
 
         return getMoreStaminaPotions;
+    }
+
+    @Override
+    public String getName()
+    {
+        return null;
     }
 }

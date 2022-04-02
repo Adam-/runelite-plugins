@@ -68,6 +68,12 @@ public class BlastFurnaceState
         return quantity;
     }
 
+    public int getEquipmentQuantity(int itemId)
+    {
+        ItemContainer inventory = client.getItemContainer(InventoryID.EQUIPMENT);
+        return inventory == null ? 0 : inventory.count(itemId);
+    }
+
     public int getBankQuantity(int itemId)
     {
         ItemContainer inventory = client.getItemContainer(InventoryID.BANK);

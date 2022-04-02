@@ -3,7 +3,7 @@ package com.toofifty.easyblastfurnace.methods;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
 import net.runelite.api.ItemID;
 
-public class AdamantiteBarMethod extends RegularBarMethod
+public class AdamantiteBarMethod extends MetalBarMethod
 {
     @Override
     MethodStep withdrawOre()
@@ -27,5 +27,11 @@ public class AdamantiteBarMethod extends RegularBarMethod
     int coalPer()
     {
         return 3;
+    }
+
+    @Override
+    public String getName()
+    {
+        return "Adamantite bars";
     }
 }

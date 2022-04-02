@@ -3,35 +3,35 @@ package com.toofifty.easyblastfurnace.methods;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
 import net.runelite.api.ItemID;
 
-public class RuniteBarMethod extends MetalBarMethod
+public class MithrilHybridMethod extends GoldHybridMethod
 {
     @Override
     MethodStep withdrawOre()
     {
-        return withdrawRuniteOre;
+        return withdrawMithrilOre;
     }
 
     @Override
     int oreItem()
     {
-        return ItemID.RUNITE_ORE;
+        return ItemID.MITHRIL_ORE;
     }
 
     @Override
     int barItem()
     {
-        return ItemID.RUNITE_BAR;
+        return ItemID.MITHRIL_BAR;
     }
 
     @Override
     int coalPer()
     {
-        return 4;
+        return 2;
     }
 
     @Override
     public String getName()
     {
-        return "Runite bars";
+        return "Gold + mithril";
     }
 }

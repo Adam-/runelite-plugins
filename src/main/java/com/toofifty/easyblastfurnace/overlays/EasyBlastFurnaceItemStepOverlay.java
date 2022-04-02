@@ -62,6 +62,8 @@ public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
         if (config.itemOverlayTextMode() == HighlightOverlayTextSetting.NONE) return;
 
         TextComponent textComponent = new TextComponent();
+        textComponent.setColor(color);
+        textComponent.setText(step.getTooltip());
 
         FontMetrics fontMetrics = graphics.getFontMetrics();
         int textWidth = fontMetrics.stringWidth(step.getTooltip());
@@ -78,10 +80,7 @@ public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
                 bounds.y - textHeight / 2
             ));
         }
-
-        textComponent.setColor(color);
-        textComponent.setText(step.getTooltip());
-
+        
         textComponent.render(graphics);
     }
 }

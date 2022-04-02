@@ -3,7 +3,7 @@ package com.toofifty.easyblastfurnace.methods;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
 import net.runelite.api.ItemID;
 
-public class SteelBarMethod extends RegularBarMethod
+public class SteelBarMethod extends MetalBarMethod
 {
     @Override
     MethodStep withdrawOre()
@@ -27,5 +27,11 @@ public class SteelBarMethod extends RegularBarMethod
     int coalPer()
     {
         return 1;
+    }
+
+    @Override
+    public String getName()
+    {
+        return "Steel bars";
     }
 }

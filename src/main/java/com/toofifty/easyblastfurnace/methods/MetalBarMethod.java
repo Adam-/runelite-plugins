@@ -11,7 +11,7 @@ import net.runelite.client.plugins.blastfurnace.BarsOres;
  * - Do trips with ores
  * - Repeat
  */
-abstract public class RegularBarMethod extends Method
+abstract public class MetalBarMethod extends Method
 {
     abstract MethodStep withdrawOre();
 
@@ -21,9 +21,30 @@ abstract public class RegularBarMethod extends Method
 
     abstract int coalPer();
 
+    private MethodStep checkPrerequisite(BlastFurnaceState state)
+    {
+        if (state.getInventoryQuantity(ItemID.COAL_BAG_12019) == 0) {
+            return state.isBankOpen() ? withdrawCoalBag : openBank;
+        }
+
+        if (state.getInventoryQuantity(ItemID.ICE_GLOVES) == 0 &&
+            state.getEquipmentQuantity(ItemID.ICE_GLOVES) == 0) {
+            return state.isBankOpen() ? withdrawIceGloves : openBank;
+        }
+
+        if (state.getInventoryQuantity(ItemID.ICE_GLOVES) > 0) {
+            return equipIceGloves;
+        }
+
+        return null;
+    }
+
     @Override
     public MethodStep next(BlastFurnaceState state)
     {
+        MethodStep prerequisite = checkPrerequisite(state);
+        if (prerequisite != null) return prerequisite;
+
         if (state.getFurnaceQuantity(BarsOres.COAL) >= coalPer() &&
             state.getFurnaceQuantity(oreItem()) >= 1) {
             return waitForBars;
@@ -34,12 +55,8 @@ abstract public class RegularBarMethod extends Method
         }
 
         if (state.isBankOpen()) {
-            if (state.getInventoryQuantity(ItemID.COAL_BAG_12019) == 0) {
-                return withdrawCoalBag;
-            }
-
             if (state.getInventoryQuantity(barItem()) > 0) {
-                return depositAllIntoBank;
+                return depositInventory;
             }
 
             if (state.getCoalInCoalBag() == 0) {

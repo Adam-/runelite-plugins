@@ -19,7 +19,7 @@ public interface EasyBlastFurnaceConfig extends Config
     )
     default ItemOverlaySetting itemOverlayMode()
     {
-        return ItemOverlaySetting.OUTLINE;
+        return ItemOverlaySetting.BOX;
     }
 
     @ConfigItem(
