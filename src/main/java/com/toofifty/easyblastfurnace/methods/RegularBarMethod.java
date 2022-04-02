@@ -22,21 +22,6 @@ abstract public class RegularBarMethod extends Method
     abstract int coalPer();
 
     @Override
-    public MethodStep[] getPrerequisiteSteps()
-    {
-        return new MethodStep[]{
-            equipIceGloves,
-            withdrawCoalBag,
-        };
-    }
-
-    @Override
-    public MethodStep[] getSteps()
-    {
-        return new MethodStep[0];
-    }
-
-    @Override
     public MethodStep next(BlastFurnaceState state)
     {
         if (state.getFurnaceQuantity(BarsOres.COAL) >= coalPer() &&
