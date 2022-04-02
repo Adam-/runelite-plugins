@@ -17,7 +17,9 @@ abstract public class GoldHybridMethod extends Method
 
     private MethodStep checkPrerequisite(BlastFurnaceState state)
     {
-        // ensure player has both ice gloves & goldsmith gauntlets either in inventory or equipped
+        if (state.getInventoryQuantity(ItemID.COAL_BAG_12019) == 0) {
+            return state.isBankOpen() ? withdrawCoalBag : openBank;
+        }
 
         if (state.getInventoryQuantity(ItemID.ICE_GLOVES) == 0 &&
             state.getEquipmentQuantity(ItemID.ICE_GLOVES) == 0) {
@@ -27,6 +29,11 @@ abstract public class GoldHybridMethod extends Method
         if (state.getInventoryQuantity(ItemID.GOLDSMITH_GAUNTLETS) == 0 &&
             state.getEquipmentQuantity(ItemID.GOLDSMITH_GAUNTLETS) == 0) {
             return state.isBankOpen() ? withdrawGoldsmithGauntlets : openBank;
+        }
+
+        if (state.getEquipmentQuantity(ItemID.ICE_GLOVES) == 0 &&
+            state.getEquipmentQuantity(ItemID.GOLDSMITH_GAUNTLETS) == 0) {
+            return equipGoldsmithGauntlets;
         }
 
         return null;
