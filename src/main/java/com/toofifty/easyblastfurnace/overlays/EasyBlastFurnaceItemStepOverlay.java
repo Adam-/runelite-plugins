@@ -75,7 +75,7 @@ public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
         } else {
             textComponent.setPosition(new Point(
                 bounds.x + bounds.width / 2 - textWidth / 2,
-                bounds.y - textHeight
+                bounds.y - textHeight / 2
             ));
         }
 

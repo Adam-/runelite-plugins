@@ -24,10 +24,11 @@ public abstract class Method
     protected final MethodStep equipGoldsmithGauntlets = new ItemStep(ItemID.GOLDSMITH_GAUNTLETS, "Equip goldsmith gauntlets");
 
     // objects
-    protected final MethodStep depositAllIntoBank = new ObjectStep(EasyBlastFurnacePlugin.BANK_CHEST, "Deposit bars into bank");
+    protected final MethodStep depositAllIntoBank = new ObjectStep(EasyBlastFurnacePlugin.BANK_CHEST, "Deposit all into bank");
     protected final MethodStep putOntoConveyorBelt = new ObjectStep(EasyBlastFurnacePlugin.CONVEYOR_BELT, "Put ore onto conveyor belt");
     protected final MethodStep openBank = new ObjectStep(EasyBlastFurnacePlugin.BANK_CHEST, "Open bank chest");
     protected final MethodStep collectBars = new ObjectStep(EasyBlastFurnacePlugin.BAR_DISPENSER, "Collect bars");
+    protected final MethodStep waitForBars = new ObjectStep(EasyBlastFurnacePlugin.BAR_DISPENSER, "Wait for bars to smelt");
 
     abstract public MethodStep[] getPrerequisiteSteps();
 

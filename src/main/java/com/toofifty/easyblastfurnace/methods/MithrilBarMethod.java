@@ -47,6 +47,11 @@ public class MithrilBarMethod extends Method
     @Override
     public MethodStep next(BlastFurnaceState state)
     {
+        if (state.getFurnaceQuantity(BarsOres.COAL) > 1 &&
+            state.getFurnaceQuantity(BarsOres.MITHRIL_ORE) > 0) {
+            return waitForBars;
+        }
+
         if (state.getFurnaceQuantity(BarsOres.MITHRIL_BAR) > 0) {
             return collectBars;
         }

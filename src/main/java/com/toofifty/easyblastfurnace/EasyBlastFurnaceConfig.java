@@ -109,4 +109,15 @@ public interface EasyBlastFurnaceConfig extends Config
     {
         return true;
     }
+
+    @ConfigItem(
+        position = 10,
+        keyName = "requireStaminaThreshold",
+        name = "Require stamina threshold",
+        description = "Require a stamina dose when run energy is lower than this amount. Feature is disabled when set to 0."
+    )
+    default int requireStaminaThreshold()
+    {
+        return 50;
+    }
 }

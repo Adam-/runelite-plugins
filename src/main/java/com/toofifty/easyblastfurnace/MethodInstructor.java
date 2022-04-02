@@ -2,6 +2,7 @@ package com.toofifty.easyblastfurnace;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.toofifty.easyblastfurnace.methods.DrinkStaminaMethod;
 import com.toofifty.easyblastfurnace.methods.Method;
 import com.toofifty.easyblastfurnace.methods.MithrilBarMethod;
 import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceCoalBagOverlay;
@@ -10,7 +11,6 @@ import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceItemStepOverlay;
 import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceObjectStepOverlay;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
 import com.toofifty.easyblastfurnace.utils.BlastFurnaceState;
-import net.runelite.api.Client;
 import net.runelite.api.Item;
 import net.runelite.api.ItemID;
 
@@ -30,10 +30,12 @@ public class MethodInstructor
     private EasyBlastFurnaceCoalBagOverlay coalBagOverlay;
 
     @Inject
-    private BlastFurnaceState state;
+    private EasyBlastFurnaceConfig config;
 
     @Inject
-    private Client client;
+    private BlastFurnaceState state;
+
+    private final DrinkStaminaMethod drinkStaminaMethod = new DrinkStaminaMethod();
 
     private Method currentMethod;
 
@@ -41,7 +43,8 @@ public class MethodInstructor
     {
         if (currentMethod == null) return;
 
-        MethodStep step = currentMethod.next(state);
+        MethodStep step = drinkStaminaMethod.next(state);
+        if (step == null) step = currentMethod.next(state);
 
         instructionOverlay.setStep(step);
         itemStepOverlay.setStep(step);
