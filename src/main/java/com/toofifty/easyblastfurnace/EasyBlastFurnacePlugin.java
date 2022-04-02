@@ -3,12 +3,10 @@ package com.toofifty.easyblastfurnace;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.toofifty.easyblastfurnace.methods.Method;
-import com.toofifty.easyblastfurnace.methods.MithrilBarMethod;
 import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceCoalBagOverlay;
+import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceInstructionOverlay;
 import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceItemStepOverlay;
 import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceObjectStepOverlay;
-import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceOverlay;
-import com.toofifty.easyblastfurnace.steps.MethodStep;
 import com.toofifty.easyblastfurnace.utils.BlastFurnaceState;
 import com.toofifty.easyblastfurnace.utils.ObjectManager;
 import lombok.Getter;
@@ -53,7 +51,7 @@ public class EasyBlastFurnacePlugin extends Plugin
     private ObjectManager objectManager;
 
     @Inject
-    private EasyBlastFurnaceOverlay overlay;
+    private EasyBlastFurnaceInstructionOverlay instructionOverlay;
 
     @Inject
     private EasyBlastFurnaceItemStepOverlay itemStepOverlay;
@@ -64,6 +62,9 @@ public class EasyBlastFurnacePlugin extends Plugin
     @Inject
     private EasyBlastFurnaceCoalBagOverlay coalBagOverlay;
 
+    @Inject
+    private MethodInstructor methodInstructor;
+
     @Getter
     private boolean isEnabled = false;
 
@@ -73,7 +74,7 @@ public class EasyBlastFurnacePlugin extends Plugin
     @Override
     protected void startUp()
     {
-        overlayManager.add(overlay);
+        overlayManager.add(instructionOverlay);
         overlayManager.add(coalBagOverlay);
         overlayManager.add(itemStepOverlay);
         overlayManager.add(objectStepOverlay);
@@ -82,41 +83,12 @@ public class EasyBlastFurnacePlugin extends Plugin
     @Override
     protected void shutDown()
     {
-        reset();
-        
-        overlayManager.remove(overlay);
+        methodInstructor.reset();
+
+        overlayManager.remove(instructionOverlay);
         overlayManager.remove(coalBagOverlay);
         overlayManager.remove(itemStepOverlay);
         overlayManager.remove(objectStepOverlay);
-    }
-
-    private void next()
-    {
-        if (currentMethod == null) return;
-
-        MethodStep step = currentMethod.next(state);
-
-        overlay.setStep(step);
-        itemStepOverlay.setStep(step);
-        objectStepOverlay.setStep(step);
-    }
-
-    private void reset()
-    {
-        currentMethod = null;
-        overlay.setStep(null);
-        itemStepOverlay.setStep(null);
-        objectStepOverlay.setStep(null);
-    }
-
-    private void setMethodFromInventory(Item[] items)
-    {
-        for (Item item : items) {
-            switch (item.getId()) {
-                case ItemID.MITHRIL_ORE:
-                    currentMethod = new MithrilBarMethod();
-            }
-        }
     }
 
     @Subscribe
@@ -143,7 +115,7 @@ public class EasyBlastFurnacePlugin extends Plugin
             case BAR_DISPENSER:
             case BANK_CHEST:
                 isEnabled = false;
-                reset();
+                methodInstructor.reset();
         }
     }
 
@@ -162,12 +134,12 @@ public class EasyBlastFurnacePlugin extends Plugin
 
         if (event.getContainerId() == InventoryID.INVENTORY.getId()) {
             if (currentMethod == null) {
-                setMethodFromInventory(event.getItemContainer().getItems());
+                methodInstructor.setMethodFromInventory(event.getItemContainer().getItems());
             }
         }
 
         // handle any inventory or bank changes
-        next();
+        methodInstructor.next();
     }
 
     @Subscribe
@@ -176,7 +148,7 @@ public class EasyBlastFurnacePlugin extends Plugin
         if (!isEnabled) return;
 
         // handle furnace ore/bar quantity changes
-        next();
+        methodInstructor.next();
     }
 
     @Subscribe
@@ -196,7 +168,7 @@ public class EasyBlastFurnacePlugin extends Plugin
         }
 
         // handle coal bag changes
-        next();
+        methodInstructor.next();
     }
 
     @Subscribe
@@ -208,7 +180,7 @@ public class EasyBlastFurnacePlugin extends Plugin
         if (event.getMenuAction().getId() == EMPTY_ACTION) state.emptyCoalBag();
 
         // handle coal bag changes
-        next();
+        methodInstructor.next();
     }
 
     @Provides

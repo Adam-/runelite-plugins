@@ -8,6 +8,15 @@ import net.runelite.client.plugins.blastfurnace.BarsOres;
 public class MithrilBarMethod extends Method
 {
     @Override
+    public MethodStep[] getPrerequisiteSteps()
+    {
+        return new MethodStep[]{
+            equipIceGloves,
+            withdrawCoalBag
+        };
+    }
+
+    @Override
     public MethodStep[] getSteps()
     {
         return new MethodStep[]{
@@ -43,6 +52,10 @@ public class MithrilBarMethod extends Method
         }
 
         if (state.isBankOpen()) {
+            if (state.getInventoryQuantity(ItemID.COAL_BAG_12019) == 0) {
+                return withdrawCoalBag;
+            }
+
             if (state.getInventoryQuantity(ItemID.MITHRIL_BAR) > 0) {
                 return depositAllIntoBank;
             }
@@ -65,6 +78,10 @@ public class MithrilBarMethod extends Method
         }
 
         if (state.getInventoryQuantity(ItemID.MITHRIL_BAR) > 0) {
+            return openBank;
+        }
+
+        if (state.getInventoryQuantity(ItemID.COAL_BAG_12019) == 0) {
             return openBank;
         }
 

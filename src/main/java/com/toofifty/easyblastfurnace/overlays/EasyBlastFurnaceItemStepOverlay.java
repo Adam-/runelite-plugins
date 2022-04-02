@@ -1,6 +1,7 @@
 package com.toofifty.easyblastfurnace.overlays;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
 import com.toofifty.easyblastfurnace.config.HighlightOverlayTextSetting;
 import com.toofifty.easyblastfurnace.config.ItemOverlaySetting;
@@ -16,6 +17,7 @@ import net.runelite.client.ui.overlay.components.TextComponent;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
+@Singleton
 public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
 {
     @Inject

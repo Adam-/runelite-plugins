@@ -1,6 +1,7 @@
 package com.toofifty.easyblastfurnace.overlays;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
 import com.toofifty.easyblastfurnace.EasyBlastFurnacePlugin;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
@@ -14,7 +15,8 @@ import net.runelite.client.ui.overlay.components.TitleComponent;
 
 import java.awt.*;
 
-public class EasyBlastFurnaceOverlay extends OverlayPanel
+@Singleton
+public class EasyBlastFurnaceInstructionOverlay extends OverlayPanel
 {
     private static final Color TOOLTIP_COLOR = new Color(190, 190, 190);
 
@@ -27,7 +29,7 @@ public class EasyBlastFurnaceOverlay extends OverlayPanel
     private MethodStep step;
 
     @Inject
-    EasyBlastFurnaceOverlay(EasyBlastFurnacePlugin plugin)
+    EasyBlastFurnaceInstructionOverlay(EasyBlastFurnacePlugin plugin)
     {
         super(plugin);
         this.plugin = plugin;

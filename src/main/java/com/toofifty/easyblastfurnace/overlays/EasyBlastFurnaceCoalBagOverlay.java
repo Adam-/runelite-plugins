@@ -1,6 +1,7 @@
 package com.toofifty.easyblastfurnace.overlays;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
 import com.toofifty.easyblastfurnace.EasyBlastFurnacePlugin;
 import com.toofifty.easyblastfurnace.utils.BlastFurnaceState;
@@ -11,6 +12,7 @@ import net.runelite.client.ui.overlay.components.TextComponent;
 
 import java.awt.*;
 
+@Singleton
 public class EasyBlastFurnaceCoalBagOverlay extends WidgetItemOverlay
 {
     @Inject
