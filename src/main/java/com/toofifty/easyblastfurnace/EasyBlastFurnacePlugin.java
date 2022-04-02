@@ -82,6 +82,8 @@ public class EasyBlastFurnacePlugin extends Plugin
     @Override
     protected void shutDown()
     {
+        reset();
+        
         overlayManager.remove(overlay);
         overlayManager.remove(coalBagOverlay);
         overlayManager.remove(itemStepOverlay);
@@ -99,6 +101,14 @@ public class EasyBlastFurnacePlugin extends Plugin
         objectStepOverlay.setStep(step);
     }
 
+    private void reset()
+    {
+        currentMethod = null;
+        overlay.setStep(null);
+        itemStepOverlay.setStep(null);
+        objectStepOverlay.setStep(null);
+    }
+
     private void setMethodFromInventory(Item[] items)
     {
         for (Item item : items) {
@@ -113,8 +123,6 @@ public class EasyBlastFurnacePlugin extends Plugin
     public void onGameObjectSpawned(GameObjectSpawned event)
     {
         GameObject gameObject = event.getGameObject();
-
-        System.out.println(gameObject.getId());
 
         switch (gameObject.getId()) {
             case CONVEYOR_BELT:
@@ -135,6 +143,7 @@ public class EasyBlastFurnacePlugin extends Plugin
             case BAR_DISPENSER:
             case BANK_CHEST:
                 isEnabled = false;
+                reset();
         }
     }
 
@@ -194,8 +203,6 @@ public class EasyBlastFurnacePlugin extends Plugin
     public void onMenuOptionClicked(MenuOptionClicked event)
     {
         if (!isEnabled) return;
-
-        System.out.println(event.getMenuOption() + ": " + event.getMenuTarget() + " " + event.getMenuAction().getId());
 
         if (event.getMenuAction().getId() == FILL_ACTION) state.fillCoalBag();
         if (event.getMenuAction().getId() == EMPTY_ACTION) state.emptyCoalBag();

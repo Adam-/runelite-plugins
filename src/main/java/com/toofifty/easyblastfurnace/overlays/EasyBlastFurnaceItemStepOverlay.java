@@ -1,6 +1,9 @@
 package com.toofifty.easyblastfurnace.overlays;
 
 import com.google.inject.Inject;
+import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
+import com.toofifty.easyblastfurnace.config.HighlightOverlayTextSetting;
+import com.toofifty.easyblastfurnace.config.ItemOverlaySetting;
 import com.toofifty.easyblastfurnace.steps.ItemStep;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
 import lombok.Setter;
@@ -18,6 +21,9 @@ public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
     @Inject
     private ItemManager itemManager;
 
+    @Inject
+    private EasyBlastFurnaceConfig config;
+
     @Setter
     private MethodStep step;
 
@@ -31,9 +37,13 @@ public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
     public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem widgetItem)
     {
         if (step == null) return;
-        if (!(step instanceof ItemStep) || ((ItemStep) step).getItemId() != itemId) return;
+        if (!(step instanceof ItemStep)) return;
+        if (((ItemStep) step).getItemId() != itemId) return;
+        if (config.itemOverlayMode() == ItemOverlaySetting.NONE) return;
 
-        BufferedImage outline = itemManager.getItemOutline(itemId, widgetItem.getQuantity(), Color.CYAN);
+        Color color = config.itemOverlayColor();
+
+        BufferedImage outline = itemManager.getItemOutline(itemId, widgetItem.getQuantity(), color);
 
         Rectangle bounds = widgetItem.getCanvasBounds();
 
@@ -42,17 +52,27 @@ public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
 
         imageComponent.render(graphics);
 
+        if (config.itemOverlayTextMode() == HighlightOverlayTextSetting.NONE) return;
+
         TextComponent textComponent = new TextComponent();
 
         FontMetrics fontMetrics = graphics.getFontMetrics();
         int textWidth = fontMetrics.stringWidth(step.getTooltip());
         int textHeight = fontMetrics.getHeight();
 
-        textComponent.setPosition(new Point(
-            bounds.x + bounds.width / 2 - textWidth / 2,
-            bounds.y + bounds.height + textHeight
-        ));
-        textComponent.setColor(Color.CYAN);
+        if (config.itemOverlayTextMode() == HighlightOverlayTextSetting.BELOW) {
+            textComponent.setPosition(new Point(
+                bounds.x + bounds.width / 2 - textWidth / 2,
+                bounds.y + bounds.height + textHeight
+            ));
+        } else {
+            textComponent.setPosition(new Point(
+                bounds.x + bounds.width / 2 - textWidth / 2,
+                bounds.y - textHeight
+            ));
+        }
+        
+        textComponent.setColor(color);
         textComponent.setText(step.getTooltip());
 
         textComponent.render(graphics);
