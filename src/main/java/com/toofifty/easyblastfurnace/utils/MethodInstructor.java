@@ -1,16 +1,17 @@
-package com.toofifty.easyblastfurnace;
+package com.toofifty.easyblastfurnace.utils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
 import com.toofifty.easyblastfurnace.methods.DrinkStaminaMethod;
 import com.toofifty.easyblastfurnace.methods.Method;
 import com.toofifty.easyblastfurnace.methods.MithrilBarMethod;
+import com.toofifty.easyblastfurnace.methods.SteelBarMethod;
 import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceCoalBagOverlay;
 import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceInstructionOverlay;
 import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceItemStepOverlay;
 import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceObjectStepOverlay;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
-import com.toofifty.easyblastfurnace.utils.BlastFurnaceState;
 import net.runelite.api.Item;
 import net.runelite.api.ItemID;
 
@@ -63,6 +64,8 @@ public class MethodInstructor
     {
         for (Item item : items) {
             switch (item.getId()) {
+                case ItemID.IRON_ORE:
+                    currentMethod = new SteelBarMethod();
                 case ItemID.MITHRIL_ORE:
                     currentMethod = new MithrilBarMethod();
             }

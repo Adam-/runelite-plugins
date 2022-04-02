@@ -8,6 +8,7 @@ import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceInstructionOverlay
 import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceItemStepOverlay;
 import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceObjectStepOverlay;
 import com.toofifty.easyblastfurnace.utils.BlastFurnaceState;
+import com.toofifty.easyblastfurnace.utils.MethodInstructor;
 import com.toofifty.easyblastfurnace.utils.ObjectManager;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

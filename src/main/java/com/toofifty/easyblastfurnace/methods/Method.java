@@ -16,6 +16,7 @@ public abstract class Method
 
     protected final MethodStep withdrawCoal = new ItemStep(ItemID.COAL, "Withdraw coal");
     protected final MethodStep withdrawGoldOre = new ItemStep(ItemID.GOLD_ORE, "Withdraw gold ore");
+    protected final MethodStep withdrawIronOre = new ItemStep(ItemID.IRON_ORE, "Withdraw iron ore");
     protected final MethodStep withdrawMithrilOre = new ItemStep(ItemID.MITHRIL_ORE, "Withdraw mithril ore");
     protected final MethodStep withdrawAdamantiteOre = new ItemStep(ItemID.ADAMANTITE_ORE, "Withdraw adamantite ore");
     protected final MethodStep withdrawRuniteOre = new ItemStep(ItemID.RUNITE_ORE, "Withdraw runite ore");
