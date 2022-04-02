@@ -5,14 +5,14 @@ import com.toofifty.easyblastfurnace.utils.BlastFurnaceState;
 import net.runelite.api.ItemID;
 import net.runelite.client.plugins.blastfurnace.BarsOres;
 
-public class MithrilBarMethod extends Method
+public class AdamantiteBarMethod extends Method
 {
     @Override
     public MethodStep[] getPrerequisiteSteps()
     {
         return new MethodStep[]{
             equipIceGloves,
-            withdrawCoalBag
+            withdrawCoalBag,
         };
     }
 
@@ -31,17 +31,7 @@ public class MithrilBarMethod extends Method
             openBank,
 
             fillCoalBag,
-            withdrawMithrilOre,
-            putOntoConveyorBelt,
-            emptyCoalBag,
-            putOntoConveyorBelt,
-            collectBars,
-
-            openBank,
-            depositAllIntoBank,
-
-            fillCoalBag,
-            withdrawMithrilOre,
+            withdrawAdamantiteOre,
             putOntoConveyorBelt,
             emptyCoalBag,
             putOntoConveyorBelt,
@@ -52,12 +42,12 @@ public class MithrilBarMethod extends Method
     @Override
     public MethodStep next(BlastFurnaceState state)
     {
-        if (state.getFurnaceQuantity(BarsOres.COAL) > 1 &&
-            state.getFurnaceQuantity(BarsOres.MITHRIL_ORE) > 0) {
+        if (state.getFurnaceQuantity(BarsOres.COAL) > 2 &&
+            state.getFurnaceQuantity(BarsOres.ADAMANTITE_ORE) > 0) {
             return waitForBars;
         }
 
-        if (state.getFurnaceQuantity(BarsOres.MITHRIL_BAR) > 0) {
+        if (state.getFurnaceQuantity(BarsOres.ADAMANTITE_BAR) > 0) {
             return collectBars;
         }
 
@@ -66,7 +56,7 @@ public class MithrilBarMethod extends Method
                 return withdrawCoalBag;
             }
 
-            if (state.getInventoryQuantity(ItemID.MITHRIL_BAR) > 0) {
+            if (state.getInventoryQuantity(ItemID.ADAMANTITE_BAR) > 0) {
                 return depositAllIntoBank;
             }
 
@@ -82,12 +72,12 @@ public class MithrilBarMethod extends Method
                 return withdrawCoal;
             }
 
-            if (state.getInventoryQuantity(ItemID.MITHRIL_ORE) == 0) {
-                return withdrawMithrilOre;
+            if (state.getInventoryQuantity(ItemID.ADAMANTITE_ORE) == 0) {
+                return withdrawAdamantiteOre;
             }
         }
 
-        if (state.getInventoryQuantity(ItemID.MITHRIL_BAR) > 0) {
+        if (state.getInventoryQuantity(ItemID.ADAMANTITE_BAR) > 0) {
             return openBank;
         }
 
@@ -99,7 +89,7 @@ public class MithrilBarMethod extends Method
             return putOntoConveyorBelt;
         }
 
-        if (state.getInventoryQuantity(ItemID.MITHRIL_ORE) > 0) {
+        if (state.getInventoryQuantity(ItemID.ADAMANTITE_ORE) > 0) {
             return putOntoConveyorBelt;
         }
 

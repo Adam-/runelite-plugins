@@ -34,7 +34,7 @@ public class SteelBarMethod extends Method
     @Override
     public MethodStep next(BlastFurnaceState state)
     {
-        if (state.getFurnaceQuantity(BarsOres.COAL) > 1 &&
+        if (state.getFurnaceQuantity(BarsOres.COAL) > 0 &&
             state.getFurnaceQuantity(BarsOres.IRON_ORE) > 0) {
             return waitForBars;
         }
