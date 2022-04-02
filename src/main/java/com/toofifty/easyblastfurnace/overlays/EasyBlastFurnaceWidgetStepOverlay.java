@@ -45,10 +45,8 @@ public class EasyBlastFurnaceWidgetStepOverlay extends Overlay
         if (config.itemOverlayMode() == ItemOverlaySetting.NONE) return null;
 
         Widget widget = client.getWidget(((WidgetStep) step).getWidgetInfo());
-        if (widget == null) {
-            System.out.println("No widget :(");
-            return null;
-        }
+        if (widget == null) return null;
+
 
         Color color = config.itemOverlayColor();
         Rectangle bounds = widget.getBounds();

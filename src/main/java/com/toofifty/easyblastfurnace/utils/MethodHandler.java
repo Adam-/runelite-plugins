@@ -36,18 +36,6 @@ public class MethodHandler
 
     private Method currentMethod;
 
-    private Method setMethod(Method method)
-    {
-        clear();
-        currentMethod = method;
-
-        System.out.println("Setting method: " + method.getName());
-
-        instructionOverlay.setMethod(currentMethod);
-
-        return currentMethod;
-    }
-
     public void next()
     {
         if (currentMethod == null) return;
@@ -116,8 +104,6 @@ public class MethodHandler
 
         clear();
         currentMethod = method;
-
-        System.out.println("Setting method: " + method.getName());
 
         instructionOverlay.setMethod(currentMethod);
     }

@@ -51,7 +51,7 @@ public class EasyBlastFurnaceInstructionOverlay extends OverlayPanel
 
         panelComponent.getChildren().add(TitleComponent.builder().text("Easy Blast Furnace").build());
         if (method != null) {
-            panelComponent.getChildren().add(LineComponent.builder().left("Method:").leftColor(TOOLTIP_COLOR).right(method.getName()).rightColor(config.itemOverlayColor()).build());
+            panelComponent.getChildren().add(LineComponent.builder().left(method.getName()).leftColor(config.itemOverlayColor()).build());
         }
         panelComponent.getChildren().add(LineComponent.builder().left(tooltip).leftColor(TOOLTIP_COLOR).build());
 
