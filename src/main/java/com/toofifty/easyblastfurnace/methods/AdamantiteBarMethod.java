@@ -1,102 +1,31 @@
 package com.toofifty.easyblastfurnace.methods;
 
 import com.toofifty.easyblastfurnace.steps.MethodStep;
-import com.toofifty.easyblastfurnace.utils.BlastFurnaceState;
 import net.runelite.api.ItemID;
-import net.runelite.client.plugins.blastfurnace.BarsOres;
 
-public class AdamantiteBarMethod extends Method
+public class AdamantiteBarMethod extends RegularBarMethod
 {
     @Override
-    public MethodStep[] getPrerequisiteSteps()
+    MethodStep withdrawOre()
     {
-        return new MethodStep[]{
-            equipIceGloves,
-            withdrawCoalBag,
-        };
+        return withdrawAdamantiteOre;
     }
 
     @Override
-    public MethodStep[] getSteps()
+    int oreItem()
     {
-        return new MethodStep[]{
-            openBank,
-
-            fillCoalBag,
-            withdrawCoal,
-            putOntoConveyorBelt,
-            emptyCoalBag,
-            putOntoConveyorBelt,
-
-            openBank,
-
-            fillCoalBag,
-            withdrawAdamantiteOre,
-            putOntoConveyorBelt,
-            emptyCoalBag,
-            putOntoConveyorBelt,
-            collectBars,
-        };
+        return ItemID.ADAMANTITE_ORE;
     }
 
     @Override
-    public MethodStep next(BlastFurnaceState state)
+    int barItem()
     {
-        if (state.getFurnaceQuantity(BarsOres.COAL) > 2 &&
-            state.getFurnaceQuantity(BarsOres.ADAMANTITE_ORE) > 0) {
-            return waitForBars;
-        }
+        return ItemID.ADAMANTITE_BAR;
+    }
 
-        if (state.getFurnaceQuantity(BarsOres.ADAMANTITE_BAR) > 0) {
-            return collectBars;
-        }
-
-        if (state.isBankOpen()) {
-            if (state.getInventoryQuantity(ItemID.COAL_BAG_12019) == 0) {
-                return withdrawCoalBag;
-            }
-
-            if (state.getInventoryQuantity(ItemID.ADAMANTITE_BAR) > 0) {
-                return depositAllIntoBank;
-            }
-
-            if (state.getCoalInCoalBag() == 0) {
-                return fillCoalBag;
-            }
-
-            if (state.getInventoryQuantity(ItemID.COAL) > 0) {
-                return putOntoConveyorBelt;
-            }
-
-            if (state.getFurnaceQuantity(BarsOres.COAL) < 54) {
-                return withdrawCoal;
-            }
-
-            if (state.getInventoryQuantity(ItemID.ADAMANTITE_ORE) == 0) {
-                return withdrawAdamantiteOre;
-            }
-        }
-
-        if (state.getInventoryQuantity(ItemID.ADAMANTITE_BAR) > 0) {
-            return openBank;
-        }
-
-        if (state.getInventoryQuantity(ItemID.COAL_BAG_12019) == 0) {
-            return openBank;
-        }
-
-        if (state.getInventoryQuantity(ItemID.COAL) > 0) {
-            return putOntoConveyorBelt;
-        }
-
-        if (state.getInventoryQuantity(ItemID.ADAMANTITE_ORE) > 0) {
-            return putOntoConveyorBelt;
-        }
-
-        if (state.getCoalInCoalBag() > 0) {
-            return emptyCoalBag;
-        }
-
-        return openBank;
+    @Override
+    int coalPer()
+    {
+        return 3;
     }
 }

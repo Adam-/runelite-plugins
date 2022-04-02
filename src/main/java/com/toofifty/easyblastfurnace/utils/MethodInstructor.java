@@ -3,10 +3,7 @@ package com.toofifty.easyblastfurnace.utils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
-import com.toofifty.easyblastfurnace.methods.DrinkStaminaMethod;
-import com.toofifty.easyblastfurnace.methods.Method;
-import com.toofifty.easyblastfurnace.methods.MithrilBarMethod;
-import com.toofifty.easyblastfurnace.methods.SteelBarMethod;
+import com.toofifty.easyblastfurnace.methods.*;
 import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceCoalBagOverlay;
 import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceInstructionOverlay;
 import com.toofifty.easyblastfurnace.overlays.EasyBlastFurnaceItemStepOverlay;
@@ -66,8 +63,19 @@ public class MethodInstructor
             switch (item.getId()) {
                 case ItemID.IRON_ORE:
                     currentMethod = new SteelBarMethod();
+                    break;
+
                 case ItemID.MITHRIL_ORE:
                     currentMethod = new MithrilBarMethod();
+                    break;
+
+                case ItemID.ADAMANTITE_ORE:
+                    currentMethod = new AdamantiteBarMethod();
+                    break;
+
+                case ItemID.RUNITE_ORE:
+                    currentMethod = new RuniteBarMethod();
+                    break;
             }
         }
     }

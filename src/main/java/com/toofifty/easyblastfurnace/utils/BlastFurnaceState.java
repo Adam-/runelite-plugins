@@ -10,6 +10,8 @@ import net.runelite.client.plugins.blastfurnace.BarsOres;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Arrays;
+import java.util.Optional;
 
 @Singleton
 public class BlastFurnaceState
@@ -75,6 +77,13 @@ public class BlastFurnaceState
     public int getFurnaceQuantity(BarsOres varbit)
     {
         return client.getVar(varbit.getVarbit());
+    }
+
+    public int getFurnaceQuantity(int itemId)
+    {
+        Optional<BarsOres> varbit = Arrays.stream(BarsOres.values()).filter(e -> e.getItemID() == itemId).findFirst();
+        assert varbit.isPresent();
+        return getFurnaceQuantity(varbit.get());
     }
 
     private void setCoalInCoalBag(int amount)
