@@ -21,7 +21,8 @@ import java.util.regex.Pattern;
 
 @Slf4j
 @PluginDescriptor(
-    name = "Easy Blast Furnace"
+    name = "Easy Blast Furnace",
+    description = "Helps you train at the blast furnace more efficiently"
 )
 public class EasyBlastFurnacePlugin extends Plugin
 {
