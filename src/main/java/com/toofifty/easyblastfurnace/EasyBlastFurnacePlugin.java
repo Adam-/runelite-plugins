@@ -12,6 +12,7 @@ import net.runelite.api.*;
 import net.runelite.api.events.*;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.OverlayMenuClicked;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -180,6 +181,15 @@ public class EasyBlastFurnacePlugin extends Plugin
 
         // handle coal bag changes
         methodHandler.next();
+    }
+
+    @Subscribe
+    public void onOverlayMenuClicked(OverlayMenuClicked event)
+    {
+        if (event.getOverlay() == instructionOverlay &&
+            event.getEntry().getOption().equals(EasyBlastFurnaceInstructionOverlay.RESET_ACTION)) {
+            methodHandler.clear();
+        }
     }
 
     @Provides

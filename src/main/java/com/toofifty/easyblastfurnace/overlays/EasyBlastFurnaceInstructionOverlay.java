@@ -19,6 +19,8 @@ import java.awt.*;
 @Singleton
 public class EasyBlastFurnaceInstructionOverlay extends OverlayPanel
 {
+    public static final String RESET_ACTION = "Reset";
+
     private static final Color TOOLTIP_COLOR = new Color(190, 190, 190);
 
     private final EasyBlastFurnacePlugin plugin;
@@ -38,7 +40,8 @@ public class EasyBlastFurnaceInstructionOverlay extends OverlayPanel
         super(plugin);
         this.plugin = plugin;
 
-        getMenuEntries().add(new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY_CONFIG, OverlayManager.OPTION_CONFIGURE, "Easy Blast Furnace overlay"));
+        getMenuEntries().add(new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY, "Reset", "Easy blast furnace overlay"));
+        getMenuEntries().add(new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY_CONFIG, OverlayManager.OPTION_CONFIGURE, "Easy blast furnace overlay"));
     }
 
     @Override
