@@ -4,6 +4,7 @@ import com.toofifty.easyblastfurnace.methods.GoldBarMethod;
 import com.toofifty.easyblastfurnace.methods.GoldHybridMethod;
 import com.toofifty.easyblastfurnace.methods.MetalBarMethod;
 import com.toofifty.easyblastfurnace.methods.Method;
+import com.toofifty.easyblastfurnace.state.BlastFurnaceState;
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
@@ -153,7 +154,7 @@ public class SessionStatistics
         };
 
         for (int barId : bars) {
-            int diff = state.getFurnaceChange(barId);
+            int diff = state.getFurnace().getChange(barId);
             if (diff > 0) {
                 outputs.put(barId, outputs.getOrDefault(barId, 0) + diff);
             }

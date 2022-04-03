@@ -1,8 +1,8 @@
 package com.toofifty.easyblastfurnace.methods;
 
+import com.toofifty.easyblastfurnace.state.BlastFurnaceState;
 import com.toofifty.easyblastfurnace.steps.ItemStep;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
-import com.toofifty.easyblastfurnace.utils.BlastFurnaceState;
 import net.runelite.api.ItemID;
 
 public class DrinkStaminaMethod extends Method
@@ -22,50 +22,49 @@ public class DrinkStaminaMethod extends Method
     @Override
     public MethodStep next(BlastFurnaceState state)
     {
-        if (!state.needsStaminaDose() && state.getInventoryQuantity(new int[]{
-            ItemID.VIAL,
-            ItemID.STAMINA_POTION1,
-            ItemID.STAMINA_POTION2,
-            ItemID.STAMINA_POTION3,
-        }) > 0) {
+        if (!state.getPlayer().needsStamina() &&
+            (state.getInventory().has(ItemID.VIAL) ||
+                state.getInventory().has(ItemID.STAMINA_POTION1) ||
+                state.getInventory().has(ItemID.STAMINA_POTION2) ||
+                state.getInventory().has(ItemID.STAMINA_POTION3))) {
             return depositInventory;
         }
 
-        if (!state.isBankOpen() || !state.needsStaminaDose()) return null;
+        if (!state.getBank().isOpen() || !state.getPlayer().needsStamina()) return null;
 
-        if (state.getFreeInventorySlots() == 0) {
+        if (!state.getInventory().hasFreeSlots()) {
             return depositInventory;
         }
 
-        if (state.getInventoryQuantity(ItemID.STAMINA_POTION1) > 0) {
+        if (state.getInventory().has(ItemID.STAMINA_POTION1)) {
             return drinkStaminaPotion1;
         }
 
-        if (state.getInventoryQuantity(ItemID.STAMINA_POTION2) > 0) {
+        if (state.getInventory().has(ItemID.STAMINA_POTION2)) {
             return drinkStaminaPotion2;
         }
 
-        if (state.getInventoryQuantity(ItemID.STAMINA_POTION3) > 0) {
+        if (state.getInventory().has(ItemID.STAMINA_POTION3)) {
             return drinkStaminaPotion3;
         }
 
-        if (state.getInventoryQuantity(ItemID.STAMINA_POTION4) > 0) {
+        if (state.getInventory().has(ItemID.STAMINA_POTION4)) {
             return drinkStaminaPotion4;
         }
 
-        if (state.getBankQuantity(ItemID.STAMINA_POTION1) > 0) {
+        if (state.getBank().has(ItemID.STAMINA_POTION1)) {
             return withdrawStaminaPotion1;
         }
 
-        if (state.getBankQuantity(ItemID.STAMINA_POTION2) > 0) {
+        if (state.getBank().has(ItemID.STAMINA_POTION2)) {
             return withdrawStaminaPotion2;
         }
 
-        if (state.getBankQuantity(ItemID.STAMINA_POTION3) > 0) {
+        if (state.getBank().has(ItemID.STAMINA_POTION3)) {
             return withdrawStaminaPotion3;
         }
 
-        if (state.getBankQuantity(ItemID.STAMINA_POTION4) > 0) {
+        if (state.getBank().has(ItemID.STAMINA_POTION4)) {
             return withdrawStaminaPotion4;
         }
 

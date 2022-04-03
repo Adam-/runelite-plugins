@@ -3,7 +3,7 @@ package com.toofifty.easyblastfurnace;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.toofifty.easyblastfurnace.overlays.*;
-import com.toofifty.easyblastfurnace.utils.BlastFurnaceState;
+import com.toofifty.easyblastfurnace.state.BlastFurnaceState;
 import com.toofifty.easyblastfurnace.utils.MethodHandler;
 import com.toofifty.easyblastfurnace.utils.ObjectManager;
 import com.toofifty.easyblastfurnace.utils.SessionStatistics;
@@ -164,7 +164,7 @@ public class EasyBlastFurnacePlugin extends Plugin
         if (!isEnabled) return;
 
         statistics.onFurnaceUpdate();
-        state.updatePreviousFurnaceQuantity();
+        state.getFurnace().update();
 
         // handle furnace ore/bar quantity changes
         methodHandler.next();
@@ -180,10 +180,10 @@ public class EasyBlastFurnacePlugin extends Plugin
         Matcher filledMatcher = COAL_FULL_MESSAGE.matcher(event.getMessage());
 
         if (emptyMatcher.matches()) {
-            state.emptyCoalBag();
+            state.getCoalBag().empty();
 
         } else if (filledMatcher.matches()) {
-            state.fillCoalBag();
+            state.getCoalBag().fill();
         }
 
         // handle coal bag changes
@@ -195,8 +195,8 @@ public class EasyBlastFurnacePlugin extends Plugin
     {
         if (!isEnabled) return;
 
-        if (event.getMenuOption().equals(FILL_ACTION)) state.fillCoalBag();
-        if (event.getMenuOption().equals(EMPTY_ACTION)) state.emptyCoalBag();
+        if (event.getMenuOption().equals(FILL_ACTION)) state.getCoalBag().fill();
+        if (event.getMenuOption().equals(EMPTY_ACTION)) state.getCoalBag().empty();
         if (event.getMenuOption().equals(DRINK_ACTION)) statistics.drinkStamina();
 
         // handle coal bag changes

@@ -1,9 +1,8 @@
 package com.toofifty.easyblastfurnace.methods;
 
+import com.toofifty.easyblastfurnace.state.BlastFurnaceState;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
-import com.toofifty.easyblastfurnace.utils.BlastFurnaceState;
 import net.runelite.api.ItemID;
-import net.runelite.client.plugins.blastfurnace.BarsOres;
 
 /**
  * Represents a basic method for all regular bars (using coal)
@@ -23,16 +22,16 @@ abstract public class MetalBarMethod extends Method
 
     private MethodStep checkPrerequisite(BlastFurnaceState state)
     {
-        if (state.getInventoryQuantity(ItemID.COAL_BAG_12019) == 0) {
-            return state.isBankOpen() ? withdrawCoalBag : openBank;
+        if (!state.getInventory().has(ItemID.COAL_BAG_12019)) {
+            return state.getBank().isOpen() ? withdrawCoalBag : openBank;
         }
 
-        if (state.getInventoryQuantity(ItemID.ICE_GLOVES) == 0 &&
-            state.getEquipmentQuantity(ItemID.ICE_GLOVES) == 0) {
-            return state.isBankOpen() ? withdrawIceGloves : openBank;
+        if (!state.getInventory().has(ItemID.ICE_GLOVES) &&
+            !state.getEquipment().equipped(ItemID.ICE_GLOVES)) {
+            return state.getBank().isOpen() ? withdrawIceGloves : openBank;
         }
 
-        if (state.getInventoryQuantity(ItemID.ICE_GLOVES) > 0) {
+        if (state.getInventory().has(ItemID.ICE_GLOVES)) {
             return equipIceGloves;
         }
 
@@ -45,54 +44,54 @@ abstract public class MetalBarMethod extends Method
         MethodStep prerequisite = checkPrerequisite(state);
         if (prerequisite != null) return prerequisite;
 
-        if (state.getFurnaceQuantity(BarsOres.COAL) >= coalPer() &&
-            state.getFurnaceQuantity(oreItem()) >= 1) {
+        if (state.getFurnace().getQuantity(ItemID.COAL) >= coalPer() &&
+            state.getFurnace().getQuantity(oreItem()) >= 1) {
             return waitForBars;
         }
 
-        if (state.getFurnaceQuantity(barItem()) > 0) {
+        if (state.getFurnace().has(barItem())) {
             return collectBars;
         }
 
-        if (state.isBankOpen()) {
-            if (state.getInventoryQuantity(barItem()) > 0) {
+        if (state.getBank().isOpen()) {
+            if (state.getInventory().has(barItem())) {
                 return depositInventory;
             }
 
-            if (state.getCoalInCoalBag() == 0) {
+            if (state.getCoalBag().isEmpty()) {
                 return fillCoalBag;
             }
 
-            if (state.getInventoryQuantity(ItemID.COAL) > 0) {
+            if (state.getInventory().has(ItemID.COAL)) {
                 return putOntoConveyorBelt;
             }
 
-            if (state.getFurnaceQuantity(BarsOres.COAL) < 27 * (coalPer() - 1)) {
+            if (state.getFurnace().getQuantity(ItemID.COAL) < 27 * (coalPer() - 1)) {
                 return withdrawCoal;
             }
 
-            if (state.getInventoryQuantity(oreItem()) == 0) {
+            if (!state.getInventory().has(oreItem())) {
                 return withdrawOre();
             }
         }
 
-        if (state.getInventoryQuantity(barItem()) > 0) {
+        if (state.getInventory().has(barItem())) {
             return openBank;
         }
 
-        if (state.getInventoryQuantity(ItemID.COAL_BAG_12019) == 0) {
+        if (!state.getInventory().has(ItemID.COAL_BAG_12019)) {
             return openBank;
         }
 
-        if (state.getInventoryQuantity(ItemID.COAL) > 0) {
+        if (state.getInventory().has(ItemID.COAL)) {
             return putOntoConveyorBelt;
         }
 
-        if (state.getInventoryQuantity(oreItem()) > 0) {
+        if (state.getInventory().has(oreItem())) {
             return putOntoConveyorBelt;
         }
 
-        if (state.getCoalInCoalBag() > 0) {
+        if (!state.getCoalBag().isEmpty()) {
             return emptyCoalBag;
         }
 

@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
 import com.toofifty.easyblastfurnace.methods.*;
+import com.toofifty.easyblastfurnace.state.BlastFurnaceState;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
 import lombok.Getter;
 import net.runelite.api.ItemID;
@@ -41,7 +42,7 @@ public class MethodHandler
 
     private boolean inInventory(int itemId)
     {
-        return state.getInventoryQuantity(itemId) > 0;
+        return state.getInventory().has(itemId);
     }
 
     private Method getMethodFromInventory()

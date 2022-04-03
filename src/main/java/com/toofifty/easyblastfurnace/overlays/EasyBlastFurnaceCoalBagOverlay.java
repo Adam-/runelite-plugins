@@ -4,7 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
 import com.toofifty.easyblastfurnace.EasyBlastFurnacePlugin;
-import com.toofifty.easyblastfurnace.utils.BlastFurnaceState;
+import com.toofifty.easyblastfurnace.state.BlastFurnaceState;
 import net.runelite.api.ItemID;
 import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.ui.overlay.WidgetItemOverlay;
@@ -46,7 +46,7 @@ public class EasyBlastFurnaceCoalBagOverlay extends WidgetItemOverlay
 
         textComponent.setPosition(new Point(bounds.x - 1, bounds.y + 8));
         textComponent.setColor(color);
-        textComponent.setText(Integer.toString(state.getCoalInCoalBag()));
+        textComponent.setText(Integer.toString(state.getCoalBag().getCoal()));
 
         textComponent.render(graphics);
     }

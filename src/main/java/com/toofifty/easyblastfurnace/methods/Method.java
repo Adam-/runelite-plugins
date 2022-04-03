@@ -1,11 +1,11 @@
 package com.toofifty.easyblastfurnace.methods;
 
 import com.toofifty.easyblastfurnace.EasyBlastFurnacePlugin;
+import com.toofifty.easyblastfurnace.state.BlastFurnaceState;
 import com.toofifty.easyblastfurnace.steps.ItemStep;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
 import com.toofifty.easyblastfurnace.steps.ObjectStep;
 import com.toofifty.easyblastfurnace.steps.WidgetStep;
-import com.toofifty.easyblastfurnace.utils.BlastFurnaceState;
 import net.runelite.api.ItemID;
 import net.runelite.api.widgets.WidgetInfo;
 
