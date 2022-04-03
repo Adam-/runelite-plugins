@@ -5,17 +5,38 @@ import com.toofifty.easyblastfurnace.config.ItemOverlaySetting;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 
 import java.awt.*;
 
 @ConfigGroup("easy-blastfurnace")
 public interface EasyBlastFurnaceConfig extends Config
 {
+    @ConfigSection(
+        name = "Guidance overlays",
+        description = "Configure instruction, item and object overlays",
+        position = 0
+    )
+    String guidanceOverlays = "guidanceOverlays";
+
+    @ConfigItem(
+        position = 0,
+        keyName = "showStepOverlay",
+        name = "Show step overlay",
+        description = "Show an instructional overlay of the next step",
+        section = guidanceOverlays
+    )
+    default boolean showStepOverlay()
+    {
+        return true;
+    }
+
     @ConfigItem(
         position = 1,
         keyName = "itemOverlayMode",
         name = "Item overlay mode",
-        description = "Select how highlighted items appear"
+        description = "Select how highlighted items appear",
+        section = guidanceOverlays
     )
     default ItemOverlaySetting itemOverlayMode()
     {
@@ -25,8 +46,9 @@ public interface EasyBlastFurnaceConfig extends Config
     @ConfigItem(
         position = 2,
         keyName = "itemOverlayTextMode",
-        name = "Item overlay text mode",
-        description = "Select where to display tooltip text for items"
+        name = "Item overlay tooltip",
+        description = "Select where to display tooltip text for items",
+        section = guidanceOverlays
     )
     default HighlightOverlayTextSetting itemOverlayTextMode()
     {
@@ -37,7 +59,8 @@ public interface EasyBlastFurnaceConfig extends Config
         position = 3,
         keyName = "itemOverlayColor",
         name = "Item overlay color",
-        description = "Change the color of the item overlay"
+        description = "Change the color of the item overlay",
+        section = guidanceOverlays
     )
     default Color itemOverlayColor()
     {
@@ -48,7 +71,8 @@ public interface EasyBlastFurnaceConfig extends Config
         position = 4,
         keyName = "showObjectOverlays",
         name = "Show object overlays",
-        description = "Enables clickbox overlays for the next object to click"
+        description = "Enables clickbox overlays for the next object to click",
+        section = guidanceOverlays
     )
     default boolean showObjectOverlays()
     {
@@ -58,8 +82,9 @@ public interface EasyBlastFurnaceConfig extends Config
     @ConfigItem(
         position = 5,
         keyName = "objectOverlayTextMode",
-        name = "Object overlay text mode",
-        description = "Select where to display tooltip text for game objects"
+        name = "Object overlay tooltip",
+        description = "Select where to display tooltip text for game objects",
+        section = guidanceOverlays
     )
     default HighlightOverlayTextSetting objectOverlayTextMode()
     {
@@ -70,18 +95,27 @@ public interface EasyBlastFurnaceConfig extends Config
         position = 6,
         keyName = "objectOverlayColor",
         name = "Object overlay color",
-        description = "Change the color of the object overlay"
+        description = "Change the color of the object overlay",
+        section = guidanceOverlays
     )
     default Color objectOverlayColor()
     {
         return Color.CYAN;
     }
 
+    @ConfigSection(
+        name = "Coal bag overlay",
+        description = "Configure coal bag overlay",
+        position = 1
+    )
+    String coalBagOverlay = "coalBagOverlay";
+
     @ConfigItem(
-        position = 7,
+        position = 0,
         keyName = "showCoalBagOverlay",
-        name = "Show coal bag contents",
-        description = "Display the amount of coal inside your coal bag"
+        name = "Show coal bag overlay",
+        description = "Display the amount of coal inside your coal bag",
+        section = coalBagOverlay
     )
     default boolean showCoalBagOverlay()
     {
@@ -89,32 +123,30 @@ public interface EasyBlastFurnaceConfig extends Config
     }
 
     @ConfigItem(
-        position = 8,
+        position = 1,
         keyName = "coalBagOverlayColor",
         name = "Coal bag overlay color",
-        description = "Change the color of the coal bag count"
+        description = "Change the color of the coal bag count",
+        section = coalBagOverlay
     )
     default Color coalBagOverlayColor()
     {
         return Color.CYAN;
     }
 
-    @ConfigItem(
-        position = 9,
-        keyName = "showStepOverlay",
-        name = "Show step overlay",
-        description = "Show a generic overlay of the next step"
+    @ConfigSection(
+        name = "Statistics overlay",
+        description = "Configure statistics overlay",
+        position = 2
     )
-    default boolean showStepOverlay()
-    {
-        return true;
-    }
+    String statisticsOverlay = "statisticsOverlay";
 
     @ConfigItem(
-        position = 10,
+        position = 0,
         keyName = "showStatisticsOverlay",
         name = "Show statistics",
-        description = "Show an overlay with statistics such as bars todo/done, XP banked & stamina doses used."
+        description = "Show an overlay with statistics such as bars todo/done, XP banked & stamina doses used.",
+        section = statisticsOverlay
     )
     default boolean showStatisticsOverlay()
     {
@@ -122,7 +154,7 @@ public interface EasyBlastFurnaceConfig extends Config
     }
 
     @ConfigItem(
-        position = 11,
+        position = 3,
         keyName = "requireStaminaThreshold",
         name = "Require stamina threshold",
         description = "Require a stamina dose when run energy is lower than this amount. Feature is disabled when set to 0."
