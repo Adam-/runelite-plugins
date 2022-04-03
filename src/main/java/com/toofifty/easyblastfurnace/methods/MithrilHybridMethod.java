@@ -32,6 +32,6 @@ public class MithrilHybridMethod extends GoldHybridMethod
     @Override
     public String getName()
     {
-        return "Gold + mithril";
+        return "Gold + mithril bars";
     }
 }

@@ -32,6 +32,6 @@ public class AdamantiteHybridMethod extends GoldHybridMethod
     @Override
     public String getName()
     {
-        return "Gold + adamantite";
+        return "Gold + adamantite bars";
     }
 }

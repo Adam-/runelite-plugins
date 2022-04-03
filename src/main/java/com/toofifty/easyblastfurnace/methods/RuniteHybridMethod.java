@@ -32,6 +32,6 @@ public class RuniteHybridMethod extends GoldHybridMethod
     @Override
     public String getName()
     {
-        return "Gold + runite";
+        return "Gold + runite bars";
     }
 }

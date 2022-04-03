@@ -50,12 +50,11 @@ public class EasyBlastFurnaceInstructionOverlay extends OverlayPanel
         if (!plugin.isEnabled()) return null;
         if (!config.showStepOverlay()) return null;
 
+        String methodName = method != null ? method.getName() : "No method selected";
         String tooltip = step != null ? step.getTooltip() : "Withdraw an ore from the bank to start. You can start a hybrid method by also withdrawing gold ore.";
 
         panelComponent.getChildren().add(TitleComponent.builder().text("Easy Blast Furnace").build());
-        if (method != null) {
-            panelComponent.getChildren().add(LineComponent.builder().left(method.getName()).leftColor(config.itemOverlayColor()).build());
-        }
+        panelComponent.getChildren().add(LineComponent.builder().left(methodName).leftColor(config.itemOverlayColor()).build());
         panelComponent.getChildren().add(LineComponent.builder().left(tooltip).leftColor(TOOLTIP_COLOR).build());
 
         return super.render(graphics);
