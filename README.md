@@ -14,6 +14,9 @@ Huge thanks to [C Engineer](https://www.youtube.com/channel/UCUNoAjAgVHEHc6jrUr4
 
 and 'public' chat messages for each of the above (that only you can see)
 
+Sounds are downloaded to the local file system instead of being 'baked in' to the plugin build, allowing for further
+expansion in the future while also 'supporting' user-swapped sounds for pre-existing events
+
 ### Planned / Work In Progress expansions
 - none
 

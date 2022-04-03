@@ -22,16 +22,11 @@ public class SoundEngine {
     private Clip clip = null;
 
     private boolean loadClip(Sound sound) {
-        try (InputStream resourceStream = SoundEngine.class.getResourceAsStream(sound.getResourceName())) {
-            if (resourceStream == null) {
-                log.warn("Failed to load C Engineer sound " + sound + " as resource stream was null!");
-            } else {
-                try (InputStream fileStream = new BufferedInputStream(resourceStream);
-                     AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(fileStream)) {
-                    clip.open(audioInputStream); // liable to error with pulseaudio, works on windows, no clue about mac
-                }
-                return true;
+        try (InputStream stream = new BufferedInputStream(SoundFileManager.getSoundStream(sound))) {
+            try (AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(stream)) {
+                clip.open(audioInputStream); // liable to error with pulseaudio, works on windows, one user informs me mac works
             }
+            return true;
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
             log.warn("Failed to load C Engineer sound " + sound, e);
         }

@@ -13,10 +13,12 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import okhttp3.OkHttpClient;
 
 import javax.inject.Inject;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,6 +43,12 @@ public class CEngineerCompletedPlugin extends Plugin
 
 	@Inject
 	private CEngineerCompletedConfig config;
+
+	@Inject
+	private ScheduledExecutorService executor;
+
+	@Inject
+	private OkHttpClient okHttpClient;
 
 	private final Varbits[] varbitsAchievementDiaries = {
 			Varbits.DIARY_ARDOUGNE_EASY, Varbits.DIARY_ARDOUGNE_MEDIUM, Varbits.DIARY_ARDOUGNE_HARD, Varbits.DIARY_ARDOUGNE_ELITE,
@@ -82,6 +90,10 @@ public class CEngineerCompletedPlugin extends Plugin
 	{
 		clientThread.invoke(this::setupOldMaps);
 		lastLoginTick = -1;
+		executor.submit(() -> {
+			SoundFileManager.ensureDownloadDirectoryExists();
+			SoundFileManager.downloadAllMissingSounds(okHttpClient);
+		});
 	}
 
 	@Override
