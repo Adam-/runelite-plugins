@@ -112,17 +112,6 @@ public interface EasyBlastFurnaceConfig extends Config
 
     @ConfigItem(
         position = 10,
-        keyName = "requireStaminaThreshold",
-        name = "Require stamina threshold",
-        description = "Require a stamina dose when run energy is lower than this amount. Feature is disabled when set to 0."
-    )
-    default int requireStaminaThreshold()
-    {
-        return 50;
-    }
-
-    @ConfigItem(
-        position = 9,
         keyName = "showStatisticsOverlay",
         name = "Show statistics",
         description = "Show an overlay with statistics such as bars todo/done, XP banked & stamina doses used."
@@ -130,5 +119,16 @@ public interface EasyBlastFurnaceConfig extends Config
     default boolean showStatisticsOverlay()
     {
         return true;
+    }
+
+    @ConfigItem(
+        position = 11,
+        keyName = "requireStaminaThreshold",
+        name = "Require stamina threshold",
+        description = "Require a stamina dose when run energy is lower than this amount. Feature is disabled when set to 0."
+    )
+    default int requireStaminaThreshold()
+    {
+        return 50;
     }
 }

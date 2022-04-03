@@ -37,7 +37,7 @@ public class EasyBlastFurnaceInstructionOverlay extends OverlayPanel
         super(plugin);
         this.plugin = plugin;
 
-        getMenuEntries().add(new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY, "Reset", "Easy blast furnace overlay"));
+        getMenuEntries().add(new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY, RESET_ACTION, "Easy blast furnace overlay"));
         getMenuEntries().add(new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY_CONFIG, OverlayManager.OPTION_CONFIGURE, "Easy blast furnace overlay"));
     }
 

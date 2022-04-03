@@ -92,6 +92,7 @@ public class EasyBlastFurnacePlugin extends Plugin
     @Override
     protected void shutDown()
     {
+        statistics.clear();
         methodHandler.clear();
 
         overlayManager.remove(instructionOverlay);
@@ -125,6 +126,7 @@ public class EasyBlastFurnacePlugin extends Plugin
             case CONVEYOR_BELT:
             case BAR_DISPENSER:
             case BANK_CHEST:
+                statistics.clear();
                 methodHandler.clear();
                 isEnabled = false;
         }
@@ -203,6 +205,10 @@ public class EasyBlastFurnacePlugin extends Plugin
         if (event.getOverlay() == instructionOverlay &&
             event.getEntry().getOption().equals(EasyBlastFurnaceInstructionOverlay.RESET_ACTION)) {
             methodHandler.clear();
+        }
+        if (event.getOverlay() == statisticsOverlay &&
+            event.getEntry().getOption().equals(EasyBlastFurnaceStatisticsOverlay.CLEAR_ACTION)) {
+            statistics.clear();
         }
     }
 

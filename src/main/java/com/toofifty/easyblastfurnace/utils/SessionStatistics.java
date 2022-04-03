@@ -34,6 +34,12 @@ public class SessionStatistics
 
     private final Map<Integer, Integer> outputs = new HashMap<>();
 
+    public void clear()
+    {
+        outputs.clear();
+        staminaDoses = 0;
+    }
+
     public void drinkStamina()
     {
         staminaDoses++;

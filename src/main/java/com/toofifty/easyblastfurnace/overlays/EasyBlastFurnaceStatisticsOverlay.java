@@ -16,6 +16,8 @@ import java.awt.*;
 @Singleton
 public class EasyBlastFurnaceStatisticsOverlay extends OverlayPanel
 {
+    public static final String CLEAR_ACTION = "Clear";
+
     @Inject
     private SessionStatistics statistics;
 
@@ -30,6 +32,7 @@ public class EasyBlastFurnaceStatisticsOverlay extends OverlayPanel
         super(plugin);
         this.plugin = plugin;
 
+        getMenuEntries().add(new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY, CLEAR_ACTION, "Easy blast furnace statistics"));
         getMenuEntries().add(new OverlayMenuEntry(MenuAction.RUNELITE_OVERLAY_CONFIG, OverlayManager.OPTION_CONFIGURE, "Easy blast furnace statistics"));
     }
 
