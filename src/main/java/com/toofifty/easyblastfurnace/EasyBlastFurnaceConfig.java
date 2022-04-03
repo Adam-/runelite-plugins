@@ -2,10 +2,7 @@ package com.toofifty.easyblastfurnace;
 
 import com.toofifty.easyblastfurnace.config.HighlightOverlayTextSetting;
 import com.toofifty.easyblastfurnace.config.ItemOverlaySetting;
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
-import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.*;
 
 import java.awt.*;
 
@@ -154,11 +151,128 @@ public interface EasyBlastFurnaceConfig extends Config
     }
 
     @ConfigItem(
+        position = 1,
+        keyName = "showBarsTodo",
+        name = "Show bars todo",
+        description = "Show amount of bars that can be made from ores in the bank.",
+        section = statisticsOverlay
+    )
+    default boolean showBarsTodo()
+    {
+        return true;
+    }
+
+    @ConfigItem(
+        position = 2,
+        keyName = "showBarsMade",
+        name = "Show bars made",
+        description = "Show amount of bars made in the session.",
+        section = statisticsOverlay
+    )
+    default boolean showBarsMade()
+    {
+        return true;
+    }
+
+    @ConfigItem(
         position = 3,
+        keyName = "showXpBanked",
+        name = "Show XP banked",
+        description = "Show amount of Smithing XP that can be gained from ores in the bank.",
+        section = statisticsOverlay
+    )
+    default boolean showXpBanked()
+    {
+        return true;
+    }
+
+    @ConfigItem(
+        position = 4,
+        keyName = "showXpGained",
+        name = "Show XP gained",
+        description = "Show amount of Smithing XP gained in the session.",
+        section = statisticsOverlay
+    )
+    default boolean showXpGained()
+    {
+        return true;
+    }
+
+    @ConfigItem(
+        position = 5,
+        keyName = "showStaminaDoses",
+        name = "Show stamina doses",
+        description = "Show amount of stamina potion doses consumed in the session.",
+        section = statisticsOverlay
+    )
+    default boolean showStaminaDoses()
+    {
+        return true;
+    }
+
+    @ConfigSection(
+        name = "Cleanup",
+        description = "Configure auto-clearing plugin state",
+        position = 3,
+        closedByDefault = true
+    )
+    String cleanup = "cleanup";
+
+    @ConfigItem(
+        position = 0,
+        keyName = "clearMethodOnLogout",
+        name = "Clear method on logout",
+        description = "Clear the current method on logout. If disabled, the method can still be cleared by (shift) right clicking the overlay.",
+        section = cleanup
+    )
+    default boolean clearMethodOnLogout()
+    {
+        return true;
+    }
+
+    @ConfigItem(
+        position = 1,
+        keyName = "clearMethodOnExit",
+        name = "Clear method on BF exit",
+        description = "Clear the current method when exiting the Blast Furnace. If disabled, the method can still be cleared by (shift) right clicking the overlay.",
+        section = cleanup
+    )
+    default boolean clearMethodOnExit()
+    {
+        return true;
+    }
+
+    @ConfigItem(
+        position = 2,
+        keyName = "clearStatisticsOnLogout",
+        name = "Clear stats on logout",
+        description = "Clear the statistics on logout. If disabled, the statistics can still be cleared by (shift) right clicking the overlay.",
+        section = cleanup
+    )
+    default boolean clearStatisticsOnLogout()
+    {
+        return true;
+    }
+
+    @ConfigItem(
+        position = 3,
+        keyName = "clearStatisticsOnExit",
+        name = "Clear stats on BF exit",
+        description = "Clear the statistics when exiting the Blast Furnace. If disabled, the statistics can still be cleared by (shift) right clicking the overlay.",
+        section = cleanup
+    )
+    default boolean clearStatisticsOnExit()
+    {
+        return true;
+    }
+
+    @ConfigItem(
+        position = 4,
         keyName = "requireStaminaThreshold",
-        name = "Require stamina threshold",
+        name = "Low energy threshold",
         description = "Require a stamina dose when run energy is lower than this amount. Feature is disabled when set to 0."
     )
+    @Units(Units.PERCENT)
     default int requireStaminaThreshold()
     {
         return 50;

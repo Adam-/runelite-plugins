@@ -42,30 +42,40 @@ public class EasyBlastFurnaceStatisticsOverlay extends OverlayPanel
         if (!plugin.isEnabled()) return null;
         if (!config.showStatisticsOverlay()) return null;
 
-        panelComponent.getChildren().add(LineComponent.builder()
-            .left("Bars todo:")
-            .right(Integer.toString(statistics.getTotalActionsBanked()))
-            .build());
+        if (config.showBarsTodo()) {
+            panelComponent.getChildren().add(LineComponent.builder()
+                .left("Bars todo:")
+                .right(Integer.toString(statistics.getTotalActionsBanked()))
+                .build());
+        }
 
-        panelComponent.getChildren().add(LineComponent.builder()
-            .left("Bars made:")
-            .right(Integer.toString(statistics.getTotalActionsDone()))
-            .build());
+        if (config.showBarsMade()) {
+            panelComponent.getChildren().add(LineComponent.builder()
+                .left("Bars made:")
+                .right(Integer.toString(statistics.getTotalActionsDone()))
+                .build());
+        }
 
-        panelComponent.getChildren().add(LineComponent.builder()
-            .left("XP banked:")
-            .right(Double.toString(statistics.getTotalXpBanked()))
-            .build());
+        if (config.showXpBanked()) {
+            panelComponent.getChildren().add(LineComponent.builder()
+                .left("XP banked:")
+                .right(Double.toString(statistics.getTotalXpBanked()))
+                .build());
+        }
 
-        panelComponent.getChildren().add(LineComponent.builder()
-            .left("XP gained:")
-            .right(Double.toString(statistics.getTotalXpGained()))
-            .build());
+        if (config.showXpGained()) {
+            panelComponent.getChildren().add(LineComponent.builder()
+                .left("XP gained:")
+                .right(Double.toString(statistics.getTotalXpGained()))
+                .build());
+        }
 
-        panelComponent.getChildren().add(LineComponent.builder()
-            .left("Stamina doses:")
-            .right(Integer.toString(statistics.getStaminaDoses()))
-            .build());
+        if (config.showStaminaDoses()) {
+            panelComponent.getChildren().add(LineComponent.builder()
+                .left("Stamina doses:")
+                .right(Integer.toString(statistics.getStaminaDoses()))
+                .build());
+        }
 
         return super.render(graphics);
     }

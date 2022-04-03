@@ -46,6 +46,9 @@ public class EasyBlastFurnacePlugin extends Plugin
     private OverlayManager overlayManager;
 
     @Inject
+    private EasyBlastFurnaceConfig config;
+
+    @Inject
     private BlastFurnaceState state;
 
     @Inject
@@ -126,8 +129,8 @@ public class EasyBlastFurnacePlugin extends Plugin
             case CONVEYOR_BELT:
             case BAR_DISPENSER:
             case BANK_CHEST:
-                statistics.clear();
-                methodHandler.clear();
+                if (config.clearMethodOnExit()) methodHandler.clear();
+                if (config.clearStatisticsOnExit()) statistics.clear();
                 isEnabled = false;
         }
     }
@@ -136,7 +139,8 @@ public class EasyBlastFurnacePlugin extends Plugin
     public void onGameStateChanged(GameStateChanged event)
     {
         if (event.getGameState() != GameState.LOGGED_IN) {
-            methodHandler.clear();
+            if (config.clearMethodOnLogout()) methodHandler.clear();
+            if (config.clearStatisticsOnLogout()) statistics.clear();
             isEnabled = false;
         }
     }
