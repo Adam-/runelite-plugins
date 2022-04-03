@@ -4,28 +4,13 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
 import com.toofifty.easyblastfurnace.methods.*;
-import com.toofifty.easyblastfurnace.overlays.*;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
+import lombok.Getter;
 import net.runelite.api.ItemID;
 
 @Singleton
 public class MethodHandler
 {
-    @Inject
-    private EasyBlastFurnaceInstructionOverlay instructionOverlay;
-
-    @Inject
-    private EasyBlastFurnaceItemStepOverlay itemStepOverlay;
-
-    @Inject
-    private EasyBlastFurnaceObjectStepOverlay objectStepOverlay;
-
-    @Inject
-    private EasyBlastFurnaceWidgetStepOverlay widgetStepOverlay;
-
-    @Inject
-    private EasyBlastFurnaceCoalBagOverlay coalBagOverlay;
-
     @Inject
     private EasyBlastFurnaceConfig config;
 
@@ -34,29 +19,24 @@ public class MethodHandler
 
     private final DrinkStaminaMethod drinkStaminaMethod = new DrinkStaminaMethod();
 
-    private Method currentMethod;
+    @Getter
+    private Method method;
+
+    @Getter
+    private MethodStep step;
 
     public void next()
     {
-        if (currentMethod == null) return;
+        if (method == null) return;
 
-        MethodStep step = drinkStaminaMethod.next(state);
-        if (step == null) step = currentMethod.next(state);
-
-        instructionOverlay.setStep(step);
-        itemStepOverlay.setStep(step);
-        objectStepOverlay.setStep(step);
-        widgetStepOverlay.setStep(step);
+        step = drinkStaminaMethod.next(state);
+        if (step == null) step = method.next(state);
     }
 
     public void clear()
     {
-        currentMethod = null;
-        instructionOverlay.setMethod(null);
-        instructionOverlay.setStep(null);
-        itemStepOverlay.setStep(null);
-        objectStepOverlay.setStep(null);
-        widgetStepOverlay.setStep(null);
+        method = null;
+        step = null;
     }
 
     private boolean inInventory(int itemId)
@@ -67,21 +47,21 @@ public class MethodHandler
     private Method getMethodFromInventory()
     {
         // ensure method doesn't reset after gold/metal has been removed from inventory
-        if (currentMethod instanceof GoldHybridMethod) return null;
+        if (method instanceof GoldHybridMethod) return null;
 
         if (inInventory(ItemID.GOLD_ORE) ||
-            currentMethod instanceof GoldBarMethod) {
+            method instanceof GoldBarMethod) {
 
             if (inInventory(ItemID.MITHRIL_ORE) ||
-                currentMethod instanceof MithrilBarMethod)
+                method instanceof MithrilBarMethod)
                 return new MithrilHybridMethod();
 
             if (inInventory(ItemID.ADAMANTITE_ORE) ||
-                currentMethod instanceof AdamantiteBarMethod)
+                method instanceof AdamantiteBarMethod)
                 return new AdamantiteHybridMethod();
 
             if (inInventory(ItemID.RUNITE_ORE) ||
-                currentMethod instanceof RuniteBarMethod)
+                method instanceof RuniteBarMethod)
                 return new RuniteHybridMethod();
 
             return new GoldBarMethod();
@@ -99,12 +79,10 @@ public class MethodHandler
     {
         Method method = getMethodFromInventory();
         if (method == null ||
-            (currentMethod != null && currentMethod.getClass().isInstance(method)))
+            (this.method != null && this.method.getClass().isInstance(method)))
             return;
 
         clear();
-        currentMethod = method;
-
-        instructionOverlay.setMethod(currentMethod);
+        this.method = method;
     }
 }

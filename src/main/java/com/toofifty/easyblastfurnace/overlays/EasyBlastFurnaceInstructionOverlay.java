@@ -6,7 +6,7 @@ import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
 import com.toofifty.easyblastfurnace.EasyBlastFurnacePlugin;
 import com.toofifty.easyblastfurnace.methods.Method;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
-import lombok.Setter;
+import com.toofifty.easyblastfurnace.utils.MethodHandler;
 import net.runelite.api.MenuAction;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
@@ -28,11 +28,8 @@ public class EasyBlastFurnaceInstructionOverlay extends OverlayPanel
     @Inject
     private EasyBlastFurnaceConfig config;
 
-    @Setter
-    private MethodStep step;
-
-    @Setter
-    private Method method;
+    @Inject
+    private MethodHandler methodHandler;
 
     @Inject
     EasyBlastFurnaceInstructionOverlay(EasyBlastFurnacePlugin plugin)
@@ -49,6 +46,9 @@ public class EasyBlastFurnaceInstructionOverlay extends OverlayPanel
     {
         if (!plugin.isEnabled()) return null;
         if (!config.showStepOverlay()) return null;
+
+        Method method = methodHandler.getMethod();
+        MethodStep step = methodHandler.getStep();
 
         String methodName = method != null ? method.getName() : "No method selected";
         String tooltip = step != null ? step.getTooltip() : "Withdraw an ore from the bank to start. You can start a hybrid method by also withdrawing gold ore.";

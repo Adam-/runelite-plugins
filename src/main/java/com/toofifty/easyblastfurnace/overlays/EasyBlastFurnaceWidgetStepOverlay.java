@@ -5,7 +5,7 @@ import com.toofifty.easyblastfurnace.config.HighlightOverlayTextSetting;
 import com.toofifty.easyblastfurnace.config.ItemOverlaySetting;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
 import com.toofifty.easyblastfurnace.steps.WidgetStep;
-import lombok.Setter;
+import com.toofifty.easyblastfurnace.utils.MethodHandler;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.ui.overlay.Overlay;
@@ -27,8 +27,8 @@ public class EasyBlastFurnaceWidgetStepOverlay extends Overlay
     @Inject
     private EasyBlastFurnaceConfig config;
 
-    @Setter
-    private MethodStep step;
+    @Inject
+    private MethodHandler methodHandler;
 
     EasyBlastFurnaceWidgetStepOverlay()
     {
@@ -40,9 +40,12 @@ public class EasyBlastFurnaceWidgetStepOverlay extends Overlay
     @Override
     public Dimension render(Graphics2D graphics)
     {
+        if (config.itemOverlayMode() == ItemOverlaySetting.NONE) return null;
+
+        MethodStep step = methodHandler.getStep();
+
         if (step == null) return null;
         if (!(step instanceof WidgetStep)) return null;
-        if (config.itemOverlayMode() == ItemOverlaySetting.NONE) return null;
 
         Widget widget = client.getWidget(((WidgetStep) step).getWidgetInfo());
         if (widget == null) return null;

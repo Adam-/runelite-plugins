@@ -13,13 +13,13 @@ import net.runelite.client.plugins.blastfurnace.BarsOres;
  */
 abstract public class MetalBarMethod extends Method
 {
-    abstract MethodStep withdrawOre();
+    public abstract int oreItem();
 
-    abstract int oreItem();
+    protected abstract MethodStep withdrawOre();
 
-    abstract int barItem();
+    protected abstract int barItem();
 
-    abstract int coalPer();
+    protected abstract int coalPer();
 
     private MethodStep checkPrerequisite(BlastFurnaceState state)
     {

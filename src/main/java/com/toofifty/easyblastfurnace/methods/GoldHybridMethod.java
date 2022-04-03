@@ -5,16 +5,8 @@ import com.toofifty.easyblastfurnace.utils.BlastFurnaceState;
 import net.runelite.api.ItemID;
 import net.runelite.client.plugins.blastfurnace.BarsOres;
 
-abstract public class GoldHybridMethod extends Method
+abstract public class GoldHybridMethod extends MetalBarMethod
 {
-    abstract MethodStep withdrawOre();
-
-    abstract int oreItem();
-
-    abstract int barItem();
-
-    abstract int coalPer();
-
     private MethodStep checkPrerequisite(BlastFurnaceState state)
     {
         if (state.getInventoryQuantity(ItemID.COAL_BAG_12019) == 0) {

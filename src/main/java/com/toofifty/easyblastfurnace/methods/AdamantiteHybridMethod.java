@@ -6,25 +6,25 @@ import net.runelite.api.ItemID;
 public class AdamantiteHybridMethod extends GoldHybridMethod
 {
     @Override
-    MethodStep withdrawOre()
+    protected MethodStep withdrawOre()
     {
         return withdrawAdamantiteOre;
     }
 
     @Override
-    int oreItem()
+    public int oreItem()
     {
         return ItemID.ADAMANTITE_ORE;
     }
 
     @Override
-    int barItem()
+    protected int barItem()
     {
         return ItemID.ADAMANTITE_BAR;
     }
 
     @Override
-    int coalPer()
+    protected int coalPer()
     {
         return 3;
     }

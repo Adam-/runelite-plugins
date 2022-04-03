@@ -6,6 +6,7 @@ import com.toofifty.easyblastfurnace.overlays.*;
 import com.toofifty.easyblastfurnace.utils.BlastFurnaceState;
 import com.toofifty.easyblastfurnace.utils.MethodHandler;
 import com.toofifty.easyblastfurnace.utils.ObjectManager;
+import com.toofifty.easyblastfurnace.utils.SessionStatistics;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -34,8 +35,9 @@ public class EasyBlastFurnacePlugin extends Plugin
     private static final Pattern COAL_FULL_MESSAGE = Pattern.compile("^The coal bag contains 27 pieces of coal.$");
     private static final Pattern COAL_EMPTY_MESSAGE = Pattern.compile("^The coal bag is now empty.$");
 
-    private static final int FILL_ACTION = 33;
-    private static final int EMPTY_ACTION = 36;
+    private static final String FILL_ACTION = "Fill";
+    private static final String EMPTY_ACTION = "Empty";
+    private static final String DRINK_ACTION = "Drink";
 
     @Inject
     private Client client;
@@ -53,6 +55,9 @@ public class EasyBlastFurnacePlugin extends Plugin
     private EasyBlastFurnaceInstructionOverlay instructionOverlay;
 
     @Inject
+    private EasyBlastFurnaceStatisticsOverlay statisticsOverlay;
+
+    @Inject
     private EasyBlastFurnaceItemStepOverlay itemStepOverlay;
 
     @Inject
@@ -67,6 +72,9 @@ public class EasyBlastFurnacePlugin extends Plugin
     @Inject
     private MethodHandler methodHandler;
 
+    @Inject
+    private SessionStatistics statistics;
+
     @Getter
     private boolean isEnabled = false;
 
@@ -74,6 +82,7 @@ public class EasyBlastFurnacePlugin extends Plugin
     protected void startUp()
     {
         overlayManager.add(instructionOverlay);
+        overlayManager.add(statisticsOverlay);
         overlayManager.add(coalBagOverlay);
         overlayManager.add(itemStepOverlay);
         overlayManager.add(objectStepOverlay);
@@ -86,6 +95,7 @@ public class EasyBlastFurnacePlugin extends Plugin
         methodHandler.clear();
 
         overlayManager.remove(instructionOverlay);
+        overlayManager.remove(statisticsOverlay);
         overlayManager.remove(coalBagOverlay);
         overlayManager.remove(itemStepOverlay);
         overlayManager.remove(objectStepOverlay);
@@ -147,6 +157,9 @@ public class EasyBlastFurnacePlugin extends Plugin
     {
         if (!isEnabled) return;
 
+        statistics.onFurnaceUpdate();
+        state.updatePreviousFurnaceQuantity();
+
         // handle furnace ore/bar quantity changes
         methodHandler.next();
     }
@@ -176,8 +189,9 @@ public class EasyBlastFurnacePlugin extends Plugin
     {
         if (!isEnabled) return;
 
-        if (event.getMenuAction().getId() == FILL_ACTION) state.fillCoalBag();
-        if (event.getMenuAction().getId() == EMPTY_ACTION) state.emptyCoalBag();
+        if (event.getMenuOption().equals(FILL_ACTION)) state.fillCoalBag();
+        if (event.getMenuOption().equals(EMPTY_ACTION)) state.emptyCoalBag();
+        if (event.getMenuOption().equals(DRINK_ACTION)) statistics.drinkStamina();
 
         // handle coal bag changes
         methodHandler.next();

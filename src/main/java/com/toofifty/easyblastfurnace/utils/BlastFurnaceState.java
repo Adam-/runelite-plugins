@@ -11,6 +11,8 @@ import net.runelite.client.plugins.blastfurnace.BarsOres;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Singleton
@@ -31,6 +33,8 @@ public class BlastFurnaceState
     @Getter
     @Setter
     private int previousCoalInInventory = 0;
+
+    private final Map<Integer, Integer> previousFurnaceQuantity = new HashMap<>();
 
     public int getRunEnergy()
     {
@@ -83,6 +87,18 @@ public class BlastFurnaceState
     public int getFurnaceQuantity(BarsOres varbit)
     {
         return client.getVar(varbit.getVarbit());
+    }
+
+    public void updatePreviousFurnaceQuantity()
+    {
+        for (BarsOres varbit : BarsOres.values()) {
+            previousFurnaceQuantity.put(varbit.getItemID(), getFurnaceQuantity(varbit));
+        }
+    }
+    
+    public int getFurnaceChange(int itemId)
+    {
+        return getFurnaceQuantity(itemId) - previousFurnaceQuantity.getOrDefault(itemId, 0);
     }
 
     public int getFurnaceQuantity(int itemId)

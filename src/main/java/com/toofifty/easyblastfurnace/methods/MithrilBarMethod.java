@@ -6,25 +6,25 @@ import net.runelite.api.ItemID;
 public class MithrilBarMethod extends MetalBarMethod
 {
     @Override
-    MethodStep withdrawOre()
+    protected MethodStep withdrawOre()
     {
         return withdrawMithrilOre;
     }
 
     @Override
-    int oreItem()
+    public int oreItem()
     {
         return ItemID.MITHRIL_ORE;
     }
 
     @Override
-    int barItem()
+    protected int barItem()
     {
         return ItemID.MITHRIL_BAR;
     }
 
     @Override
-    int coalPer()
+    protected int coalPer()
     {
         return 2;
     }

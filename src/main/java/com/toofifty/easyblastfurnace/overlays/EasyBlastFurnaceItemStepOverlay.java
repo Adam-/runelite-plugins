@@ -7,7 +7,7 @@ import com.toofifty.easyblastfurnace.config.HighlightOverlayTextSetting;
 import com.toofifty.easyblastfurnace.config.ItemOverlaySetting;
 import com.toofifty.easyblastfurnace.steps.ItemStep;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
-import lombok.Setter;
+import com.toofifty.easyblastfurnace.utils.MethodHandler;
 import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.WidgetItemOverlay;
@@ -26,8 +26,8 @@ public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
     @Inject
     private EasyBlastFurnaceConfig config;
 
-    @Setter
-    private MethodStep step;
+    @Inject
+    private MethodHandler methodHandler;
 
     EasyBlastFurnaceItemStepOverlay()
     {
@@ -38,10 +38,13 @@ public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
     @Override
     public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem widgetItem)
     {
+        if (config.itemOverlayMode() == ItemOverlaySetting.NONE) return;
+        
+        MethodStep step = methodHandler.getStep();
+
         if (step == null) return;
         if (!(step instanceof ItemStep)) return;
         if (((ItemStep) step).getItemId() != itemId) return;
-        if (config.itemOverlayMode() == ItemOverlaySetting.NONE) return;
 
         Color color = config.itemOverlayColor();
 
@@ -80,7 +83,7 @@ public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
                 bounds.y - textHeight / 2
             ));
         }
-        
+
         textComponent.render(graphics);
     }
 }

@@ -120,4 +120,15 @@ public interface EasyBlastFurnaceConfig extends Config
     {
         return 50;
     }
+
+    @ConfigItem(
+        position = 9,
+        keyName = "showStatisticsOverlay",
+        name = "Show statistics",
+        description = "Show an overlay with statistics such as bars todo/done, XP banked & stamina doses used."
+    )
+    default boolean showStatisticsOverlay()
+    {
+        return true;
+    }
 }
