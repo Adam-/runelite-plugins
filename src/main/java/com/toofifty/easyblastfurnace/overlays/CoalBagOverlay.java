@@ -13,7 +13,7 @@ import net.runelite.client.ui.overlay.components.TextComponent;
 import java.awt.*;
 
 @Singleton
-public class EasyBlastFurnaceCoalBagOverlay extends WidgetItemOverlay
+public class CoalBagOverlay extends WidgetItemOverlay
 {
     @Inject
     private EasyBlastFurnacePlugin plugin;
@@ -24,7 +24,7 @@ public class EasyBlastFurnaceCoalBagOverlay extends WidgetItemOverlay
     @Inject
     private BlastFurnaceState state;
 
-    EasyBlastFurnaceCoalBagOverlay()
+    CoalBagOverlay()
     {
         showOnInventory();
     }

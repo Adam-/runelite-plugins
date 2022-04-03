@@ -2,10 +2,7 @@ package com.toofifty.easyblastfurnace.methods;
 
 import com.toofifty.easyblastfurnace.EasyBlastFurnacePlugin;
 import com.toofifty.easyblastfurnace.state.BlastFurnaceState;
-import com.toofifty.easyblastfurnace.steps.ItemStep;
-import com.toofifty.easyblastfurnace.steps.MethodStep;
-import com.toofifty.easyblastfurnace.steps.ObjectStep;
-import com.toofifty.easyblastfurnace.steps.WidgetStep;
+import com.toofifty.easyblastfurnace.steps.*;
 import net.runelite.api.ItemID;
 import net.runelite.api.widgets.WidgetInfo;
 
@@ -34,7 +31,7 @@ public abstract class Method
     protected final MethodStep putOntoConveyorBelt = new ObjectStep(EasyBlastFurnacePlugin.CONVEYOR_BELT, "Put ore onto conveyor belt");
     protected final MethodStep openBank = new ObjectStep(EasyBlastFurnacePlugin.BANK_CHEST, "Open bank chest");
     protected final MethodStep collectBars = new ObjectStep(EasyBlastFurnacePlugin.BAR_DISPENSER, "Collect bars");
-    protected final MethodStep waitForBars = new ObjectStep(EasyBlastFurnacePlugin.BAR_DISPENSER, "Wait for bars to smelt");
+    protected final MethodStep waitForBars = new TileStep(EasyBlastFurnacePlugin.PICKUP_POSITION, "Wait for bars to smelt");
 
     abstract public MethodStep next(BlastFurnaceState state);
 

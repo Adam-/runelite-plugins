@@ -18,7 +18,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 @Singleton
-public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
+public class ItemStepOverlay extends WidgetItemOverlay
 {
     @Inject
     private ItemManager itemManager;
@@ -29,7 +29,7 @@ public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
     @Inject
     private MethodHandler methodHandler;
 
-    EasyBlastFurnaceItemStepOverlay()
+    ItemStepOverlay()
     {
         showOnBank();
         showOnInventory();
@@ -39,7 +39,7 @@ public class EasyBlastFurnaceItemStepOverlay extends WidgetItemOverlay
     public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem widgetItem)
     {
         if (config.itemOverlayMode() == ItemOverlaySetting.NONE) return;
-        
+
         MethodStep step = methodHandler.getStep();
 
         if (step == null) return;

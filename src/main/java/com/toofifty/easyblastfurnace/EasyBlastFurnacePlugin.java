@@ -10,6 +10,7 @@ import com.toofifty.easyblastfurnace.utils.SessionStatistics;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -31,6 +32,8 @@ public class EasyBlastFurnacePlugin extends Plugin
     public static final int CONVEYOR_BELT = ObjectID.CONVEYOR_BELT;
     public static final int BAR_DISPENSER = NullObjectID.NULL_9092;
     public static final int BANK_CHEST = ObjectID.BANK_CHEST_26707;
+
+    public static final WorldPoint PICKUP_POSITION = new WorldPoint(1940, 4962, 0);
 
     private static final Pattern COAL_FULL_MESSAGE = Pattern.compile("^The coal bag contains 27 pieces of coal.$");
     private static final Pattern COAL_EMPTY_MESSAGE = Pattern.compile("^The coal bag is now empty.$");
@@ -55,22 +58,25 @@ public class EasyBlastFurnacePlugin extends Plugin
     private ObjectManager objectManager;
 
     @Inject
-    private EasyBlastFurnaceInstructionOverlay instructionOverlay;
+    private InstructionOverlay instructionOverlay;
 
     @Inject
-    private EasyBlastFurnaceStatisticsOverlay statisticsOverlay;
+    private StatisticsOverlay statisticsOverlay;
 
     @Inject
-    private EasyBlastFurnaceItemStepOverlay itemStepOverlay;
+    private ItemStepOverlay itemStepOverlay;
 
     @Inject
-    private EasyBlastFurnaceObjectStepOverlay objectStepOverlay;
+    private WidgetStepOverlay widgetStepOverlay;
 
     @Inject
-    private EasyBlastFurnaceWidgetStepOverlay widgetStepOverlay;
+    private ObjectStepOverlay objectStepOverlay;
 
     @Inject
-    private EasyBlastFurnaceCoalBagOverlay coalBagOverlay;
+    private TileStepOverlay tileStepOverlay;
+
+    @Inject
+    private CoalBagOverlay coalBagOverlay;
 
     @Inject
     private MethodHandler methodHandler;
@@ -88,8 +94,9 @@ public class EasyBlastFurnacePlugin extends Plugin
         overlayManager.add(statisticsOverlay);
         overlayManager.add(coalBagOverlay);
         overlayManager.add(itemStepOverlay);
-        overlayManager.add(objectStepOverlay);
         overlayManager.add(widgetStepOverlay);
+        overlayManager.add(objectStepOverlay);
+        overlayManager.add(tileStepOverlay);
     }
 
     @Override
@@ -102,8 +109,9 @@ public class EasyBlastFurnacePlugin extends Plugin
         overlayManager.remove(statisticsOverlay);
         overlayManager.remove(coalBagOverlay);
         overlayManager.remove(itemStepOverlay);
-        overlayManager.remove(objectStepOverlay);
         overlayManager.remove(widgetStepOverlay);
+        overlayManager.remove(objectStepOverlay);
+        overlayManager.remove(tileStepOverlay);
     }
 
     @Subscribe
@@ -152,6 +160,7 @@ public class EasyBlastFurnacePlugin extends Plugin
 
         if (event.getContainerId() == InventoryID.INVENTORY.getId()) {
             methodHandler.setMethodFromInventory();
+            state.update();
         }
 
         // handle any inventory or bank changes
@@ -164,7 +173,7 @@ public class EasyBlastFurnacePlugin extends Plugin
         if (!isEnabled) return;
 
         statistics.onFurnaceUpdate();
-        state.getFurnace().update();
+        state.update();
 
         // handle furnace ore/bar quantity changes
         methodHandler.next();
@@ -207,11 +216,11 @@ public class EasyBlastFurnacePlugin extends Plugin
     public void onOverlayMenuClicked(OverlayMenuClicked event)
     {
         if (event.getOverlay() == instructionOverlay &&
-            event.getEntry().getOption().equals(EasyBlastFurnaceInstructionOverlay.RESET_ACTION)) {
+            event.getEntry().getOption().equals(InstructionOverlay.RESET_ACTION)) {
             methodHandler.clear();
         }
         if (event.getOverlay() == statisticsOverlay &&
-            event.getEntry().getOption().equals(EasyBlastFurnaceStatisticsOverlay.CLEAR_ACTION)) {
+            event.getEntry().getOption().equals(StatisticsOverlay.CLEAR_ACTION)) {
             statistics.clear();
         }
     }

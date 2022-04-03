@@ -39,15 +39,23 @@ abstract public class GoldHybridMethod extends MetalBarMethod
         // continue doing gold bars until enough coal has been deposited
         // then do one trip of metal bars
 
-        if (state.getInventory().has(ItemID.COAL)) {
+        if (state.getInventory().has(ItemID.GOLD_ORE) &&
+            !state.getEquipment().equipped(ItemID.GOLDSMITH_GAUNTLETS)) {
+            return equipGoldsmithGauntlets;
+        }
+
+        if (state.getInventory().has(ItemID.COAL) ||
+            state.getInventory().has(ItemID.GOLD_ORE) ||
+            state.getInventory().has(oreItem())) {
             return putOntoConveyorBelt;
         }
 
-        if (state.getFurnace().getQuantity(ItemID.COAL) >= coalPer() &&
-            state.getFurnace().getQuantity(oreItem()) >= 1) {
-            if (!state.getEquipment().equipped(ItemID.ICE_GLOVES)) {
-                return equipIceGloves;
-            }
+        if (state.getPlayer().isAtConveyorBelt() &&
+            state.getCoalBag().isFull()) {
+            return emptyCoalBag;
+        }
+
+        if (state.getPlayer().hasLoadedOres()) {
             return waitForBars;
         }
 
@@ -57,11 +65,6 @@ abstract public class GoldHybridMethod extends MetalBarMethod
                 return equipIceGloves;
             }
             return collectBars;
-        }
-
-        if (state.getInventory().has(ItemID.GOLD_ORE) &&
-            !state.getEquipment().equipped(ItemID.GOLDSMITH_GAUNTLETS)) {
-            return equipGoldsmithGauntlets;
         }
 
         if (state.getBank().isOpen()) {
@@ -93,17 +96,8 @@ abstract public class GoldHybridMethod extends MetalBarMethod
             return openBank;
         }
 
-        if (state.getInventory().has(ItemID.COAL_BAG_12019)) {
+        if (!state.getInventory().has(ItemID.COAL_BAG_12019)) {
             return openBank;
-        }
-
-        if (state.getInventory().has(oreItem()) ||
-            state.getInventory().has(ItemID.GOLD_ORE)) {
-            return putOntoConveyorBelt;
-        }
-
-        if (!state.getCoalBag().isEmpty()) {
-            return emptyCoalBag;
         }
 
         return openBank;

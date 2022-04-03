@@ -6,6 +6,8 @@ import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 
 import javax.inject.Inject;
+import java.util.Arrays;
+import java.util.Optional;
 
 public class InventoryState
 {
@@ -14,11 +16,40 @@ public class InventoryState
 
     private ItemContainer inventory;
 
+    private Item[] previousInventory = new Item[]{};
+
     private void load()
     {
-        if (inventory == null) {
-            inventory = client.getItemContainer(InventoryID.INVENTORY);
+        ItemContainer inventory = client.getItemContainer(InventoryID.INVENTORY);
+        if (inventory != null) {
+            this.inventory = inventory;
         }
+    }
+
+    private int getPreviousQuantity(int itemId)
+    {
+        Optional<Item> item = Arrays.stream(previousInventory).filter(i -> i.getId() == itemId).findFirst();
+
+        return item.map(Item::getQuantity).orElse(0);
+    }
+
+    public void update()
+    {
+        load();
+
+        if (inventory != null) {
+            previousInventory = inventory.getItems().clone();
+        }
+    }
+
+    public int getChange(int itemId)
+    {
+        return getQuantity(itemId) - getPreviousQuantity(itemId);
+    }
+
+    public boolean hasChanged(int itemId)
+    {
+        return getChange(itemId) != 0;
     }
 
     public int getQuantity(int itemId)

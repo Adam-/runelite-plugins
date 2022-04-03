@@ -5,6 +5,7 @@ import com.google.inject.Singleton;
 import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
 import com.toofifty.easyblastfurnace.EasyBlastFurnacePlugin;
 import com.toofifty.easyblastfurnace.methods.Method;
+import com.toofifty.easyblastfurnace.state.BlastFurnaceState;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
 import com.toofifty.easyblastfurnace.utils.MethodHandler;
 import net.runelite.api.MenuAction;
@@ -17,7 +18,7 @@ import net.runelite.client.ui.overlay.components.TitleComponent;
 import java.awt.*;
 
 @Singleton
-public class EasyBlastFurnaceInstructionOverlay extends OverlayPanel
+public class InstructionOverlay extends OverlayPanel
 {
     public static final String RESET_ACTION = "Reset";
 
@@ -29,10 +30,13 @@ public class EasyBlastFurnaceInstructionOverlay extends OverlayPanel
     private EasyBlastFurnaceConfig config;
 
     @Inject
+    private BlastFurnaceState state;
+
+    @Inject
     private MethodHandler methodHandler;
 
     @Inject
-    EasyBlastFurnaceInstructionOverlay(EasyBlastFurnacePlugin plugin)
+    InstructionOverlay(EasyBlastFurnacePlugin plugin)
     {
         super(plugin);
         this.plugin = plugin;

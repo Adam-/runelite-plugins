@@ -17,8 +17,9 @@ public class BankState
 
     private void load()
     {
-        if (bank == null) {
-            bank = client.getItemContainer(InventoryID.BANK);
+        ItemContainer bank = client.getItemContainer(InventoryID.BANK);
+        if (bank != null) {
+            this.bank = bank;
         }
     }
 

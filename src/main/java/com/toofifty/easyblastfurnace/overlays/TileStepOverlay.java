@@ -1,26 +1,24 @@
 package com.toofifty.easyblastfurnace.overlays;
 
-
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
 import com.toofifty.easyblastfurnace.config.HighlightOverlayTextSetting;
 import com.toofifty.easyblastfurnace.steps.MethodStep;
-import com.toofifty.easyblastfurnace.steps.ObjectStep;
+import com.toofifty.easyblastfurnace.steps.TileStep;
 import com.toofifty.easyblastfurnace.utils.MethodHandler;
-import com.toofifty.easyblastfurnace.utils.ObjectManager;
-import net.runelite.api.GameObject;
+import net.runelite.api.Client;
+import net.runelite.api.Perspective;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.TextComponent;
 
 import java.awt.*;
 
-@Singleton
-public class EasyBlastFurnaceObjectStepOverlay extends Overlay
+public class TileStepOverlay extends Overlay
 {
     @Inject
-    private ObjectManager objectManager;
+    private Client client;
 
     @Inject
     private EasyBlastFurnaceConfig config;
@@ -28,7 +26,7 @@ public class EasyBlastFurnaceObjectStepOverlay extends Overlay
     @Inject
     private MethodHandler methodHandler;
 
-    EasyBlastFurnaceObjectStepOverlay()
+    TileStepOverlay()
     {
         setPosition(OverlayPosition.DYNAMIC);
     }
@@ -41,24 +39,24 @@ public class EasyBlastFurnaceObjectStepOverlay extends Overlay
         MethodStep step = methodHandler.getStep();
 
         if (step == null) return null;
-        if (!(step instanceof ObjectStep)) return null;
+        if (!(step instanceof TileStep)) return null;
 
         Color color = config.objectOverlayColor();
 
-        GameObject object = objectManager.get(((ObjectStep) step).getObjectId());
-        Shape clickBox = object.getClickbox();
+        LocalPoint localPoint = LocalPoint.fromWorld(client, ((TileStep) step).getWorldPoint());
+        if (localPoint == null) return null;
 
-        if (clickBox == null) return null;
+        Polygon polygon = Perspective.getCanvasTilePoly(client, localPoint);
 
         graphics.setColor(color);
-        graphics.draw(clickBox);
+        graphics.draw(polygon);
         graphics.setColor(new Color(color.getRed(), color.getBlue(), color.getGreen(), 20));
-        graphics.fill(clickBox);
+        graphics.fill(polygon);
 
         if (config.objectOverlayTextMode() == HighlightOverlayTextSetting.NONE) return null;
 
         TextComponent textComponent = new TextComponent();
-        Rectangle bounds = object.getClickbox().getBounds();
+        Rectangle bounds = polygon.getBounds();
 
         FontMetrics fontMetrics = graphics.getFontMetrics();
         int textWidth = fontMetrics.stringWidth(step.getTooltip());

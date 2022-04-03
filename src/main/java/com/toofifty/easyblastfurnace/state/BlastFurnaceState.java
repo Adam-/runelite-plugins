@@ -1,8 +1,7 @@
 package com.toofifty.easyblastfurnace.state;
 
-import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
 import lombok.Getter;
-import net.runelite.api.Client;
+import net.runelite.api.ItemID;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -11,12 +10,6 @@ import javax.inject.Singleton;
 @Singleton
 public class BlastFurnaceState
 {
-    @Inject
-    private Client client;
-
-    @Inject
-    private EasyBlastFurnaceConfig config;
-
     @Inject
     private CoalBagState coalBag;
 
@@ -34,4 +27,27 @@ public class BlastFurnaceState
 
     @Inject
     private BankState bank;
+
+    public void update()
+    {
+        if (player.isAtConveyorBelt() &&
+            (inventory.hasChanged(ItemID.GOLD_ORE) ||
+                inventory.hasChanged(ItemID.IRON_ORE) ||
+                inventory.hasChanged(ItemID.MITHRIL_ORE) ||
+                inventory.hasChanged(ItemID.ADAMANTITE_ORE) ||
+                inventory.hasChanged(ItemID.RUNITE_ORE))) {
+            player.hasLoadedOres(true);
+        }
+
+        if (furnace.has(ItemID.GOLD_BAR) ||
+            furnace.has(ItemID.STEEL_BAR) ||
+            furnace.has(ItemID.MITHRIL_BAR) ||
+            furnace.has(ItemID.ADAMANTITE_BAR) ||
+            furnace.has(ItemID.RUNITE_BAR)) {
+            player.hasLoadedOres(false);
+        }
+
+        inventory.update();
+        furnace.update();
+    }
 }

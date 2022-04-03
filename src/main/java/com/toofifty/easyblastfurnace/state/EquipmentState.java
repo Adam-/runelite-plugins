@@ -15,8 +15,9 @@ public class EquipmentState
 
     private void load()
     {
-        if (equipment == null) {
-            equipment = client.getItemContainer(InventoryID.EQUIPMENT);
+        ItemContainer equipment = client.getItemContainer(InventoryID.EQUIPMENT);
+        if (equipment != null) {
+            this.equipment = equipment;
         }
     }
 

@@ -29,15 +29,22 @@ public class GoldBarMethod extends Method
         MethodStep prerequisite = checkPrerequisite(state);
         if (prerequisite != null) return prerequisite;
 
+        if (state.getInventory().has(ItemID.GOLD_ORE)) {
+            if (!state.getEquipment().equipped(ItemID.GOLDSMITH_GAUNTLETS)) {
+                return equipGoldsmithGauntlets;
+            }
+            return putOntoConveyorBelt;
+        }
+
+        if (state.getPlayer().hasLoadedOres()) {
+            return waitForBars;
+        }
+
         if (state.getFurnace().has(ItemID.GOLD_BAR)) {
             if (!state.getEquipment().equipped(ItemID.ICE_GLOVES)) {
                 return equipIceGloves;
             }
             return collectBars;
-        }
-
-        if (!state.getEquipment().equipped(ItemID.GOLDSMITH_GAUNTLETS)) {
-            return equipGoldsmithGauntlets;
         }
 
         if (state.getBank().isOpen()) {
@@ -48,10 +55,6 @@ public class GoldBarMethod extends Method
             if (!state.getInventory().has(ItemID.GOLD_ORE)) {
                 return withdrawGoldOre;
             }
-        }
-
-        if (state.getInventory().has(ItemID.GOLD_ORE)) {
-            return putOntoConveyorBelt;
         }
 
         return openBank;

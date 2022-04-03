@@ -14,7 +14,7 @@ import javax.inject.Singleton;
 import java.awt.*;
 
 @Singleton
-public class EasyBlastFurnaceStatisticsOverlay extends OverlayPanel
+public class StatisticsOverlay extends OverlayPanel
 {
     public static final String CLEAR_ACTION = "Clear";
 
@@ -27,7 +27,7 @@ public class EasyBlastFurnaceStatisticsOverlay extends OverlayPanel
     private final EasyBlastFurnacePlugin plugin;
 
     @Inject
-    EasyBlastFurnaceStatisticsOverlay(EasyBlastFurnacePlugin plugin)
+    StatisticsOverlay(EasyBlastFurnacePlugin plugin)
     {
         super(plugin);
         this.plugin = plugin;
