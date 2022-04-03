@@ -121,7 +121,6 @@ public class CEngineerCompletedPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
-		log.debug("GAME STATE " + event.getGameState());
 		switch(event.getGameState())
 		{
 			case LOGIN_SCREEN:
