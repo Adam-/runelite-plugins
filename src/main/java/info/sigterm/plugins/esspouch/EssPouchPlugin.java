@@ -149,7 +149,6 @@ public class EssPouchPlugin extends Plugin
 		{
 			return;
 		}
-		log.info(event.getMessage());
 		// Clear pouches when GotR starts.
 		if (GOTR_START_MESSAGE.matcher(event.getMessage()).matches())
 		{
