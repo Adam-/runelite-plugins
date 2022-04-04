@@ -57,8 +57,10 @@ import net.runelite.client.ui.overlay.OverlayManager;
 public class EssPouchPlugin extends Plugin
 {
 	private static final int INVENTORY_SIZE = 28;
+	private static final int GOTR_WIDGET_ID = 48889876;
 
 	private static final Pattern POUCH_CHECK_MESSAGE = Pattern.compile("^There (?:is|are) ([a-z-]+)(?: pure| daeyalt| guardian)? essences? in this pouch\\.$");
+	private static final Pattern GOTR_START_MESSAGE = Pattern.compile("^(<col=[a-f0-9]{6}>)?(The rift becomes active!)(<\\/col>)?$");
 	private static final ImmutableMap<String, Integer> TEXT_TO_NUMBER = ImmutableMap.<String, Integer>builder()
 		.put("no", 0)
 		.put("one", 1)
@@ -78,7 +80,7 @@ public class EssPouchPlugin extends Plugin
 		.put("fifteen", 15)
 		.put("sixteen", 16)
 		.put("seventeen", 17)
-		.put("eightteen", 18)
+		.put("eighteen", 18)
 		.put("nineteen", 19)
 		.put("twenty", 20)
 		.put("twenty-one", 21)
@@ -116,6 +118,7 @@ public class EssPouchPlugin extends Plugin
 	private final Deque<ClickOperation> checkedPouches = new ArrayDeque<>();
 	private int lastEssence;
 	private int lastSpace;
+	private boolean gotrStarted;
 
 	@Override
 	protected void startUp()
@@ -146,6 +149,18 @@ public class EssPouchPlugin extends Plugin
 		{
 			return;
 		}
+		log.info(event.getMessage());
+		// Clear pouches when GotR starts.
+		if (GOTR_START_MESSAGE.matcher(event.getMessage()).matches())
+		{
+			gotrStarted = true;
+			for (Pouch pouch : Pouch.values())
+			{
+				pouch.setHolding(0);
+				pouch.setUnknown(false);
+			}
+		}
+
 
 		if (!checkedPouches.isEmpty())
 		{
@@ -170,12 +185,28 @@ public class EssPouchPlugin extends Plugin
 		}
 	}
 
+	public boolean isInGotr()
+	{
+		Widget gotrWidget = client.getWidget(GOTR_WIDGET_ID);
+		return gotrWidget != null;
+	}
+
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
 		if (InventoryID.INVENTORY.getId() != event.getContainerId())
 		{
 			return;
+		}
+
+		// empty pouches if you left GotR
+		if (gotrStarted && !isInGotr()) {
+			gotrStarted = false;
+			for (Pouch pouch : Pouch.values())
+			{
+				pouch.setHolding(0);
+				pouch.setUnknown(false);
+			}
 		}
 
 		final Item[] items = event.getItemContainer().getItems();
