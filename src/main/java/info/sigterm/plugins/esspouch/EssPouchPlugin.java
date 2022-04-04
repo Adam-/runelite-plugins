@@ -60,7 +60,6 @@ public class EssPouchPlugin extends Plugin
 	private static final int GOTR_WIDGET_ID = 48889876;
 
 	private static final Pattern POUCH_CHECK_MESSAGE = Pattern.compile("^There (?:is|are) ([a-z-]+)(?: pure| daeyalt| guardian)? essences? in this pouch\\.$");
-	private static final Pattern GOTR_START_MESSAGE = Pattern.compile("^(<col=[a-f0-9]{6}>)?(The rift becomes active!)(<\\/col>)?$");
 	private static final ImmutableMap<String, Integer> TEXT_TO_NUMBER = ImmutableMap.<String, Integer>builder()
 		.put("no", 0)
 		.put("one", 1)
@@ -149,8 +148,9 @@ public class EssPouchPlugin extends Plugin
 		{
 			return;
 		}
+
 		// Clear pouches when GotR starts.
-		if (GOTR_START_MESSAGE.matcher(event.getMessage()).matches())
+		if (event.getMessage().contains("The rift becomes active!"))
 		{
 			gotrStarted = true;
 			for (Pouch pouch : Pouch.values())
