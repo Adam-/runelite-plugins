@@ -207,7 +207,6 @@ public class EssPouchPlugin extends Plugin
 				case ItemID.LARGE_POUCH_5513:
 				case ItemID.GIANT_POUCH_5515:
 				case ItemID.COLOSSAL_POUCH_26786:
-				case ItemID.COLOSSAL_POUCH_26906:
 					pouch = Pouch.forItem(item.getId());
 					pouch.degrade(true);
 					break;
