@@ -2,6 +2,7 @@ package com.toofifty.easyblastfurnace.overlays;
 
 import com.toofifty.easyblastfurnace.EasyBlastFurnaceConfig;
 import com.toofifty.easyblastfurnace.EasyBlastFurnacePlugin;
+import com.toofifty.easyblastfurnace.utils.RSNumberFormat;
 import com.toofifty.easyblastfurnace.utils.SessionStatistics;
 import net.runelite.api.MenuAction;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -45,35 +46,35 @@ public class StatisticsOverlay extends OverlayPanel
         if (config.showBarsTodo()) {
             panelComponent.getChildren().add(LineComponent.builder()
                 .left("Bars todo:")
-                .right(Integer.toString(statistics.getTotalActionsBanked()))
+                .right(RSNumberFormat.format(statistics.getTotalActionsBanked()))
                 .build());
         }
 
         if (config.showBarsMade()) {
             panelComponent.getChildren().add(LineComponent.builder()
                 .left("Bars made:")
-                .right(Integer.toString(statistics.getTotalActionsDone()))
+                .right(RSNumberFormat.format(statistics.getTotalActionsDone()))
                 .build());
         }
 
         if (config.showXpBanked()) {
             panelComponent.getChildren().add(LineComponent.builder()
                 .left("XP banked:")
-                .right(Double.toString(statistics.getTotalXpBanked()))
+                .right(RSNumberFormat.format(statistics.getTotalXpBanked()))
                 .build());
         }
 
         if (config.showXpGained()) {
             panelComponent.getChildren().add(LineComponent.builder()
                 .left("XP gained:")
-                .right(Double.toString(statistics.getTotalXpGained()))
+                .right(RSNumberFormat.format(statistics.getTotalXpGained()))
                 .build());
         }
 
         if (config.showStaminaDoses()) {
             panelComponent.getChildren().add(LineComponent.builder()
                 .left("Stamina doses:")
-                .right(Integer.toString(statistics.getStaminaDoses()))
+                .right(RSNumberFormat.format(statistics.getStaminaDoses()))
                 .build());
         }
 
