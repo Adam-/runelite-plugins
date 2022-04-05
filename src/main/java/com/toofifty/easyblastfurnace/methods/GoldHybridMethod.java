@@ -86,7 +86,7 @@ abstract public class GoldHybridMethod extends MetalBarMethod
                 return withdrawGoldOre;
             }
 
-            if (state.getInventory().has(oreItem())) {
+            if (!state.getInventory().has(oreItem())) {
                 return withdrawOre();
             }
         }
