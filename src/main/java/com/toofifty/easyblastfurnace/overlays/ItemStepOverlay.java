@@ -44,7 +44,8 @@ public class ItemStepOverlay extends WidgetItemOverlay
 
         if (step == null) return;
         if (!(step instanceof ItemStep)) return;
-        if (((ItemStep) step).getItemId() != itemId) return;
+        if (((ItemStep) step).getItemId() != itemId &&
+            ((ItemStep) step).getAlternateItemId() != itemId) return;
 
         Color color = config.itemOverlayColor();
 

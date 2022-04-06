@@ -35,7 +35,8 @@ public class CoalBagOverlay extends WidgetItemOverlay
         if (!plugin.isEnabled()) return;
         if (!(itemId == ItemID.COAL_BAG ||
             itemId == ItemID.COAL_BAG_12019 ||
-            itemId == ItemID.COAL_BAG_25627))
+            itemId == ItemID.COAL_BAG_25627 ||
+            itemId == ItemID.OPEN_COAL_BAG))
             return;
         if (!config.showCoalBagOverlay()) return;
 

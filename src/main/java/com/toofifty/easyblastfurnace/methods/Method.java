@@ -9,10 +9,10 @@ import net.runelite.api.widgets.WidgetInfo;
 public abstract class Method
 {
     // items
-    protected final MethodStep fillCoalBag = new ItemStep(ItemID.COAL_BAG_12019, "Fill coal bag");
-    protected final MethodStep refillCoalBag = new ItemStep(ItemID.COAL_BAG_12019, "Refill coal bag");
-    protected final MethodStep emptyCoalBag = new ItemStep(ItemID.COAL_BAG_12019, "Empty coal bag");
-    protected final MethodStep withdrawCoalBag = new ItemStep(ItemID.COAL_BAG_12019, "Withdraw coal bag");
+    protected final MethodStep fillCoalBag = new ItemStep(ItemID.COAL_BAG_12019, ItemID.OPEN_COAL_BAG, "Fill coal bag");
+    protected final MethodStep refillCoalBag = new ItemStep(ItemID.COAL_BAG_12019, ItemID.OPEN_COAL_BAG, "Refill coal bag");
+    protected final MethodStep emptyCoalBag = new ItemStep(ItemID.COAL_BAG_12019, ItemID.OPEN_COAL_BAG, "Empty coal bag");
+    protected final MethodStep withdrawCoalBag = new ItemStep(ItemID.COAL_BAG_12019, ItemID.OPEN_COAL_BAG, "Withdraw coal bag");
 
     protected final MethodStep withdrawCoal = new ItemStep(ItemID.COAL, "Withdraw coal");
     protected final MethodStep withdrawGoldOre = new ItemStep(ItemID.GOLD_ORE, "Withdraw gold ore");

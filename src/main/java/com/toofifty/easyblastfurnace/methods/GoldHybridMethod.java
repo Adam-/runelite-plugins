@@ -8,7 +8,8 @@ abstract public class GoldHybridMethod extends MetalBarMethod
 {
     private MethodStep checkPrerequisite(BlastFurnaceState state)
     {
-        if (!state.getInventory().has(ItemID.COAL_BAG_12019)) {
+        if (!state.getInventory().has(ItemID.COAL_BAG_12019) &&
+            !state.getInventory().has(ItemID.OPEN_COAL_BAG)) {
             return state.getBank().isOpen() ? withdrawCoalBag : openBank;
         }
 
@@ -89,15 +90,6 @@ abstract public class GoldHybridMethod extends MetalBarMethod
             if (!state.getInventory().has(oreItem())) {
                 return withdrawOre();
             }
-        }
-
-        if (state.getInventory().has(barItem()) ||
-            state.getInventory().has(ItemID.GOLD_BAR)) {
-            return openBank;
-        }
-
-        if (!state.getInventory().has(ItemID.COAL_BAG_12019)) {
-            return openBank;
         }
 
         return openBank;

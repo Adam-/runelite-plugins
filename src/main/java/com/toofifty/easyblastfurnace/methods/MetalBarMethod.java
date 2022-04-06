@@ -22,7 +22,8 @@ abstract public class MetalBarMethod extends Method
 
     private MethodStep checkPrerequisite(BlastFurnaceState state)
     {
-        if (!state.getInventory().has(ItemID.COAL_BAG_12019)) {
+        if (!state.getInventory().has(ItemID.COAL_BAG_12019) &&
+            !state.getInventory().has(ItemID.OPEN_COAL_BAG)) {
             return state.getBank().isOpen() ? withdrawCoalBag : openBank;
         }
 
@@ -82,14 +83,6 @@ abstract public class MetalBarMethod extends Method
             if (!state.getInventory().has(oreItem())) {
                 return withdrawOre();
             }
-        }
-
-        if (state.getInventory().has(barItem())) {
-            return openBank;
-        }
-
-        if (!state.getInventory().has(ItemID.COAL_BAG_12019)) {
-            return openBank;
         }
 
         return openBank;
