@@ -45,6 +45,7 @@ public class RegionLocker
 	public static Color grayColor;
 	public static int grayAmount;
 	public static boolean hardBorder;
+	public static boolean invertShader;
 	private static boolean unlockReamls;
 	private static boolean unlockUnderground;
 	private static TrailblazerRegion trailblazerRegion;
@@ -75,6 +76,7 @@ public class RegionLocker
 		grayColor = config.shaderGrayColor();
 		grayAmount = config.shaderGrayAmount().getAlpha();
 		hardBorder = config.hardBorder();
+		invertShader = config.invertShader();
 		trailblazerRegion = config.trailblazerRegion();
 
 		regions.clear();
