@@ -28,6 +28,10 @@
 #define TILE_SIZE 128
 #define LOCKED_REGIONS_SIZE 16
 
+// smallest unit of the texture which can be moved per tick. textures are all
+// 128x128px - so this is equivalent to +1px
+#define TEXTURE_ANIM_UNIT (1.0f / 128.0f)
+
 #define FOG_SCENE_EDGE_MIN TILE_SIZE
 #define FOG_SCENE_EDGE_MAX (103 * TILE_SIZE)
 #define FOG_CORNER_ROUNDING 1.5
@@ -53,6 +57,8 @@ uniform int useFog;
 uniform int fogDepth;
 uniform int drawDistance;
 uniform mat4 projectionMatrix;
+uniform vec2 textureAnimations[128];
+uniform int tick;
 
 uniform int useGray;
 uniform int baseX;
@@ -64,7 +70,8 @@ out float vGrayAmount;
 out ivec3 vPosition;
 out vec4 vColor;
 out float vHsl;
-out vec4 vUv;
+out int vTextureId;
+out vec2 vUv;
 out float vFogAmount;
 
 #include hsl_to_rgb.glsl
@@ -111,7 +118,17 @@ void main()
   vPosition = vertex;
   vColor = vec4(rgb, 1.f - a);
   vHsl = float(hsl);
-  vUv = uv;
+
+  int textureIdx = int(uv.x); // the texture id + 1
+  vec2 textureUv = uv.yz;
+
+  vec2 textureAnim = vec2(0);
+  if (textureIdx > 0) {
+    textureAnim = textureAnimations[textureIdx - 1];
+  }
+
+  vTextureId = textureIdx;
+  vUv = textureUv + tick * textureAnim * TEXTURE_ANIM_UNIT;
 
   int fogWest = max(FOG_SCENE_EDGE_MIN, cameraX - drawDistance);
   int fogEast = min(FOG_SCENE_EDGE_MAX, cameraX + drawDistance - TILE_SIZE);

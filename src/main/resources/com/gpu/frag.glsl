@@ -32,6 +32,7 @@ uniform vec4 fogColor;
 uniform vec4 configGrayColor;
 uniform float configGrayAmount;
 uniform int colorBlindMode;
+uniform float textureLightMode;
 
 in vec4 Color;
 noperspective centroid in float fHsl;
@@ -63,14 +64,13 @@ void main() {
   if (textureId > 0) {
     int textureIdx = textureId - 1;
 
-    vec2 animatedUv = fUv + textureOffsets[textureIdx];
-
-    vec4 textureColor = texture(textures, vec3(animatedUv, float(textureIdx)));
+    vec4 textureColor = texture(textures, vec3(fUv, float(textureIdx)));
     vec4 textureColorBrightness = pow(textureColor, vec4(brightness, brightness, brightness, 1.0f));
 
     // textured triangles hsl is a 7 bit lightness 2-126
     float light = fHsl / 127.f;
-    c = textureColorBrightness * vec4(light, light, light, 1.f);
+    vec3 mul = (1.f - textureLightMode) * vec3(light) + textureLightMode * Color.rgb;
+    c = textureColorBrightness * vec4(mul, 1.f);
   } else {
     // pick interpolated hsl or rgb depending on smooth banding setting
     vec3 rgb = hslToRgb(int(fHsl)) * smoothBanding + Color.rgb * (1.f - smoothBanding);

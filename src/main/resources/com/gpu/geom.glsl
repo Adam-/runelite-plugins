@@ -55,7 +55,8 @@ uniform int lockedRegions[LOCKED_REGIONS_SIZE];
 in ivec3 vPosition[];
 in vec4 vColor[];
 in float vHsl[];
-in vec4 vUv[];
+in int vTextureId[];
+in vec2 vUv[];
 in float vFogAmount[];
 in float vGrayAmount[];
 
@@ -93,8 +94,8 @@ void main() {
 
   Color = vColor[0];
   fHsl = vHsl[0];
-  fUv = vUv[0].yz;
-  textureId = int(vUv[0].x);
+  fUv = vUv[0];
+  textureId = vTextureId[0];
   fogAmount = vFogAmount[0];
   grayAmount = useHardBorder * locked + (1 - useHardBorder) * vGrayAmount[0];
   gl_Position  = projectionMatrix * vec4(vPosition[0], 1.f);
@@ -102,8 +103,8 @@ void main() {
 
   Color = vColor[1];
   fHsl = vHsl[1];
-  fUv = vUv[1].yz;
-  textureId = int(vUv[1].x);
+  fUv = vUv[1];
+  textureId = vTextureId[1];
   fogAmount = vFogAmount[1];
   grayAmount =  useHardBorder * locked + (1 - useHardBorder) * vGrayAmount[1];
   gl_Position  = projectionMatrix * vec4(vPosition[1], 1.f);
@@ -111,8 +112,8 @@ void main() {
 
   Color = vColor[2];
   fHsl = vHsl[2];
-  fUv = vUv[2].yz;
-  textureId = int(vUv[2].x);
+  fUv = vUv[2];
+  textureId = vTextureId[2];
   fogAmount = vFogAmount[2];
   grayAmount =  useHardBorder * locked + (1 - useHardBorder) * vGrayAmount[2];
   gl_Position  = projectionMatrix * vec4(vPosition[2], 1.f);
