@@ -29,6 +29,7 @@ public class MethodHandler
     public void next()
     {
         if (method == null) return;
+        if (!state.getPlayer().isOnBlastFurnaceWorld()) return;
 
         step = drinkStaminaMethod.next(state);
         if (step == null) step = method.next(state);

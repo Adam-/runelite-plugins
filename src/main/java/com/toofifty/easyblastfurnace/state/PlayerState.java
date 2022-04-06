@@ -10,10 +10,14 @@ import net.runelite.api.Varbits;
 import net.runelite.api.coords.WorldPoint;
 
 import javax.inject.Inject;
+import java.util.Arrays;
 
 public class PlayerState
 {
     private static final WorldPoint LOAD_POSITION = new WorldPoint(1942, 4967, 0);
+    private static final int[] BLAST_FURNACE_WORLDS = new int[]{
+        352, 355, 356, 357, 358, 386, 387, 395, 424, 466, 494, 495, 496, 515, 516
+    };
 
     @Accessors(fluent = true)
     @Getter
@@ -50,5 +54,10 @@ public class PlayerState
         return config.requireStaminaThreshold() != 0 &&
             !hasStamina() &&
             getRunEnergy() <= config.requireStaminaThreshold();
+    }
+
+    public boolean isOnBlastFurnaceWorld()
+    {
+        return Arrays.stream(BLAST_FURNACE_WORLDS).anyMatch(world -> world == client.getWorld());
     }
 }

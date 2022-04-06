@@ -55,7 +55,11 @@ public class InstructionOverlay extends OverlayPanel
         MethodStep step = methodHandler.getStep();
 
         String methodName = method != null ? method.getName() : "No method selected";
-        String tooltip = step != null ? step.getTooltip() : "Withdraw an ore from the bank to start. You can start a hybrid method by also withdrawing gold ore.";
+        String tooltip = state.getPlayer().isOnBlastFurnaceWorld()
+            ? (step != null
+            ? step.getTooltip()
+            : "Withdraw an ore from the bank to start. You can start a hybrid method by also withdrawing gold ore.")
+            : "You need to be on a Blast Furnace themed world to use this plugin.";
 
         panelComponent.getChildren().add(TitleComponent.builder().text("Easy Blast Furnace").build());
         panelComponent.getChildren().add(LineComponent.builder().left(methodName).leftColor(config.itemOverlayColor()).build());
