@@ -22,8 +22,8 @@ public class TitheOverlayPoints extends Overlay {
     private final Client client;
     private final PanelComponent panel = new PanelComponent();
 
-    private final static int TITHE_FARM_POINTS = Varbits.TITHE_FARM_POINTS.getId();
-    private final static int TITHE_FARM_SACK = Varbits.TITHE_FARM_SACK_AMOUNT.getId();
+    private final static int TITHE_FARM_POINTS = Varbits.TITHE_FARM_POINTS;
+    private final static int TITHE_FARM_SACK = Varbits.TITHE_FARM_SACK_AMOUNT;
     private final static int TITHE_FARM_SACK_TOTAL = 100;
     private final static int TITHE_FARM_POINTS_BREAK = 74;
 
