@@ -31,20 +31,20 @@ import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.Varbits;
+import net.runelite.api.annotations.Varbit;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.game.ItemManager;
-
 import net.runelite.client.game.RunepouchRune;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.OverlayUtil;
 
 class EquipmentRunepouchOverlay
 {
-	private static final Varbits[] AMOUNT_VARBITS =
+	private static final int[] AMOUNT_VARBITS =
 			{
 					Varbits.RUNE_POUCH_AMOUNT1, Varbits.RUNE_POUCH_AMOUNT2, Varbits.RUNE_POUCH_AMOUNT3
 			};
-	private static final Varbits[] RUNE_VARBITS =
+	private static final int[] RUNE_VARBITS =
 			{
 					Varbits.RUNE_POUCH_RUNE1, Varbits.RUNE_POUCH_RUNE2, Varbits.RUNE_POUCH_RUNE3
 			};
@@ -75,13 +75,13 @@ class EquipmentRunepouchOverlay
 
 		for (int i = 0; i < AMOUNT_VARBITS.length; i++)
 		{
-			Varbits amountVarbit = AMOUNT_VARBITS[i];
+			@Varbit int amountVarbit = AMOUNT_VARBITS[i];
 
 			int amount = client.getVar(amountVarbit);
 			if (amount <= 0)
 				continue;
 
-			Varbits runeVarbit = RUNE_VARBITS[i];
+			@Varbit int runeVarbit = RUNE_VARBITS[i];
 			int runeId = client.getVar(runeVarbit);
 			RunepouchRune rune = RunepouchRune.getRune(runeId);
 			if (rune == null)
