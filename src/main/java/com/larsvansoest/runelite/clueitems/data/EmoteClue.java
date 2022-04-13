@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableSet;
 import com.larsvansoest.runelite.clueitems.EmoteClueItemsPlugin;
 import lombok.Getter;
 import net.runelite.api.Varbits;
+import net.runelite.api.annotations.Varbit;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.cluescrolls.clues.Enemy;
 import net.runelite.client.plugins.cluescrolls.clues.LocationClueScroll;
@@ -1261,39 +1262,40 @@ public final class EmoteClue implements TextClueScroll, LocationClueScroll
 	private final ItemRequirement[] itemRequirements;
 
 	private final Enemy enemy;
-	private final Varbits hasFirePit;
+	@Varbit
+	private final int hasFirePit;
 
 	private EmoteClue(
 			final EmoteClueDifficulty emoteClueDifficulty, final String text, final String locationName, final StashUnit stashUnit, final WorldPoint location, final Emote firstEmote,
 			final ItemRequirement... itemRequirements)
 	{
-		this(emoteClueDifficulty, text, locationName, stashUnit, location, firstEmote, null, null, null, itemRequirements);
+		this(emoteClueDifficulty, text, locationName, stashUnit, location, firstEmote, null, null, -1, itemRequirements);
 	}
 
 	private EmoteClue(
 			final EmoteClueDifficulty emoteClueDifficulty, final String text, final String locationName, final StashUnit stashUnit, final WorldPoint location, final Emote firstEmote,
 			final Emote secondEmote, final ItemRequirement... itemRequirements)
 	{
-		this(emoteClueDifficulty, text, locationName, stashUnit, location, firstEmote, secondEmote, null, null, itemRequirements);
+		this(emoteClueDifficulty, text, locationName, stashUnit, location, firstEmote, secondEmote, null, -1, itemRequirements);
 	}
 
 	private EmoteClue(
 			final EmoteClueDifficulty emoteClueDifficulty, final String text, final String locationName, final StashUnit stashUnit, final WorldPoint location, final Enemy enemy,
 			final Emote firstEmote, final ItemRequirement... itemRequirements)
 	{
-		this(emoteClueDifficulty, text, locationName, stashUnit, location, firstEmote, null, enemy, null, itemRequirements);
+		this(emoteClueDifficulty, text, locationName, stashUnit, location, firstEmote, null, enemy, -1, itemRequirements);
 	}
 
 	private EmoteClue(
-			final EmoteClueDifficulty emoteClueDifficulty, final String text, final String locationName, final StashUnit stashUnit, final WorldPoint location, final Emote firstEmote,
-			final Emote secondEmote, final Varbits firePit, final ItemRequirement... itemRequirements)
+		final EmoteClueDifficulty emoteClueDifficulty, final String text, final String locationName, final StashUnit stashUnit, final WorldPoint location, final Emote firstEmote,
+		final Emote secondEmote, @Varbit final int firePit, final ItemRequirement... itemRequirements)
 	{
 		this(emoteClueDifficulty, text, locationName, stashUnit, location, firstEmote, secondEmote, null, firePit, itemRequirements);
 	}
 
 	private EmoteClue(
 			final EmoteClueDifficulty emoteClueDifficulty, final String text, final String locationName, final StashUnit stashUnit, final WorldPoint location, final Emote firstEmote,
-			final Emote secondEmote, final Enemy enemy, final Varbits hasFirePit, final ItemRequirement... itemRequirements)
+			final Emote secondEmote, final Enemy enemy, @Varbit final int hasFirePit, final ItemRequirement... itemRequirements)
 	{
 		this.emoteClueDifficulty = emoteClueDifficulty;
 		this.text = text;
