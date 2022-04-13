@@ -22,8 +22,8 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 
-	testCompile group: 'org.mockito', name: 'mockito-core', version: '2.23.4'
-	testCompile group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.1.0'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.23.4'
+    testImplementation group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.1.0'
 }
 
 group = 'com.tobmistaketracker'
