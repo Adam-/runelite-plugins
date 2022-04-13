@@ -193,11 +193,11 @@ public class SuppliesTrackerPlugin extends Plugin
 
 	//Rune pouch stuff
 	private boolean runepouchInInv = false;
-	private static final Varbits[] AMOUNT_VARBITS =
+	private static final int[] AMOUNT_VARBITS =
 			{
 					Varbits.RUNE_POUCH_AMOUNT1, Varbits.RUNE_POUCH_AMOUNT2, Varbits.RUNE_POUCH_AMOUNT3
 			};
-	private static final Varbits[] RUNE_VARBITS =
+	private static final int[] RUNE_VARBITS =
 			{
 					Varbits.RUNE_POUCH_RUNE1, Varbits.RUNE_POUCH_RUNE2, Varbits.RUNE_POUCH_RUNE3
 			};
