@@ -7,8 +7,6 @@ import java.util.regex.Pattern;
 public class TobDropChanceConstant
 {
 
-    public static final Varbits THEATRE_STATUS_VARP = Varbits.THEATRE_OF_BLOOD;
-
     public static final int THEATRE_RAIDERS_VARP = 330;
     public static final int MAX_RAIDERS = 5;
 
