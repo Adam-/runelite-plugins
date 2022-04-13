@@ -59,7 +59,7 @@ import net.runelite.http.api.RuneLiteAPI;
 @Slf4j
 public class BankValueHistoryTracker
 {
-	private static final List<Varbits> TAB_VARBITS = ImmutableList.of(
+	private static final List<Integer> TAB_VARBITS = ImmutableList.of(
 		Varbits.BANK_TAB_ONE_COUNT,
 		Varbits.BANK_TAB_TWO_COUNT,
 		Varbits.BANK_TAB_THREE_COUNT,
