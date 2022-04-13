@@ -1,10 +1,15 @@
 package com.github.m0bilebtw;
 
 import com.google.inject.Provides;
+import java.util.HashMap;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import static net.runelite.api.Varbits.DIARY_KARAMJA_EASY;
+import static net.runelite.api.Varbits.DIARY_KARAMJA_HARD;
+import static net.runelite.api.Varbits.DIARY_KARAMJA_MEDIUM;
+import net.runelite.api.annotations.Varbit;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
@@ -50,12 +55,12 @@ public class CEngineerCompletedPlugin extends Plugin
 	@Inject
 	private OkHttpClient okHttpClient;
 
-	private final Varbits[] varbitsAchievementDiaries = {
+	private final int[] varbitsAchievementDiaries = {
 			Varbits.DIARY_ARDOUGNE_EASY, Varbits.DIARY_ARDOUGNE_MEDIUM, Varbits.DIARY_ARDOUGNE_HARD, Varbits.DIARY_ARDOUGNE_ELITE,
 			Varbits.DIARY_DESERT_EASY, Varbits.DIARY_DESERT_MEDIUM, Varbits.DIARY_DESERT_HARD, Varbits.DIARY_DESERT_ELITE,
 			Varbits.DIARY_FALADOR_EASY, Varbits.DIARY_FALADOR_MEDIUM, Varbits.DIARY_FALADOR_HARD, Varbits.DIARY_FALADOR_ELITE,
 			Varbits.DIARY_KANDARIN_EASY, Varbits.DIARY_KANDARIN_MEDIUM, Varbits.DIARY_KANDARIN_HARD, Varbits.DIARY_KANDARIN_ELITE,
-			Varbits.DIARY_KARAMJA_EASY, Varbits.DIARY_KARAMJA_MEDIUM, Varbits.DIARY_KARAMJA_HARD, Varbits.DIARY_KARAMJA_ELITE,
+			DIARY_KARAMJA_EASY, DIARY_KARAMJA_MEDIUM, DIARY_KARAMJA_HARD, Varbits.DIARY_KARAMJA_ELITE,
 			Varbits.DIARY_KOUREND_EASY, Varbits.DIARY_KOUREND_MEDIUM, Varbits.DIARY_KOUREND_HARD, Varbits.DIARY_KOUREND_ELITE,
 			Varbits.DIARY_LUMBRIDGE_EASY, Varbits.DIARY_LUMBRIDGE_MEDIUM, Varbits.DIARY_LUMBRIDGE_HARD, Varbits.DIARY_LUMBRIDGE_ELITE,
 			Varbits.DIARY_MORYTANIA_EASY, Varbits.DIARY_MORYTANIA_MEDIUM, Varbits.DIARY_MORYTANIA_HARD, Varbits.DIARY_MORYTANIA_ELITE,
@@ -79,7 +84,7 @@ public class CEngineerCompletedPlugin extends Plugin
     private static final int WORLD_POINT_LUMCASTLE_STAIRCASE_NORTH_Y = 3229;
 
 	private final Map<Skill, Integer> oldExperience = new EnumMap<>(Skill.class);
-	private final Map<Varbits, Integer> oldAchievementDiaries = new EnumMap<>(Varbits.class);
+	private final Map<Integer, Integer> oldAchievementDiaries = new HashMap<>();
 
 	private int lastLoginTick = -1;
 	private int lastGEOfferTick = -1;
@@ -111,8 +116,8 @@ public class CEngineerCompletedPlugin extends Plugin
 			for (final Skill skill : Skill.values()) {
 				oldExperience.put(skill, client.getSkillExperience(skill));
 			}
-			for (Varbits diary : varbitsAchievementDiaries) {
-				int value = client.getVar(diary);
+			for (@Varbit int diary : varbitsAchievementDiaries) {
+				int value = client.getVarbitValue(diary);
 				oldAchievementDiaries.put(diary, value);
 			}
 		}
@@ -240,8 +245,8 @@ public class CEngineerCompletedPlugin extends Plugin
 		}
 
 		// Apparently I can't check if it's a particular varbit using the names from Varbits enum, so this is the way
-		for (Varbits diary : varbitsAchievementDiaries) {
-			int newValue = client.getVar(diary);
+		for (@Varbit int diary : varbitsAchievementDiaries) {
+			int newValue = client.getVarbitValue(diary);
 			int previousValue = oldAchievementDiaries.getOrDefault(diary, -1);
 			oldAchievementDiaries.put(diary, newValue);
 			if (config.announceAchievementDiary() && previousValue != -1 && previousValue != newValue && isAchievementDiaryCompleted(diary, newValue)) {
@@ -290,7 +295,7 @@ public class CEngineerCompletedPlugin extends Plugin
 		lastGEOfferTick = client.getTickCount();
 	}
 
-	private boolean isAchievementDiaryCompleted(Varbits diary, int value) {
+	private boolean isAchievementDiaryCompleted(int diary, int value) {
 		switch (diary) {
 			case DIARY_KARAMJA_EASY:
 			case DIARY_KARAMJA_MEDIUM:
