@@ -127,7 +127,7 @@ public class RaidTrackerTest extends TestCase
 	{
 		RaidTracker raidTracker = new RaidTracker();
 
-		when(client.getVar(ArgumentMatchers.any(Varbits.class))).thenReturn(5); //random integer, I chose 5
+		when(client.getVar(anyInt())).thenReturn(5); //random integer, I chose 5
 		raidTracker.setInRaidChambers(true);
 
 		ChatMessage message  = new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Congratulations - your raid is complete! Team size: 15 Players Duration: 50:26 Personal best: 31:12", "", 0);
