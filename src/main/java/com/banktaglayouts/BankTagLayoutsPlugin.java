@@ -181,8 +181,8 @@ public class BankTagLayoutsPlugin extends Plugin implements MouseListener
 	private final Map<Integer, Widget> indexToWidget = new HashMap<>();
 
 	// Copied from the rune pouch plugin
-	private static final Varbits[] AMOUNT_VARBITS = {Varbits.RUNE_POUCH_AMOUNT1, Varbits.RUNE_POUCH_AMOUNT2, Varbits.RUNE_POUCH_AMOUNT3};
-	private static final Varbits[] RUNE_VARBITS = {Varbits.RUNE_POUCH_RUNE1, Varbits.RUNE_POUCH_RUNE2, Varbits.RUNE_POUCH_RUNE3};
+	private static final int[] AMOUNT_VARBITS = {Varbits.RUNE_POUCH_AMOUNT1, Varbits.RUNE_POUCH_AMOUNT2, Varbits.RUNE_POUCH_AMOUNT3};
+	private static final int[] RUNE_VARBITS = {Varbits.RUNE_POUCH_RUNE1, Varbits.RUNE_POUCH_RUNE2, Varbits.RUNE_POUCH_RUNE3};
 
 	private Widget showLayoutPreviewButton = null;
 	private Widget applyLayoutPreviewButton = null;
