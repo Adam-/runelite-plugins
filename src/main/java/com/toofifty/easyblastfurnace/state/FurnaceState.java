@@ -1,7 +1,7 @@
 package com.toofifty.easyblastfurnace.state;
 
+import com.toofifty.easyblastfurnace.utils.BarsOres;
 import net.runelite.api.Client;
-import net.runelite.client.plugins.blastfurnace.BarsOres;
 
 import javax.inject.Inject;
 import java.util.Arrays;
