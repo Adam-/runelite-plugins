@@ -1,0 +1,49 @@
+plugins {
+	id 'java'
+	id "com.github.johnrengelman.shadow" version "7.1.2"
+}
+
+repositories {
+	mavenLocal()
+	maven {
+		url = 'https://repo.runelite.net'
+	}
+	mavenCentral()
+}
+
+def runeLiteVersion = '1.8.25-SNAPSHOT'
+
+dependencies {
+	compileOnly group: 'net.runelite', name: 'client', version: runeLiteVersion
+
+	compileOnly 'org.projectlombok:lombok:1.18.4'
+	annotationProcessor 'org.projectlombok:lombok:1.18.4'
+
+	def joglVer = "2.4.0-rc-20220318";
+	implementation "net.runelite.jogl:jogl-rl:$joglVer"
+	implementation "net.runelite.gluegen:gluegen-rt:$joglVer"
+	["windows-amd64", "windows-i586", "linux-amd64", "macosx-universal"].each { platform ->
+		runtimeOnly "net.runelite.jogl:jogl-rl:$joglVer:natives-$platform"
+		runtimeOnly "net.runelite.gluegen:gluegen-rt:$joglVer:natives-$platform"
+	}
+
+	testImplementation 'junit:junit:4.12'
+	testImplementation group: 'net.runelite', name: 'client', version: runeLiteVersion
+	testImplementation group: 'net.runelite', name: 'jshell', version: runeLiteVersion
+}
+
+group = 'com.example'
+version = '1.3.3'
+sourceCompatibility = '1.8'
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+}
+
+shadowJar {
+	from sourceSets.test.output
+	configurations = [project.configurations.testRuntimeClasspath]
+	manifest {
+		attributes "Main-Class": "com.example.ExamplePluginTest"
+	}
+}
