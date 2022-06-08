@@ -27,7 +27,7 @@ package com.goaltracker.ui;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
-import java.io.FileWriter;
+
 import javax.swing.filechooser.FileNameExtensionFilter;
 import lombok.Getter;
 import com.goaltracker.Goal;
@@ -54,9 +54,13 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -190,9 +194,10 @@ public class GoalTrackerPanel extends PluginPanel
 					if (confirm != 0) return;
 				}
 
-				try
+				try (FileInputStream fileStream = new FileInputStream(file);
+					InputStreamReader reader = new InputStreamReader(fileStream, StandardCharsets.UTF_8);
+					BufferedReader in = new BufferedReader(reader))
 				{
-					BufferedReader in = new BufferedReader(new FileReader(file));
 					String line = in.readLine();
 					StringBuilder json = new StringBuilder();
 					while (line != null)
@@ -254,13 +259,12 @@ public class GoalTrackerPanel extends PluginPanel
 					file = new File(file.getParentFile(), file.getName() + ".json");
 				}
 
-				try
+				try (FileOutputStream fileStream = new FileOutputStream(file);
+					OutputStreamWriter writer = new OutputStreamWriter(fileStream, StandardCharsets.UTF_8))
 				{
 					final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 					final String json = gson.toJson(plugin.getGoals());
-					FileWriter fw = new FileWriter(file);
-					fw.write(json);
-					fw.close();
+					writer.write(json);
 				}
 				catch (IOException ex)
 				{
