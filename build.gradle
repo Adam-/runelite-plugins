@@ -19,6 +19,7 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok:1.18.4'
 	annotationProcessor 'org.projectlombok:lombok:1.18.4'
 
+	/*
 	def joglVer = "2.4.0-rc-20220318";
 	implementation "net.runelite.jogl:jogl-rl:$joglVer"
 	implementation "net.runelite.gluegen:gluegen-rt:$joglVer"
@@ -26,6 +27,7 @@ dependencies {
 		runtimeOnly "net.runelite.jogl:jogl-rl:$joglVer:natives-$platform"
 		runtimeOnly "net.runelite.gluegen:gluegen-rt:$joglVer:natives-$platform"
 	}
+	*/
 
 	testImplementation 'junit:junit:4.12'
 	testImplementation group: 'net.runelite', name: 'client', version: runeLiteVersion
