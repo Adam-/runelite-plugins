@@ -10,16 +10,16 @@ public interface DiscordLootLoggerConfig extends Config
 	String GROUP = "discordlootlogger";
 
 	@ConfigItem(
-		keyName = "webhook",
-		name = "Webhook URL",
-		description = "The Discord Webhook URL to send messages to"
+			keyName = "webhook",
+			name = "Webhook URL",
+			description = "The Discord Webhook URL to send messages to"
 	)
 	String webhook();
 
 	@ConfigItem(
-		keyName = "sendScreenshot",
-		name = "Send Screenshot",
-		description = "Includes a screenshot when receiving the loot"
+			keyName = "sendScreenshot",
+			name = "Send Screenshot",
+			description = "Includes a screenshot when receiving the loot"
 	)
 	default boolean sendScreenshot()
 	{
@@ -27,16 +27,16 @@ public interface DiscordLootLoggerConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "lootnpcs",
-		name = "Loot NPCs",
-		description = "Only logs loot from these NPCs, comma separated"
+			keyName = "lootnpcs",
+			name = "Loot NPCs",
+			description = "Only logs loot from these NPCs, comma separated"
 	)
 	String lootNpcs();
 
 	@ConfigItem(
-		keyName = "includeLowValueItems",
-		name = "Include Low Value Items",
-		description = "Only log loot items worth more than the value set in loot value option."
+			keyName = "includeLowValueItems",
+			name = "Include Low Value Items",
+			description = "Only log loot items worth more than the value set in loot value option."
 	)
 	default boolean includeLowValueItems()
 	{
@@ -44,9 +44,9 @@ public interface DiscordLootLoggerConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "lootvalue",
-		name = "Loot Value",
-		description = "Only logs loot worth more then the given value. 0 to disable."
+			keyName = "lootvalue",
+			name = "Loot Value",
+			description = "Only logs loot worth more then the given value. 0 to disable."
 	)
 	default int lootValue()
 	{
@@ -54,9 +54,9 @@ public interface DiscordLootLoggerConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "stackvalue",
-		name = "Include Stack Value",
-		description = "Include the value of each stack."
+			keyName = "stackvalue",
+			name = "Include Stack Value",
+			description = "Include the value of each stack."
 	)
 	default boolean stackValue()
 	{
@@ -64,11 +64,31 @@ public interface DiscordLootLoggerConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "includeusername",
-		name = "Include Username",
-		description = "Include your RSN in the post."
+			keyName = "includeusername",
+			name = "Include Username",
+			description = "Include your RSN in the post."
 	)
 	default boolean includeUsername()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "includepets",
+			name = "Include Pets",
+			description = "Log pet drops."
+	)
+	default boolean includePets()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+			keyName = "includecollectionlog",
+			name = "Include Collection Log",
+			description = "Log collection log drops. (Must enable Settings>Chat>Collection log - New addition notification)"
+	)
+	default boolean includeCollectionLog()
 	{
 		return false;
 	}

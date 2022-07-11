@@ -5,16 +5,16 @@ import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.NPC;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -30,6 +30,8 @@ import net.runelite.client.util.ImageCapture;
 import net.runelite.client.util.QuantityFormatter;
 import net.runelite.client.util.Text;
 import net.runelite.client.util.WildcardMatcher;
+
+import static net.runelite.api.ChatMessageType.CONSOLE;
 import static net.runelite.http.api.RuneLiteAPI.GSON;
 import net.runelite.http.api.loottracker.LootRecordType;
 import okhttp3.Call;
@@ -44,7 +46,7 @@ import okhttp3.Response;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Discord Loot Logger"
+		name = "Discord Loot Logger"
 )
 public class DiscordLootLoggerPlugin extends Plugin
 {
@@ -64,6 +66,10 @@ public class DiscordLootLoggerPlugin extends Plugin
 	private DrawManager drawManager;
 
 	private List<String> lootNpcs;
+
+	private static final Pattern COLLECTION_LOG_ITEM_REGEX = Pattern.compile("New item added to your collection log:.*");
+
+	private static final Pattern Pet_LOG_ITEM_REGEX = Pattern.compile("You have a funny feeling like you.*");
 
 	private static String itemImageUrl(int itemId)
 	{
@@ -141,15 +147,44 @@ public class DiscordLootLoggerPlugin extends Plugin
 		processLoot(lootReceived.getName(), lootReceived.getItems());
 	}
 
+	@Subscribe
+	public void onChatMessage(ChatMessage chatMessage) {
+		boolean processCollection = false;
+		if (chatMessage.getType() != ChatMessageType.GAMEMESSAGE && chatMessage.getType() != ChatMessageType.SPAM) {
+			return;
+		}
+		String inputMessage = chatMessage.getMessage();
+		String outputMessage = inputMessage.replaceAll("\\<.*?>", "");
+		if (config.includeCollectionLog() && COLLECTION_LOG_ITEM_REGEX.matcher(outputMessage).matches()) {
+			processCollection = true;
+		}
+		if (config.includePets() && Pet_LOG_ITEM_REGEX.matcher(outputMessage).matches()) {
+			processCollection = true;
+		}
+		if(processCollection) {
+			processCollection(outputMessage);
+		}
+	}
+
 	private String getPlayerName()
 	{
 		return client.getLocalPlayer().getName();
 	}
-
+	private void processCollection(String name){
+		WebhookBody webhookBody = new WebhookBody();
+		boolean sendMessage = false;
+		StringBuilder stringBuilder = new StringBuilder();
+		if (config.includeUsername())
+		{
+			stringBuilder.append("\n**").append(getPlayerName()).append("**").append("\n\n");
+		}
+		stringBuilder.append("***").append(name).append("***").append("\n");
+		webhookBody.setContent(stringBuilder.toString());
+		sendWebhook(webhookBody);
+	}
 	private void processLoot(String name, Collection<ItemStack> items)
 	{
 		WebhookBody webhookBody = new WebhookBody();
-
 		boolean sendMessage = false;
 		long totalValue = 0;
 		StringBuilder stringBuilder = new StringBuilder();
@@ -200,8 +235,8 @@ public class DiscordLootLoggerPlugin extends Plugin
 
 		HttpUrl url = HttpUrl.parse(configUrl);
 		MultipartBody.Builder requestBodyBuilder = new MultipartBody.Builder()
-			.setType(MultipartBody.FORM)
-			.addFormDataPart("payload_json", GSON.toJson(webhookBody));
+				.setType(MultipartBody.FORM)
+				.addFormDataPart("payload_json", GSON.toJson(webhookBody));
 
 		if (config.sendScreenshot())
 		{
@@ -230,7 +265,7 @@ public class DiscordLootLoggerPlugin extends Plugin
 			}
 
 			requestBodyBuilder.addFormDataPart("file", "image.png",
-				RequestBody.create(MediaType.parse("image/png"), imageBytes));
+					RequestBody.create(MediaType.parse("image/png"), imageBytes));
 			buildRequestAndSend(url, requestBodyBuilder);
 		});
 	}
@@ -239,9 +274,9 @@ public class DiscordLootLoggerPlugin extends Plugin
 	{
 		RequestBody requestBody = requestBodyBuilder.build();
 		Request request = new Request.Builder()
-			.url(url)
-			.post(requestBody)
-			.build();
+				.url(url)
+				.post(requestBody)
+				.build();
 		sendRequest(request);
 	}
 
