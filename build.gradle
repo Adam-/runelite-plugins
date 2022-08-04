@@ -27,6 +27,14 @@ dependencies {
 	testCompileOnly 'org.projectlombok:lombok:1.18.20'
 	testAnnotationProcessor 'org.projectlombok:lombok:1.18.20'
 
+	def joglVer = "2.4.0-rc-20220318";
+	implementation "net.runelite.jogl:jogl-rl:$joglVer"
+	implementation "net.runelite.gluegen:gluegen-rt:$joglVer"
+	["windows-amd64", "windows-i586", "linux-amd64", "macosx-universal"].each { platform ->
+		runtimeOnly "net.runelite.jogl:jogl-rl:$joglVer:natives-$platform"
+		runtimeOnly "net.runelite.gluegen:gluegen-rt:$joglVer:natives-$platform"
+	}
+
 	//compileOnly group: 'net.runelite', name: 'jogl-rl', version: runeLiteVersion
 }
 
