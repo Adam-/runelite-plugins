@@ -1,5 +1,6 @@
 package info.sigterm.plugins.discordlootlogger;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
@@ -151,7 +152,6 @@ public class DiscordLootLoggerPlugin extends Plugin
 		WebhookBody webhookBody = new WebhookBody();
 
 		boolean sendMessage = false;
-		long totalValue = 0;
 		StringBuilder stringBuilder = new StringBuilder();
 		if (config.includeUsername())
 		{
@@ -166,8 +166,6 @@ public class DiscordLootLoggerPlugin extends Plugin
 
 			int price = itemManager.getItemPrice(itemId);
 			long total = (long) price * qty;
-
-			totalValue += total;
 
 			if (config.includeLowValueItems() || total >= targetValue)
 			{
@@ -192,24 +190,37 @@ public class DiscordLootLoggerPlugin extends Plugin
 
 	private void sendWebhook(WebhookBody webhookBody)
 	{
-		String configUrl = config.webhook();
-		if (Strings.isNullOrEmpty(configUrl))
+		String configUrls = config.webhook();
+		if (Strings.isNullOrEmpty(configUrls))
 		{
 			return;
 		}
 
-		HttpUrl url = HttpUrl.parse(configUrl);
-		MultipartBody.Builder requestBodyBuilder = new MultipartBody.Builder()
-			.setType(MultipartBody.FORM)
-			.addFormDataPart("payload_json", GSON.toJson(webhookBody));
+		List<String> urls = Splitter.on("\n")
+			.omitEmptyStrings()
+			.trimResults()
+			.splitToList(configUrls);
+		for (String url : urls)
+		{
+			HttpUrl u = HttpUrl.parse(url);
+			if (u == null)
+			{
+				log.info("Malformed webhook url {}", url);
+				continue;
+			}
 
-		if (config.sendScreenshot())
-		{
-			sendWebhookWithScreenshot(url, requestBodyBuilder);
-		}
-		else
-		{
-			buildRequestAndSend(url, requestBodyBuilder);
+			MultipartBody.Builder requestBodyBuilder = new MultipartBody.Builder()
+				.setType(MultipartBody.FORM)
+				.addFormDataPart("payload_json", GSON.toJson(webhookBody));
+
+			if (config.sendScreenshot())
+			{
+				sendWebhookWithScreenshot(u, requestBodyBuilder);
+			}
+			else
+			{
+				buildRequestAndSend(u, requestBodyBuilder);
+			}
 		}
 	}
 
