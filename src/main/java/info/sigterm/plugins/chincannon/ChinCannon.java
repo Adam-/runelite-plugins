@@ -12,7 +12,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Chinchompa cannon"
+	name = "Chinbompa"
 )
 public class ChinCannon extends Plugin
 {
