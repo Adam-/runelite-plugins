@@ -99,6 +99,9 @@ public class GoalTrackerPanel extends PluginPanel
 	@Getter
 	private int selectedBorderThickness = DEFAULT_BORDER_THICKNESS;
 
+	@Inject
+	private Gson gson;
+
 	static
 	{
 		final BufferedImage addIcon = ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "add_icon.png");
@@ -262,7 +265,6 @@ public class GoalTrackerPanel extends PluginPanel
 				try (FileOutputStream fileStream = new FileOutputStream(file);
 					OutputStreamWriter writer = new OutputStreamWriter(fileStream, StandardCharsets.UTF_8))
 				{
-					final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 					final String json = gson.toJson(plugin.getGoals());
 					writer.write(json);
 				}
