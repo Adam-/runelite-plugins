@@ -49,7 +49,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 @PluginDescriptor(
-		name = "Goal Tracker",
+		name = "Region Goal Tracker",
 		description = "Add goals to chunks",
 		tags = {"chunk", "backlog", "log"},
 		enabledByDefault = false
