@@ -95,6 +95,9 @@ public class GoalTrackerPlugin extends Plugin
 	@Inject
 	private GoalTrackerInput inputListener;
 
+	@Inject
+	private Gson gson;
+
 	private GoalTrackerPanel pluginPanel;
 	private NavigationButton navigationButton;
 	private NavigationButton titleBarButton;
@@ -148,7 +151,6 @@ public class GoalTrackerPlugin extends Plugin
 			return;
 		}
 
-		final Gson gson = new Gson();
 		final String json = gson.toJson(goals);
 		configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY, json);
 	}
@@ -160,7 +162,6 @@ public class GoalTrackerPlugin extends Plugin
 			return Stream.empty();
 		}
 
-		final Gson gson = new Gson();
 		try
 		{
 			final List<Goal> goalData = gson.fromJson(json, new TypeToken<ArrayList<Goal>>()
