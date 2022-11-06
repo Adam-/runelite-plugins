@@ -23,7 +23,7 @@ public class ChinCannon extends Plugin
 	public void onProjectileMoved(ProjectileMoved projectileMoved)
 	{
 		Projectile projectile = projectileMoved.getProjectile();
-		if (projectile.getId() == 53) //cball
+		if (projectile.getId() == 53 || projectile.getId() == 1443) //cball, granite cball
 		{
 			Projectile p = client.createProjectile(1272, //black chin
 				projectile.getFloor(),
