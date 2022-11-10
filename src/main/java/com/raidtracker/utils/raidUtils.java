@@ -23,7 +23,7 @@ public class raidUtils
     private Client client;
 
     @Inject
-    private static RaidTrackerPlugin RaidTrackerPlugin;
+    private static RaidTrackerPlugin raidTrackerPlugin;
 
     @Inject
     private ConfigManager configManager;
@@ -46,12 +46,12 @@ public class raidUtils
                 {
                     if (message.startsWith(room))
                     {
-                        Array.set(raidTracker.roomTimes, ArrayUtils.indexOf(coxRooms, room), com.raidtracker.RaidTrackerPlugin.stringTimeToSeconds(timeString.split(" ")[timeString.split(" ").length - 1]));
+                        Array.set(raidTracker.roomTimes, ArrayUtils.indexOf(coxRooms, room), raidTrackerPlugin.stringTimeToSeconds(timeString.split(" ")[timeString.split(" ").length - 1]));
                         return;
                     };
                     if (message.toLowerCase().contains(room))
                     {
-                        Array.set(raidTracker.roomTimes, ArrayUtils.indexOf(coxRooms, room), com.raidtracker.RaidTrackerPlugin.stringTimeToSeconds(timeString.split(" ")[0]));
+                        Array.set(raidTracker.roomTimes, ArrayUtils.indexOf(coxRooms, room), raidTrackerPlugin.stringTimeToSeconds(timeString.split(" ")[0]));
                         return;
                     };
                 };
@@ -64,12 +64,12 @@ public class raidUtils
                     Array.set(
                             raidTracker.roomTimes,
                             ArrayUtils.indexOf(waves, wave),
-                            (com.raidtracker.RaidTrackerPlugin.stringTimeToSeconds(message.toLowerCase().split("duration: ")[1].split((wave.equalsIgnoreCase("the final challenge")) ? "theatre" : "total")[0]
+                            (raidTrackerPlugin.stringTimeToSeconds(message.toLowerCase().split("duration: ")[1].split((wave.equalsIgnoreCase("the final challenge")) ? "theatre" : "total")[0]
                             )));
                 }
 
                 if (message.toLowerCase().contains("theatre of blood wave completion")) {
-                    raidTracker.setRaidTime(com.raidtracker.RaidTrackerPlugin.stringTimeToSeconds(message.toLowerCase().split("time: ")[1].split("personal")[0]));
+                    raidTracker.setRaidTime(raidTrackerPlugin.stringTimeToSeconds(message.toLowerCase().split("time: ")[1].split("personal")[0]));
                 }
 
                 break;
@@ -86,20 +86,20 @@ public class raidUtils
                         if (message.contains("Tombs"))
                         {
                             String m1 = (message.split("Tombs")[0]).split("Duration: ")[1]; // Warden completion time.
-                            Array.set(raidTracker.getRoomTimes(), ArrayUtils.indexOf(toaRooms, room), com.raidtracker.RaidTrackerPlugin.stringTimeToSeconds(m1.split(" ")[0]));
+                            Array.set(raidTracker.getRoomTimes(), ArrayUtils.indexOf(toaRooms, room), raidTrackerPlugin.stringTimeToSeconds(m1.split(" ")[0]));
                             String m2 = (message.split("Tombs")[1]).split("time: ")[1].split(". Personal best:")[0]; // Total Completion time.
-                            raidTracker.setRaidTime(com.raidtracker.RaidTrackerPlugin.stringTimeToSeconds(m2.split(" ")[0]));
+                            raidTracker.setRaidTime(raidTrackerPlugin.stringTimeToSeconds(m2.split(" ")[0]));
                         } else
                         {
                             String[] bossRooms = {"Zebak", "Ba-Ba", "Akkha", "Kephri"};
-                            Array.set(raidTracker.getRoomTimes(), ArrayUtils.indexOf(toaRooms, room), com.raidtracker.RaidTrackerPlugin.stringTimeToSeconds(t.split(" ")[0]));
+                            Array.set(raidTracker.getRoomTimes(), ArrayUtils.indexOf(toaRooms, room), raidTrackerPlugin.stringTimeToSeconds(t.split(" ")[0]));
                             if (ArrayUtils.indexOf(toaRooms, room) %2 != 0)
                             {
                                 int pathTime = (int) Array.get(raidTracker.getRoomTimes(), ArrayUtils.indexOf(toaRooms, room) - 1);
                                 Array.set(
                                         raidTracker.getRoomTimes(),
                                         toaRooms.length + ArrayUtils.indexOf(bossRooms, room),
-                                        (pathTime + com.raidtracker.RaidTrackerPlugin.stringTimeToSeconds(t.split(" ")[0]))
+                                        (pathTime + raidTrackerPlugin.stringTimeToSeconds(t.split(" ")[0]))
                                 );
                             };
                         }
@@ -122,7 +122,7 @@ public class raidUtils
                 String name = message.split(" - ")[0];
                 if (name == playername)
                 {
-                    name =   RaidTrackerPlugin.getProfileKey(configManager);
+                    name =   raidTrackerPlugin.getProfileKey(configManager);
                 };
                 String drop = message.split(" - ")[1];
                 int value = itemManager.search(drop).get(0).getPrice();
@@ -137,7 +137,7 @@ public class raidUtils
                 String name = message.split(" found something special: ")[0];
                 if (name == playername)
                 {
-                    name =   RaidTrackerPlugin.getProfileKey(configManager);
+                    name =   raidTrackerPlugin.getProfileKey(configManager);
                 };
                 String drop = message.split(" found something special: ")[1];
                 int value = itemManager.search(drop).get(0).getPrice();
@@ -159,17 +159,17 @@ public class raidUtils
         switch (tracker.getCurrentState().getRaidType())
         {
             case 0 :
-                if (message.startsWith(com.raidtracker.RaidTrackerPlugin.TWISTED_KIT_RECIPIENTS) || message.startsWith(com.raidtracker.RaidTrackerPlugin.DUST_RECIPIENTS))
+                if (message.startsWith(raidTrackerPlugin.TWISTED_KIT_RECIPIENTS) || message.startsWith(raidTrackerPlugin.DUST_RECIPIENTS))
                 {
-                    boolean isKit = message.startsWith(com.raidtracker.RaidTrackerPlugin.TWISTED_KIT_RECIPIENTS);
+                    boolean isKit = message.startsWith(raidTrackerPlugin.TWISTED_KIT_RECIPIENTS);
                     String[] recipients = isKit ?
-                            message.split(com.raidtracker.RaidTrackerPlugin.TWISTED_KIT_RECIPIENTS)[1].split(",") :
-                            message.split(com.raidtracker.RaidTrackerPlugin.DUST_RECIPIENTS)[1].split(",");
+                            message.split(raidTrackerPlugin.TWISTED_KIT_RECIPIENTS)[1].split(",") :
+                            message.split(raidTrackerPlugin.DUST_RECIPIENTS)[1].split(",");
                     for (String recipient : recipients)
                     {
                         if (recipient == playername)
                         {
-                            recipient =   RaidTrackerPlugin.getProfileKey(configManager);
+                            recipient =   raidTrackerPlugin.getProfileKey(configManager);
                         };
                         nTradables.add(new UniqueDrop(recipient, isKit ? "Twisted Kit" : "Metamorphic Dust"));
                     }
@@ -179,7 +179,7 @@ public class raidUtils
                 String name = message.split(" found something special: ")[0];
                 if (name == playername)
                 {
-                    name =   RaidTrackerPlugin.getProfileKey(configManager);
+                    name =   raidTrackerPlugin.getProfileKey(configManager);
                 };
                 String drop = message.split(" found something special: ")[1];
                 nTradables.add(new UniqueDrop(name, drop));
@@ -194,7 +194,7 @@ public class raidUtils
         boolean duplicate = message.toLowerCase().contains("would have been followed");
         String tmpName = message.split(" ")[0];
         String drop = "";
-        String name = duplicate ? com.raidtracker.RaidTrackerPlugin.profileKey : message.split(" ")[0];
+        String name = duplicate ? raidTrackerPlugin.profileKey : message.split(" ")[0];
         switch (tracker.getCurrentState().getRaidType())
         {
             case 0 : drop = "Olmlet";break;

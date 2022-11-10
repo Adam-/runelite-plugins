@@ -347,8 +347,15 @@ public class RaidTrackerPlugin extends Plugin
 
 		if (tracker.isInRaid() && (event.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION || event.getType() == ChatMessageType.GAMEMESSAGE))
 		{
+
 			//unescape java to avoid unicode
 			String message = unescapeJavaString(Text.removeTags(event.getMessage()));
+
+			// zz chambers.
+			if (message.startsWith(RAID_COMPLETE_MESSAGE))
+			{
+				raidTracker.setRaidComplete(true);
+			};
 			String[] pets = {"olmlet", "lil' zik", "tumeken's guardian"};
 			boolean hasPet = Utils.containsCaseInsensitive(message, pets);
 			if (raidTracker.isRaidComplete() && (hasPet || message.toLowerCase().contains("would have been followed")))
@@ -365,7 +372,8 @@ public class RaidTrackerPlugin extends Plugin
 			if (
 					raidTracker.isRaidComplete() && // if the raid is complete
 					Utils.containsCaseInsensitive(Arrays.asList(SPECIAL_LOOT_MESSAGE), message) && // and it comtains special loot message
-					!Utils.containsCaseInsensitive(Arrays.asList(ROOM_COMPLETE_MESSAGE), message) // and it doesn't contain raid completed message
+					!Utils.containsCaseInsensitive(Arrays.asList(ROOM_COMPLETE_MESSAGE), message) &&
+					!message.startsWith(RAID_COMPLETE_MESSAGE)// and it doesn't contain raid completed message
 			)
 			{
 				if (Utils.containsCaseInsensitive(Arrays.asList(SPECIAL_LOOT_MESSAGE), message))

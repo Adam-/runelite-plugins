@@ -31,15 +31,18 @@ public class FileReadWriter {
         };
         log.info("writer started");
         ArrayList<RaidTracker> saved = readFromFile(raidTracker.getInRaidType());
-        final boolean[] newrt = {true};
-        saved.forEach(srt -> {
-            if (srt.getKillCountID() == raidTracker.getKillCountID())
+        boolean newrt = true;
+        int index = 0;
+        for (RaidTracker srt : saved)
+        {
+            if (srt.getKillCountID().equalsIgnoreCase(raidTracker.getKillCountID()))
             {
-                newrt[0] = false;
-                saved.set(saved.indexOf(srt), raidTracker);
+                newrt = false;
+                saved.set(index, raidTracker);
             };
-        });
-        if (newrt[0])
+            index ++;
+        }
+        if (newrt)
         {
             saved.add(raidTracker);
         };
@@ -171,7 +174,8 @@ public class FileReadWriter {
 
 
             FileWriter fw = new FileWriter(fileName, false); //the true will append the new data
-            for (RaidTracker RT : RTList) {
+            for (RaidTracker RT : RTList)
+            {
                 gson.toJson(parser.parse(getJSONString(RT, gson, parser)), fw);
                 fw.append("\n");
             }

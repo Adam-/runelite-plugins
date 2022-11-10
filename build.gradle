@@ -10,7 +10,7 @@ repositories {
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.8.17'
+def runeLiteVersion = 'latest.release'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -18,11 +18,13 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok:1.18.20'
 	annotationProcessor 'org.projectlombok:lombok:1.18.20'
 
-    testImplementation "org.mockito:mockito-core:3.3.3"
-	testImplementation "com.google.inject.extensions:guice-testlib:4.1.0"
-    testImplementation 'junit:junit:4.12'
-    testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
-    testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
+	testImplementation "org.mockito:mockito-core:3.3.3"
+	testImplementation group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.2.0', {
+		exclude group: 'com.google.inject', module: 'guice'
+	}
+	testImplementation 'junit:junit:4.12'
+	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
+	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
 group = 'raidtracker'
@@ -31,4 +33,5 @@ sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
+	options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }

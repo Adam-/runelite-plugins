@@ -12,6 +12,7 @@ import junit.framework.TestCase;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
+import net.runelite.api.Varbits;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.client.RuneLite;
 import net.runelite.client.config.ConfigClient;
@@ -192,10 +193,13 @@ public class RaidTrackerTest extends TestCase
 	@Test
 	public void ChambersTest()
 	{
+		FileReadWriter fw = new FileReadWriter();
 		Player player = mock(Player.class);
 		when(client.getLocalPlayer()).thenReturn(player);
 		when(player.getName()).thenReturn("Test_user");
-
+		when(client.getVarbitValue(Varbits.TOTAL_POINTS)).thenReturn(50000);
+		when(client.getVarbitValue(Varbits.PERSONAL_POINTS)).thenReturn(1000000);
+		RaidTracker raidTracker = new RaidTracker();
 		List<ItemPrice> ItemList = new ArrayList<>();
 		ItemPrice KodaiItem = new ItemPrice();
 		KodaiItem.setId(0);
@@ -209,10 +213,11 @@ public class RaidTrackerTest extends TestCase
 
 		ItemList.add(KodaiItem);
 		ItemList.add(TbowItem);
+		RaidTrackerPlugin.setFw(fw);
+		raidTracker.inRaidType = 0;
+		//raidTracker.setRaidComplete(true);
+		RaidTrackerPlugin.checkChatMessage(new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "<col=ef20ff>Congratulations - your raid is complete!</col><br>Team size: <col=ff0000>4 players</col> Duration:</col> <col=ff0000>28:33</col> Personal best: </col><col=ff0000>22:50</col>", "", 0), raidTracker);
 
-
-		RaidTracker raidTracker = new RaidTracker();
-		raidTracker.setRaidComplete(true);
 
 		when(RaidStateTracker.getCurrentState()).thenReturn(new RaidState(false, 0));
 		when(itemManager.search(anyString()))
@@ -224,7 +229,7 @@ public class RaidTrackerTest extends TestCase
 		raidTracker.setTeamSize(5);
 		RaidTrackerPlugin.checkChatMessage(new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Player 1 - Kodai insignia", "", 0),raidTracker);
 		RaidTrackerPlugin.checkChatMessage(new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Player 2 - Twisted Bow", "", 0),raidTracker);
-		System.out.println(raidTracker.getUniques());
+		fw.writeToFile(raidTracker);
 	}
 	@Test
 	public void TobTest()
@@ -294,7 +299,9 @@ public class RaidTrackerTest extends TestCase
 				});
 		raidTracker.setTeamSize(5);
 		RaidTrackerPlugin.checkChatMessage( new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Canvasba found something special: Tumeken\\u0027s guardian", "", 0), raidTracker);
+		fw.writeToFile(raidTracker);
 		RaidTrackerPlugin.checkChatMessage(new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Canvasba found something special: Tumekens Shadow", "", 0),raidTracker);
+		fw.writeToFile(raidTracker);
 		RaidTrackerPlugin.checkChatMessage(new ChatMessage(null, ChatMessageType.FRIENDSCHATNOTIFICATION, "", "Canvasba found something special: Osmumtuns Fang", "", 0),raidTracker);
 		fw.writeToFile(raidTracker);
 	};
