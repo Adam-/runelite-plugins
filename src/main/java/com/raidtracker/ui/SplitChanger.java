@@ -1,19 +1,22 @@
 package com.raidtracker.ui;
 
+import com.google.inject.Inject;
 import com.raidtracker.RaidTracker;
+import com.raidtracker.RaidTrackerPlugin;
+import com.raidtracker.utils.UniqueDrop;
+import com.raidtracker.utils.uiUtils;
 import lombok.Getter;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.util.AsyncBufferedImage;
-import org.apache.commons.text.StringEscapeUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.image.AffineTransformOp;
-import java.awt.image.BufferedImage;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -26,42 +29,52 @@ import java.util.TreeMap;
 public class SplitChanger extends JPanel {
 
     @Getter
-    public final RaidTracker raidTracker;
+    public final UniqueDrop drop;
+    private uiUtils uiUtils = new uiUtils();
     private final ItemManager itemManager;
     private final RaidTrackerPanel raidTrackerPanel;
+    @Inject
+    private static RaidTrackerPlugin RaidTrackerPlugin;
+
+    private final  RaidTracker raidTracker;
+    private final String profileKey;
+    private final String name;
     private boolean locked = false;
 
-    public SplitChanger(final ItemManager itemManager, final RaidTracker raidTracker, final RaidTrackerPanel raidTrackerPanel) {
-        this.itemManager = itemManager;
+    public SplitChanger(final ItemManager itemManager, final UniqueDrop drop, final RaidTrackerPanel raidTrackerPanel, RaidTracker raidTracker, String profileKey, String name) {
         this.raidTracker = raidTracker;
+        this.itemManager = itemManager;
+        this.drop = drop;
         this.raidTrackerPanel = raidTrackerPanel;
-
+        this.profileKey = profileKey;
+        this.name = name;
         this.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
         this.setBorder(new EmptyBorder(3,5,5,5));
 
         this.add(getImagePanel());
         this.add(getVarPanel());
+        this.add(Box.createRigidArea(new Dimension(0, 10)));
     }
 
     private JPanel getImagePanel() {
-        AsyncBufferedImage image = itemManager.getImage(getByName(raidTracker.getSpecialLoot()).getItemID(), 1, false);
+        String UniqueName = drop.getDrop();
+        AsyncBufferedImage image = itemManager.getImage(getByName(UniqueName).getItemID(), 1, false);
 
         JPanel iconWrapper = new JPanel();
         iconWrapper.setLayout(new BoxLayout(iconWrapper, BoxLayout.Y_AXIS));
         iconWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-
         JLabel icon = new JLabel();
-        icon.setIcon(new ImageIcon(resizeImage(image)));
+        icon.setIcon(new ImageIcon(uiUtils.resizeImage(image)));
         icon.setVerticalAlignment(SwingConstants.CENTER);
         icon.setHorizontalAlignment(SwingConstants.CENTER);
         icon.setBorder(new EmptyBorder(0,0,0,0));
-        icon.setToolTipText(raidTracker.getSpecialLoot());
+        icon.setToolTipText(UniqueName);
 
 
         image.onLoaded(() ->
         {
-            icon.setIcon(new ImageIcon(resizeImage(image)));
+            icon.setIcon(new ImageIcon(uiUtils.resizeImage(image)));
             icon.revalidate();
             icon.repaint();
         });
@@ -82,70 +95,39 @@ public class SplitChanger extends JPanel {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(new EmptyBorder(5,5,5,0));
         panel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-
+        boolean isOwnDrop = drop.getUsername().equalsIgnoreCase(profileKey);
         JPanel splitReceivedWrapper = new JPanel();
         splitReceivedWrapper.setLayout(new GridLayout(0,2));
         JLabel splitReceivedLabel = textPanel("Split Amount: ");
         splitReceivedLabel.setHorizontalAlignment(SwingConstants.LEFT);
         splitReceivedWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
+        JPanel itempriceWrapper = new JPanel();
+        itempriceWrapper.setLayout(new GridLayout(0, 2));
+        JLabel itempriceLabel = textPanel("Price : ");
+        itempriceLabel.setHorizontalAlignment(SwingConstants.LEFT);
+        itempriceWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+
         JTextField splitReceived = getTextField();
-        splitReceived.setText(format(atleastZero(raidTracker.getLootSplitReceived())));
-        splitReceived.setToolTipText(NumberFormat.getInstance().format(atleastZero(raidTracker.getLootSplitReceived())));
+        splitReceived.setText(format(atleastZero(drop.isFfa() ? (isOwnDrop ? drop.getValue() : 0) : drop.getValue() / drop.getSCount())));
+        splitReceived.setToolTipText(NumberFormat.getInstance().format(atleastZero(drop.isFfa() ? (isOwnDrop ? drop.getValue() : 0) : drop.getValue() / drop.getSCount())));
+        JTextField itemPrice = getTextField();
+        itemPrice.setText(format(atleastZero(drop.getValue())));
+        itemPrice.setToolTipText(NumberFormat.getInstance().format(atleastZero(drop.getValue())));
 
-        splitReceived.getDocument().addDocumentListener((SimpleDocumentListener) e -> {
-            if (!locked) {
-                int value = parse(splitReceived.getText());
-
-                if (value != raidTracker.getLootSplitReceived() && value != -5) {
-                    raidTracker.setLootSplitReceived(value);
-                    if (raidTracker.isFreeForAll()) {
-                        raidTracker.setSpecialLootValue(value);
-                    } else {
-                        raidTracker.setSpecialLootValue(value * raidTracker.getTeamSize());
-                        setSplit();
-                    }
-
-                    splitReceived.setToolTipText(NumberFormat.getInstance().format(atleastZero(raidTracker.getLootSplitReceived())));
-
-                    variablesChanged();
-                }
-            }
-        });
-
-        splitReceived.addActionListener(e -> {
-            //format the number when losing focus
-            splitReceived.setText(format(atleastZero(raidTracker.getLootSplitReceived())));
-        });
 
         splitReceivedWrapper.add(splitReceivedLabel);
         splitReceivedWrapper.add(splitReceived);
-
+        itempriceWrapper.add(itempriceLabel);
+        itempriceWrapper.add(itemPrice);
         JPanel ffaWrapper = new JPanel();
         ffaWrapper.setLayout(new GridLayout(0, 2));
         ffaWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
         JCheckBox ffa = new JCheckBox("FFA?");
         ffa.setBorder(new EmptyBorder(0,15,0,0));
-        ffa.setSelected(raidTracker.isFreeForAll());
-        ffa.addActionListener((e) -> {
-            raidTracker.setFreeForAll(ffa.isSelected());
+        ffa.setSelected(drop.isFfa());
 
-            locked = true;
-
-            if (ffa.isSelected()) {
-                setFFA();
-            }
-            else {
-                setSplit();
-            }
-            splitReceived.setText(format(atleastZero(raidTracker.getLootSplitReceived())));
-            splitReceived.setToolTipText(NumberFormat.getInstance().format(atleastZero(raidTracker.getLootSplitReceived())));
-
-            variablesChanged();
-
-            locked = false;
-        });
 
         JPanel ReceivedWrapper = new JPanel();
         ReceivedWrapper.setLayout(new BoxLayout(ReceivedWrapper, BoxLayout.Y_AXIS));
@@ -154,7 +136,7 @@ public class SplitChanger extends JPanel {
         JLabel receivedBy = textPanel("received by: ");
         receivedBy.setForeground(ColorScheme.LIGHT_GRAY_COLOR.brighter());
 
-        JLabel receiver = textPanel(fixSpaces(raidTracker.getSpecialLootReceiver()));
+        JLabel receiver = textPanel(fixSpaces(drop.getUsername().equalsIgnoreCase(profileKey) ? name : drop.getUsername()));
         receiver.setForeground(ColorScheme.LIGHT_GRAY_COLOR.brighter());
 
         ReceivedWrapper.add(receivedBy);
@@ -165,40 +147,110 @@ public class SplitChanger extends JPanel {
 
         JPanel teamSizeWrapper = new JPanel();
         teamSizeWrapper.setLayout(new GridLayout(0, 2));
-        JLabel teamSizeLabel = textPanel("Team Size: ");
+        JLabel teamSizeLabel = textPanel("Splits : ");
         teamSizeLabel.setHorizontalAlignment(SwingConstants.LEFT);
         teamSizeWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-        SpinnerNumberModel model = new SpinnerNumberModel(Math.min(Math.max(1, raidTracker.getTeamSize()), 100), 1, 100, 1);
+        SpinnerNumberModel model = new SpinnerNumberModel(Math.min(Math.max(1, drop.getSCount()), 100), 1, 100, 1);
         JSpinner teamSize = new JSpinner(model);
         teamSize.setBackground(ColorScheme.DARKER_GRAY_COLOR.darker());
         Component editor = teamSize.getEditor();
 
         JFormattedTextField spinnerTextField = ((JSpinner.DefaultEditor) editor).getTextField();
         spinnerTextField.setColumns(2);
-        teamSize.addChangeListener(e -> {
-            locked = true;
-            raidTracker.setTeamSize(Math.min(Math.max(1, Integer.parseInt(teamSize.getValue().toString())), 100));
-            setSplit();
-            splitReceived.setText(format(atleastZero(raidTracker.getLootSplitReceived())));
-            splitReceived.setToolTipText(NumberFormat.getInstance().format(atleastZero(raidTracker.getLootSplitReceived())));
 
-            variablesChanged();
-
-            locked = false;
+        teamSize.addChangeListener(e -> SplitComponentUpdated(itemPrice,splitReceived,ffa,teamSize));
+        ffa.addActionListener((e) -> {SplitComponentUpdated(itemPrice,splitReceived,ffa,teamSize);});
+        itemPrice.getDocument().addDocumentListener((SimpleDocumentListener) e -> {{SplitComponentUpdated(itemPrice,splitReceived,ffa,teamSize);};});
+        splitReceived.getDocument().addDocumentListener((SimpleDocumentListener) e -> {{SplitComponentUpdated(itemPrice,splitReceived,ffa,teamSize);};});
+        splitReceived.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {};
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER)
+                {
+                    SplitComponentUpdated(itemPrice,splitReceived,ffa,teamSize, true);
+                    e.consume();
+                }
+            };
+            @Override
+            public void keyReleased(KeyEvent e) {}
         });
 
         teamSizeWrapper.add(teamSizeLabel);
         teamSizeWrapper.add(teamSize);
 
+
         panel.add(ffaWrapper);
         panel.add(Box.createRigidArea(new Dimension(0, 3)));
         panel.add(splitReceivedWrapper);
         panel.add(Box.createRigidArea(new Dimension(0, 3)));
+        panel.add(itempriceWrapper);
+        panel.add(Box.createRigidArea(new Dimension(0, 3)));
         panel.add(teamSizeWrapper);
-
         return panel;
     }
+
+    /**
+     * Fired Whenever someone changes a selection on the split changer, Split/Price/ffa/teamsize
+     * @param itemPrice
+     * @param splitReceived
+     * @param ffa
+     *
+     */
+    private void SplitComponentUpdated(JTextField itemPrice, JTextField splitReceived, JCheckBox ffa, JSpinner teamSize, boolean updateall)
+    {
+        if (locked) return;
+        locked = true;
+        boolean editPrice = itemPrice.hasFocus();
+        boolean editSplit = splitReceived.hasFocus();
+
+        boolean isOwnDrop = drop.getUsername().equalsIgnoreCase(profileKey);
+
+        drop.setFfa(ffa.isSelected());
+        drop.setSCount(Math.min(Math.max(1, Integer.parseInt(teamSize.getValue().toString())), 100));
+
+        System.out.println(editPrice);
+        if (updateall)
+        {
+            int value = drop.getValue();
+            splitReceived.setText(format(atleastZero(drop.isFfa() ? (isOwnDrop ? drop.getValue() : 0) : drop.getValue() / drop.getSCount())));
+            splitReceived.setToolTipText(NumberFormat.getInstance().format(atleastZero(drop.isFfa() ? (isOwnDrop ? drop.getValue() : 0) : drop.getValue() / drop.getSCount())));
+            itemPrice.setText(format(atleastZero(value)));
+            itemPrice.setToolTipText(NumberFormat.getInstance().format(atleastZero(value)));
+        }
+        if (editPrice)
+        {
+            int value = parse(itemPrice.getText());
+            System.out.println(value);
+            drop.setValue(value);
+            splitReceived.setText(format(atleastZero(drop.isFfa() ? (isOwnDrop ? drop.getValue() : 0) : drop.getValue() / drop.getSCount())));
+            splitReceived.setToolTipText(NumberFormat.getInstance().format(atleastZero(drop.isFfa() ? (isOwnDrop ? drop.getValue() : 0) : drop.getValue() / drop.getSCount())));
+        }else if (editSplit)
+        {
+            if (!drop.isFfa())
+            {
+                int value = parse(splitReceived.getText());
+                value = ffa.isSelected() ? value : value * drop.getSCount();
+                drop.setValue(value);
+                System.out.println(value);
+                itemPrice.setText(format(atleastZero(value)));
+                itemPrice.setToolTipText(NumberFormat.getInstance().format(atleastZero(value)));
+            };
+        } else
+        {
+            int value = drop.getValue();
+            splitReceived.setText(format(atleastZero(drop.isFfa() ? (isOwnDrop ? drop.getValue() : 0) : drop.getValue() / drop.getSCount())));
+            splitReceived.setToolTipText(NumberFormat.getInstance().format(atleastZero(drop.isFfa() ? (isOwnDrop ? drop.getValue() : 0) : drop.getValue() / drop.getSCount())));
+        };
+        variablesChanged();
+        locked = false;
+    };
+    private void SplitComponentUpdated(JTextField itemPrice, JTextField splitReceived, JCheckBox ffa, JSpinner teamSize)
+    {
+        SplitComponentUpdated(itemPrice, splitReceived, ffa, teamSize, false);
+    };
 
     private JTextField getTextField()
     {
@@ -219,43 +271,9 @@ public class SplitChanger extends JPanel {
         raidTrackerPanel.setUpdateButton(true);
     }
 
-    private void setFFA() {
-        boolean inOwnName = raidTracker.isSpecialLootInOwnName();
-
-        if (inOwnName) {
-            raidTracker.setLootSplitReceived(raidTracker.getSpecialLootValue());
-            raidTracker.setLootSplitPaid(-1);
-        }
-        else {
-            raidTracker.setLootSplitPaid(-1);
-            raidTracker.setLootSplitReceived(-1);
-        }
-    }
-
-    private void setSplit() {
-        boolean inOwnName = raidTracker.isSpecialLootInOwnName();
-
-        int splitSize = raidTracker.getSpecialLootValue() / raidTracker.getTeamSize();
-
-        if (!raidTracker.isFreeForAll()) {
-            if (inOwnName) {
-                raidTracker.setLootSplitPaid(splitSize);
-            } else {
-                raidTracker.setLootSplitPaid(-1);
-            }
-
-            raidTracker.setLootSplitReceived(splitSize);
-        }
-    }
-
     private JLabel textPanel(String text) {
-        return raidTrackerPanel.textPanel(text);
+        return raidTrackerPanel.textPanel(text, SwingConstants.CENTER, SwingConstants.CENTER);
     }
-
-    private BufferedImage resizeImage(BufferedImage before) {
-        return raidTrackerPanel.resizeImage(before, 1.75, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-    }
-
     private String getDateText() {
         String dateText;
 
@@ -360,13 +378,14 @@ public class SplitChanger extends JPanel {
 
     public String fixSpaces(String s) {
         //replace null characters with spaces
-        return unescapeJavaString(s.replace("ï¿½", " ").replace("Â ", " "));
+        return uiUtils.unescapeJavaString(s.replace("ï¿½", " ").replace("Â ", " "));
     }
 
     private RaidUniques getByName(String name) {
         EnumSet<RaidUniques> uniquesList = getUniquesList();
+
         for (RaidUniques unique: uniquesList) {
-            if (unique.getName().toLowerCase().equals(name.toLowerCase())) {
+            if (unique.getName().equalsIgnoreCase(name)) {
                 return unique;
             }
         }
@@ -375,87 +394,19 @@ public class SplitChanger extends JPanel {
     }
 
     EnumSet<RaidUniques> getUniquesList() {
-        if (raidTrackerPanel.isTob()) {
-            return raidTrackerPanel.getTobUniques();
-        }
+        switch (raidTrackerPanel.getRaidIndex())
+        {
+            case 0 : return raidTrackerPanel.getCoxUniques();
+            case 1 : return raidTrackerPanel.getTobUniques();
+            case 2 : return raidTrackerPanel.getToaUniques();
+        };
         return raidTrackerPanel.getCoxUniques();
     }
 
-    //from stackoverflow
-    public String unescapeJavaString(String st) {
-
-        if (st == null) {
-            return null;
-        }
-
-        StringBuilder sb = new StringBuilder(st.length());
-
-        for (int i = 0; i < st.length(); i++) {
-            char ch = st.charAt(i);
-            if (ch == '\\') {
-                char nextChar = (i == st.length() - 1) ? '\\' : st
-                        .charAt(i + 1);
-                // Octal escape?
-                if (nextChar >= '0' && nextChar <= '7') {
-                    String code = "" + nextChar;
-                    i++;
-                    if ((i < st.length() - 1) && st.charAt(i + 1) >= '0'
-                            && st.charAt(i + 1) <= '7') {
-                        code += st.charAt(i + 1);
-                        i++;
-                        if ((i < st.length() - 1) && st.charAt(i + 1) >= '0'
-                                && st.charAt(i + 1) <= '7') {
-                            code += st.charAt(i + 1);
-                            i++;
-                        }
-                    }
-                    sb.append((char) Integer.parseInt(code, 8));
-                    continue;
-                }
-                switch (nextChar) {
-                    case '\\':
-                        ch = '\\';
-                        break;
-                    case 'b':
-                        ch = '\b';
-                        break;
-                    case 'f':
-                        ch = '\f';
-                        break;
-                    case 'n':
-                        ch = '\n';
-                        break;
-                    case 'r':
-                        ch = '\r';
-                        break;
-                    case 't':
-                        ch = '\t';
-                        break;
-                    case '\"':
-                        ch = '\"';
-                        break;
-                    case '\'':
-                        ch = '\'';
-                        break;
-                    // Hex Unicode: u????
-                    case 'u':
-                        if (i >= st.length() - 5) {
-                            ch = 'u';
-                            break;
-                        }
-                        int code = Integer.parseInt(
-                                "" + st.charAt(i + 2) + st.charAt(i + 3)
-                                        + st.charAt(i + 4) + st.charAt(i + 5), 16);
-                        sb.append(Character.toChars(code));
-                        i += 5;
-                        continue;
-                }
-                i++;
-            }
-            sb.append(ch);
-        }
-        return sb.toString();
-    }
+    RaidTracker getRaidTracker()
+    {
+        return this.raidTracker;
+    };
 
     //also from stackoverflow
     @FunctionalInterface
@@ -475,5 +426,4 @@ public class SplitChanger extends JPanel {
             update(e);
         }
     }
-
 }

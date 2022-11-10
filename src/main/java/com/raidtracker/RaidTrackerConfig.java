@@ -3,10 +3,23 @@ package com.raidtracker;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 
 @ConfigGroup("raidtracker")
 public interface RaidTrackerConfig extends Config
 {
+	@ConfigSection(
+			name = "Tombs of Amascot",
+			description = "Settings for Tombs of Amascot",
+			position = 1
+	)
+	String toasection = "Tombs of Amascot";
+	@ConfigSection(
+			name = "Chambers of Xeric",
+			description = "Settings for Chambers of Xeric",
+			position = 1
+	)
+	String coxSection = "Chambers of Xeric";
 	@ConfigItem(
 		keyName = "defaultFFA",
 		name = "default FFA",
@@ -26,7 +39,6 @@ public interface RaidTrackerConfig extends Config
 	default int FFACutoff() {
 		return 1000000;
 	}
-
 	@ConfigItem(
 			keyName = "lastXKills",
 			name = "Last X Kills",
@@ -48,15 +60,23 @@ public interface RaidTrackerConfig extends Config
 	@ConfigItem(
 		keyName = "dey0Tracker",
 		name = "Log raid room times (dey0)",
-		description = "Track raid room times with dey0's raid timers plugin. This will replace the regular time splits panel with more detailed times of each part of the raid"
+		description = "Track raid room times with dey0's raid timers plugin. This will replace the regular time splits panel with more detailed times of each part of the raid",
+		section = coxSection
 	)
 	default boolean dey0Tracker() { return false; }
-
+	@ConfigItem(
+			keyName = "toatracker",
+			name = "Compact TOA times",
+			description = "If enabled will track seperate room times, not combining path/boss",
+			section = toasection
+	)
+	default boolean toatracker() { return false; }
 
 	@ConfigItem(
 			keyName = "showKillsLogged",
 			name = "Show Kills Logged",
 			description = "Disable this checkmark to hide the Kills Logged panel in the ui"
+
 	)
 	default boolean showKillsLogged()
 	{
@@ -87,7 +107,8 @@ public interface RaidTrackerConfig extends Config
 	@ConfigItem(
 			keyName = "showPoints",
 			name = "Show Points",
-			description = "Disable this checkmark to hide the Points Panel in the ui"
+			description = "Disable this checkmark to hide the Points Panel in the ui",
+			section = coxSection
 	)
 	default boolean showPoints()
 	{
