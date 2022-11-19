@@ -36,6 +36,8 @@ import net.runelite.api.ItemID;
 import net.runelite.api.MenuAction;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.events.ChatMessage;
+import net.runelite.api.ChatMessageType;
 import net.runelite.client.Notifier;
 import net.runelite.client.ui.overlay.OverlayManager;
 import static org.junit.Assert.assertEquals;
@@ -87,6 +89,24 @@ public class EssPouchPluginTest
 		when(menuOptionClicked.getMenuOption()).thenReturn("Empty");
 		runecraftPlugin.onMenuOptionClicked(menuOptionClicked);
 	}
+
+	// Tells the plugin that there was a click on fill option on the pouch with id @pouchId.
+	void clickFillPouch(int pouchId) {
+		MenuOptionClicked menuOptionClicked = mock(MenuOptionClicked.class);
+		when(menuOptionClicked.getMenuAction()).thenReturn(MenuAction.ITEM_FIRST_OPTION);
+		when(menuOptionClicked.getId()).thenReturn(pouchId);
+		when(menuOptionClicked.getMenuOption()).thenReturn("Fill");
+		runecraftPlugin.onMenuOptionClicked(menuOptionClicked);
+	}
+
+	// Tells the plugin that there was a game message that says @msg.
+	void injectGameMessage(String msg) {
+		ChatMessage empty_message = mock(ChatMessage.class);
+		when(empty_message.getType()).thenReturn(ChatMessageType.GAMEMESSAGE);
+		when(empty_message.getMessage()).thenReturn(msg);
+		runecraftPlugin.onChatMessage(empty_message);
+	}
+
 
 	@Test
 	public void testPouches()
@@ -155,5 +175,68 @@ public class EssPouchPluginTest
 
 		assertEquals(0, Pouch.SMALL.getHolding());
 		assertEquals(0, Pouch.MEDIUM.getHolding());
+	}
+
+	// Tests that if a pouch is empty but this plugin thinks it has essence, the plugin updates to show that it's actually empty
+	@Test
+	public void testEmptyCorrection()
+	{
+		// At start, we "know" it has 10 essence (even though it actually is empty!)
+		Pouch.COLOSSAL.setHolding(10);
+		Pouch.COLOSSAL.setUnknown(false);
+
+		// It should think there's 10 items
+		assertEquals(10, Pouch.COLOSSAL.getHolding());
+
+		clickEmptyPouch(ItemID.COLOSSAL_POUCH);
+
+		// Inject a chat message saying it was empty
+		injectGameMessage("There are no guardian essences in this pouch.");
+
+		// It should now think that the pouch is empty
+		assertEquals(0, Pouch.COLOSSAL.getHolding());
+	}
+
+	@Test
+	public void testFullCorrection()
+	{
+		// At start, we "know" it has 10 essence (even though it actually is empty!)
+		Pouch.COLOSSAL.setHolding(10);
+		Pouch.COLOSSAL.setUnknown(false);
+
+		// It should think there's 10 items
+		assertEquals(10, Pouch.COLOSSAL.getHolding());
+
+		clickFillPouch(ItemID.COLOSSAL_POUCH);
+
+		injectGameMessage("You cannot add any more essence to the pouch.");
+
+		// It should now think that the pouch is full
+		assertEquals(40, Pouch.COLOSSAL.getHolding());
+	}
+
+	@Test
+	public void testMultiPouchFullEmptyCorrection()
+	{
+		Pouch.GIANT.setHolding(10);
+		Pouch.GIANT.setUnknown(false);
+		Pouch.MEDIUM.setHolding(2);
+		Pouch.MEDIUM.setUnknown(false);
+
+		assertEquals(10, Pouch.GIANT.getHolding());
+		assertEquals(2, Pouch.MEDIUM.getHolding());
+
+		// Click fill on one and empty on the other before any messagse appear
+		clickFillPouch(ItemID.MEDIUM_POUCH);
+		clickEmptyPouch(ItemID.GIANT_POUCH);
+
+		// Have the first game message say it was full, then the second say it was empty
+		injectGameMessage("You cannot add any more essence to the pouch.");
+		injectGameMessage("There are no guardian essences in this pouch.");
+
+		// Now it should realize that full message referred to the medium pouch, and the empty message referred to the
+		// giant pouch.
+		assertEquals(6, Pouch.MEDIUM.getHolding());
+		assertEquals(0, Pouch.GIANT.getHolding());
 	}
 }
