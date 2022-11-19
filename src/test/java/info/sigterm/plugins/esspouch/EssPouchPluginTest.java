@@ -69,20 +69,30 @@ public class EssPouchPluginTest
 	@Inject
 	EssPouchPlugin runecraftPlugin;
 
+	@Mock
+	ItemContainer inventory;
+
 	@Before
 	public void before()
 	{
 		Guice.createInjector(BoundFieldModule.of(this)).injectMembers(this);
+		when(client.getItemContainer(InventoryID.INVENTORY)).thenReturn(inventory);
+	}
+
+	// Tells the plugin that there was a click on empty option on the pouch with id @pouchId.
+	void clickEmptyPouch(int pouchId) {
+		MenuOptionClicked menuOptionClicked = mock(MenuOptionClicked.class);
+		when(menuOptionClicked.getMenuAction()).thenReturn(MenuAction.ITEM_FIRST_OPTION);
+		when(menuOptionClicked.getId()).thenReturn(pouchId);
+		when(menuOptionClicked.getMenuOption()).thenReturn("Empty");
+		runecraftPlugin.onMenuOptionClicked(menuOptionClicked);
 	}
 
 	@Test
 	public void testPouches()
 	{
-		ItemContainer itemContainer = mock(ItemContainer.class);
-		when(client.getItemContainer(InventoryID.INVENTORY)).thenReturn(itemContainer);
-
 		// Add 4 pouches
-		when(itemContainer.getItems()).thenReturn(new Item[]{
+		when(inventory.getItems()).thenReturn(new Item[]{
 			new Item(ItemID.SMALL_POUCH, 1),
 			new Item(ItemID.MEDIUM_POUCH, 1),
 			new Item(ItemID.LARGE_POUCH, 1),
@@ -97,27 +107,19 @@ public class EssPouchPluginTest
 		}
 
 		// Initialize last counters
-		ItemContainerChanged itemContainerChanged = new ItemContainerChanged(InventoryID.INVENTORY.getId(), itemContainer);
+		ItemContainerChanged itemContainerChanged = new ItemContainerChanged(InventoryID.INVENTORY.getId(), inventory);
 		runecraftPlugin.onItemContainerChanged(itemContainerChanged);
 
 		// Empty small
-		MenuOptionClicked menuOptionClicked = new MenuOptionClicked();
-		menuOptionClicked.setMenuAction(MenuAction.ITEM_FIRST_OPTION);
-		menuOptionClicked.setId(ItemID.SMALL_POUCH);
-		menuOptionClicked.setMenuOption("Empty");
-		runecraftPlugin.onMenuOptionClicked(menuOptionClicked);
+		clickEmptyPouch(ItemID.SMALL_POUCH);
 
 		// <server tick here>
 
 		// Empty medium
-		menuOptionClicked = new MenuOptionClicked();
-		menuOptionClicked.setMenuAction(MenuAction.ITEM_FIRST_OPTION);
-		menuOptionClicked.setId(ItemID.MEDIUM_POUCH);
-		menuOptionClicked.setMenuOption("Empty");
-		runecraftPlugin.onMenuOptionClicked(menuOptionClicked);
+		clickEmptyPouch(ItemID.MEDIUM_POUCH);
 
 		// Update inventory with 3 pess
-		when(itemContainer.getItems()).thenReturn(new Item[]{
+		when(inventory.getItems()).thenReturn(new Item[]{
 			new Item(ItemID.SMALL_POUCH, 1),
 			new Item(ItemID.MEDIUM_POUCH, 1),
 			new Item(ItemID.LARGE_POUCH, 1),
@@ -133,7 +135,7 @@ public class EssPouchPluginTest
 		assertEquals(6, Pouch.MEDIUM.getHolding());
 
 		// Add 6 more pess
-		when(itemContainer.getItems()).thenReturn(new Item[]{
+		when(inventory.getItems()).thenReturn(new Item[]{
 			new Item(ItemID.SMALL_POUCH, 1),
 			new Item(ItemID.MEDIUM_POUCH, 1),
 			new Item(ItemID.LARGE_POUCH, 1),
