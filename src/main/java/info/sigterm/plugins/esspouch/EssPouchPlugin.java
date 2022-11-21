@@ -59,6 +59,7 @@ public class EssPouchPlugin extends Plugin
 	private static final int INVENTORY_SIZE = 28;
 	private static final int GOTR_WIDGET_ID = 48889876;
 
+	private static final String POUCH_ADD_FULL_MESSAGE = "You cannot add any more essence to the pouch.";
 	private static final Pattern POUCH_CHECK_MESSAGE = Pattern.compile("^There (?:is|are) ([a-z-]+)(?: pure| daeyalt| guardian)? essences? in this pouch\\.$");
 	private static final ImmutableMap<String, Integer> TEXT_TO_NUMBER = ImmutableMap.<String, Integer>builder()
 		.put("no", 0)
@@ -141,6 +142,19 @@ public class EssPouchPlugin extends Plugin
 		overlayManager.remove(essencePouchOverlay);
 	}
 
+	// Pops ClickOperations from checkedPouches until it finds one that is still valid this tick and returns that one.
+	// Returns null if there are no valid pouches in the list.
+	private ClickOperation popFirstValidCheckedPouch()
+	{
+		ClickOperation op = checkedPouches.pollFirst();
+		while (op != null && op.tick < client.getTickCount())
+		{
+			op = checkedPouches.pollFirst();
+		}
+		return op;
+	}
+
+
 	@Subscribe
 	public void onChatMessage(ChatMessage event)
 	{
@@ -163,23 +177,34 @@ public class EssPouchPlugin extends Plugin
 
 		if (!checkedPouches.isEmpty())
 		{
-			Matcher matcher = POUCH_CHECK_MESSAGE.matcher(event.getMessage());
-			if (matcher.matches())
+			if (event.getMessage().equals(POUCH_ADD_FULL_MESSAGE))
 			{
-				final int num = TEXT_TO_NUMBER.get(matcher.group(1));
-				// Keep getting operations until we get a valid one
-				do
+				ClickOperation op = popFirstValidCheckedPouch();
+				// Make sure it was a filling operation that produced this message
+				if (op != null && op.delta == 1)
 				{
-					final ClickOperation op = checkedPouches.pop();
-					if (op.tick >= client.getTickCount())
+					Pouch pouch = op.pouch;
+					// It's gotta be all the way full now.
+					pouch.setHolding(pouch.getHoldAmount());
+					pouch.setUnknown(false);
+				}
+			}
+			else
+			{
+				Matcher matcher = POUCH_CHECK_MESSAGE.matcher(event.getMessage());
+				if (matcher.matches())
+				{
+					final int num = TEXT_TO_NUMBER.get(matcher.group(1));
+					ClickOperation op = popFirstValidCheckedPouch();
+					// Update if it was a check operation (delta == 0) or an empty operation and it is now empty. The
+					// empty operation only produces the message if it was already completely empty
+					if (op != null && (op.delta == 0 || (op.delta == -1 && num == 0)))
 					{
 						Pouch pouch = op.pouch;
 						pouch.setHolding(num);
 						pouch.setUnknown(false);
-						break;
 					}
 				}
-				while (!checkedPouches.isEmpty());
 			}
 		}
 	}
@@ -370,9 +395,11 @@ public class EssPouchPlugin extends Plugin
 		{
 			case "Fill":
 				clickedItems.add(new ClickOperation(pouch, tick, 1));
+				checkedPouches.add(new ClickOperation(pouch, tick, 1));
 				break;
 			case "Empty":
 				clickedItems.add(new ClickOperation(pouch, tick, -1));
+				checkedPouches.add(new ClickOperation(pouch, tick, -1));
 				break;
 			case "Check":
 				checkedPouches.add(new ClickOperation(pouch, tick));
