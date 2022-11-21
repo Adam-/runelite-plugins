@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.ItemID;
 import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
@@ -30,6 +31,8 @@ public class ItemFillerPlugin extends Plugin
 	@Inject
 	private ItemFillerConfig config;
 
+	private Widget invUpdateWidget;
+
 	@Override
 	protected void startUp()
 	{
@@ -51,6 +54,19 @@ public class ItemFillerPlugin extends Plugin
 	private void redrawInventory()
 	{
 		client.runScript(client.getWidget(WidgetInfo.INVENTORY).getOnInvTransmitListener());
+		// also maybe invbig update etc..
+	}
+
+	@Subscribe
+	public void onScriptPreFired(ScriptPreFired scriptPreFired)
+	{
+		// [proc,interface_inv_update_big]
+		if (scriptPreFired.getScriptId() == 153)
+		{
+			// [proc,interface_inv_update_big](component $component0, inv $inv1, int $int2, int $int3, int $int4, component $component5, string $string0, string $string1, string $string2, string $string3, string $string4, string $string5, string $string6, string $string7, string $string8)
+			int w = client.getIntStack()[client.getIntStackSize() - 6]; // first argument
+			invUpdateWidget = client.getWidget(w);
+		}
 	}
 
 	@Subscribe
@@ -60,20 +76,39 @@ public class ItemFillerPlugin extends Plugin
 		if (scriptPostFired.getScriptId() == 6010)
 		{
 			Widget w = client.getWidget(WidgetInfo.INVENTORY);
-			int filler = config.filler();
-			for (Widget i : w.getDynamicChildren())
+			replaceItems(w);
+		}
+		// [proc,interface_inv_update_big]
+		else if (scriptPostFired.getScriptId() == 153)
+		{
+			if (invUpdateWidget != null)
 			{
-				if (i.getItemId() == filler)
-				{
-					log.debug("Replacing {} with an item filler", i.getName());
-					i.setName("Filler");
-					i.setTargetVerb(null);
-					i.setItemId(ItemID.BANK_FILLER);
-					i.setClickMask(0);
-					i.setOnDragCompleteListener(null);
-					i.setOnDragListener(null);
-					Arrays.fill(i.getActions(), "");
-				}
+				replaceItems(invUpdateWidget);
+				invUpdateWidget = null;
+			}
+		}
+	}
+
+	private void replaceItems(Widget w)
+	{
+		if (w == null)
+		{
+			return;
+		}
+
+		int filler = config.filler();
+		for (Widget i : w.getDynamicChildren())
+		{
+			if (i.getItemId() == filler)
+			{
+				log.debug("Replacing {} with an item filler", i.getName());
+				i.setName("Filler");
+				i.setTargetVerb(null);
+				i.setItemId(ItemID.BANK_FILLER);
+				i.setClickMask(0);
+				i.setOnDragCompleteListener(null);
+				i.setOnDragListener(null);
+				Arrays.fill(i.getActions(), "");
 			}
 		}
 	}
