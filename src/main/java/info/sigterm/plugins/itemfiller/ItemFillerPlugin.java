@@ -86,6 +86,23 @@ public class ItemFillerPlugin extends Plugin
 		{
 			Widget w = client.getWidget(WidgetInfo.INVENTORY);
 			replaceItems(w);
+			replaceItems(client.getWidget(268, 0)); // deposit box inventory
+		}
+		// [proc,bank_depositbox_update]
+		else if (id == 146)
+		{
+			replaceItems(client.getWidget(WidgetInfo.DEPOSIT_BOX_INVENTORY_ITEMS_CONTAINER));
+		}
+		// [proc,bankmain_build]
+		else if (id == 277)
+		{
+			replaceItems(client.getWidget(WidgetInfo.BANK_TAB_CONTAINER));
+			replaceItems(client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER));
+		}
+		// [proc,bankside_build]
+		else if (id == 296)
+		{
+			replaceItems(client.getWidget(WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER));
 		}
 		// [proc,ge_offer_side_draw]
 		else if (id == 783)
@@ -101,6 +118,11 @@ public class ItemFillerPlugin extends Plugin
 		else if (id == 827)
 		{
 			replaceItems(client.getWidget(430, 0));
+		}
+		// [proc,bankside_worn_drawitem]
+		else if (id == 3327)
+		{
+			replaceItems(client.getWidget(15, 4));
 		}
 		// [proc,interface_inv_update_big]
 		// [proc,deathkeep_left_redraw]
