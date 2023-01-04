@@ -67,19 +67,44 @@ public class ItemFillerPlugin extends Plugin
 			int w = client.getIntStack()[client.getIntStackSize() - 6]; // first argument
 			invUpdateWidget = client.getWidget(w);
 		}
+		// [proc,deathkeep_left_setsection]
+		else if (scriptPreFired.getScriptId() == 975)
+		{
+			// [proc,deathkeep_left_setsection](string $text0, component $component0, int $comsubid1, int $int2, int $int3, int $int4)
+			int w = client.getIntStack()[client.getIntStackSize() - 5]; // second argument
+			invUpdateWidget = client.getWidget(w);
+		}
 	}
 
 	@Subscribe
 	public void onScriptPostFired(ScriptPostFired scriptPostFired)
 	{
+		int id = scriptPostFired.getScriptId();
+
 		// [proc,inventory_build]
-		if (scriptPostFired.getScriptId() == 6010)
+		if (id == 6010)
 		{
 			Widget w = client.getWidget(WidgetInfo.INVENTORY);
 			replaceItems(w);
 		}
+		// [proc,ge_offer_side_draw]
+		else if (id == 783)
+		{
+			replaceItems(client.getWidget(WidgetInfo.GRAND_EXCHANGE_INVENTORY_ITEMS_CONTAINER));
+		}
+		// [proc,ge_pricechecker_redraw]
+		else if (id == 787)
+		{
+			replaceItems(client.getWidget(WidgetInfo.GUIDE_PRICES_ITEMS_CONTAINER));
+		}
+		// [proc,itemsets_side_draw]
+		else if (id == 827)
+		{
+			replaceItems(client.getWidget(430, 0));
+		}
 		// [proc,interface_inv_update_big]
-		else if (scriptPostFired.getScriptId() == 153)
+		// [proc,deathkeep_left_redraw]
+		else if (id == 153 || id == 975)
 		{
 			if (invUpdateWidget != null)
 			{
