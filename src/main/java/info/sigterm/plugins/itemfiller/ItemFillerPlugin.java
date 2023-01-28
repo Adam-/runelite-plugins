@@ -67,19 +67,66 @@ public class ItemFillerPlugin extends Plugin
 			int w = client.getIntStack()[client.getIntStackSize() - 6]; // first argument
 			invUpdateWidget = client.getWidget(w);
 		}
+		// [proc,deathkeep_left_setsection]
+		else if (scriptPreFired.getScriptId() == 975)
+		{
+			// [proc,deathkeep_left_setsection](string $text0, component $component0, int $comsubid1, int $int2, int $int3, int $int4)
+			int w = client.getIntStack()[client.getIntStackSize() - 5]; // second argument
+			invUpdateWidget = client.getWidget(w);
+		}
 	}
 
 	@Subscribe
 	public void onScriptPostFired(ScriptPostFired scriptPostFired)
 	{
+		int id = scriptPostFired.getScriptId();
+
 		// [proc,inventory_build]
-		if (scriptPostFired.getScriptId() == 6010)
+		if (id == 6010)
 		{
 			Widget w = client.getWidget(WidgetInfo.INVENTORY);
 			replaceItems(w);
+			replaceItems(client.getWidget(268, 0)); // deposit box inventory
+		}
+		// [proc,bank_depositbox_update]
+		else if (id == 146)
+		{
+			replaceItems(client.getWidget(WidgetInfo.DEPOSIT_BOX_INVENTORY_ITEMS_CONTAINER));
+		}
+		// [proc,bankmain_build]
+		else if (id == 277)
+		{
+			replaceItems(client.getWidget(WidgetInfo.BANK_TAB_CONTAINER));
+			replaceItems(client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER));
+		}
+		// [proc,bankside_build]
+		else if (id == 296)
+		{
+			replaceItems(client.getWidget(WidgetInfo.BANK_INVENTORY_ITEMS_CONTAINER));
+		}
+		// [proc,ge_offer_side_draw]
+		else if (id == 783)
+		{
+			replaceItems(client.getWidget(WidgetInfo.GRAND_EXCHANGE_INVENTORY_ITEMS_CONTAINER));
+		}
+		// [proc,ge_pricechecker_redraw]
+		else if (id == 787)
+		{
+			replaceItems(client.getWidget(WidgetInfo.GUIDE_PRICES_ITEMS_CONTAINER));
+		}
+		// [proc,itemsets_side_draw]
+		else if (id == 827)
+		{
+			replaceItems(client.getWidget(430, 0));
+		}
+		// [proc,bankside_worn_drawitem]
+		else if (id == 3327)
+		{
+			replaceItems(client.getWidget(15, 4));
 		}
 		// [proc,interface_inv_update_big]
-		else if (scriptPostFired.getScriptId() == 153)
+		// [proc,deathkeep_left_redraw]
+		else if (id == 153 || id == 975)
 		{
 			if (invUpdateWidget != null)
 			{
