@@ -279,6 +279,11 @@ public class RegionGpuPlugin extends Plugin implements DrawCallbacks
 	private int viewportOffsetX;
 	private int viewportOffsetY;
 
+	// fields for non-compute draw
+	private boolean drawingModel;
+	private int modelX, modelY, modelZ;
+	private int modelOrientation;
+
 	// Uniforms
 	private int uniColorBlindMode;
 	private int uniUiColorBlindMode;
