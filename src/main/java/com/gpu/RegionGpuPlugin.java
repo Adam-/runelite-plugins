@@ -1859,13 +1859,7 @@ public class RegionGpuPlugin extends Plugin implements DrawCallbacks
 	@Override
 	public boolean drawFace(Model model, int face)
 	{
-		if (!drawingModel)
-		{
-			return false;
-		}
-
-		targetBufferOffset += sceneUploader.pushFace(model, face, true, vertexBuffer, uvBuffer, modelX, modelY, modelZ, modelOrientation);
-		return true;
+		return false;
 	}
 
 	/**
