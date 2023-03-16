@@ -9,7 +9,7 @@ repositories {
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.8.21-SNAPSHOT'
+def runeLiteVersion = '1.9.13'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -18,24 +18,11 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok:1.18.20'
 
 	testImplementation 'junit:junit:4.12'
-	testImplementation 'org.slf4j:slf4j-simple:1.7.12'
-	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion, {
-		exclude group: 'ch.qos.logback', module: 'logback-classic'
-	}
+	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 
 	testCompileOnly 'org.projectlombok:lombok:1.18.20'
 	testAnnotationProcessor 'org.projectlombok:lombok:1.18.20'
-
-	def joglVer = "2.4.0-rc-20220318";
-	implementation "net.runelite.jogl:jogl-rl:$joglVer"
-	implementation "net.runelite.gluegen:gluegen-rt:$joglVer"
-	["windows-amd64", "windows-i586", "linux-amd64", "macosx-universal"].each { platform ->
-		runtimeOnly "net.runelite.jogl:jogl-rl:$joglVer:natives-$platform"
-		runtimeOnly "net.runelite.gluegen:gluegen-rt:$joglVer:natives-$platform"
-	}
-
-	//compileOnly group: 'net.runelite', name: 'jogl-rl', version: runeLiteVersion
 }
 
 group = 'com.regionlocker'
