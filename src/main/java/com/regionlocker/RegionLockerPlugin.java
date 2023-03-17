@@ -25,42 +25,22 @@
 package com.regionlocker;
 
 import com.google.inject.Provides;
-import java.awt.Rectangle;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
-import net.runelite.api.MessageNode;
-import net.runelite.api.Point;
-import net.runelite.api.RenderOverview;
-import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.FocusChanged;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
-import net.runelite.client.chat.ChatColorType;
-import net.runelite.client.chat.ChatCommandManager;
-import net.runelite.client.chat.ChatMessageBuilder;
-import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.events.ChatInput;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.ui.ClientToolbar;
-import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
-import net.runelite.client.util.ImageUtil;
-import net.runelite.client.util.LinkBrowser;
-import net.runelite.client.util.Text;
-import static net.runelite.client.util.Text.sanitize;
 
 @PluginDescriptor(
 		name = RegionLockerPlugin.PLUGIN_NAME,
