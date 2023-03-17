@@ -100,7 +100,6 @@ public class GoalTrackerPlugin extends Plugin
 
 	private GoalTrackerPanel pluginPanel;
 	private NavigationButton navigationButton;
-	private NavigationButton titleBarButton;
 
 	@Provides
 	GoalTrackerConfig provideConfig(ConfigManager configManager)
@@ -125,7 +124,6 @@ public class GoalTrackerPlugin extends Plugin
 				.panel(pluginPanel)
 				.build();
 
-		clientToolbar.addNavigation(titleBarButton);
 		clientToolbar.addNavigation(navigationButton);
 
 		keyManager.registerKeyListener(inputListener);
