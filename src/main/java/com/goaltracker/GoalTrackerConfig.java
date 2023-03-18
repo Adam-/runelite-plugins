@@ -59,11 +59,23 @@ public interface GoalTrackerConfig extends Config
 		return false;
 	}
 
+	String COLLAPSE_REQUIREMENTS_KEY = "collapseRequirements";
+	@ConfigItem(
+			keyName = COLLAPSE_REQUIREMENTS_KEY,
+			name = "Collapse requirements",
+			description = "Hides all goal requirements by default",
+			position = 5
+	)
+	default boolean collapseRequirements()
+	{
+		return false;
+	}
+
 	@ConfigItem(
 			keyName = "hotKey",
 			name = "Hover hotkey",
 			description = "Which key to hold to view the goals tooltip on the map",
-			position = 5
+			position = 6
 	)
 	default Keybind hotKey()
 	{
@@ -75,7 +87,7 @@ public interface GoalTrackerConfig extends Config
 			keyName = "noProgressColor",
 			name = "No progress color",
 			description = "Color of goals with no progress",
-			position = 6
+			position = 7
 	)
 	default Color noProgressColor()
 	{
@@ -87,7 +99,7 @@ public interface GoalTrackerConfig extends Config
 			keyName = "inProgressColor",
 			name = "In-progress color",
 			description = "Color of goals that are in progress",
-			position = 7
+			position = 8
 	)
 	default Color inProgressColor()
 	{
@@ -99,7 +111,7 @@ public interface GoalTrackerConfig extends Config
 			keyName = "completedColor",
 			name = "Completed color",
 			description = "Color of completed goals",
-			position = 8
+			position = 9
 	)
 	default Color completedColor()
 	{
@@ -111,7 +123,7 @@ public interface GoalTrackerConfig extends Config
 			keyName = "requiredChunkColor",
 			name = "Required chunk color",
 			description = "Color of chunks that are a requirement for goals",
-			position = 9
+			position = 10
 	)
 	default Color requiredChunkColor()
 	{

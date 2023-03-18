@@ -3,6 +3,7 @@ package com.goaltracker.ui;
 import com.goaltracker.Goal;
 import com.goaltracker.GoalTrackerPlugin;
 import com.goaltracker.Requirement;
+import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.components.MouseDragEventForwarder;
@@ -73,6 +74,7 @@ public class RequirementsPanel extends JPanel
 		this.plugin = plugin;
 		this.parentPanel = parentPanel;
 		this.goal = goal;
+		expanded = !plugin.config.collapseRequirements();
 
 		setLayout(new BorderLayout());
 		setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -84,6 +86,7 @@ public class RequirementsPanel extends JPanel
 		bottomContainer = new JPanel(new GridBagLayout());
 		bottomContainer.setBorder(new EmptyBorder(5, 0, 0, 0));
 		bottomContainer.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		bottomContainer.setVisible(expanded);
 
 		JLabel requirementsLabel = new JLabel("Requirements");
 
@@ -94,8 +97,9 @@ public class RequirementsPanel extends JPanel
 			@Override
 			public void mouseClicked(MouseEvent mouseEvent)
 			{
-				String name = JOptionPane.showInputDialog("Requirement name:");
-				if (name == null || name.isEmpty()) return;
+				String name = JOptionPane.showInputDialog(addRequirement, "Requirement name:");
+				if (name == null || name.isEmpty())
+					return;
 				goal.getRequirements().add(new Requirement(name, false));
 				plugin.updateConfig();
 				updateRequirements();
@@ -117,13 +121,14 @@ public class RequirementsPanel extends JPanel
 		});
 
 		expandButton = new JLabel(EXPAND_LESS_ICON);
+		expandButton.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 1));
 		nameWrapper.setToolTipText("View less...");
 		nameWrapper.addMouseListener(new MouseAdapter()
 		{
 			@Override
 			public void mouseClicked(MouseEvent mouseEvent)
 			{
-				toggleExpand();
+				setExpanded(!expanded);
 			}
 
 			@Override
@@ -203,7 +208,7 @@ public class RequirementsPanel extends JPanel
 	{
 		JLabel requirementLabel = new JLabel(requirement.getName());
 		requirementLabel.setForeground(requirement.isCompleted() ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.PROGRESS_ERROR_COLOR);
-		requirementLabel.setToolTipText("Toggle complete");
+		requirementLabel.setToolTipText("Toggle completion");
 		requirementLabel.addMouseListener(new MouseAdapter()
 		{
 			@Override
@@ -256,7 +261,7 @@ public class RequirementsPanel extends JPanel
 			requirementWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 			JLabel requirementLabel = createRequirementLabel(requirement);
 			JLabel deleteLabel = createDeleteLabel(requirement);
-			requirementWrapper.add(requirementLabel, BorderLayout.WEST);
+			requirementWrapper.add(requirementLabel, BorderLayout.CENTER);
 			requirementWrapper.add(deleteLabel, BorderLayout.EAST);
 			bottomContainer.add(requirementWrapper, gbc);
 			gbc.gridy++;
@@ -277,21 +282,10 @@ public class RequirementsPanel extends JPanel
 		gbc.gridy++;
 	}
 
-	public void expand()
+	public void setExpanded(boolean expanded)
 	{
-		if (!expanded) toggleExpand();
-	}
-
-	public void retract()
-	{
-		if (expanded) toggleExpand();
-	}
-
-	public void toggleExpand()
-	{
-		expanded = !expanded;
+		this.expanded = expanded;
 		bottomContainer.setVisible(expanded);
 		updateHeader();
 	}
-
 }

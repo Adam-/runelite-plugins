@@ -24,6 +24,7 @@
  */
 package com.goaltracker;
 
+import static com.goaltracker.GoalTrackerConfig.COLLAPSE_REQUIREMENTS_KEY;
 import static com.goaltracker.GoalTrackerConfig.CONFIG_GROUP;
 import static com.goaltracker.GoalTrackerConfig.HIDE_COMPLETED_GOALS_KEY;
 import static com.goaltracker.GoalTrackerConfig.OLD_CONFIG_GROUP;
@@ -159,9 +160,12 @@ public class GoalTrackerPlugin extends Plugin
 			return;
 		}
 
-		if (event.getKey().equals(HIDE_COMPLETED_GOALS_KEY))
+		switch (event.getKey())
 		{
-			updateGoals();
+			case HIDE_COMPLETED_GOALS_KEY:
+			case COLLAPSE_REQUIREMENTS_KEY:
+				updateGoals();
+				break;
 		}
 	}
 

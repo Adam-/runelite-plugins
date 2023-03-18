@@ -37,6 +37,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -50,7 +51,6 @@ import com.goaltracker.Goal;
 import com.goaltracker.GoalTrackerPlugin;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
-import net.runelite.client.ui.components.DragAndDropReorderPane;
 import net.runelite.client.ui.components.FlatTextField;
 import net.runelite.client.ui.components.MouseDragEventForwarder;
 import net.runelite.client.util.ImageUtil;
@@ -58,14 +58,16 @@ import net.runelite.client.util.ImageUtil;
 public class GoalPanel extends JPanel
 {
 	private static final Border NAME_BOTTOM_BORDER = new CompoundBorder(
-			BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.DARK_GRAY_COLOR),
-			BorderFactory.createLineBorder(ColorScheme.DARKER_GRAY_COLOR));
+		BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.DARK_GRAY_COLOR),
+		BorderFactory.createMatteBorder(3, 0, 3, 0, ColorScheme.DARKER_GRAY_COLOR));
 
 	private static final ImageIcon CHECKED_ICON;
 	private static final ImageIcon CHECKED_HOVER_ICON;
 	private static final ImageIcon CHECKBOX_ICON;
 	private static final ImageIcon CHECKBOX_HOVER_ICON;
 
+	private static final ImageIcon EDIT_ICON;
+	private static final ImageIcon EDIT_HOVER_ICON;
 	private static final ImageIcon DELETE_ICON;
 	private static final ImageIcon DELETE_HOVER_ICON;
 
@@ -78,7 +80,7 @@ public class GoalPanel extends JPanel
 	private final FlatTextField nameInput = new FlatTextField();
 	private final JLabel save = new JLabel("Save");
 	private final JLabel cancel = new JLabel("Cancel");
-	private final JLabel rename = new JLabel("Rename");
+	private final JLabel rename = new JLabel();
 
 	private final JTextField chunkInput = new JTextField("", 20);
 
@@ -95,6 +97,10 @@ public class GoalPanel extends JPanel
 		final BufferedImage deleteImg = ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "delete_icon.png");
 		DELETE_ICON = new ImageIcon(deleteImg);
 		DELETE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(deleteImg, -100));
+
+		final BufferedImage editImg = ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "edit_icon.png");
+		EDIT_ICON = new ImageIcon(editImg);
+		EDIT_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(editImg, -100));
 	}
 
 	GoalPanel(GoalTrackerPlugin plugin, JComponent parentPanel, Goal goal)
@@ -109,7 +115,8 @@ public class GoalPanel extends JPanel
 		nameWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		nameWrapper.setBorder(NAME_BOTTOM_BORDER);
 
-		JPanel nameActions = new JPanel(new BorderLayout(3, 0));
+		JPanel nameActions = new JPanel();
+		nameActions.setLayout(new BoxLayout(nameActions, BoxLayout.X_AXIS));
 		nameActions.setBorder(new EmptyBorder(0, 0, 0, 8));
 		nameActions.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
@@ -169,8 +176,8 @@ public class GoalPanel extends JPanel
 			}
 		});
 
-		rename.setFont(FontManager.getRunescapeSmallFont());
-		rename.setForeground(ColorScheme.LIGHT_GRAY_COLOR.darker());
+		rename.setIcon(EDIT_ICON);
+		rename.setToolTipText("Rename goal");
 		rename.addMouseListener(new MouseAdapter()
 		{
 			@Override
@@ -183,48 +190,17 @@ public class GoalPanel extends JPanel
 			@Override
 			public void mouseEntered(MouseEvent mouseEvent)
 			{
-				rename.setForeground(ColorScheme.LIGHT_GRAY_COLOR.darker().darker());
+				rename.setIcon(EDIT_HOVER_ICON);
 			}
 
 			@Override
 			public void mouseExited(MouseEvent mouseEvent)
 			{
-				rename.setForeground(ColorScheme.LIGHT_GRAY_COLOR.darker());
+				rename.setIcon(EDIT_ICON);
 			}
 		});
 
-		nameActions.add(save, BorderLayout.EAST);
-		nameActions.add(cancel, BorderLayout.WEST);
-		nameActions.add(rename, BorderLayout.CENTER);
-
-		nameInput.setText(goal.getName());
-		nameInput.setBorder(null);
-		nameInput.setEditable(false);
-		nameInput.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		nameInput.setPreferredSize(new Dimension(0, 24));
-		nameInput.getTextField().setForeground(Color.WHITE);
-		nameInput.getTextField().setBorder(new EmptyBorder(0, 8, 0, 0));
-
-		nameWrapper.add(nameInput, BorderLayout.CENTER);
-		nameWrapper.add(nameActions, BorderLayout.EAST);
-
-		JPanel bottomContainer = new JPanel(new GridBagLayout());
-		bottomContainer.setBorder(new EmptyBorder(8, 0, 8, 0));
-		bottomContainer.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-
-		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.weightx = 1;
-		gbc.gridx = 0;
-		gbc.gridy = 0;
-
-		JPanel leftActions = new JPanel(new BorderLayout());
-		leftActions.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-
-		JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-		rightActions.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-
-		completeLabel.setToolTipText(goal.isCompleted() ? "Completed" : "Complete");
+		completeLabel.setToolTipText(goal.isCompleted() ? "Mark as incomplete" : "Mark as completed");
 		completeLabel.addMouseListener(new MouseAdapter()
 		{
 			@Override
@@ -282,9 +258,48 @@ public class GoalPanel extends JPanel
 			}
 		});
 
-		JPanel chunkWrapper = new JPanel(new BorderLayout(3, 0));
+		cancel.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
+		save.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
+		rename.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
+		completeLabel.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
+		deleteLabel.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
+		nameActions.add(cancel);
+		nameActions.add(save);
+		nameActions.add(rename);
+		nameActions.add(completeLabel);
+		nameActions.add(deleteLabel);
+
+		nameInput.setText(goal.getName());
+		nameInput.setBorder(null);
+		nameInput.setEditable(false);
+		nameInput.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		nameInput.setPreferredSize(new Dimension(0, 24));
+		nameInput.getTextField().setForeground(Color.WHITE);
+		nameInput.getTextField().setBorder(new EmptyBorder(2, 8, 0, 0));
+
+		nameWrapper.add(nameInput, BorderLayout.CENTER);
+		nameWrapper.add(nameActions, BorderLayout.EAST);
+
+		JPanel bottomContainer = new JPanel(new GridBagLayout());
+		bottomContainer.setBorder(new EmptyBorder(8, 0, 8, 0));
+		bottomContainer.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weightx = 1;
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+
+		JPanel leftActions = new JPanel(new BorderLayout());
+		leftActions.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+
+		JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+		rightActions.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+
+		JPanel chunkWrapper = new JPanel(new BorderLayout(8, 0));
 		chunkWrapper.setPreferredSize(new Dimension(0, 24));
 		chunkWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		chunkWrapper.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
 
 		chunkInput.setText(Integer.toString(goal.getChunk()));
 		chunkInput.setPreferredSize(new Dimension(0, 24));
@@ -308,23 +323,15 @@ public class GoalPanel extends JPanel
 		});
 
 		JLabel chunkLabel = new JLabel("Chunk ID:");
-		chunkLabel.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 0));
 		chunkWrapper.add(chunkLabel, BorderLayout.WEST);
 		chunkWrapper.add(chunkInput, BorderLayout.CENTER);
 		bottomContainer.add(chunkWrapper, gbc);
 		gbc.gridy++;
-		bottomContainer.add(Box.createRigidArea(new Dimension(0, 10)), gbc);
+		bottomContainer.add(Box.createRigidArea(new Dimension(0, 8)), gbc);
 		gbc.gridy++;
 
 		RequirementsPanel requirementsPanel = new RequirementsPanel(plugin, parentPanel, goal);
 		bottomContainer.add(requirementsPanel, gbc);
-		gbc.gridy++;
-		bottomContainer.add(Box.createRigidArea(new Dimension(0, 10)), gbc);
-		gbc.gridy++;
-
-		rightActions.add(completeLabel);
-		rightActions.add(deleteLabel);
-		bottomContainer.add(rightActions, gbc);
 		gbc.gridy++;
 
 		add(nameWrapper, BorderLayout.NORTH);
@@ -348,6 +355,8 @@ public class GoalPanel extends JPanel
 		leftActions.addMouseMotionListener(mouseDragEventForwarder);
 		rightActions.addMouseListener(mouseDragEventForwarder);
 		rightActions.addMouseMotionListener(mouseDragEventForwarder);
+		rename.addMouseListener(mouseDragEventForwarder);
+		rename.addMouseMotionListener(mouseDragEventForwarder);
 		completeLabel.addMouseListener(mouseDragEventForwarder);
 		completeLabel.addMouseMotionListener(mouseDragEventForwarder);
 		deleteLabel.addMouseListener(mouseDragEventForwarder);
@@ -377,6 +386,7 @@ public class GoalPanel extends JPanel
 
 	private void updateCompletion()
 	{
+		completeLabel.setToolTipText(goal.isCompleted() ? "Mark as incomplete" : "Mark as completed");
 		completeLabel.setIcon(goal.isCompleted() ? CHECKED_ICON : CHECKBOX_ICON);
 		plugin.updateConfig();
 	}
