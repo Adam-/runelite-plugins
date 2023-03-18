@@ -25,19 +25,22 @@
 package com.goaltracker.ui;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 
+import java.awt.Component;
+import javax.swing.BoxLayout;
+import javax.swing.JLayeredPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import lombok.Getter;
 import com.goaltracker.Goal;
 import com.goaltracker.GoalTrackerPlugin;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
+import net.runelite.client.ui.components.DragAndDropReorderPane;
 import net.runelite.client.ui.components.IconTextField;
 import net.runelite.client.util.ImageUtil;
 
-import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -47,8 +50,6 @@ import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -64,6 +65,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Slf4j
 public class GoalTrackerPanel extends PluginPanel
 {
 	private static final ImageIcon ADD_ICON;
@@ -83,9 +85,9 @@ public class GoalTrackerPanel extends PluginPanel
 	private final JLabel exportButton = new JLabel(EXPORT_ICON);
 	private final JLabel title = new JLabel();
 
-	private final JPanel goalView = new JPanel(new GridBagLayout());
-
 	private final IconTextField searchBar = new IconTextField();
+
+	private DragAndDropReorderPane goalListPanel = new DragAndDropReorderPane();
 
 	@Inject
 	private GoalTrackerPlugin plugin;
@@ -123,7 +125,7 @@ public class GoalTrackerPanel extends PluginPanel
 		setBorder(new EmptyBorder(10, 10, 10, 10));
 
 		JPanel northPanel = new JPanel(new BorderLayout(0, 5));
-		northPanel.setBorder(new EmptyBorder(1, 0, 10, 0));
+		northPanel.setBorder(new EmptyBorder(1, 0, 5, 0));
 
 		JPanel actionWrapper = new JPanel(new BorderLayout(8, 0));
 
@@ -144,18 +146,15 @@ public class GoalTrackerPanel extends PluginPanel
 		northPanel.add(actionWrapper, BorderLayout.EAST);
 		northPanel.add(searchBar, BorderLayout.SOUTH);
 
-		JPanel centerPanel = new JPanel(new BorderLayout());
+		JPanel centerPanel = new JPanel();
+		centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
 		centerPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-
-		goalView.setBackground(ColorScheme.DARK_GRAY_COLOR);
-
-		updateGoals();
 
 		addGoal.setToolTipText("Add new goal");
 		addGoal.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(MouseEvent mouseEvent)
+			public void mouseClicked(MouseEvent mouseEvent)
 			{
 				plugin.addGoal();
 			}
@@ -177,7 +176,7 @@ public class GoalTrackerPanel extends PluginPanel
 		importButton.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(MouseEvent mouseEvent)
+			public void mouseClicked(MouseEvent mouseEvent)
 			{
 				JFileChooser fc = new JFileChooser();
 				fc.setDialogType(JFileChooser.OPEN_DIALOG);
@@ -244,7 +243,7 @@ public class GoalTrackerPanel extends PluginPanel
 		exportButton.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(MouseEvent mouseEvent)
+			public void mouseClicked(MouseEvent mouseEvent)
 			{
 				JFileChooser fc = new JFileChooser();
 				fc.setDialogType(JFileChooser.SAVE_DIALOG);
@@ -289,10 +288,31 @@ public class GoalTrackerPanel extends PluginPanel
 			}
 		});
 
-		centerPanel.add(goalView, BorderLayout.CENTER);
+		goalListPanel = new DragAndDropReorderPane();
+		goalListPanel.addDragListener(draggedComponent -> {
+			try
+			{
+				Component[] components = goalListPanel.getComponentsInLayer(JLayeredPane.DEFAULT_LAYER);
+				for (int i = 0; i < components.length; i++)
+				{
+					if (components[i] == draggedComponent) {
+						GoalPanel goalPanel = (GoalPanel) components[i];
+						plugin.reorderGoal(goalPanel.goal, i);
+						break;
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				log.error("The goal panel should only contain GoalPanel instances", ex);
+			}
+		});
+		centerPanel.add(goalListPanel);
 
 		add(northPanel, BorderLayout.NORTH);
 		add(centerPanel, BorderLayout.CENTER);
+
+		updateGoals();
 	}
 
 	private void onSearchBarChanged()
@@ -320,23 +340,13 @@ public class GoalTrackerPanel extends PluginPanel
 
 	public void updateGoals(String text)
 	{
-		goalView.removeAll();
-
-		GridBagConstraints constraints = new GridBagConstraints();
-		constraints.fill = GridBagConstraints.HORIZONTAL;
-		constraints.weightx = 1;
-		constraints.gridx = 0;
-		constraints.gridy = 0;
+		goalListPanel.removeAll();
 
 		for (final Goal goal : plugin.getGoals())
 		{
 			if (goal != null && (text.isEmpty() || matchesSearchTerms(goal, text.toLowerCase())))
 			{
-				goalView.add(new GoalPanel(plugin, goal), constraints);
-				constraints.gridy++;
-
-				goalView.add(Box.createRigidArea(new Dimension(0, 10)), constraints);
-				constraints.gridy++;
+				goalListPanel.add(new GoalPanel(plugin, goalListPanel, goal));
 			}
 		}
 

@@ -3,7 +3,9 @@ package com.goaltracker.ui;
 import com.goaltracker.Goal;
 import com.goaltracker.GoalTrackerPlugin;
 import com.goaltracker.Requirement;
+import javax.swing.JComponent;
 import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.components.MouseDragEventForwarder;
 import net.runelite.client.util.ImageUtil;
 
 import javax.swing.Box;
@@ -39,6 +41,7 @@ public class RequirementsPanel extends JPanel
 	private JPanel nameWrapper;
 
 	private final GoalTrackerPlugin plugin;
+	private final JComponent parentPanel;
 	private final Goal goal;
 
 	private boolean expanded = true;
@@ -65,16 +68,12 @@ public class RequirementsPanel extends JPanel
 		DELETE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(deleteImg, -100));
 	}
 
-	RequirementsPanel(GoalTrackerPlugin plugin, Goal goal)
+	RequirementsPanel(GoalTrackerPlugin plugin, JComponent parentPanel, Goal goal)
 	{
 		this.plugin = plugin;
+		this.parentPanel = parentPanel;
 		this.goal = goal;
 
-		init();
-	}
-
-	public void init()
-	{
 		setLayout(new BorderLayout());
 		setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		setBorder(new EmptyBorder(0, 8, 0, 8));
@@ -93,7 +92,7 @@ public class RequirementsPanel extends JPanel
 		addRequirement.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(MouseEvent mouseEvent)
+			public void mouseClicked(MouseEvent mouseEvent)
 			{
 				String name = JOptionPane.showInputDialog("Requirement name:");
 				if (name == null || name.isEmpty()) return;
@@ -122,7 +121,7 @@ public class RequirementsPanel extends JPanel
 		nameWrapper.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(MouseEvent mouseEvent)
+			public void mouseClicked(MouseEvent mouseEvent)
 			{
 				toggleExpand();
 			}
@@ -156,6 +155,17 @@ public class RequirementsPanel extends JPanel
 
 		add(nameWrapper, BorderLayout.NORTH);
 		add(bottomContainer, BorderLayout.CENTER);
+
+		// forward mouse drag events to parent panel for drag and drop reordering
+		MouseDragEventForwarder mouseDragEventForwarder = new MouseDragEventForwarder(parentPanel);
+		bottomContainer.addMouseListener(mouseDragEventForwarder);
+		bottomContainer.addMouseMotionListener(mouseDragEventForwarder);
+		addRequirement.addMouseListener(mouseDragEventForwarder);
+		addRequirement.addMouseMotionListener(mouseDragEventForwarder);
+		nameWrapper.addMouseListener(mouseDragEventForwarder);
+		nameWrapper.addMouseMotionListener(mouseDragEventForwarder);
+		addButtonWrapper.addMouseListener(mouseDragEventForwarder);
+		addButtonWrapper.addMouseMotionListener(mouseDragEventForwarder);
 	}
 
 	public JLabel createDeleteLabel(Requirement requirement)
@@ -165,7 +175,7 @@ public class RequirementsPanel extends JPanel
 		deleteLabel.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(MouseEvent mouseEvent)
+			public void mouseClicked(MouseEvent mouseEvent)
 			{
 				goal.getRequirements().remove(requirement);
 				plugin.updateConfig();
@@ -197,7 +207,7 @@ public class RequirementsPanel extends JPanel
 		requirementLabel.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(MouseEvent mouseEvent)
+			public void mouseClicked(MouseEvent mouseEvent)
 			{
 				requirement.setCompleted(!requirement.isCompleted());
 				plugin.updateConfig();
@@ -252,6 +262,15 @@ public class RequirementsPanel extends JPanel
 			gbc.gridy++;
 			bottomContainer.add(Box.createRigidArea(new Dimension(0, 5)), gbc);
 			gbc.gridy++;
+
+			// forward mouse drag events to parent panel for drag and drop reordering
+			MouseDragEventForwarder mouseDragEventForwarder = new MouseDragEventForwarder(parentPanel);
+			requirementLabel.addMouseListener(mouseDragEventForwarder);
+			requirementLabel.addMouseMotionListener(mouseDragEventForwarder);
+			deleteLabel.addMouseListener(mouseDragEventForwarder);
+			deleteLabel.addMouseMotionListener(mouseDragEventForwarder);
+			requirementWrapper.addMouseListener(mouseDragEventForwarder);
+			requirementWrapper.addMouseMotionListener(mouseDragEventForwarder);
 		}
 
 		bottomContainer.add(addButtonWrapper, gbc);

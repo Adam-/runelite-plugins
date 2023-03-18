@@ -38,10 +38,10 @@ import java.awt.image.BufferedImage;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
@@ -50,13 +50,13 @@ import com.goaltracker.Goal;
 import com.goaltracker.GoalTrackerPlugin;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
+import net.runelite.client.ui.components.DragAndDropReorderPane;
 import net.runelite.client.ui.components.FlatTextField;
+import net.runelite.client.ui.components.MouseDragEventForwarder;
 import net.runelite.client.util.ImageUtil;
 
 public class GoalPanel extends JPanel
 {
-	private static final int DEFAULT_FILL_OPACITY = 75;
-
 	private static final Border NAME_BOTTOM_BORDER = new CompoundBorder(
 			BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.DARK_GRAY_COLOR),
 			BorderFactory.createLineBorder(ColorScheme.DARKER_GRAY_COLOR));
@@ -70,7 +70,7 @@ public class GoalPanel extends JPanel
 	private static final ImageIcon DELETE_HOVER_ICON;
 
 	private final GoalTrackerPlugin plugin;
-	private final Goal goal;
+	public final Goal goal;
 
 	private final JLabel completeLabel = new JLabel();
 	private final JLabel deleteLabel = new JLabel();
@@ -81,9 +81,6 @@ public class GoalPanel extends JPanel
 	private final JLabel rename = new JLabel("Rename");
 
 	private final JTextField chunkInput = new JTextField("", 20);
-	private final JTextArea requirementsInput = new JTextArea();
-
-	private GridBagConstraints gbc;
 
 	static
 	{
@@ -100,13 +97,13 @@ public class GoalPanel extends JPanel
 		DELETE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(deleteImg, -100));
 	}
 
-	GoalPanel(GoalTrackerPlugin plugin, Goal goal)
+	GoalPanel(GoalTrackerPlugin plugin, JComponent parentPanel, Goal goal)
 	{
 		this.plugin = plugin;
 		this.goal = goal;
 
 		setLayout(new BorderLayout());
-		setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		setBorder(new EmptyBorder(5, 0, 0, 0));
 
 		JPanel nameWrapper = new JPanel(new BorderLayout());
 		nameWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -122,7 +119,7 @@ public class GoalPanel extends JPanel
 		save.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(MouseEvent mouseEvent)
+			public void mouseClicked(MouseEvent mouseEvent)
 			{
 				goal.setName(nameInput.getText());
 				plugin.updateConfig();
@@ -151,7 +148,7 @@ public class GoalPanel extends JPanel
 		cancel.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(MouseEvent mouseEvent)
+			public void mouseClicked(MouseEvent mouseEvent)
 			{
 				nameInput.setEditable(false);
 				nameInput.setText(goal.getName());
@@ -177,7 +174,7 @@ public class GoalPanel extends JPanel
 		rename.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(MouseEvent mouseEvent)
+			public void mouseClicked(MouseEvent mouseEvent)
 			{
 				nameInput.setEditable(true);
 				updateNameActions(true);
@@ -215,7 +212,7 @@ public class GoalPanel extends JPanel
 		bottomContainer.setBorder(new EmptyBorder(8, 0, 8, 0));
 		bottomContainer.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-		gbc = new GridBagConstraints();
+		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.weightx = 1;
 		gbc.gridx = 0;
@@ -231,7 +228,7 @@ public class GoalPanel extends JPanel
 		completeLabel.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(MouseEvent mouseEvent)
+			public void mouseClicked(MouseEvent mouseEvent)
 			{
 				goal.setCompleted(!goal.isCompleted());
 				updateCompletion();
@@ -255,11 +252,16 @@ public class GoalPanel extends JPanel
 		deleteLabel.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(MouseEvent mouseEvent)
+			public void mouseClicked(MouseEvent mouseEvent)
 			{
-				int confirm = JOptionPane.showConfirmDialog(GoalPanel.this,
+				int confirm = 0;
+
+				boolean quickDelete = mouseEvent.isShiftDown() && plugin.config.enableQuickDelete();
+				if (!quickDelete) {
+					confirm = JOptionPane.showConfirmDialog(GoalPanel.this,
 						"Are you sure you want to permanently delete this goal?",
 						"Warning", JOptionPane.OK_CANCEL_OPTION);
+				}
 
 				if (confirm == 0)
 				{
@@ -298,7 +300,7 @@ public class GoalPanel extends JPanel
 				}
 				catch (Exception ex)
 				{
-
+					// ignore
 				}
 				goal.setChunk(chunk);
 				chunkInput.setText(Integer.toString(goal.getChunk()));
@@ -314,7 +316,8 @@ public class GoalPanel extends JPanel
 		bottomContainer.add(Box.createRigidArea(new Dimension(0, 10)), gbc);
 		gbc.gridy++;
 
-		bottomContainer.add(new RequirementsPanel(plugin, goal), gbc);
+		RequirementsPanel requirementsPanel = new RequirementsPanel(plugin, parentPanel, goal);
+		bottomContainer.add(requirementsPanel, gbc);
 		gbc.gridy++;
 		bottomContainer.add(Box.createRigidArea(new Dimension(0, 10)), gbc);
 		gbc.gridy++;
@@ -328,6 +331,35 @@ public class GoalPanel extends JPanel
 		add(bottomContainer, BorderLayout.CENTER);
 
 		updateCompletion();
+
+		// forward mouse drag events to parent panel for drag and drop reordering
+		MouseDragEventForwarder mouseDragEventForwarder = new MouseDragEventForwarder(parentPanel);
+		addMouseListener(mouseDragEventForwarder);
+		addMouseMotionListener(mouseDragEventForwarder);
+		nameWrapper.addMouseListener(mouseDragEventForwarder);
+		nameWrapper.addMouseMotionListener(mouseDragEventForwarder);
+		nameActions.addMouseListener(mouseDragEventForwarder);
+		nameActions.addMouseMotionListener(mouseDragEventForwarder);
+		nameInput.getTextField().addMouseListener(mouseDragEventForwarder);
+		nameInput.getTextField().addMouseMotionListener(mouseDragEventForwarder);
+		bottomContainer.addMouseListener(mouseDragEventForwarder);
+		bottomContainer.addMouseMotionListener(mouseDragEventForwarder);
+		leftActions.addMouseListener(mouseDragEventForwarder);
+		leftActions.addMouseMotionListener(mouseDragEventForwarder);
+		rightActions.addMouseListener(mouseDragEventForwarder);
+		rightActions.addMouseMotionListener(mouseDragEventForwarder);
+		completeLabel.addMouseListener(mouseDragEventForwarder);
+		completeLabel.addMouseMotionListener(mouseDragEventForwarder);
+		deleteLabel.addMouseListener(mouseDragEventForwarder);
+		deleteLabel.addMouseMotionListener(mouseDragEventForwarder);
+		chunkWrapper.addMouseListener(mouseDragEventForwarder);
+		chunkWrapper.addMouseMotionListener(mouseDragEventForwarder);
+		chunkInput.addMouseListener(mouseDragEventForwarder);
+		chunkInput.addMouseMotionListener(mouseDragEventForwarder);
+		chunkLabel.addMouseListener(mouseDragEventForwarder);
+		chunkLabel.addMouseMotionListener(mouseDragEventForwarder);
+		requirementsPanel.addMouseListener(mouseDragEventForwarder);
+		requirementsPanel.addMouseMotionListener(mouseDragEventForwarder);
 	}
 
 	private void updateNameActions(boolean saveAndCancel)

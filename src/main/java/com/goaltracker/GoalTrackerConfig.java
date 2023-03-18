@@ -33,10 +33,21 @@ public interface GoalTrackerConfig extends Config
 	}
 
 	@ConfigItem(
+			keyName = "enableQuickDelete",
+			name = "Enable shift delete",
+			description = "Allows deleting goals more quickly by holding down shift while clicking the delete button",
+			position = 3
+	)
+	default boolean enableQuickDelete()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 			keyName = "hotKey",
 			name = "Hover hotkey",
 			description = "Which key to hold to view the goals tooltip on the map",
-			position = 3
+			position = 5
 	)
 	default Keybind hotKey()
 	{
@@ -48,7 +59,7 @@ public interface GoalTrackerConfig extends Config
 			keyName = "noProgressColor",
 			name = "No progress color",
 			description = "Color of goals with no progress",
-			position = 4
+			position = 6
 	)
 	default Color noProgressColor()
 	{
@@ -60,7 +71,7 @@ public interface GoalTrackerConfig extends Config
 			keyName = "inProgressColor",
 			name = "In-progress color",
 			description = "Color of goals that are in progress",
-			position = 5
+			position = 7
 	)
 	default Color inProgressColor()
 	{
@@ -72,7 +83,7 @@ public interface GoalTrackerConfig extends Config
 			keyName = "completedColor",
 			name = "Completed color",
 			description = "Color of completed goals",
-			position = 6
+			position = 8
 	)
 	default Color completedColor()
 	{
@@ -84,7 +95,7 @@ public interface GoalTrackerConfig extends Config
 			keyName = "requiredChunkColor",
 			name = "Required chunk color",
 			description = "Color of chunks that are a requirement for goals",
-			position = 7
+			position = 9
 	)
 	default Color requiredChunkColor()
 	{

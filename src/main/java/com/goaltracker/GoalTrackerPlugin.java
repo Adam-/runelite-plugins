@@ -29,6 +29,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
+import java.util.LinkedList;
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.Client;
@@ -62,7 +63,7 @@ public class GoalTrackerPlugin extends Plugin
 	private static final String ICON_FILE = "panel_icon.png";
 
 	@Getter
-	private final List<Goal> goals = new ArrayList<>();
+	private final LinkedList<Goal> goals = new LinkedList<>();
 
 	@Getter
 	@Setter
@@ -72,7 +73,7 @@ public class GoalTrackerPlugin extends Plugin
 	private Client client;
 
 	@Inject
-	private GoalTrackerConfig config;
+	public GoalTrackerConfig config;
 
 	@Inject
 	private ClientToolbar clientToolbar;
@@ -184,7 +185,7 @@ public class GoalTrackerPlugin extends Plugin
 				false
 		);
 
-		goals.add(0, goal);
+		goals.addFirst(goal);
 		updateGoals();
 		updateConfig();
 	}
@@ -199,5 +200,12 @@ public class GoalTrackerPlugin extends Plugin
 	public void updateGoals()
 	{
 		pluginPanel.updateGoals();
+	}
+
+	public void reorderGoal(Goal goal, int newIndex)
+	{
+		goals.remove(goal);
+		goals.add(newIndex, goal);
+		updateConfig();
 	}
 }
