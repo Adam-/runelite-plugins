@@ -26,6 +26,7 @@ package com.goaltracker;
 
 import static com.goaltracker.GoalTrackerConfig.CONFIG_GROUP;
 import static com.goaltracker.GoalTrackerConfig.HIDE_COMPLETED_GOALS_KEY;
+import static com.goaltracker.GoalTrackerConfig.OLD_CONFIG_GROUP;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -114,7 +115,12 @@ public class GoalTrackerPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		loadConfig(configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY)).forEach(goals::add);
+		String taskListJson = configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY);
+		if (taskListJson == null)
+		{
+			taskListJson = configManager.getConfiguration(OLD_CONFIG_GROUP, CONFIG_KEY);
+		}
+		loadConfig(taskListJson).forEach(goals::add);
 
 		pluginPanel = injector.getInstance(GoalTrackerPanel.class);
 		pluginPanel.rebuild();
@@ -164,11 +170,12 @@ public class GoalTrackerPlugin extends Plugin
 		if (goals.isEmpty())
 		{
 			configManager.unsetConfiguration(CONFIG_GROUP, CONFIG_KEY);
-			return;
 		}
-
-		final String json = gson.toJson(goals);
-		configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY, json);
+		else
+		{
+			String json = gson.toJson(goals);
+			configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY, json);
+		}
 	}
 
 	public Stream<Goal> loadConfig(String json)

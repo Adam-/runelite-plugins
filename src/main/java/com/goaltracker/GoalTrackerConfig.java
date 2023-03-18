@@ -11,7 +11,8 @@ import net.runelite.client.config.Keybind;
 @ConfigGroup(CONFIG_GROUP)
 public interface GoalTrackerConfig extends Config
 {
-	String CONFIG_GROUP = "goaltracker";
+	String OLD_CONFIG_GROUP = "goaltracker";
+	String CONFIG_GROUP = "RegionLockerGoalTracker";
 
 	@ConfigItem(
 			keyName = "drawMapOverlay",
