@@ -344,8 +344,11 @@ public class GoalTrackerPanel extends PluginPanel
 
 		for (final Goal goal : plugin.getGoals())
 		{
-			if (goal != null && (text.isEmpty() || matchesSearchTerms(goal, text.toLowerCase())))
-			{
+			if (
+				goal != null &&
+				matchesSearchTerms(goal, text) &&
+				!(goal.isCompleted() && plugin.config.hideCompletedGoals())
+			) {
 				goalListPanel.add(new GoalPanel(plugin, goalListPanel, goal));
 			}
 		}
@@ -356,6 +359,11 @@ public class GoalTrackerPanel extends PluginPanel
 
 	public boolean matchesSearchTerms(Goal goal, String text)
 	{
+		if (text.isEmpty())
+			return true;
+
+		text = text.toLowerCase();
+
 		Pattern p = Pattern.compile("((?:\\\")([^\\\"]*)(?:\\\")|\\w+)");
 		Matcher m = p.matcher(text);
 

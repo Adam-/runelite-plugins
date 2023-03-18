@@ -24,6 +24,8 @@
  */
 package com.goaltracker;
 
+import static com.goaltracker.GoalTrackerConfig.CONFIG_GROUP;
+import static com.goaltracker.GoalTrackerConfig.HIDE_COMPLETED_GOALS_KEY;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -34,6 +36,8 @@ import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.Client;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -58,7 +62,6 @@ import java.util.stream.Stream;
 public class GoalTrackerPlugin extends Plugin
 {
 	private static final String PLUGIN_NAME = "Goal Tracker";
-	private static final String CONFIG_GROUP = "goaltracker";
 	private static final String CONFIG_KEY = "goals";
 	private static final String ICON_FILE = "panel_icon.png";
 
@@ -109,7 +112,7 @@ public class GoalTrackerPlugin extends Plugin
 	}
 
 	@Override
-	protected void startUp() throws Exception
+	protected void startUp()
 	{
 		loadConfig(configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY)).forEach(goals::add);
 
@@ -133,13 +136,27 @@ public class GoalTrackerPlugin extends Plugin
 	}
 
 	@Override
-	protected void shutDown() throws Exception
+	protected void shutDown()
 	{
 		overlayManager.remove(overlay);
 		overlayManager.removeIf(GoalTrackerOverlay.class::isInstance);
 		goals.clear();
 		clientToolbar.removeNavigation(navigationButton);
 		keyManager.unregisterKeyListener(inputListener);
+	}
+
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (!event.getGroup().equals(CONFIG_GROUP))
+		{
+			return;
+		}
+
+		if (event.getKey().equals(HIDE_COMPLETED_GOALS_KEY))
+		{
+			updateGoals();
+		}
 	}
 
 	public void updateConfig()

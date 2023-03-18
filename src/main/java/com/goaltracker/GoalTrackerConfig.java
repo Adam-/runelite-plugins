@@ -1,5 +1,6 @@
 package com.goaltracker;
 
+import static com.goaltracker.GoalTrackerConfig.CONFIG_GROUP;
 import java.awt.Color;
 import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;
@@ -7,9 +8,11 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Keybind;
 
-@ConfigGroup("goaltracker")
+@ConfigGroup(CONFIG_GROUP)
 public interface GoalTrackerConfig extends Config
 {
+	String CONFIG_GROUP = "goaltracker";
+
 	@ConfigItem(
 			keyName = "drawMapOverlay",
 			name = "Draw goal chunks on map",
@@ -39,6 +42,18 @@ public interface GoalTrackerConfig extends Config
 			position = 3
 	)
 	default boolean enableQuickDelete()
+	{
+		return false;
+	}
+
+	String HIDE_COMPLETED_GOALS_KEY = "hideCompletedGoals";
+	@ConfigItem(
+			keyName = HIDE_COMPLETED_GOALS_KEY,
+			name = "Hide completed goals",
+			description = "Hides all completed goals from the goal tracker panel",
+			position = 4
+	)
+	default boolean hideCompletedGoals()
 	{
 		return false;
 	}
