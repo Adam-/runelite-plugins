@@ -66,7 +66,6 @@ uniform int baseY;
 uniform int lockedRegions[LOCKED_REGIONS_SIZE];
 
 out float vGrayAmount;
-
 out ivec3 vPosition;
 out vec4 vColor;
 out float vHsl;

@@ -52,19 +52,19 @@ uniform int baseX;
 uniform int baseY;
 uniform int lockedRegions[LOCKED_REGIONS_SIZE];
 
+in float vGrayAmount[];
 in ivec3 vPosition[];
 in vec4 vColor[];
 in float vHsl[];
 in int vTextureId[];
 in vec2 vUv[];
 in float vFogAmount[];
-in float vGrayAmount[];
 
 out vec4 Color;
 noperspective centroid out float fHsl;
+flat out int textureId;
 out vec2 fUv;
 out float fogAmount;
-flat out int textureId;
 out float grayAmount;
 
 #include to_screen.glsl
@@ -92,32 +92,16 @@ void main() {
   ivec3 center = (vPosition[0] + vPosition[1] + vPosition[2])/3;
   float locked = useGray * isLocked(center.x, center.z);
 
-  Color = vColor[0];
-  fHsl = vHsl[0];
-  fUv = vUv[0];
-  textureId = vTextureId[0];
-  fogAmount = vFogAmount[0];
-  grayAmount = useHardBorder * locked + (1 - useHardBorder) * vGrayAmount[0];
-  gl_Position  = projectionMatrix * vec4(vPosition[0], 1.f);
-  EmitVertex();
-
-  Color = vColor[1];
-  fHsl = vHsl[1];
-  fUv = vUv[1];
-  textureId = vTextureId[1];
-  fogAmount = vFogAmount[1];
-  grayAmount =  useHardBorder * locked + (1 - useHardBorder) * vGrayAmount[1];
-  gl_Position  = projectionMatrix * vec4(vPosition[1], 1.f);
-  EmitVertex();
-
-  Color = vColor[2];
-  fHsl = vHsl[2];
-  fUv = vUv[2];
-  textureId = vTextureId[2];
-  fogAmount = vFogAmount[2];
-  grayAmount =  useHardBorder * locked + (1 - useHardBorder) * vGrayAmount[2];
-  gl_Position  = projectionMatrix * vec4(vPosition[2], 1.f);
-  EmitVertex();
+  for (int i = 0; i < 3; i++) {
+    Color = vColor[i];
+    fHsl = vHsl[i];
+    fUv = vUv[i];
+    textureId = vTextureId[i];
+    fogAmount = vFogAmount[i];
+    grayAmount = useHardBorder * locked + (1 - useHardBorder) * vGrayAmount[i];
+    gl_Position  = projectionMatrix * vec4(vPosition[i], 1.f);
+    EmitVertex();
+  }
 
   EndPrimitive();
 }
