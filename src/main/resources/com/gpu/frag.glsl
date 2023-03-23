@@ -25,7 +25,6 @@
 #version 330
 
 uniform sampler2DArray textures;
-uniform vec2 textureOffsets[64];
 uniform float brightness;
 uniform float smoothBanding;
 uniform vec4 fogColor;
