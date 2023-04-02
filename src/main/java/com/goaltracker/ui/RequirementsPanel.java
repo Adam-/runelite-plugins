@@ -3,6 +3,7 @@ package com.goaltracker.ui;
 import com.goaltracker.Goal;
 import com.goaltracker.GoalTrackerPlugin;
 import com.goaltracker.Requirement;
+import java.awt.Cursor;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import net.runelite.client.ui.ColorScheme;
@@ -82,6 +83,7 @@ public class RequirementsPanel extends JPanel
 
 		nameWrapper = new JPanel(new BorderLayout());
 		nameWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		nameWrapper.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
 		bottomContainer = new JPanel(new GridBagLayout());
 		bottomContainer.setBorder(new EmptyBorder(5, 0, 0, 0));
@@ -91,6 +93,7 @@ public class RequirementsPanel extends JPanel
 		JLabel requirementsLabel = new JLabel("Requirements");
 
 		JLabel addRequirement = new JLabel(ADD_ICON);
+		addRequirement.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		addRequirement.setToolTipText("Add new requirement");
 		addRequirement.addMouseListener(new MouseAdapter()
 		{
@@ -100,7 +103,7 @@ public class RequirementsPanel extends JPanel
 				String name = JOptionPane.showInputDialog(addRequirement, "Requirement name:");
 				if (name == null || name.isEmpty())
 					return;
-				goal.getRequirements().add(new Requirement(name, false));
+				goal.getRequirements().add(new Requirement(name, false, false));
 				plugin.updateConfig();
 				updateRequirements();
 				repaint();
@@ -204,17 +207,20 @@ public class RequirementsPanel extends JPanel
 		return deleteLabel;
 	}
 
-	public JLabel createRequirementLabel(Requirement requirement)
+	public JLabel createRequirementLabel(Requirement req)
 	{
-		JLabel requirementLabel = new JLabel(requirement.getName());
-		requirementLabel.setForeground(requirement.isCompleted() ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.PROGRESS_ERROR_COLOR);
+		JLabel requirementLabel = new JLabel(req.getName());
+		requirementLabel.setForeground(req.getColor());
 		requirementLabel.setToolTipText("Toggle completion");
 		requirementLabel.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mouseClicked(MouseEvent mouseEvent)
+			public void mouseClicked(MouseEvent e)
 			{
-				requirement.setCompleted(!requirement.isCompleted());
+				req.cycleState();
+				// Cycle backwards if shift is held, which happens to be equivalent to cycling forwards twice
+				if (e.isShiftDown())
+					req.cycleState();
 				plugin.updateConfig();
 				updateRequirements();
 				repaint();
@@ -224,13 +230,13 @@ public class RequirementsPanel extends JPanel
 			@Override
 			public void mouseEntered(MouseEvent mouseEvent)
 			{
-				requirementLabel.setForeground(requirement.isCompleted() ? ColorScheme.PROGRESS_COMPLETE_COLOR.darker() : ColorScheme.PROGRESS_ERROR_COLOR.darker());
+				requirementLabel.setForeground(req.getColor().darker());
 			}
 
 			@Override
 			public void mouseExited(MouseEvent mouseEvent)
 			{
-				requirementLabel.setForeground(requirement.isCompleted() ? ColorScheme.PROGRESS_COMPLETE_COLOR : ColorScheme.PROGRESS_ERROR_COLOR);
+				requirementLabel.setForeground(req.getColor());
 			}
 		});
 		return requirementLabel;
@@ -260,7 +266,9 @@ public class RequirementsPanel extends JPanel
 			JPanel requirementWrapper = new JPanel(new BorderLayout());
 			requirementWrapper.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 			JLabel requirementLabel = createRequirementLabel(requirement);
+			requirementLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			JLabel deleteLabel = createDeleteLabel(requirement);
+			deleteLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			requirementWrapper.add(requirementLabel, BorderLayout.CENTER);
 			requirementWrapper.add(deleteLabel, BorderLayout.EAST);
 			bottomContainer.add(requirementWrapper, gbc);

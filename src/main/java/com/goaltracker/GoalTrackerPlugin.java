@@ -33,6 +33,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
+import java.awt.Color;
 import java.util.LinkedList;
 import lombok.Getter;
 import lombok.Setter;
@@ -68,6 +69,8 @@ public class GoalTrackerPlugin extends Plugin
 	private static final String PLUGIN_NAME = "Goal Tracker";
 	private static final String TASK_LIST_CONFIG_KEY = "goals";
 	private static final String ICON_FILE = "panel_icon.png";
+
+	public static final Color COMPLETED_GREEN = Color.decode("#0dc10d");
 
 	@Getter
 	private final LinkedList<Goal> goals = new LinkedList<>();
@@ -234,10 +237,11 @@ public class GoalTrackerPlugin extends Plugin
 	public void addGoal()
 	{
 		Goal goal = new Goal(
-				"Goal " + (goals.size() + 1),
-				12850,
-				new ArrayList<>(),
-				false
+			"Goal " + (goals.size() + 1),
+			12850,
+			new ArrayList<>(),
+			false,
+			false
 		);
 
 		goals.addFirst(goal);

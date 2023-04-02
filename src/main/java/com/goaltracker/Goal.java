@@ -24,6 +24,8 @@
  */
 package com.goaltracker;
 
+import static com.goaltracker.GoalTrackerPlugin.COMPLETED_GREEN;
+import java.awt.Color;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -38,5 +40,22 @@ public class Goal
 	private String name;
 	private int chunk;
 	private ArrayList<Requirement> requirements;
+	private boolean blocked;
 	private boolean completed;
+
+	public void cycleState() {
+		if (blocked) {
+			blocked = false;
+			completed = false;
+		} else if (completed) {
+			blocked = true;
+			completed = false;
+		} else {
+			completed = true;
+		}
+	}
+
+	public Color getColor() {
+		return completed ? COMPLETED_GREEN : (blocked ? Color.RED : Color.YELLOW);
+	}
 }

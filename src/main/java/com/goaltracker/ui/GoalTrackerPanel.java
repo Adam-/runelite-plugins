@@ -28,6 +28,8 @@ import com.google.gson.Gson;
 import com.google.inject.Inject;
 
 import java.awt.Component;
+import java.awt.Cursor;
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JLayeredPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -125,9 +127,9 @@ public class GoalTrackerPanel extends PluginPanel
 		setBorder(new EmptyBorder(10, 10, 10, 10));
 
 		JPanel northPanel = new JPanel(new BorderLayout(0, 5));
-		northPanel.setBorder(new EmptyBorder(1, 0, 5, 0));
 
 		JPanel actionWrapper = new JPanel(new BorderLayout(8, 0));
+		actionWrapper.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 8));
 
 		title.setText("Goal Tracker");
 		title.setForeground(Color.WHITE);
@@ -150,6 +152,7 @@ public class GoalTrackerPanel extends PluginPanel
 		centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
 		centerPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
+		addGoal.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		addGoal.setToolTipText("Add new goal");
 		addGoal.addMouseListener(new MouseAdapter()
 		{
@@ -172,6 +175,7 @@ public class GoalTrackerPanel extends PluginPanel
 			}
 		});
 
+		importButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		importButton.setToolTipText("Import goals file...");
 		importButton.addMouseListener(new MouseAdapter()
 		{
@@ -239,6 +243,7 @@ public class GoalTrackerPanel extends PluginPanel
 			}
 		});
 
+		exportButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		exportButton.setToolTipText("Export goals file...");
 		exportButton.addMouseListener(new MouseAdapter()
 		{
