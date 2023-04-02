@@ -124,12 +124,7 @@ public class GoalPanel extends JPanel
 			@Override
 			public void mouseClicked(MouseEvent mouseEvent)
 			{
-				goal.setName(nameInput.getText());
-				plugin.updateConfig();
-
-				nameInput.setEditable(false);
-				updateNameActions(false);
-				requestFocusInWindow();
+				saveGoalRename();
 			}
 
 			@Override
@@ -154,10 +149,7 @@ public class GoalPanel extends JPanel
 			@Override
 			public void mouseClicked(MouseEvent mouseEvent)
 			{
-				nameInput.setEditable(false);
-				nameInput.setText(goal.getName());
-				updateNameActions(false);
-				requestFocusInWindow();
+				cancelGoalRename();
 			}
 
 			@Override
@@ -310,6 +302,22 @@ public class GoalPanel extends JPanel
 		nameInput.getTextField().setBorder(new EmptyBorder(2, 0, 0, 0));
 		nameInput.getTextField().setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		nameInput.getTextField().addMouseListener(nameInputMouseAdapter);
+		nameInput.getTextField().addKeyListener(new KeyAdapter()
+		{
+			@Override
+			public void keyPressed(KeyEvent e)
+			{
+				switch (e.getKeyCode())
+				{
+					case KeyEvent.VK_ENTER:
+						saveGoalRename();
+						break;
+					case KeyEvent.VK_ESCAPE:
+						cancelGoalRename();
+						break;
+				}
+			}
+		});
 
 		nameWrapper.add(completionCheckbox, BorderLayout.WEST);
 		nameWrapper.add(nameInput, BorderLayout.CENTER);
@@ -338,6 +346,20 @@ public class GoalPanel extends JPanel
 
 		chunkInput.setText(Integer.toString(goal.getChunk()));
 		chunkInput.setPreferredSize(new Dimension(0, 24));
+		chunkInput.addKeyListener(new KeyAdapter()
+		{
+			@Override
+			public void keyPressed(KeyEvent e)
+			{
+				switch (e.getKeyCode())
+				{
+					case KeyEvent.VK_ESCAPE:
+						chunkInput.setText(Integer.toString(goal.getChunk()));
+					case KeyEvent.VK_ENTER:
+						chunkInput.transferFocus();
+				}
+			}
+		});
 		chunkInput.addFocusListener(new FocusAdapter()
 		{
 			@Override
@@ -438,5 +460,23 @@ public class GoalPanel extends JPanel
 			goal.isBlocked() ? BLOCKED_ICON :
 			goal.isCompleted() ? CHECKED_ICON : CHECKBOX_ICON);
 		plugin.updateConfig();
+	}
+
+	private void saveGoalRename()
+	{
+		goal.setName(nameInput.getText());
+		plugin.updateConfig();
+
+		nameInput.setEditable(false);
+		updateNameActions(false);
+		requestFocusInWindow();
+	}
+
+	private void cancelGoalRename()
+	{
+		nameInput.setEditable(false);
+		nameInput.setText(goal.getName());
+		updateNameActions(false);
+		requestFocusInWindow();
 	}
 }
