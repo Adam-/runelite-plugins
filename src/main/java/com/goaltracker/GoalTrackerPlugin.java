@@ -24,10 +24,14 @@
  */
 package com.goaltracker;
 
+import static com.goaltracker.GoalTrackerConfig.BLOCKED_COLOR_KEY;
 import static com.goaltracker.GoalTrackerConfig.COLLAPSE_REQUIREMENTS_KEY;
+import static com.goaltracker.GoalTrackerConfig.COMPLETED_COLOR_KEY;
 import static com.goaltracker.GoalTrackerConfig.CONFIG_GROUP;
 import static com.goaltracker.GoalTrackerConfig.HIDE_COMPLETED_GOALS_KEY;
+import static com.goaltracker.GoalTrackerConfig.IN_PROGRESS_COLOR_KEY;
 import static com.goaltracker.GoalTrackerConfig.OLD_CONFIG_GROUP;
+import static com.goaltracker.GoalTrackerConfig.REQUIRED_CHUNK_COLOR_KEY;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -122,10 +126,10 @@ public class GoalTrackerPlugin extends Plugin
 				"drawMapOverlay",
 				"enableTooltip",
 				"hotKey",
-				"noProgressColor",
-				"inProgressColor",
-				"completedColor",
-				"requiredChunkColor"
+				BLOCKED_COLOR_KEY,
+				IN_PROGRESS_COLOR_KEY,
+				COMPLETED_COLOR_KEY,
+				REQUIRED_CHUNK_COLOR_KEY
 			};
 			for (String key : oldConfigKeys)
 			{
@@ -193,10 +197,11 @@ public class GoalTrackerPlugin extends Plugin
 		{
 			case HIDE_COMPLETED_GOALS_KEY:
 			case COLLAPSE_REQUIREMENTS_KEY:
-				updateGoals();
-				break;
-			default:
-				pluginPanel.rebuild();
+			case BLOCKED_COLOR_KEY:
+			case IN_PROGRESS_COLOR_KEY:
+			case COMPLETED_COLOR_KEY:
+			case REQUIRED_CHUNK_COLOR_KEY:
+				pluginPanel.updateGoals();
 				break;
 		}
 	}
@@ -234,7 +239,7 @@ public class GoalTrackerPlugin extends Plugin
 		}
 	}
 
-	public void addGoal()
+	public synchronized void addGoal()
 	{
 		Goal goal = new Goal(
 			"Goal " + (goals.size() + 1),
@@ -245,26 +250,23 @@ public class GoalTrackerPlugin extends Plugin
 		);
 
 		goals.addFirst(goal);
-		updateGoals();
-		updateConfig();
-	}
-
-	public void deleteGoal(final Goal goal)
-	{
-		goals.remove(goal);
-		updateGoals();
-		updateConfig();
-	}
-
-	public void updateGoals()
-	{
 		pluginPanel.updateGoals();
+		updateConfig();
 	}
 
-	public void reorderGoal(Goal goal, int newIndex)
+	public synchronized void deleteGoal(final Goal goal)
 	{
-		goals.remove(goal);
-		goals.add(newIndex, goal);
-		updateConfig();
+		if (goals.remove(goal)) {
+			pluginPanel.updateGoals();
+			updateConfig();
+		}
+	}
+
+	public synchronized void reorderGoal(Goal goal, int newIndex)
+	{
+		if (goals.remove(goal)) {
+			goals.add(newIndex, goal);
+			updateConfig();
+		}
 	}
 }

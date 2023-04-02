@@ -82,9 +82,10 @@ public interface GoalTrackerConfig extends Config
 		return false;
 	}
 
+	String BLOCKED_COLOR_KEY = "noProgressColor";
 	@Alpha
 	@ConfigItem(
-			keyName = "noProgressColor",
+			keyName = BLOCKED_COLOR_KEY,
 			name = "Blocked color",
 			description = "Color of goals with no progress",
 			position = 7
@@ -94,9 +95,10 @@ public interface GoalTrackerConfig extends Config
 		return Color.RED;
 	}
 
+	String IN_PROGRESS_COLOR_KEY = "inProgressColor";
 	@Alpha
 	@ConfigItem(
-			keyName = "inProgressColor",
+			keyName = IN_PROGRESS_COLOR_KEY,
 			name = "In-progress color",
 			description = "Color of goals that are in progress",
 			position = 8
@@ -106,9 +108,10 @@ public interface GoalTrackerConfig extends Config
 		return Color.YELLOW;
 	}
 
+	String COMPLETED_COLOR_KEY = "completedColor";
 	@Alpha
 	@ConfigItem(
-			keyName = "completedColor",
+			keyName = COMPLETED_COLOR_KEY,
 			name = "Completed color",
 			description = "Color of completed goals",
 			position = 9
@@ -118,9 +121,10 @@ public interface GoalTrackerConfig extends Config
 		return Color.decode("#0dc10d"); // Same color as Jagex uses for completed quests
 	}
 
+	String REQUIRED_CHUNK_COLOR_KEY = "requiredChunkColor";
 	@Alpha
 	@ConfigItem(
-			keyName = "requiredChunkColor",
+			keyName = REQUIRED_CHUNK_COLOR_KEY,
 			name = "Required chunk color",
 			description = "Color of chunks that are a requirement for goals",
 			position = 10

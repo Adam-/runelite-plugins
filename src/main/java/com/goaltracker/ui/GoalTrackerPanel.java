@@ -77,6 +77,10 @@ public class GoalTrackerPanel extends PluginPanel
 	private static final ImageIcon IMPORT_HOVER_ICON;
 	private static final ImageIcon EXPORT_ICON;
 	private static final ImageIcon EXPORT_HOVER_ICON;
+	public static final ImageIcon EDIT_ICON;
+	public static final ImageIcon EDIT_HOVER_ICON;
+	public static final ImageIcon DELETE_ICON;
+	public static final ImageIcon DELETE_HOVER_ICON;
 
 	private static final Color DEFAULT_BORDER_COLOR = Color.GREEN;
 	private static final Color DEFAULT_FILL_COLOR = new Color(0, 255, 0, 0);
@@ -117,11 +121,6 @@ public class GoalTrackerPanel extends PluginPanel
 	static ImageIcon BLOCKED_ICON;
 	static ImageIcon BLOCKED_HOVER_ICON;
 
-	static ImageIcon EDIT_ICON;
-	static ImageIcon EDIT_HOVER_ICON;
-	static ImageIcon DELETE_ICON;
-	static ImageIcon DELETE_HOVER_ICON;
-
 	static
 	{
 		final BufferedImage addIcon = ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "add_icon.png");
@@ -135,6 +134,14 @@ public class GoalTrackerPanel extends PluginPanel
 		final BufferedImage exportIcon = ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "export.png");
 		EXPORT_ICON = new ImageIcon(exportIcon);
 		EXPORT_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(exportIcon, 0.53f));
+
+		final BufferedImage deleteImg = ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "delete_icon.png");
+		DELETE_ICON = new ImageIcon(deleteImg);
+		DELETE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(deleteImg, -100));
+
+		final BufferedImage editImg = ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "edit_icon.png");
+		EDIT_ICON = new ImageIcon(editImg);
+		EDIT_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(editImg, -100));
 	}
 
 	public void init()
@@ -357,14 +364,6 @@ public class GoalTrackerPanel extends PluginPanel
 			config.blockedColor());
 		BLOCKED_ICON = new ImageIcon(blockedImg);
 		BLOCKED_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(blockedImg, -100));
-
-		final BufferedImage deleteImg = ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "delete_icon.png");
-		DELETE_ICON = new ImageIcon(deleteImg);
-		DELETE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(deleteImg, -100));
-
-		final BufferedImage editImg = ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "edit_icon.png");
-		EDIT_ICON = new ImageIcon(editImg);
-		EDIT_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(editImg, -100));
 	}
 
 	private void onSearchBarChanged()
