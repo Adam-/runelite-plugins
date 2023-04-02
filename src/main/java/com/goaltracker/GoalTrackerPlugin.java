@@ -36,6 +36,7 @@ import com.google.inject.Provides;
 import java.util.LinkedList;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -55,6 +56,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+@Slf4j
 @PluginDescriptor(
 		name = "Region Goal Tracker",
 		description = "Add goals to chunks",
@@ -64,7 +66,7 @@ import java.util.stream.Stream;
 public class GoalTrackerPlugin extends Plugin
 {
 	private static final String PLUGIN_NAME = "Goal Tracker";
-	private static final String CONFIG_KEY = "goals";
+	private static final String TASK_LIST_CONFIG_KEY = "goals";
 	private static final String ICON_FILE = "panel_icon.png";
 
 	@Getter
@@ -110,17 +112,44 @@ public class GoalTrackerPlugin extends Plugin
 	@Provides
 	GoalTrackerConfig provideConfig(ConfigManager configManager)
 	{
+		// Migrate old config values
+		if (configManager.getConfiguration(CONFIG_GROUP, "migrationCompleted") == null)
+		{
+			log.info("Migrating region locker goal tracker config...");
+			String[] oldConfigKeys =
+			{
+				TASK_LIST_CONFIG_KEY,
+				"drawMapOverlay",
+				"enableTooltip",
+				"hotKey",
+				"noProgressColor",
+				"inProgressColor",
+				"completedColor",
+				"requiredChunkColor"
+			};
+			for (String key : oldConfigKeys)
+			{
+				String value = configManager.getConfiguration(CONFIG_GROUP, key);
+				if (value == null)
+				{
+					value = configManager.getConfiguration(OLD_CONFIG_GROUP, key);
+					if (value != null)
+					{
+						configManager.setConfiguration(CONFIG_GROUP, key, value);
+					}
+				}
+			}
+
+			configManager.setConfiguration(CONFIG_GROUP, "migrationCompleted", true);
+		}
+
 		return configManager.getConfig(GoalTrackerConfig.class);
 	}
 
 	@Override
 	protected void startUp()
 	{
-		String taskListJson = configManager.getConfiguration(CONFIG_GROUP, CONFIG_KEY);
-		if (taskListJson == null)
-		{
-			taskListJson = configManager.getConfiguration(OLD_CONFIG_GROUP, CONFIG_KEY);
-		}
+		String taskListJson = configManager.getConfiguration(CONFIG_GROUP, TASK_LIST_CONFIG_KEY);
 		loadConfig(taskListJson).forEach(goals::add);
 
 		pluginPanel = injector.getInstance(GoalTrackerPanel.class);
@@ -173,12 +202,12 @@ public class GoalTrackerPlugin extends Plugin
 	{
 		if (goals.isEmpty())
 		{
-			configManager.unsetConfiguration(CONFIG_GROUP, CONFIG_KEY);
+			configManager.unsetConfiguration(CONFIG_GROUP, TASK_LIST_CONFIG_KEY);
 		}
 		else
 		{
 			String json = gson.toJson(goals);
-			configManager.setConfiguration(CONFIG_GROUP, CONFIG_KEY, json);
+			configManager.setConfiguration(CONFIG_GROUP, TASK_LIST_CONFIG_KEY, json);
 		}
 	}
 
@@ -191,9 +220,7 @@ public class GoalTrackerPlugin extends Plugin
 
 		try
 		{
-			final List<Goal> goalData = gson.fromJson(json, new TypeToken<ArrayList<Goal>>()
-			{
-			}.getType());
+			final List<Goal> goalData = gson.fromJson(json, new TypeToken<ArrayList<Goal>>(){}.getType());
 
 			return goalData.stream();
 		}
