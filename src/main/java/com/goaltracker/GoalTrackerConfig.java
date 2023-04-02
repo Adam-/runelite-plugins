@@ -37,10 +37,21 @@ public interface GoalTrackerConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "hotKey",
+		name = "Tooltip hotkey",
+		description = "Which key to hold to view the goals tooltip on the map",
+		position = 3
+	)
+	default Keybind hotKey()
+	{
+		return Keybind.SHIFT;
+	}
+
+	@ConfigItem(
 			keyName = "enableQuickDelete",
-			name = "Enable shift delete",
+			name = "Enable shift quick-delete",
 			description = "Allows deleting goals more quickly by holding down shift while clicking the delete button",
-			position = 3
+			position = 4
 	)
 	default boolean enableQuickDelete()
 	{
@@ -50,9 +61,9 @@ public interface GoalTrackerConfig extends Config
 	String HIDE_COMPLETED_GOALS_KEY = "hideCompletedGoals";
 	@ConfigItem(
 			keyName = HIDE_COMPLETED_GOALS_KEY,
-			name = "Hide completed goals",
+			name = "Hide goals when completed",
 			description = "Hides all completed goals from the goal tracker panel",
-			position = 4
+			position = 5
 	)
 	default boolean hideCompletedGoals()
 	{
@@ -64,32 +75,21 @@ public interface GoalTrackerConfig extends Config
 			keyName = COLLAPSE_REQUIREMENTS_KEY,
 			name = "Collapse requirements",
 			description = "Hides all goal requirements by default",
-			position = 5
+			position = 6
 	)
 	default boolean collapseRequirements()
 	{
 		return false;
 	}
 
-	@ConfigItem(
-			keyName = "hotKey",
-			name = "Hover hotkey",
-			description = "Which key to hold to view the goals tooltip on the map",
-			position = 6
-	)
-	default Keybind hotKey()
-	{
-		return Keybind.ALT;
-	}
-
 	@Alpha
 	@ConfigItem(
 			keyName = "noProgressColor",
-			name = "No progress color",
+			name = "Blocked color",
 			description = "Color of goals with no progress",
 			position = 7
 	)
-	default Color noProgressColor()
+	default Color blockedColor()
 	{
 		return Color.RED;
 	}
@@ -115,7 +115,7 @@ public interface GoalTrackerConfig extends Config
 	)
 	default Color completedColor()
 	{
-		return Color.GREEN;
+		return Color.decode("#0dc10d"); // Same color as Jagex uses for completed quests
 	}
 
 	@Alpha

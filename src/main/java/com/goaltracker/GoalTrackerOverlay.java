@@ -28,10 +28,8 @@ package com.goaltracker;
 import com.google.inject.Inject;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
@@ -125,23 +123,18 @@ public class GoalTrackerOverlay extends Overlay
 
 
 				int regionId = ((x >> 6) << 8) | (y >> 6);
-				String regionText = String.valueOf(regionId);
-				FontMetrics fm = graphics.getFontMetrics();
-				Rectangle2D textBounds = fm.getStringBounds(regionText, graphics);
 				Rectangle regionRect = new Rectangle(xPos, yPos, regionPixelSize, regionPixelSize);
 
 				Goal[] goals = plugin.getGoals().stream().filter(g -> g.getChunk() == regionId).toArray(Goal[]::new);
-				long completed = Arrays.stream(goals).filter(Goal::isCompleted).count();
-				long total = goals.length;
 
 				Goal[] reqs = new Goal[0];
 				if (!RegionLocker.hasRegion(regionId))
 				{
-					reqs = plugin.getGoals().stream().filter(g ->
-							g.getRequirements().stream().anyMatch(r ->
-									r.getName().equals(Integer.toString(regionId))
-							)
-					).toArray(Goal[]::new);
+					reqs = plugin.getGoals().stream()
+						.filter(g -> g
+							.getRequirements().stream()
+							.anyMatch(r -> r.getName().equals(Integer.toString(regionId))))
+						.toArray(Goal[]::new);
 				}
 
 				if (config.enableTooltip() && plugin.isHotkeyPressed() && regionRect.contains(mousePos.getX(), mousePos.getY()))
@@ -154,16 +147,39 @@ public class GoalTrackerOverlay extends Overlay
 					}
 				}
 
-				if (config.drawMapOverlay() && ((total > 0 && completed < total) || reqs.length > 0))
+				if (config.drawMapOverlay())
 				{
 					Color color;
-					if (total > 0)
-						color = getProgressColor(completed, total);
-					else
+					if (reqs.length > 0)
+					{
 						color = config.requiredChunkColor();
+					}
+					else if (goals.length > 0)
+					{
+						if (Arrays.stream(goals).allMatch(Goal::isCompleted))
+						{
+							if (config.hideCompletedGoals())
+							{
+								continue;
+							}
+							color = config.completedColor();
+						}
+						else if (Arrays.stream(goals).anyMatch(Goal::isBlocked))
+						{
+							color = config.blockedColor();
+						}
+						else
+						{
+							color = config.inProgressColor();
+						}
+					}
+					else
+					{
+						continue;
+					}
+
 					graphics.setColor(color);
 					graphics.drawRect(xPos + 1, yPos + 1, regionPixelSize - 2, regionPixelSize - 2);
-					//graphics.drawString(Integer.toString(total), xPos + LABEL_PADDING, yPos - LABEL_PADDING);
 				}
 			}
 		}
@@ -177,7 +193,7 @@ public class GoalTrackerOverlay extends Overlay
 		String reqsTitle = "Chunk required for:</br>";
 		StringBuilder reqsSb = textFromGoals(reqsTitle, reqs);
 
-		return sb.toString() + reqsSb.toString();
+		return sb.append(reqsSb).toString();
 	}
 
 	private StringBuilder textFromGoals(String title, Goal[] goals)
@@ -185,34 +201,23 @@ public class GoalTrackerOverlay extends Overlay
 		StringBuilder sb = new StringBuilder();
 		for (final Goal goal : goals)
 		{
-			if (!goal.isCompleted())
+			Color color;
+			if (Arrays.stream(goals).allMatch(Goal::isCompleted))
 			{
-				long completed = goal.getRequirements().stream().filter(Requirement::isCompleted).count();
-				long total = goal.getRequirements().size();
-				Color color = getProgressColor(completed, total);
-
-				sb.append(ColorUtil.wrapWithColorTag(goal.getName(), color) + "</br>");
+				color = config.completedColor();
 			}
+			else if (Arrays.stream(goals).anyMatch(Goal::isBlocked))
+			{
+				color = config.blockedColor();
+			}
+			else
+			{
+				color = config.inProgressColor();
+			}
+
+			sb.append(ColorUtil.wrapWithColorTag(goal.getName(), color) + "</br>");
 		}
 		if (!sb.toString().isEmpty()) sb.insert(0, title);
 		return sb;
-	}
-
-	private Color getProgressColor(long count, long total)
-	{
-		Color color;
-		if (count == 0)
-		{
-			color = config.noProgressColor();
-		}
-		else if (count == total)
-		{
-			color = config.completedColor();
-		}
-		else
-		{
-			color = config.inProgressColor();
-		}
-		return color;
 	}
 }

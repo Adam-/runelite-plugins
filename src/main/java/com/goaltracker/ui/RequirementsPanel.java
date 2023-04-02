@@ -207,10 +207,16 @@ public class RequirementsPanel extends JPanel
 		return deleteLabel;
 	}
 
+	private Color getRequirementColor(Requirement req)
+	{
+		return req.isCompleted() ? plugin.config.completedColor() :
+			(req.isBlocked() ? plugin.config.blockedColor() : plugin.config.inProgressColor());
+	}
+
 	public JLabel createRequirementLabel(Requirement req)
 	{
 		JLabel requirementLabel = new JLabel(req.getName());
-		requirementLabel.setForeground(req.getColor());
+		requirementLabel.setForeground(getRequirementColor(req));
 		requirementLabel.setToolTipText("Toggle completion");
 		requirementLabel.addMouseListener(new MouseAdapter()
 		{
@@ -230,13 +236,13 @@ public class RequirementsPanel extends JPanel
 			@Override
 			public void mouseEntered(MouseEvent mouseEvent)
 			{
-				requirementLabel.setForeground(req.getColor().darker());
+				requirementLabel.setForeground(getRequirementColor(req).darker());
 			}
 
 			@Override
 			public void mouseExited(MouseEvent mouseEvent)
 			{
-				requirementLabel.setForeground(req.getColor());
+				requirementLabel.setForeground(getRequirementColor(req));
 			}
 		});
 		return requirementLabel;

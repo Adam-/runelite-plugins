@@ -24,6 +24,7 @@
  */
 package com.goaltracker.ui;
 
+import com.goaltracker.GoalTrackerConfig;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 
@@ -94,6 +95,9 @@ public class GoalTrackerPanel extends PluginPanel
 	@Inject
 	private GoalTrackerPlugin plugin;
 
+	@Inject
+	private GoalTrackerConfig config;
+
 	@Getter
 	private Color selectedColor = DEFAULT_BORDER_COLOR;
 
@@ -105,6 +109,18 @@ public class GoalTrackerPanel extends PluginPanel
 
 	@Inject
 	private Gson gson;
+
+	static ImageIcon CHECKED_ICON;
+	static ImageIcon CHECKED_HOVER_ICON;
+	static ImageIcon CHECKBOX_ICON;
+	static ImageIcon CHECKBOX_HOVER_ICON;
+	static ImageIcon BLOCKED_ICON;
+	static ImageIcon BLOCKED_HOVER_ICON;
+
+	static ImageIcon EDIT_ICON;
+	static ImageIcon EDIT_HOVER_ICON;
+	static ImageIcon DELETE_ICON;
+	static ImageIcon DELETE_HOVER_ICON;
 
 	static
 	{
@@ -123,6 +139,8 @@ public class GoalTrackerPanel extends PluginPanel
 
 	public void init()
 	{
+		loadIcons();
+
 		setLayout(new BorderLayout());
 		setBorder(new EmptyBorder(10, 10, 10, 10));
 
@@ -320,6 +338,35 @@ public class GoalTrackerPanel extends PluginPanel
 		updateGoals();
 	}
 
+	private void loadIcons()
+	{
+		final BufferedImage checkedImg = ImageUtil.recolorImage(
+			ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "checked_icon.png"),
+			config.completedColor());
+		CHECKED_ICON = new ImageIcon(checkedImg);
+		CHECKED_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(checkedImg, -100));
+
+		final BufferedImage checkboxImg = ImageUtil.recolorImage(
+			ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "checkbox_icon.png"),
+			config.inProgressColor());
+		CHECKBOX_ICON = new ImageIcon(checkboxImg);
+		CHECKBOX_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(checkboxImg, -100));
+
+		final BufferedImage blockedImg = ImageUtil.recolorImage(
+			ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "blocked_icon.png"),
+			config.blockedColor());
+		BLOCKED_ICON = new ImageIcon(blockedImg);
+		BLOCKED_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(blockedImg, -100));
+
+		final BufferedImage deleteImg = ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "delete_icon.png");
+		DELETE_ICON = new ImageIcon(deleteImg);
+		DELETE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(deleteImg, -100));
+
+		final BufferedImage editImg = ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "edit_icon.png");
+		EDIT_ICON = new ImageIcon(editImg);
+		EDIT_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(editImg, -100));
+	}
+
 	private void onSearchBarChanged()
 	{
 		final String text = searchBar.getText();
@@ -332,6 +379,7 @@ public class GoalTrackerPanel extends PluginPanel
 
 	public void rebuild()
 	{
+		loadIcons();
 		removeAll();
 		repaint();
 		revalidate();

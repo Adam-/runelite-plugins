@@ -24,7 +24,16 @@
  */
 package com.goaltracker.ui;
 
-import static com.goaltracker.GoalTrackerPlugin.COMPLETED_GREEN;
+import static com.goaltracker.ui.GoalTrackerPanel.BLOCKED_HOVER_ICON;
+import static com.goaltracker.ui.GoalTrackerPanel.BLOCKED_ICON;
+import static com.goaltracker.ui.GoalTrackerPanel.CHECKBOX_HOVER_ICON;
+import static com.goaltracker.ui.GoalTrackerPanel.CHECKBOX_ICON;
+import static com.goaltracker.ui.GoalTrackerPanel.CHECKED_HOVER_ICON;
+import static com.goaltracker.ui.GoalTrackerPanel.CHECKED_ICON;
+import static com.goaltracker.ui.GoalTrackerPanel.DELETE_HOVER_ICON;
+import static com.goaltracker.ui.GoalTrackerPanel.DELETE_ICON;
+import static com.goaltracker.ui.GoalTrackerPanel.EDIT_HOVER_ICON;
+import static com.goaltracker.ui.GoalTrackerPanel.EDIT_ICON;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -38,11 +47,9 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -57,25 +64,12 @@ import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.components.FlatTextField;
 import net.runelite.client.ui.components.MouseDragEventForwarder;
-import net.runelite.client.util.ImageUtil;
 
 public class GoalPanel extends JPanel
 {
 	private static final Border NAME_BOTTOM_BORDER = new CompoundBorder(
 		BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.DARK_GRAY_COLOR),
 		BorderFactory.createMatteBorder(3, 0, 3, 0, ColorScheme.DARKER_GRAY_COLOR));
-
-	private static final ImageIcon CHECKED_ICON;
-	private static final ImageIcon CHECKED_HOVER_ICON;
-	private static final ImageIcon CHECKBOX_ICON;
-	private static final ImageIcon CHECKBOX_HOVER_ICON;
-	private static final ImageIcon BLOCKED_ICON;
-	private static final ImageIcon BLOCKED_HOVER_ICON;
-
-	private static final ImageIcon EDIT_ICON;
-	private static final ImageIcon EDIT_HOVER_ICON;
-	private static final ImageIcon DELETE_ICON;
-	private static final ImageIcon DELETE_HOVER_ICON;
 
 	private final GoalTrackerPlugin plugin;
 	public final Goal goal;
@@ -91,35 +85,6 @@ public class GoalPanel extends JPanel
 	private final JTextField chunkInput = new JTextField("", 20);
 
 	private final MouseAdapter nameInputMouseAdapter;
-
-	static
-	{
-		final BufferedImage checkedImg = ImageUtil.recolorImage(
-			ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "checked_icon.png"),
-			COMPLETED_GREEN);
-		CHECKED_ICON = new ImageIcon(checkedImg);
-		CHECKED_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(checkedImg, -100));
-
-		final BufferedImage checkboxImg = ImageUtil.recolorImage(
-			ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "checkbox_icon.png"),
-			Color.YELLOW);
-		CHECKBOX_ICON = new ImageIcon(checkboxImg);
-		CHECKBOX_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(checkboxImg, -100));
-
-		final BufferedImage blockedImg = ImageUtil.recolorImage(
-			ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "blocked_icon.png"),
-			Color.RED);
-		BLOCKED_ICON = new ImageIcon(blockedImg);
-		BLOCKED_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(blockedImg, -100));
-
-		final BufferedImage deleteImg = ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "delete_icon.png");
-		DELETE_ICON = new ImageIcon(deleteImg);
-		DELETE_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(deleteImg, -100));
-
-		final BufferedImage editImg = ImageUtil.getResourceStreamFromClass(GoalTrackerPlugin.class, "edit_icon.png");
-		EDIT_ICON = new ImageIcon(editImg);
-		EDIT_HOVER_ICON = new ImageIcon(ImageUtil.alphaOffset(editImg, -100));
-	}
 
 	GoalPanel(GoalTrackerPlugin plugin, JComponent parentPanel, Goal goal)
 	{
@@ -463,7 +428,9 @@ public class GoalPanel extends JPanel
 
 	private void updateCompletion()
 	{
-		nameInput.getTextField().setForeground(goal.getColor());
+		nameInput.getTextField().setForeground(goal.isCompleted() ?
+			plugin.config.completedColor() :
+			(goal.isBlocked() ? plugin.config.blockedColor() : plugin.config.inProgressColor()));
 		completionCheckbox.setToolTipText(
 			goal.isBlocked() ? "Unblock" :
 			goal.isCompleted() ? "Mark as blocked" : "Mark as completed");
