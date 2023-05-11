@@ -25,13 +25,13 @@
 package com.gpu;
 
 import com.google.common.base.Charsets;
+import com.gpu.template.Template;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.plugins.gpu.template.Template;
 import net.runelite.client.util.OSType;
 import net.runelite.rlawt.AWTContext;
 import static org.jocl.CL.*;
@@ -58,8 +58,8 @@ class OpenCLManager
 	private static final String KERNEL_NAME_LARGE = "computeLarge";
 
 	private static final int MIN_WORK_GROUP_SIZE = 256;
-	private static final int SMALL_SIZE = RegionGpuPlugin.SMALL_TRIANGLE_COUNT;
-	private static final int LARGE_SIZE = RegionGpuPlugin.MAX_TRIANGLE;
+	private static final int SMALL_SIZE = RegionLockerGpuPlugin.SMALL_TRIANGLE_COUNT;
+	private static final int LARGE_SIZE = RegionLockerGpuPlugin.MAX_TRIANGLE;
 	//  struct shared_data {
 	//      int totalNum[12];
 	//      int totalDistance[12];

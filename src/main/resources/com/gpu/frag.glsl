@@ -24,67 +24,58 @@
  */
 #version 330
 
+//#define FRAG_UVS
+
 uniform sampler2DArray textures;
 uniform float brightness;
 uniform float smoothBanding;
 uniform vec4 fogColor;
-uniform vec4 configGrayColor;
-uniform float configGrayAmount;
 uniform int colorBlindMode;
 uniform float textureLightMode;
 
-in vec4 Color;
+in vec4 fColor;
 noperspective centroid in float fHsl;
-flat in int textureId;
+flat in int fTextureId;
 in vec2 fUv;
-in float fogAmount;
-in float grayAmount;
+in float fFogAmount;
 
 out vec4 FragColor;
 
-#include hsl_to_rgb.glsl
-#include colorblind.glsl
-
-float blendSoftLight(float base, float blend) {
-	return (blend<0.5)?(2.0*base*blend+base*base*(1.0-2.0*blend)):(sqrt(base)*(2.0*blend-1.0)+2.0*base*(1.0-blend));
-}
-
-vec3 blendSoftLight(vec3 base, vec3 blend) {
-	return vec3(blendSoftLight(base.r,blend.r),blendSoftLight(base.g,blend.g),blendSoftLight(base.b,blend.b));
-}
-
-vec3 blendSoftLight(vec3 base, vec3 blend, float opacity) {
-	return (blendSoftLight(base, blend) * opacity + base * (1.0 - opacity));
-}
+#include "hsl_to_rgb.glsl"
+#include "colorblind.glsl"
+#include "region-locker/frag.glsl"
 
 void main() {
   vec4 c;
 
-  if (textureId > 0) {
-    int textureIdx = textureId - 1;
+  if (fTextureId > 0) {
+    int textureIdx = fTextureId - 1;
 
     vec4 textureColor = texture(textures, vec3(fUv, float(textureIdx)));
     vec4 textureColorBrightness = pow(textureColor, vec4(brightness, brightness, brightness, 1.0f));
 
     // textured triangles hsl is a 7 bit lightness 2-126
     float light = fHsl / 127.f;
-    vec3 mul = (1.f - textureLightMode) * vec3(light) + textureLightMode * Color.rgb;
+    vec3 mul = (1.f - textureLightMode) * vec3(light) + textureLightMode * fColor.rgb;
     c = textureColorBrightness * vec4(mul, 1.f);
   } else {
     // pick interpolated hsl or rgb depending on smooth banding setting
-    vec3 rgb = hslToRgb(int(fHsl)) * smoothBanding + Color.rgb * (1.f - smoothBanding);
-    c = vec4(rgb, Color.a);
+    vec3 rgb = hslToRgb(int(fHsl)) * smoothBanding + fColor.rgb * (1.f - smoothBanding);
+    c = vec4(rgb, fColor.a);
   }
 
   if (colorBlindMode > 0) {
     c.rgb = colorblind(colorBlindMode, c.rgb);
   }
 
-  vec3 mixedColor = mix(c.rgb, fogColor.rgb, fogAmount);
-  float gray = dot(mixedColor.rgb, vec3(0.299, 0.587, 0.114));
-  vec3 grayColor = vec3(gray);
-  grayColor = mix(mixedColor.rgb, grayColor.rgb, configGrayAmount);
-  grayColor = blendSoftLight(grayColor, configGrayColor.rgb, configGrayColor.a);
-  vec3 finalColor = mix(mixedColor.rgb, grayColor.rgb, grayAmount);
-  FragColor = vec4(finalColor, c.a);
+  vec3 mixedColor = mix(c.rgb, fogColor.rgb, fFogAmount);
+#ifdef FRAG_UVS
+  if (fTextureId > 0) {
+    FragColor = vec4(fUv.x, 0, fUv.y, 1);
+  } else {
+#endif
+    FragColor = regionLockerShading(vec4(mixedColor, c.a));
+#ifdef FRAG_UVS
+  }
+#endif
 }

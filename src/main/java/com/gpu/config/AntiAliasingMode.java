@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Adam <Adam@sigterm.info>
+ * Copyright (c) 2018, Lotto <https://github.com/devLotto>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,29 +22,27 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#version 330
+package com.gpu.config;
 
-#define SAMPLING_DEFAULT 0
-#define SAMPLING_MITCHELL 1
-#define SAMPLING_CATROM 2
-#define SAMPLING_XBR 3
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-uniform int samplingMode;
-uniform ivec2 sourceDimensions;
-uniform ivec2 targetDimensions;
+@Getter
+@RequiredArgsConstructor
+public enum AntiAliasingMode
+{
+	DISABLED("Disabled", 0),
+	MSAA_2("MSAA x2", 2),
+	MSAA_4("MSAA x4", 4),
+	MSAA_8("MSAA x8", 8),
+	MSAA_16("MSAA x16", 16);
 
-#include "scale/xbr_lv2_vert.glsl"
+	private final String name;
+	private final int samples;
 
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec2 aTexCoord;
-
-out vec2 TexCoord;
-out XBRTable xbrTable;
-
-void main() {
-  gl_Position = vec4(aPos, 1.0);
-  TexCoord = aTexCoord;
-
-  if (samplingMode == SAMPLING_XBR)
-    xbrTable = xbr_vert(TexCoord, sourceDimensions);
+	@Override
+	public String toString()
+	{
+		return name;
+	}
 }

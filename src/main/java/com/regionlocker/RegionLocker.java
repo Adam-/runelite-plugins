@@ -28,31 +28,28 @@ import java.awt.Color;
 import java.util.*;
 
 import lombok.Getter;
-import net.runelite.api.Client;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.util.Text;
 
 public class RegionLocker
 {
-	private final Client client;
 	private final RegionLockerConfig config;
 	private final ConfigManager configManager;
 
 	@Getter
-	private static Map<String, RegionTypes> regions = new HashMap<>();
+	private final static Map<String, RegionTypes> regions = new HashMap<>();
 
 	public static boolean renderLockedRegions;
-	public static Color grayColor;
+	public static Color grayColor = new Color(0, 31, 77, 204);
 	public static int grayAmount;
 	public static boolean hardBorder;
 	public static boolean invertShader;
 	private static boolean unlockReamls;
 	private static boolean unlockUnderground;
-	private static TrailblazerRegion trailblazerRegion;
+	private static TrailblazerRegion trailblazerRegion = TrailblazerRegion.NONE;
 
-	RegionLocker(Client client, RegionLockerConfig config, ConfigManager configManager)
+	RegionLocker(RegionLockerConfig config, ConfigManager configManager)
 	{
-		this.client = client;
 		this.config = config;
 		this.configManager = configManager;
 		readConfig();

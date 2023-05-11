@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.runelite.client.plugins.gpu.template.Template;
+import com.gpu.template.Template;
 import org.lwjgl.opengl.GL43C;
 
 public class Shader

@@ -97,7 +97,7 @@ public class RegionLockerPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		regionLocker = new RegionLocker(client, config, configManager);
+		regionLocker = new RegionLocker(config, configManager);
 		overlayManager.add(regionLockerOverlay);
 		overlayManager.add(regionBorderOverlay);
 		keyManager.registerKeyListener(inputListener);

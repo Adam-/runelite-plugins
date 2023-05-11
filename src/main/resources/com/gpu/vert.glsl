@@ -26,19 +26,14 @@
 #version 330
 
 #define TILE_SIZE 128
-#define LOCKED_REGIONS_SIZE 16
-
-// smallest unit of the texture which can be moved per tick. textures are all
-// 128x128px - so this is equivalent to +1px
-#define TEXTURE_ANIM_UNIT (1.0f / 128.0f)
 
 #define FOG_SCENE_EDGE_MIN TILE_SIZE
 #define FOG_SCENE_EDGE_MAX (103 * TILE_SIZE)
 #define FOG_CORNER_ROUNDING 1.5
-#define FOG_CORNER_ROUNDING_SQUARED FOG_CORNER_ROUNDING * FOG_CORNER_ROUNDING
+#define FOG_CORNER_ROUNDING_SQUARED (FOG_CORNER_ROUNDING * FOG_CORNER_ROUNDING)
 
-layout (location = 0) in ivec4 VertexPosition;
-layout (location = 1) in vec4 uv;
+layout(location = 0) in ivec4 VertexPosition;
+layout(location = 1) in vec4 uv;
 
 layout(std140) uniform uniforms {
   int cameraYaw;
@@ -56,57 +51,22 @@ uniform float brightness;
 uniform int useFog;
 uniform int fogDepth;
 uniform int drawDistance;
-uniform mat4 projectionMatrix;
-uniform vec2 textureAnimations[128];
-uniform int tick;
 
-uniform int useGray;
-uniform int baseX;
-uniform int baseY;
-uniform int lockedRegions[LOCKED_REGIONS_SIZE];
+out ivec3 gVertex;
+out vec4 gColor;
+out float gHsl;
+out int gTextureId;
+out vec3 gTexPos;
+out float gFogAmount;
 
-out float vGrayAmount;
-out ivec3 vPosition;
-out vec4 vColor;
-out float vHsl;
-out int vTextureId;
-out vec2 vUv;
-out float vFogAmount;
-
-#include hsl_to_rgb.glsl
+#include "hsl_to_rgb.glsl"
+#include "region-locker/vert.glsl"
 
 float fogFactorLinear(const float dist, const float start, const float end) {
   return 1.0 - clamp((dist - start) / (end - start), 0.0, 1.0);
 }
 
-const ivec2 regionOffsets[5] = ivec2[](
-  ivec2(0,0), ivec2(-1,-1), ivec2(-1,1), ivec2(1,-1), ivec2(1,1)
-);
-
-int toRegionId(int x, int y) {
-  return (x >> 13 << 8) + (y >> 13);
-}
-
-float b_convert(float n) {
-  return clamp(abs(n), 0.0, 1.0);
-}
-
-float isLocked(int x, int y) {
-  x = x + baseX;
-  y = y + baseY;
-  float result = 1.0;
-  for (int i = 0; i < LOCKED_REGIONS_SIZE; ++i) {
-    for (int j = 0; j < regionOffsets.length(); ++j) {
-      ivec2 off = regionOffsets[j];
-      int region = toRegionId(x + off.x, y + off.y);
-      result = result * (lockedRegions[i] - region);
-    }
-  }
-  return b_convert(result);
-}
-
-void main()
-{
+void main() {
   ivec3 vertex = VertexPosition.xyz;
   int ahsl = VertexPosition.w;
   int hsl = ahsl & 0xffff;
@@ -114,20 +74,12 @@ void main()
 
   vec3 rgb = hslToRgb(hsl);
 
-  vPosition = vertex;
-  vColor = vec4(rgb, 1.f - a);
-  vHsl = float(hsl);
+  gVertex = vertex;
+  gColor = vec4(rgb, 1.f - a);
+  gHsl = float(hsl);
 
-  int textureIdx = int(uv.x); // the texture id + 1
-  vec2 textureUv = uv.yz;
-
-  vec2 textureAnim = vec2(0);
-  if (textureIdx > 0) {
-    textureAnim = textureAnimations[textureIdx - 1];
-  }
-
-  vTextureId = textureIdx;
-  vUv = textureUv + tick * textureAnim * TEXTURE_ANIM_UNIT;
+  gTextureId = int(uv.x);  // the texture id + 1;
+  gTexPos = uv.yzw;
 
   int fogWest = max(FOG_SCENE_EDGE_MIN, cameraX - drawDistance);
   int fogEast = min(FOG_SCENE_EDGE_MAX, cameraX + drawDistance - TILE_SIZE);
@@ -139,11 +91,11 @@ void main()
   int zDist = min(vertex.z - fogSouth, fogNorth - vertex.z);
   float nearestEdgeDistance = min(xDist, zDist);
   float secondNearestEdgeDistance = max(xDist, zDist);
-  float fogDistance = nearestEdgeDistance - FOG_CORNER_ROUNDING * TILE_SIZE *
-      max(0.f, (nearestEdgeDistance + FOG_CORNER_ROUNDING_SQUARED) /
-             (secondNearestEdgeDistance + FOG_CORNER_ROUNDING_SQUARED));
+  float fogDistance =
+      nearestEdgeDistance - FOG_CORNER_ROUNDING * TILE_SIZE *
+                                max(0.f, (nearestEdgeDistance + FOG_CORNER_ROUNDING_SQUARED) / (secondNearestEdgeDistance + FOG_CORNER_ROUNDING_SQUARED));
 
-  vFogAmount = fogFactorLinear(fogDistance, 0, fogDepth * TILE_SIZE) * useFog;
+  gFogAmount = fogFactorLinear(fogDistance, 0, fogDepth * TILE_SIZE) * useFog;
 
-  vGrayAmount = useGray * isLocked(int(vertex.x), int(vertex.z));
+  regionLockerVert(vertex);
 }

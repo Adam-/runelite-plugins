@@ -25,10 +25,9 @@
 
 #version 330
 
-#define PI 3.1415926535897932384626433832795f
-#define UNIT PI / 1024.0f
-
-#define LOCKED_REGIONS_SIZE 16
+// smallest unit of the texture which can be moved per tick. textures are all
+// 128x128px - so this is equivalent to +1px
+#define TEXTURE_ANIM_UNIT (1.0f / 128.0f)
 
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
@@ -45,61 +44,55 @@ layout(std140) uniform uniforms {
   ivec2 sinCosTable[2048];
 };
 
+#include "uv.glsl"
+
+uniform vec2 textureAnimations[128];
+uniform int tick;
 uniform mat4 projectionMatrix;
-uniform int useGray;
-uniform int useHardBorder;
-uniform int baseX;
-uniform int baseY;
-uniform int lockedRegions[LOCKED_REGIONS_SIZE];
 
-in float vGrayAmount[];
-in ivec3 vPosition[];
-in vec4 vColor[];
-in float vHsl[];
-in int vTextureId[];
-in vec2 vUv[];
-in float vFogAmount[];
+in ivec3 gVertex[3];
+in vec4 gColor[3];
+in float gHsl[3];
+in int gTextureId[3];
+in vec3 gTexPos[3];
+in float gFogAmount[3];
 
-out vec4 Color;
+out vec4 fColor;
 noperspective centroid out float fHsl;
-flat out int textureId;
+flat out int fTextureId;
 out vec2 fUv;
-out float fogAmount;
-out float grayAmount;
+out float fFogAmount;
 
-#include to_screen.glsl
-
-int toRegionId(int x, int y) {
-  return (x >> 13 << 8) + (y >> 13);
-}
-
-float b_convert(float n) {
-  return clamp(abs(n), 0.0, 1.0);
-}
-
-float isLocked(int x, int y) {
-  x = x + baseX;
-  y = y + baseY;
-  float result = 1.0;
-  for (int i = 0; i < LOCKED_REGIONS_SIZE; ++i) {
-    int region = toRegionId(x, y);
-    result = result * (lockedRegions[i] - region);
-  }
-  return b_convert(result);
-}
+#include "region-locker/geom.glsl"
 
 void main() {
-  ivec3 center = (vPosition[0] + vPosition[1] + vPosition[2])/3;
-  float locked = useGray * isLocked(center.x, center.z);
+  int textureId = gTextureId[0];
+  vec2 uv[3];
 
-  for (int i = 0; i < 3; i++) {
-    Color = vColor[i];
-    fHsl = vHsl[i];
-    fUv = vUv[i];
-    textureId = vTextureId[i];
-    fogAmount = vFogAmount[i];
-    grayAmount = useHardBorder * locked + (1 - useHardBorder) * vGrayAmount[i];
-    gl_Position  = projectionMatrix * vec4(vPosition[i], 1.f);
+  if (textureId > 0) {
+    ivec3 cameraPos = ivec3(cameraX, cameraY, cameraZ);
+    compute_uv(cameraPos, gVertex[0], gVertex[1], gVertex[2], gTexPos[0], gTexPos[1], gTexPos[2], uv[0], uv[1], uv[2]);
+
+    vec2 textureAnim = textureAnimations[textureId - 1];
+    for (int i = 0; i < 3; ++i) {
+      uv[i] += tick * textureAnim * TEXTURE_ANIM_UNIT;
+    }
+  } else {
+    uv[0] = vec2(0);
+    uv[1] = vec2(0);
+    uv[2] = vec2(0);
+  }
+
+  for (int i = 0; i < 3; ++i) {
+    fColor = gColor[i];
+    fHsl = gHsl[i];
+    fTextureId = gTextureId[i];
+    fUv = uv[i];
+    fFogAmount = gFogAmount[i];
+    gl_Position = projectionMatrix * vec4(gVertex[i], 1);
+
+    regionLockerGeomVertex(i);
+
     EmitVertex();
   }
 
