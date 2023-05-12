@@ -27,7 +27,7 @@ dependencies {
 }
 
 group = 'com.regionlocker'
-version = '2.1'
+version = '2.2'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {
