@@ -86,7 +86,8 @@ import org.lwjgl.system.Configuration;
 	enabledByDefault = false,
 	tags = {"fog", "draw distance", "chunk", "locker"},
 	conflicts = "GPU",
-	loadInSafeMode = false
+	loadInSafeMode = false,
+	configName = "RegionGpuPlugin"
 )
 @Slf4j
 public class RegionLockerGpuPlugin extends Plugin implements DrawCallbacks
