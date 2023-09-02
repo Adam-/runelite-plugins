@@ -57,7 +57,7 @@ public class PlayerOutlineOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		modelOutlineRenderer.drawOutline(client.getLocalPlayer(), config.borderWidth(), config.playerOutlineColor(), config.outlineFeather());
+		modelOutlineRenderer.drawOutline(client.getLocalPlayer(), config.borderWidth(), plugin.getActiveColor(), config.outlineFeather());
 		return null;
 	}
 

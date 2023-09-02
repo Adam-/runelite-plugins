@@ -92,40 +92,44 @@ public interface PlayerOutlineConfig extends Config
 			keyName = "playerOutlineColorMage",
 			name = "Mage Protection Color",
 			description = "The color for the players outline when praying mage protection",
-			position = 1
+			position = 1,
+			section = colorHighlightSection
 	)
 	default Color playerOutlineColorMage()
 	{
-		return new Color(0,0,255,170);
+		return new Color(0,0,255,90);
 	}
 	@Alpha
 	@ConfigItem(
 			keyName = "playerOutlineColorRange",
 			name = "Range Protection Color",
 			description = "The color for the players outline when praying range protection",
-			position = 2
+			position = 2,
+			section = colorHighlightSection
 	)
 	default Color playerOutlineColorRange()
 	{
-		return new Color(0,255,0,170);
+		return new Color(0,255,0,90);
 	}
 	@Alpha
 	@ConfigItem(
 			keyName = "playerOutlineColorMelee",
 			name = "Melee Protection Color",
 			description = "The color for the players outline when praying melee protection",
-			position = 3
+			position = 3,
+			section = colorHighlightSection
 	)
 	default Color playerOutlineMelee()
 	{
-		return new Color(255,0,0,170);
+		return new Color(255,0,0,90);
 	}
 	@Alpha
 	@ConfigItem(
 			keyName = "playerOutlineColorRedemption",
 			name = "Redemption Color",
 			description = "The color for the players outline when praying redemption",
-			position = 4
+			position = 4,
+			section = colorHighlightSection
 	)
 	default Color playerOutlineColorRedemption()
 	{
@@ -137,7 +141,8 @@ public interface PlayerOutlineConfig extends Config
 			keyName = "playerOutlineColorSmite",
 			name = "Smite Color",
 			description = "The color for the players outline when praying smite",
-			position = 5
+			position = 5,
+			section = colorHighlightSection
 	)
 	default Color playerOutlineColorSmite()
 	{
@@ -148,7 +153,8 @@ public interface PlayerOutlineConfig extends Config
 			keyName = "playerOutlineColorRet",
 			name = "Retribution Color",
 			description = "The color for the players outline when praying retribution",
-			position = 6
+			position = 6,
+			section = colorHighlightSection
 	)
 	default Color playerOutlineColorRet()
 	{

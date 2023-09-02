@@ -74,6 +74,11 @@ public class PlayerOutlinePlugin extends Plugin {
 			updateColor();
 	}
 
+	public Color getActiveColor()
+	{
+		return activeColor;
+	}
+
 	@Provides
 	PlayerOutlineConfig provideConfig(ConfigManager configManager)
 	{
@@ -83,7 +88,9 @@ public class PlayerOutlinePlugin extends Plugin {
 	void updateColor()
 	{
 		Player p = client.getLocalPlayer();
-		HeadIcon currentOverhead = p.getOverheadIcon();
+		if(p==null)
+			return;
+        HeadIcon currentOverhead = p.getOverheadIcon();
 		if(currentOverhead == null)
 		{
 			activeColor = config.playerOutlineColor();
