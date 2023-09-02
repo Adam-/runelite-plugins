@@ -39,13 +39,15 @@ public class PlayerOutlineOverlay extends Overlay
 
 	private final Client client;
 	private final PlayerOutlineConfig config;
+	private final PlayerOutlinePlugin plugin;
 	private final ModelOutlineRenderer modelOutlineRenderer;
 
 	@Inject
-	public PlayerOutlineOverlay(Client client, PlayerOutlineConfig config, ModelOutlineRenderer modelOutlineRenderer)
+	public PlayerOutlineOverlay(Client client, PlayerOutlineConfig config, ModelOutlineRenderer modelOutlineRenderer, PlayerOutlinePlugin plugin)
 	{
 		this.client = client;
 		this.config = config;
+		this.plugin = plugin;
 		this.modelOutlineRenderer = modelOutlineRenderer;
 		setPosition(OverlayPosition.DYNAMIC);
 		setLayer(OverlayLayer.ABOVE_SCENE);

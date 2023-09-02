@@ -27,10 +27,17 @@ package com.playeroutline;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
+import net.runelite.api.HeadIcon;
+import net.runelite.api.Player;
+import net.runelite.api.events.GameTick;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
+
+import java.awt.*;
 
 @Slf4j
 @PluginDescriptor(
@@ -38,28 +45,70 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	description = "A simple plugin that outlines the player allowing you to see the player behind objects.",
 	tags = "highlight, player, outline, color"
 )
-public class PlayerOutlinePlugin extends Plugin
-{
+public class PlayerOutlinePlugin extends Plugin {
 	@Inject
 	PlayerOutlineOverlay playerOutlineOverlay;
 	@Inject
 	private OverlayManager overlayManager;
+	@Inject
+	PlayerOutlineConfig config;
+	@Inject
+	Client client;
+	private Color activeColor;
 
 	@Override
-	protected void startUp()
-	{
+	protected void startUp() {
+		activeColor = config.playerOutlineColor();
 		overlayManager.add(playerOutlineOverlay);
 	}
 
 	@Override
-	protected void shutDown()
-	{
+	protected void shutDown() {
 		overlayManager.remove(playerOutlineOverlay);
+	}
+
+	@Subscribe
+	protected void onGameTick(GameTick tick)
+	{
+		if(config.prayerChanging())
+			updateColor();
 	}
 
 	@Provides
 	PlayerOutlineConfig provideConfig(ConfigManager configManager)
 	{
 		return configManager.getConfig(PlayerOutlineConfig.class);
+	}
+
+	void updateColor()
+	{
+		Player p = client.getLocalPlayer();
+		HeadIcon currentOverhead = p.getOverheadIcon();
+		if(currentOverhead == null)
+		{
+			activeColor = config.playerOutlineColor();
+			return;
+		}
+		switch(currentOverhead)
+		{
+			case MAGIC:
+				activeColor = config.playerOutlineColorMage();
+				break;
+			case MELEE:
+				activeColor = config.playerOutlineMelee();
+				break;
+			case RANGED:
+				activeColor = config.playerOutlineColorRange();
+				break;
+			case SMITE:
+				activeColor = config.playerOutlineColorSmite();
+				break;
+			case REDEMPTION:
+				activeColor = config.playerOutlineColorRedemption();
+				break;
+			case RETRIBUTION:
+				activeColor = config.playerOutlineColorRet();
+				break;
+		}
 	}
 }

@@ -25,15 +25,20 @@
 package com.playeroutline;
 
 import java.awt.Color;
-import net.runelite.client.config.Alpha;
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
-import net.runelite.client.config.Range;
+
+import net.runelite.client.config.*;
 
 @ConfigGroup("playeroutline")
 public interface PlayerOutlineConfig extends Config
 {
+
+	@ConfigSection(
+			name = "Prayer Color Highlight",
+			description = "Changes color of your highlight based on overhead prayer.",
+			position = 3,
+			closedByDefault = true
+	)
+	String colorHighlightSection = "colorHighlight";
 	@Alpha
 	@ConfigItem(
 		keyName = "playerOutlineColor",
@@ -70,4 +75,84 @@ public interface PlayerOutlineConfig extends Config
 	{
 		return 4;
 	}
+
+	@ConfigItem(
+			name = "Enable Overhead Changing",
+			description = "Changes color based on the overhead being prayed",
+			position = 0,
+			keyName = "prayerChanging",
+			section = colorHighlightSection
+	)
+	default boolean prayerChanging()
+	{
+		return false;
+	}
+	@Alpha
+	@ConfigItem(
+			keyName = "playerOutlineColorMage",
+			name = "Mage Protection Color",
+			description = "The color for the players outline when praying mage protection",
+			position = 1
+	)
+	default Color playerOutlineColorMage()
+	{
+		return new Color(0,0,255,170);
+	}
+	@Alpha
+	@ConfigItem(
+			keyName = "playerOutlineColorRange",
+			name = "Range Protection Color",
+			description = "The color for the players outline when praying range protection",
+			position = 2
+	)
+	default Color playerOutlineColorRange()
+	{
+		return new Color(0,255,0,170);
+	}
+	@Alpha
+	@ConfigItem(
+			keyName = "playerOutlineColorMelee",
+			name = "Melee Protection Color",
+			description = "The color for the players outline when praying melee protection",
+			position = 3
+	)
+	default Color playerOutlineMelee()
+	{
+		return new Color(255,0,0,170);
+	}
+	@Alpha
+	@ConfigItem(
+			keyName = "playerOutlineColorRedemption",
+			name = "Redemption Color",
+			description = "The color for the players outline when praying redemption",
+			position = 4
+	)
+	default Color playerOutlineColorRedemption()
+	{
+		return new Color(0x3D000000, true);
+	}
+
+	@Alpha
+	@ConfigItem(
+			keyName = "playerOutlineColorSmite",
+			name = "Smite Color",
+			description = "The color for the players outline when praying smite",
+			position = 5
+	)
+	default Color playerOutlineColorSmite()
+	{
+		return new Color(0x3D000000, true);
+	}
+	@Alpha
+	@ConfigItem(
+			keyName = "playerOutlineColorRet",
+			name = "Retribution Color",
+			description = "The color for the players outline when praying retribution",
+			position = 6
+	)
+	default Color playerOutlineColorRet()
+	{
+		return new Color(0x3D000000, true);
+	}
+
 }
