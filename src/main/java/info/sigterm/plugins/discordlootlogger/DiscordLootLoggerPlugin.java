@@ -2,16 +2,10 @@ package info.sigterm.plugins.discordlootlogger;
 
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.inject.Provides;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import javax.imageio.ImageIO;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.ItemComposition;
@@ -31,17 +25,22 @@ import net.runelite.client.util.ImageCapture;
 import net.runelite.client.util.QuantityFormatter;
 import net.runelite.client.util.Text;
 import net.runelite.client.util.WildcardMatcher;
-import static net.runelite.http.api.RuneLiteAPI.GSON;
 import net.runelite.http.api.loottracker.LootRecordType;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import okhttp3.*;
+
+import javax.imageio.ImageIO;
+import javax.inject.Inject;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static net.runelite.http.api.RuneLiteAPI.GSON;
 
 @Slf4j
 @PluginDescriptor(
@@ -66,6 +65,9 @@ public class DiscordLootLoggerPlugin extends Plugin
 
 	private List<String> lootNpcs;
 
+	private LoadingCache<Integer, Boolean> hiddenItemsCache;
+	private Collection<String> hiddenItemNames;
+
 	private static String itemImageUrl(int itemId)
 	{
 		return "https://static.runelite.net/cache/item/icon/" + itemId + ".png";
@@ -78,11 +80,25 @@ public class DiscordLootLoggerPlugin extends Plugin
 	protected void startUp()
 	{
 		lootNpcs = Collections.emptyList();
+		String s = config.hiddenItems();
+		hiddenItemNames = s != null ? Text.fromCSV(s) : Collections.emptyList();
+		hiddenItemsCache = CacheBuilder.newBuilder()
+				.maximumSize(512L)
+				.expireAfterAccess(10, TimeUnit.MINUTES)
+				.build(new CacheLoader<Integer, Boolean>() {
+					@Override
+					public Boolean load(Integer itemId) throws Exception {
+						ItemComposition itemComp = itemManager.getItemComposition(itemId);
+						return hiddenItemNames.stream()
+								.noneMatch(hiddenItem -> WildcardMatcher.matches(hiddenItem, itemComp.getName()));
+					}
+				});
 	}
 
 	@Override
 	protected void shutDown()
 	{
+		hiddenItemsCache.invalidateAll();
 	}
 
 	@Provides
@@ -98,6 +114,9 @@ public class DiscordLootLoggerPlugin extends Plugin
 		{
 			String s = config.lootNpcs();
 			lootNpcs = s != null ? Text.fromCSV(s) : Collections.emptyList();
+			s = config.hiddenItems();
+			hiddenItemNames = s != null ? Text.fromCSV(s) : Collections.emptyList();
+			hiddenItemsCache.invalidateAll();
 		}
 	}
 
@@ -147,8 +166,16 @@ public class DiscordLootLoggerPlugin extends Plugin
 		return client.getLocalPlayer().getName();
 	}
 
+	private Collection<ItemStack> filterHiddenItems(Collection<ItemStack> items){
+		return items.stream()
+				.filter(item -> hiddenItemsCache.getUnchecked(item.getId()))
+				.collect(Collectors.toList());
+	}
+
 	private void processLoot(String name, Collection<ItemStack> items)
 	{
+		items = filterHiddenItems(items);
+
 		WebhookBody webhookBody = new WebhookBody();
 
 		boolean sendMessage = false;
