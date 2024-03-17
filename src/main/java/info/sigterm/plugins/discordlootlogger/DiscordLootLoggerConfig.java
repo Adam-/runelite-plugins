@@ -34,6 +34,13 @@ public interface DiscordLootLoggerConfig extends Config
 	String lootNpcs();
 
 	@ConfigItem(
+			keyName = "hiddenItems",
+			name = "Hidden items",
+			description = "Items that should not trigger a notification, comma separated. Accepts wildcards."
+	)
+	default String hiddenItems() {return "";};
+
+	@ConfigItem(
 		keyName = "includeLowValueItems",
 		name = "Include Low Value Items",
 		description = "Only log loot items worth more than the value set in loot value option."
