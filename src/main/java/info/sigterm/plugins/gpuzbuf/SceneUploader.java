@@ -343,13 +343,13 @@ class SceneUploader
 			Renderable renderable = decorativeObject.getRenderable();
 			if (renderable instanceof Model)
 			{
-				pushZoneModel0((Model) renderable, decorativeObject.getX()-basex, decorativeObject.getZ(), decorativeObject.getY()-basez, vertexBuffer, ab);
+				pushZoneModel0((Model) renderable, decorativeObject.getX() + decorativeObject.getXOffset() - basex, decorativeObject.getZ(), decorativeObject.getY() + decorativeObject.getYOffset() - basez, vertexBuffer, ab);
 			}
 
 			Renderable renderable2 = decorativeObject.getRenderable2();
 			if (renderable2 instanceof Model)
 			{
-				pushZoneModel0((Model) renderable2, decorativeObject.getX()-basex, decorativeObject.getZ(), decorativeObject.getY()-basez, vertexBuffer, ab);
+				pushZoneModel0((Model) renderable2, decorativeObject.getX() + decorativeObject.getXOffset() - basex, decorativeObject.getZ(), decorativeObject.getY() - decorativeObject.getYOffset() - basez, vertexBuffer, ab);
 			}
 		}
 
@@ -402,9 +402,9 @@ class SceneUploader
 		z.sizeO += faceCount;
 	}
 
-	private void pushZoneModel0(Model model, int x, int y, int z, GpuIntBuffer vertexBuffer, GpuIntBuffer ab)
-	{
-		uploadModelScene(model, x, y, z, vertexBuffer, ab);
+
+	private void pushZoneModel0(Model model, int x, int y, int z, GpuIntBuffer vertexBuffer, GpuIntBuffer ab) {
+			uploadModelScene(model, x,y,z,vertexBuffer, ab);
 	}
 
 	private int upload(Scene scene, SceneTilePaint tile, int tileZ, int tileX, int tileY, GpuIntBuffer vertexBuffer, GpuIntBuffer ab,
@@ -658,7 +658,7 @@ class SceneUploader
 	}
 
 	// temp draw
-	public int uploadModelTemp(Model model, int orientation, int x, int y, int z, IntBuffer opaqueBuffer, IntBuffer alphaBuffer)
+	int uploadModelTemp(Model model, int orientation, int x, int y, int z, IntBuffer opaqueBuffer, IntBuffer alphaBuffer)
 	{
 		final int triangleCount = model.getFaceCount();
 		final int vertexCount = model.getVerticesCount();
@@ -797,7 +797,7 @@ class SceneUploader
 		return len;
 	}
 
-	private static void put2222(IntBuffer vb, int x, int y, int z, int w) {
+	static void put2222(IntBuffer vb, int x, int y, int z, int w) {
 		vb.put(((y & 0xffff) << 16) | (x&0xffff));
 		vb.put(((w & 0xffff) << 16) | (z&0xffff));
 	}
@@ -807,7 +807,7 @@ class SceneUploader
 		vb.put(w);
 	}
 
-	private static void put(IntBuffer vb, float x, float y, float z, int w)
+	static void put(IntBuffer vb, float x, float y, float z, int w)
 	{
 		vb.put(Float.floatToIntBits(x));
 		vb.put(Float.floatToIntBits(y));
@@ -815,19 +815,20 @@ class SceneUploader
 		vb.put(w);
 	}
 
-	private static float[] modelLocalX;
-	private static float[] modelLocalY;
-	private static float[] modelLocalZ;
+	static float[] modelLocalX;
+	static float[] modelLocalY;
+	static float[] modelLocalZ;
 
 	static final int MAX_VERTEX_COUNT = 6500;
 
-	static {
+	static
+	{
 		modelLocalX = new float[MAX_VERTEX_COUNT];
 		modelLocalY = new float[MAX_VERTEX_COUNT];
 		modelLocalZ = new float[MAX_VERTEX_COUNT];
 	}
 
-	private static int faceAlpha(short[] faceTextures, byte[] faceTransparencies, int face)
+	static int faceAlpha(short[] faceTextures, byte[] faceTransparencies, int face)
 	{
 		if (faceTransparencies != null && (faceTextures == null || faceTextures[face] == -1))
 		{
@@ -836,7 +837,7 @@ class SceneUploader
 		return 0;
 	}
 
-	private static int interpolateHSL(int hsl, byte hue2, byte sat2, byte lum2, byte lerp)
+	static int interpolateHSL(int hsl, byte hue2, byte sat2, byte lum2, byte lerp)
 	{
 		int hue = hsl >> 10 & 63;
 		int sat = hsl >> 7 & 7;

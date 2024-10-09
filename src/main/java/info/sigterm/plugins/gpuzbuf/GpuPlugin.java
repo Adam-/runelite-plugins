@@ -54,6 +54,7 @@ import net.runelite.api.GameObject;
 import net.runelite.api.GameState;
 import net.runelite.api.Model;
 import net.runelite.api.Perspective;
+import net.runelite.api.Player;
 import net.runelite.api.Projection;
 import net.runelite.api.Renderable;
 import net.runelite.api.Scene;
@@ -123,6 +124,9 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private SceneUploader sceneUploader;
 
 	@Inject
+	private FacePrioritySorter facePrioritySorter;
+
+	@Inject
 	private DrawManager drawManager;
 
 	@Inject
@@ -171,13 +175,13 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private GpuFloatBuffer uniformBuffer;
 
 	private int minLevel, level, maxLevel;
-//	private VAOList vaoO, vaoA;
 	private Set<Integer> hideRoofIds;
 
 	static class SceneContext {
 		final int sizeX, sizeZ;
 		Zone[][] zones;
 		VAOList vaoO, vaoA;
+		VAOList vaoP;
 
 		SceneContext(int sizeX, int sizeZ) {
 			this.sizeX = sizeX;
@@ -188,7 +192,9 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 					zones[x][z] = new Zone();
 				}
 			}
-			vaoO = new VAOList(); vaoA = new VAOList();
+			vaoO = new VAOList();
+			vaoA = new VAOList();
+			vaoP = new VAOList();
 		}
 	};
 
@@ -787,16 +793,15 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		}
 	}
 
-//	@Override
-//	public void updateEntityProject(FloatProjection projection)
 	private Projection lastProjection;
+
 	private void updateEntityProject(Projection projection)
 	{
 		if (lastProjection != projection)
 		{
 			float[] p = projection instanceof FloatProjection ? ((FloatProjection) projection).getProjection() : Mat4.identity();
-//			float[] p = projection == null ? Mat4.identity() : projection.getProjection();
 			glUniformMatrix4fv(uniEntityProj, false, p);
+			lastProjection = projection;
 		}
 	}
 
@@ -805,17 +810,11 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 								 float cameraX, float cameraY, float cameraZ, float cameraPitch, float cameraYaw,
 								 int minLevel, int level, int maxLevel, Set<Integer> hideRoofIds)
 	{
-//		if (scene.getWorldViewId() != -1) {
-//			// update proj ?
-//			return;
-//		}
-
 		this.minLevel = minLevel;
 		this.level = level;
 		this.maxLevel = maxLevel;
 		this.hideRoofIds = hideRoofIds;
 
-//		final Scene scene = client.getScene();
 		scene.setDrawDistance(getDrawDistance());
 
 		// UBO
@@ -968,8 +967,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		glDepthFunc(GL_GREATER);
 		glEnable(GL_DEPTH_TEST);
 
-//		VAO.map();
-
 		checkGLErrors();
 	}
 
@@ -1026,29 +1023,49 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		updateEntityProject(projection);
 		if (pass == DrawCallbacks.PASS_OPAQUE)
 		{
-			var vaos = ctx.vaoO.unmap();
+			{
+				var vaos = ctx.vaoO.unmap();
 
-			glProgramUniform3i(glProgram, uniBase, 0, 0, 0);
-			for (VAO vao : vaos) {
-				glBindVertexArray(vao.vao);
-				glDrawArrays(GL_TRIANGLES, 0, vao.vbo.len / (VAO.VERT_SIZE/4) );
+				glProgramUniform3i(glProgram, uniBase, 0, 0, 0);
+				for (VAO vao : vaos)
+				{
+					glBindVertexArray(vao.vao);
+					glDrawArrays(GL_TRIANGLES, 0, vao.vbo.len / (VAO.VERT_SIZE / 4));
+				}
+			}
+
+			{
+				var vaos = ctx.vaoP.unmap();
+				for (VAO vao : vaos)
+				{
+					glBindVertexArray(vao.vao);
+					glDepthMask(false);
+					glDrawArrays(GL_TRIANGLES, 0, vao.vbo.len / (VAO.VERT_SIZE / 4));
+					glDepthMask(true);
+
+					glColorMask(false, false, false, false);
+					glDrawArrays(GL_TRIANGLES, 0, vao.vbo.len / (VAO.VERT_SIZE / 4));
+					glColorMask(true, true, true, true);
+				}
+
 			}
 		}
 		else if (pass == DrawCallbacks.PASS_ALPHA)
 		{
 			var vaos = ctx.vaoA.unmap();
 
-			glProgramUniform3i(glProgram, uniBase, 0,  0,0);
-			for (VAO vao : vaos) {
+			glProgramUniform3i(glProgram, uniBase, 0, 0, 0);
+			for (VAO vao : vaos)
+			{
 				glBindVertexArray(vao.vao);
-				glDrawArrays(GL_TRIANGLES, 0, vao.vbo.len / (VAO.VERT_SIZE/4));
+				glDrawArrays(GL_TRIANGLES, 0, vao.vbo.len / (VAO.VERT_SIZE / 4));
 			}
 		}
 		checkGLErrors();
 	}
 
 	@Override
-	public void drawDynamic(Scene scene, TileObject tileObject, Renderable r, Model m, int orient, int x, int y, int z)
+	public void drawDynamic(Projection projection, Scene scene, TileObject tileObject, Renderable r, Model m, int orient, int x, int y, int z)
 	{
 		SceneContext ctx = context(scene);
 		int size = m.getFaceCount() * 3 * VAO.VERT_SIZE;
@@ -1057,13 +1074,24 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	}
 
 	@Override
-	public void drawTemp(Scene scene, GameObject gameObject, Model m)
+	public void drawTemp(Projection projection, Scene scene, GameObject gameObject, Model m)
 	{
 		SceneContext ctx = context(scene);
+		if (ctx == null) return;
+
+		boolean player = gameObject.getRenderable() instanceof Player;
+//		player=false;
+
 		GameObject g = gameObject;
 		int size = m.getFaceCount() * 3 * VAO.VERT_SIZE;
-		VAO o = ctx.vaoO.get(size), a = ctx.vaoA.get(size);
-		sceneUploader.uploadModelTemp(m, g.getModelOrientation(), g.getX(), g.getZ(), g.getY(), o.vbo.vb, a.vbo.vb);
+		if (!player) {
+			VAO o = ctx.vaoO.get(size), a = ctx.vaoA.get(size);
+			sceneUploader.uploadModelTemp(m, g.getModelOrientation(), g.getX(), g.getZ(), g.getY(), o.vbo.vb, a.vbo.vb);
+		} else {
+			m.calculateBoundsCylinder();
+			VAO o = ctx.vaoP.get(size), a = o;
+			facePrioritySorter.pushSortedModel(projection, m, g.getModelOrientation(), g.getX(), g.getZ(), g.getY(), o.vbo.vb, a.vbo.vb);
+		}
 	}
 
 	@Override
