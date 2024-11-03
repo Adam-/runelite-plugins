@@ -649,9 +649,9 @@ class SceneUploader
 			vy += y;
 			vz += z;
 
-			modelLocalX[v] = vx;
-			modelLocalY[v] = vy;
-			modelLocalZ[v] = vz;
+			modelLocalXI[v] = vx;
+			modelLocalYI[v] = vy;
+			modelLocalZI[v] = vz;
 		}
 
 		int len = 0;
@@ -661,8 +661,8 @@ class SceneUploader
 			int color2 = color2s[face];
 			int color3 = color3s[face];
 
-			boolean atex = (transparencies != null && transparencies[face] != 0);
-			GpuIntBuffer vb = atex ? ab : vertexBuffer;
+			boolean alpha = (transparencies != null && transparencies[face] != 0);
+			GpuIntBuffer vb = alpha ? ab : vertexBuffer;
 
 			if (color3 == -1)
 			{
@@ -677,17 +677,17 @@ class SceneUploader
 			int triangleB = indices2[face];
 			int triangleC = indices3[face];
 
-			int vx1 = (int) modelLocalX[triangleA];
-			int vy1 = (int) modelLocalY[triangleA];
-			int vz1 = (int) modelLocalZ[triangleA];
+			int vx1 = modelLocalXI[triangleA];
+			int vy1 = modelLocalYI[triangleA];
+			int vz1 = modelLocalZI[triangleA];
 
-			int vx2 = (int) modelLocalX[triangleB];
-			int vy2 = (int) modelLocalY[triangleB];
-			int vz2 = (int) modelLocalZ[triangleB];
+			int vx2 = modelLocalXI[triangleB];
+			int vy2 = modelLocalYI[triangleB];
+			int vz2 = modelLocalZI[triangleB];
 
-			int vx3 = (int) modelLocalX[triangleC];
-			int vy3 = (int) modelLocalY[triangleC];
-			int vz3 = (int) modelLocalZ[triangleC];
+			int vx3 = modelLocalXI[triangleC];
+			int vy3 = modelLocalYI[triangleC];
+			int vz3 = modelLocalZI[triangleC];
 
 			int texA, texB, texC;
 
@@ -709,13 +709,13 @@ class SceneUploader
 			int texture = faceTextures != null ? faceTextures[face] + 1 : 0;
 
 			vb.put22224(vx1, vy1, vz1, packedAlpha | color1);
-			vb.put2(texture, (int) modelLocalX[texA] - vx1, (int) modelLocalY[texA] - vy1, (int) modelLocalZ[texA] - vz1);
+			vb.put2(texture, modelLocalXI[texA] - vx1, modelLocalYI[texA] - vy1, modelLocalZI[texA] - vz1);
 
 			vb.put22224(vx2, vy2, vz2, packedAlpha | color2);
-			vb.put2(texture, (int) modelLocalX[texB] - vx2, (int) modelLocalY[texB] - vy2, (int) modelLocalZ[texB] - vz2);
+			vb.put2(texture, modelLocalXI[texB] - vx2, modelLocalYI[texB] - vy2, modelLocalZI[texB] - vz2);
 
 			vb.put22224(vx3, vy3, vz3, packedAlpha | color3);
-			vb.put2(texture, (int) modelLocalX[texC] - vx3, (int) modelLocalY[texC] - vy3, (int) modelLocalZ[texC] - vz3);
+			vb.put2(texture, modelLocalXI[texC] - vx3, modelLocalYI[texC] - vy3, modelLocalZI[texC] - vz3);
 
 			len += 3;
 		}
@@ -791,7 +791,7 @@ class SceneUploader
 			int color2 = color2s[face];
 			int color3 = color3s[face];
 
-			boolean atex = (transparencies != null && transparencies[face] != 0);
+			boolean alpha = (transparencies != null && transparencies[face] != 0);
 
 			if (color3 == -1)
 			{
@@ -848,7 +848,7 @@ class SceneUploader
 			int packedAlpha = faceAlpha(faceTextures, transparencies, face) << 24;
 			int texture = faceTextures != null ? faceTextures[face] + 1 : 0;
 
-			var vb = atex ? alphaBuffer : opaqueBuffer;
+			var vb = alpha ? alphaBuffer : opaqueBuffer;
 
 			put(vb, vx1, vy1, vz1, packedAlpha | color1);
 			put2222(vb, texture, (int) modelLocalX[texA] - (int) vx1, (int) modelLocalY[texA] - (int) vy1, (int) modelLocalZ[texA] - (int) vz1);
@@ -883,6 +883,11 @@ class SceneUploader
 	static float[] modelLocalY;
 	static float[] modelLocalZ;
 
+	// uploadModelScene runs on the maploader thread, so requires its own buffers
+	private final static int[] modelLocalXI;
+	private final static int[] modelLocalYI;
+	private final static int[] modelLocalZI;
+
 	static final int MAX_VERTEX_COUNT = 6500;
 
 	static
@@ -890,6 +895,10 @@ class SceneUploader
 		modelLocalX = new float[MAX_VERTEX_COUNT];
 		modelLocalY = new float[MAX_VERTEX_COUNT];
 		modelLocalZ = new float[MAX_VERTEX_COUNT];
+
+		modelLocalXI = new int[MAX_VERTEX_COUNT];
+		modelLocalYI = new int[MAX_VERTEX_COUNT];
+		modelLocalZI = new int[MAX_VERTEX_COUNT];
 	}
 
 	static int faceAlpha(short[] faceTextures, byte[] faceTransparencies, int face)
