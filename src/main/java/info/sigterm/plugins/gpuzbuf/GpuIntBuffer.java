@@ -34,15 +34,20 @@ class GpuIntBuffer
 {
 	private IntBuffer buffer;
 
-	GpuIntBuffer() {
-		 buffer = allocateDirect(65536);
+	GpuIntBuffer()
+	{
+		buffer = allocateDirect(65536);
 	}
 
-	GpuIntBuffer(int size) {
+	GpuIntBuffer(int size)
+	{
 		buffer = allocateDirect(size);
 	}
 
-	GpuIntBuffer(IntBuffer ib) { buffer = ib; }
+	GpuIntBuffer(IntBuffer ib)
+	{
+		buffer = ib;
+	}
 
 	void put(float x, float y, float z, int w)
 	{
@@ -60,19 +65,22 @@ class GpuIntBuffer
 			.put(Float.floatToIntBits(w));
 	}
 
-	void put22224(int x, int y, int z, int w) {
-			buffer.put(((y & 0xffff) << 16) | (x & 0xffff));
-			buffer.put(((0 & 0xffff) << 16) | (z & 0xffff));
-			buffer.put(w);
+	void put22224(int x, int y, int z, int w)
+	{
+		buffer.put(((y & 0xffff) << 16) | (x & 0xffff));
+		buffer.put(((0 & 0xffff) << 16) | (z & 0xffff));
+		buffer.put(w);
 	}
 
-	void put(int i) {
+	void put(int i)
+	{
 		buffer.put(i);
 	}
 
-	void put2(int x, int y, int z, int w) {
-		buffer.put(((y & 0xffff) << 16) | (x&0xffff));
-		buffer.put(((w & 0xffff) << 16) | (z&0xffff));
+	void put2(int x, int y, int z, int w)
+	{
+		buffer.put(((y & 0xffff) << 16) | (x & 0xffff));
+		buffer.put(((w & 0xffff) << 16) | (z & 0xffff));
 	}
 
 	void flip()
@@ -98,7 +106,7 @@ class GpuIntBuffer
 			}
 			while ((capacity - position) < size);
 
-			log.debug("resizing from {}kb to {}kb", old/1024, capacity/1024);
+			log.debug("resizing from {}kb to {}kb", old / 1024, capacity / 1024);
 			IntBuffer newB = allocateDirect(capacity);
 			buffer.flip();
 			newB.put(buffer);

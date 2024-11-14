@@ -338,7 +338,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 					| (config.removeVertexSnapping() ? DrawCallbacks.NO_VERTEX_SNAPPING : 0)
 					| DrawCallbacks.ZBUF
 				);
-				client.setExpandedMapLoading(config.expandedMapLoadingChunks());
+				client.setExpandedMapLoading(config.expandedMapLoadingZones());
 
 				// force rebuild of main buffer provider to enable alpha channel
 				client.resizeCanvas();
@@ -463,7 +463,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			{
 				clientThread.invokeLater(() ->
 				{
-					client.setExpandedMapLoading(config.expandedMapLoadingChunks());
+					client.setExpandedMapLoading(config.expandedMapLoadingZones());
 					if (client.getGameState() == GameState.LOGGED_IN)
 					{
 						client.setGameState(GameState.LOADING);
@@ -1462,10 +1462,9 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 					int ox = x + dx;
 					int oz = z + dy;
 
-					// Reused the old zone if it is also in the new scene, except for the edges to work around
-					// tile blending, edge shadows, sharelight, etc.
-					//XXX this is wrong when extended map loading is <5 or when extended map area can't be loaded due to xteas missing!
-					if (ox >= 1 && oz >= 1 && ox < SCENE_ZONES - 1 && oz < SCENE_ZONES - 1)
+					// Reused the old zone if it is also in the new scene, except for the edges, to work around
+					// tile blending, (edge) shadows, sharelight, etc.
+					if (canReuse(ctx.zones, ox, oz))
 					{
 						if (scene.isInstance())
 						{
@@ -1495,12 +1494,10 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 						}
 
 						Zone old = ctx.zones[ox][oz];
-						if (!old.initialized) continue; // this happens from turning the plugin on when logged in?
-//						assert old.initialized;
+						assert old.initialized;
 
 						if (old.dirty) continue;
-						// without extended map loading these other zones will be loaded but empty
-						if (old.sizeO ==0 && old.sizeA ==0) continue;
+						assert old.sizeO > 0 || old.sizeA > 0;
 
 						assert old.cull;
 						old.cull = false;
@@ -1645,6 +1642,21 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 		nextZones = newZones;
 		nextRoofChanges = roofChanges;
+	}
+
+	private static boolean canReuse(Zone[][] zones, int zx, int zz) {
+		// For tile blending, sharelight, and shadows to work correctly, the zones surrounding
+		// the zone must be valid.
+		for (int x = zx-1; x <= zx + 1; ++x) {
+			if (x < 0 || x >= NUM_ZONES) return false;
+			for (int z = zz-1; z <= zz + 1; ++z) {
+				if (z < 0 || z >= NUM_ZONES) return false;
+				Zone zone = zones[x][z];
+				if (!zone.initialized) return false;
+				if (zone.sizeO == 0 && zone.sizeA == 0) return false;
+			}
+		}
+		return true;
 	}
 
 	private void loadSubScene(WorldView worldView, Scene scene)

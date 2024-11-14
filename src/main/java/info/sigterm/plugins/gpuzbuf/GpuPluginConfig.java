@@ -73,7 +73,7 @@ public interface GpuPluginConfig extends Config
 		description = "Extra map area to load, in 8 tile chunks.",
 		position = 1
 	)
-	default int expandedMapLoadingChunks()
+	default int expandedMapLoadingZones()
 	{
 		return 3;
 	}

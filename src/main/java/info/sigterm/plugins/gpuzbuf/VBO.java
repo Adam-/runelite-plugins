@@ -23,11 +23,13 @@ class VBO
 	int len;
 	boolean mapped;
 
-	VBO(int size) {
-	this.size = size;
+	VBO(int size)
+	{
+		this.size = size;
 	}
 
-	void init() {
+	void init()
+	{
 		bufId = glGenBuffers();
 
 		glBindBuffer(GL_ARRAY_BUFFER, bufId);
@@ -42,25 +44,28 @@ class VBO
 			glBindBuffer(GL_ARRAY_BUFFER, bufId);
 			glUnmapBuffer(GL_ARRAY_BUFFER);
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			mapped=false;
+			mapped = false;
 		}
 		glDeleteBuffers(bufId);
 		bufId = 0;
 	}
 
-	void map() {
+	void map()
+	{
 		assert !mapped;
 		glBindBuffer(GL_ARRAY_BUFFER, bufId);
 		buffer = glMapBufferRange(GL_ARRAY_BUFFER, 0, size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT, buffer);
-		if (buffer == null) {
+		if (buffer == null)
+		{
 			throw new RuntimeException("unable to map GL buffer " + bufId + " size " + size);
 		}
 		this.vb = buffer.asIntBuffer();
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		mapped=true;
+		mapped = true;
 	}
 
-	void unmap() {
+	void unmap()
+	{
 		assert mapped;
 		len = vb.position();
 		vb = null;
@@ -68,6 +73,6 @@ class VBO
 		glBindBuffer(GL_ARRAY_BUFFER, bufId);
 		glUnmapBuffer(GL_ARRAY_BUFFER);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		mapped=false;
+		mapped = false;
 	}
 }

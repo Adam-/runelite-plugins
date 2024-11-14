@@ -32,15 +32,18 @@ class GpuFloatBuffer
 {
 	private FloatBuffer buffer;
 
-	GpuFloatBuffer() {
+	GpuFloatBuffer()
+	{
 		buffer = allocateDirect(65536);
 	}
 
-	GpuFloatBuffer(int size) {
+	GpuFloatBuffer(int size)
+	{
 		buffer = allocateDirect(size);
 	}
 
-	GpuFloatBuffer put(float f) {
+	GpuFloatBuffer put(float f)
+	{
 		buffer.put(f);
 		return this;
 	}

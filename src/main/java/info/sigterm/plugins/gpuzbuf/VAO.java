@@ -16,6 +16,11 @@ import static org.lwjgl.opengl.GL30C.glVertexAttribIPointer;
 
 class VAO
 {
+	// Temporary vertex format
+	// index 0: vec3(x, y, z)
+	// index 1: -INTEGER_MIN (non-array)
+	// index 2: int ahsl
+	// index 3: short vec4(id, x, y, z)
 	static final int VERT_SIZE = 24;
 
 	final VBO vbo;
@@ -33,7 +38,6 @@ class VAO
 
 		vbo.init();
 		glBindBuffer(GL_ARRAY_BUFFER, vbo.bufId);
-//		glBufferData(GL_ARRAY_BUFFER, vbo.size, GL_DYNAMIC_DRAW);
 
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, false, VERT_SIZE, 0);
@@ -59,7 +63,8 @@ class VAO
 }
 
 @Slf4j
-class VAOList {
+class VAOList
+{
 	// this needs to be larger than the largest single model
 	//	private static final int VAO_SIZE = 16 * 1024 * 1024;
 	private static final int VAO_SIZE = 1024 * 1024;
@@ -67,18 +72,21 @@ class VAOList {
 	private int curIdx;
 	private final List<VAO> vaos = new ArrayList<>();
 
-	 VAO get(int size)
+	VAO get(int size)
 	{
 		assert size <= VAO_SIZE;
 
-		while(curIdx < vaos.size()) {
+		while (curIdx < vaos.size())
+		{
 			VAO vao = vaos.get(curIdx);
-			if (!vao.vbo.mapped) {
+			if (!vao.vbo.mapped)
+			{
 				vao.vbo.map();
 			}
 
 			int rem = vao.vbo.vb.remaining() * Integer.BYTES;
-			if (size <= rem) {
+			if (size <= rem)
+			{
 				return vao;
 			}
 
@@ -95,7 +103,7 @@ class VAOList {
 
 	List<VAO> unmap()
 	{
-		int sz=0;
+		int sz = 0;
 		for (VAO vao : vaos)
 		{
 			if (vao.vbo.mapped)

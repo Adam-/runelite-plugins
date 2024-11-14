@@ -18,6 +18,11 @@ import static org.lwjgl.opengl.GL30C.glVertexAttribIPointer;
 @Slf4j
 class Zone
 {
+	// Zone vertex format
+	// index 0: -FLOAT.MAX_VALUE (non-array)
+	// index 1: short vec3(x, y, z)
+	// index 2: int ahsl
+	// index 3: short vec4(id, x, y, z)
 	static final int VERT_SIZE = 20;
 
 	int glVao;
