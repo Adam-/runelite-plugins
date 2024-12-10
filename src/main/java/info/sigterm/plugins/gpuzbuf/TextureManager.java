@@ -25,7 +25,6 @@
 package info.sigterm.plugins.gpuzbuf;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Texture;
@@ -38,6 +37,7 @@ import org.lwjgl.opengl.GL43C;
 @Slf4j
 class TextureManager
 {
+	static final int TEXTURE_COUNT = 256;
 	private static final int TEXTURE_SIZE = 128;
 
 	int initTextureArray(TextureProvider textureProvider)
@@ -224,8 +224,14 @@ class TextureManager
 	float[] computeTextureAnimations(TextureProvider textureProvider)
 	{
 		Texture[] textures = textureProvider.getTextures();
-		float[] anims = new float[TEXTURE_SIZE * 2];
-		for (int i = 0; i < textures.length; ++i)
+
+		if (textures.length > TEXTURE_COUNT)
+		{
+			log.warn("texture limit exceeded: {} > {}", textures.length, TEXTURE_COUNT);
+		}
+
+		float[] anims = new float[TEXTURE_COUNT * 2];
+		for (int i = 0; i < Math.min(TEXTURE_COUNT, textures.length); ++i)
 		{
 			Texture texture = textures[i];
 			if (texture == null)

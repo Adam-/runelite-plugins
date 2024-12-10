@@ -518,6 +518,14 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private Template createTemplate()
 	{
 		Template template = new Template();
+		template.add(key ->
+		{
+			if ("texture_config".equals(key))
+			{
+				return "#define TEXTURE_COUNT " + TextureManager.TEXTURE_COUNT + "\n";
+			}
+			return null;
+		});
 		template.addInclude(GpuPlugin.class);
 		return template;
 	}
@@ -1281,7 +1289,21 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				return;
 			}
 
-			throw ex;
+			log.error("error swapping buffers", ex);
+
+			// try to stop the plugin
+			SwingUtilities.invokeLater(() ->
+			{
+				try
+				{
+					pluginManager.stopPlugin(this);
+				}
+				catch (PluginInstantiationException ex2)
+				{
+					log.error("error stopping plugin", ex2);
+				}
+			});
+			return;
 		}
 
 		drawManager.processDrawComplete(this::screenshot);
@@ -1402,6 +1424,15 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 //					zones[x][y] = new Zone();
 //				}
 //		}
+		if (gameStateChanged.getGameState() == GameState.STARTING)
+		{
+			if (textureArrayId != -1)
+			{
+				textureManager.freeTextureArray(textureArrayId);
+			}
+			textureArrayId = -1;
+			lastAnisotropicFilteringLevel = -1;
+		}
 	}
 
 	@Override

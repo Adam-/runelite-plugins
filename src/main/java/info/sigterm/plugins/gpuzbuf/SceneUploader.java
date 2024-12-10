@@ -379,7 +379,7 @@ class SceneUploader
 		}
 		else if (r instanceof DynamicObject)
 		{
-			m = r.getModel();
+			m = ((DynamicObject) r).getModelZbuf();
 		}
 		if (m == null)
 		{
@@ -415,7 +415,7 @@ class SceneUploader
 		}
 		else if (r instanceof DynamicObject)
 		{
-			Model m = r.getModel();
+			Model m = ((DynamicObject) r).getModelZbuf();
 			if (m != null)
 			{
 				uploadModelScene(m, orient, x, y, z, vertexBuffer, ab);
