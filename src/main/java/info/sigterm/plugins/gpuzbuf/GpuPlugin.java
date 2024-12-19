@@ -1660,7 +1660,15 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 							int nrid = nrids[level][x][z];
 							if (prid > 0 && nrid > 0 && prid != nrid)
 							{
-								roofChanges.putIfAbsent(prid, nrid);
+								Integer old = roofChanges.putIfAbsent(prid, nrid);
+								if (old == null)
+								{
+									log.trace("Roof change: {} -> {}", prid, nrid);
+								}
+								else if (old != nrid)
+								{
+									log.debug("Roof change mismatch: {} -> {} vs {}", prid, nrid, old);
+								}
 							}
 						}
 					}
@@ -1796,20 +1804,31 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	@Override
 	public void swapScene(Scene scene)
 	{
-		if (scene.getWorldViewId() > -1) {
-			swapSub(scene); return;
+		if (scene.getWorldViewId() > -1)
+		{
+			swapSub(scene);
+			return;
 		}
 
 		SceneContext ctx = root;
-		for (int x = 0; x < ctx.zones.length; ++x) {
-			for (int z = 0; z < ctx.zones[0].length; ++z) {
+		for (int x = 0; x < ctx.sizeX; ++x)
+		{
+			for (int z = 0; z < ctx.sizeZ; ++z)
+			{
 				Zone zone = ctx.zones[x][z];
 
-				if (zone.cull) {
+				if (zone.cull)
+				{
 					zone.free();
+				}
+				else
+				{
+					// reused zone
+					zone.updateRoofs(nextRoofChanges);
 				}
 			}
 		}
+		nextRoofChanges = null;
 
 		ctx.zones = nextZones;
 		nextZones = null;
@@ -1829,26 +1848,16 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			}
 		}
 
-		// Update roofs
-		for (int x = 0; x < ctx.zones.length; ++x)
-		{
-			for (int z = 0; z < ctx.zones[0].length; ++z)
-			{
-				Zone zone = ctx.zones[x][z];
-				zone.updateRoofs(nextRoofChanges);
-			}
-		}
-		nextRoofChanges = null;
-
 		checkGLErrors();
 	}
 
-	private void swapSub(Scene scene) {
+	private void swapSub(Scene scene)
+	{
 		SceneContext ctx = context(scene);
 		// setup vaos
-		for (int x = 0; x < ctx.zones.length; ++x)
+		for (int x = 0; x < ctx.sizeX; ++x)
 		{
-			for (int z = 0; z < ctx.zones[0].length; ++z)
+			for (int z = 0; z < ctx.sizeZ; ++z)
 			{
 				Zone zone = ctx.zones[x][z];
 
