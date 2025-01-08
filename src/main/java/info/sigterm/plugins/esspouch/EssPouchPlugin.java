@@ -31,15 +31,11 @@ import java.util.Deque;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
+
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.ChatMessageType;
-import net.runelite.api.Client;
-import net.runelite.api.InventoryID;
-import net.runelite.api.Item;
-import net.runelite.api.ItemID;
-import net.runelite.api.events.ChatMessage;
-import net.runelite.api.events.ItemContainerChanged;
-import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.*;
+import net.runelite.api.events.*;
 import net.runelite.api.widgets.Widget;
 import static net.runelite.api.widgets.WidgetInfo.TO_CHILD;
 import static net.runelite.api.widgets.WidgetInfo.TO_GROUP;
@@ -114,6 +110,9 @@ public class EssPouchPlugin extends Plugin
 	@Inject
 	private EssencePouchOverlay essencePouchOverlay;
 
+	@Getter
+	static private int runecraftLevel;
+
 	private final Deque<ClickOperation> clickedItems = new ArrayDeque<>();
 	private final Deque<ClickOperation> checkedPouches = new ArrayDeque<>();
 	private int lastEssence;
@@ -134,6 +133,12 @@ public class EssPouchPlugin extends Plugin
 		}
 
 		lastEssence = lastSpace = -1;
+	}
+
+	@Subscribe
+	private void onGameTick(GameTick event)
+	{
+		runecraftLevel = client.getRealSkillLevel(Skill.RUNECRAFT);
 	}
 
 	@Override
@@ -255,14 +260,14 @@ public class EssPouchPlugin extends Plugin
 				case ItemID.LARGE_POUCH:
 				case ItemID.GIANT_POUCH:
 				case ItemID.COLOSSAL_POUCH:
-					Pouch pouch = Pouch.forItem(item.getId());
+					Pouch pouch = Pouch.forItem(item.getId(), runecraftLevel);
 					pouch.degrade(false);
 					break;
 				case ItemID.MEDIUM_POUCH_5511:
 				case ItemID.LARGE_POUCH_5513:
 				case ItemID.GIANT_POUCH_5515:
 				case ItemID.COLOSSAL_POUCH_26786:
-					pouch = Pouch.forItem(item.getId());
+					pouch = Pouch.forItem(item.getId(), runecraftLevel);
 					pouch.degrade(true);
 					break;
 			}
@@ -343,11 +348,9 @@ public class EssPouchPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onMenuOptionClicked(MenuOptionClicked event)
-	{
+	public void onMenuOptionClicked(MenuOptionClicked event) {
 		int itemId = -1;
-		switch (event.getMenuAction())
-		{
+		switch (event.getMenuAction()) {
 			case ITEM_FIRST_OPTION:
 			case ITEM_SECOND_OPTION:
 			case ITEM_THIRD_OPTION:
@@ -360,17 +363,14 @@ public class EssPouchPlugin extends Plugin
 			case CC_OP_LOW_PRIORITY:
 				int widgetId = event.getWidgetId();
 				Widget widget = client.getWidget(TO_GROUP(widgetId), TO_CHILD(widgetId));
-				if (widget != null)
-				{
+				if (widget != null) {
 					int child = event.getActionParam();
-					if (child == -1)
-					{
+					if (child == -1) {
 						return;
 					}
 
 					widget = widget.getChild(child);
-					if (widget != null)
-					{
+					if (widget != null) {
 						itemId = widget.getItemId();
 					}
 				}
@@ -379,20 +379,17 @@ public class EssPouchPlugin extends Plugin
 				return;
 		}
 
-		if (itemId == -1)
-		{
+		if (itemId == -1) {
 			return;
 		}
 
-		final Pouch pouch = Pouch.forItem(itemId);
-		if (pouch == null)
-		{
+		final Pouch pouch = Pouch.forItem(itemId, client.getRealSkillLevel(Skill.RUNECRAFT));
+		if (pouch == null) {
 			return;
 		}
 
 		final int tick = client.getTickCount() + 3;
-		switch (event.getMenuOption())
-		{
+		switch (event.getMenuOption()) {
 			case "Fill":
 				clickedItems.add(new ClickOperation(pouch, tick, 1));
 				checkedPouches.add(new ClickOperation(pouch, tick, 1));

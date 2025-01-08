@@ -29,6 +29,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.ItemID;
+import net.runelite.api.Skill;
+import info.sigterm.plugins.esspouch.EssPouchPlugin;
 
 enum Pouch
 {
@@ -36,7 +38,10 @@ enum Pouch
 	MEDIUM(6, 3),
 	LARGE(9, 7),
 	GIANT(12, 9),
-	COLOSSAL(40, 35);
+	COLOSSAL_LVL_25(8, 6), // -2?
+	COLOSSAL_LVL_50(16,0), // -3?
+	COLOSSAL_LVL_75(27, 23), // -4
+	COLOSSAL_LVL_85(40, 35); // -5
 
 	private final int baseHoldAmount;
 	private final int degradedBaseHoldAmount;
@@ -97,7 +102,7 @@ enum Pouch
 		}
 	}
 
-	static Pouch forItem(int itemId)
+	static Pouch forItem(int itemId, int runecraftLevel)
 	{
 		switch (itemId)
 		{
@@ -115,7 +120,14 @@ enum Pouch
 			case ItemID.COLOSSAL_POUCH:
 			case ItemID.COLOSSAL_POUCH_26786:
 			case ItemID.COLOSSAL_POUCH_26906:
-				return COLOSSAL;
+				if(runecraftLevel >= 85)
+					return COLOSSAL_LVL_85;
+				else if(runecraftLevel >= 75)
+					return COLOSSAL_LVL_75;
+				else if(runecraftLevel >= 50)
+					return COLOSSAL_LVL_50;
+				else
+					return COLOSSAL_LVL_25;
 			default:
 				return null;
 		}

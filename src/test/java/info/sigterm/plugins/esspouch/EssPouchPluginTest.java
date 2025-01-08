@@ -182,11 +182,11 @@ public class EssPouchPluginTest
 	public void testEmptyCorrection()
 	{
 		// At start, we "know" it has 10 essence (even though it actually is empty!)
-		Pouch.COLOSSAL.setHolding(10);
-		Pouch.COLOSSAL.setUnknown(false);
+		Pouch.COLOSSAL_LVL_85.setHolding(10);
+		Pouch.COLOSSAL_LVL_85.setUnknown(false);
 
 		// It should think there's 10 items
-		assertEquals(10, Pouch.COLOSSAL.getHolding());
+		assertEquals(10, Pouch.COLOSSAL_LVL_85.getHolding());
 
 		clickEmptyPouch(ItemID.COLOSSAL_POUCH);
 
@@ -194,25 +194,25 @@ public class EssPouchPluginTest
 		injectGameMessage("There are no guardian essences in this pouch.");
 
 		// It should now think that the pouch is empty
-		assertEquals(0, Pouch.COLOSSAL.getHolding());
+		assertEquals(0, Pouch.COLOSSAL_LVL_85.getHolding());
 	}
 
 	@Test
 	public void testFullCorrection()
 	{
 		// At start, we "know" it has 10 essence (even though it actually is empty!)
-		Pouch.COLOSSAL.setHolding(10);
-		Pouch.COLOSSAL.setUnknown(false);
+		Pouch.COLOSSAL_LVL_85.setHolding(10);
+		Pouch.COLOSSAL_LVL_85.setUnknown(false);
 
 		// It should think there's 10 items
-		assertEquals(10, Pouch.COLOSSAL.getHolding());
+		assertEquals(10, Pouch.COLOSSAL_LVL_85.getHolding());
 
 		clickFillPouch(ItemID.COLOSSAL_POUCH);
 
 		injectGameMessage("You cannot add any more essence to the pouch.");
 
 		// It should now think that the pouch is full
-		assertEquals(40, Pouch.COLOSSAL.getHolding());
+		assertEquals(40, Pouch.COLOSSAL_LVL_85.getHolding());
 	}
 
 	@Test
