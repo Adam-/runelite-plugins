@@ -383,7 +383,7 @@ public class EssPouchPlugin extends Plugin
 			return;
 		}
 
-		final Pouch pouch = Pouch.forItem(itemId, client.getRealSkillLevel(Skill.RUNECRAFT));
+		final Pouch pouch = Pouch.forItem(itemId, getRunecraftLevel());
 		if (pouch == null) {
 			return;
 		}
