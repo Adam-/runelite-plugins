@@ -23,33 +23,31 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-vec3 hslToRgb(int hsl) {
-  int var5 = hsl / 128;
-  float var6 = float(var5 >> 3) / 64.0f + 0.0078125f;
-  float var8 = float(var5 & 7) / 8.0f + 0.0625f;
+vec3 hslToRgb(vec3 hsl) {
+  float hue = hsl.x / 64.0f + 0.0078125f;
+  float sat = hsl.y / 8.0f + 0.0625f;
+  float lum = hsl.z;
 
-  int var10 = hsl % 128;
-
-  float var11 = float(var10) / 128.0f;
+  float var11 = lum / 128.0f;
   float var13 = var11;
   float var15 = var11;
   float var17 = var11;
 
-  if (var8 != 0.0f) {
+  if (sat != 0.0f) {
     float var19;
     if (var11 < 0.5f) {
-      var19 = var11 * (1.0f + var8);
+      var19 = var11 * (1.0f + sat);
     } else {
-      var19 = var11 + var8 - var11 * var8;
+      var19 = var11 + sat - var11 * sat;
     }
 
     float var21 = 2.0f * var11 - var19;
-    float var23 = var6 + 0.3333333333333333f;
+    float var23 = hue + 0.3333333333333333f;
     if (var23 > 1.0f) {
       var23 -= 1.f;
     }
 
-    float var27 = var6 - 0.3333333333333333f;
+    float var27 = hue - 0.3333333333333333f;
     if (var27 < 0.0f) {
       var27 += 1.f;
     }
@@ -64,12 +62,12 @@ vec3 hslToRgb(int hsl) {
       var13 = var21;
     }
 
-    if (6.0f * var6 < 1.0f) {
-      var15 = var21 + (var19 - var21) * 6.0f * var6;
-    } else if (2.0f * var6 < 1.0f) {
+    if (6.0f * hue < 1.0f) {
+      var15 = var21 + (var19 - var21) * 6.0f * hue;
+    } else if (2.0f * hue < 1.0f) {
       var15 = var19;
-    } else if (3.0f * var6 < 2.0f) {
-      var15 = var21 + (var19 - var21) * (0.6666666666666666f - var6) * 6.0f;
+    } else if (3.0f * hue < 2.0f) {
+      var15 = var21 + (var19 - var21) * (0.6666666666666666f - hue) * 6.0f;
     } else {
       var15 = var21;
     }

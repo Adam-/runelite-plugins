@@ -227,6 +227,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private int uniExpandedMapLoadingChunks;
 	private int uniWorldProj;
 	private int uniEntityProj;
+	private int uniEntityTint;
 	private int uniBrightness;
 	private int uniTex;
 	private int uniTexSamplingMode;
@@ -236,7 +237,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private int uniTextures;
 	private int uniTextureAnimations;
 	private int uniBlockMain;
-	private int uniSmoothBanding;
 	private int uniTextureLightMode;
 	private int uniTick;
 	private int uniBase;
@@ -245,7 +245,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	protected void startUp()
 	{
 		root = new SceneContext(NUM_ZONES, NUM_ZONES);
-		subs = new SceneContext[2048];
+		subs = new SceneContext[4096]; // XXX convert to a map
 		clientThread.invoke(() ->
 		{
 			try
@@ -543,8 +543,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	{
 		uniWorldProj = glGetUniformLocation(glProgram, "worldProj");
 		uniEntityProj = glGetUniformLocation(glProgram, "entityProj");
+		uniEntityTint = glGetUniformLocation(glProgram, "entityTint");
 		uniBrightness = glGetUniformLocation(glProgram, "brightness");
-		uniSmoothBanding = glGetUniformLocation(glProgram, "smoothBanding");
 		uniUseFog = glGetUniformLocation(glProgram, "useFog");
 		uniFogColor = glGetUniformLocation(glProgram, "fogColor");
 		uniFogDepth = glGetUniformLocation(glProgram, "fogDepth");
@@ -815,10 +815,20 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	}
 
 	@Override
-	public void prepareSceneDraw(Scene scene,
+	public void preSceneDraw(Scene scene,
 								 float cameraX, float cameraY, float cameraZ, float cameraPitch, float cameraYaw,
 								 int minLevel, int level, int maxLevel, Set<Integer> hideRoofIds)
 	{
+		if (scene.getWorldViewId() == WorldView.TOPLEVEL) preSceneDrawToplevel(scene, cameraX, cameraY, cameraZ, cameraPitch, cameraYaw,
+			minLevel, level, maxLevel, hideRoofIds);
+		else {
+			glUniform4i(uniEntityTint, scene.getOverrideHue(), scene.getOverrideSaturation(), scene.getOverrideLuminance(), scene.getOverrideAmount());
+		}
+	}
+
+	private void preSceneDrawToplevel(Scene scene,
+									  float cameraX, float cameraY, float cameraZ, float cameraPitch, float cameraYaw,
+									  int minLevel, int level, int maxLevel, Set<Integer> hideRoofIds) {
 		this.minLevel = minLevel;
 		this.level = level;
 		this.maxLevel = maxLevel;
@@ -941,7 +951,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		// Brightness happens to also be stored in the texture provider, so we use that
 		TextureProvider textureProvider = client.getTextureProvider();
 		glUniform1f(uniBrightness, (float) textureProvider.getBrightness());
-		glUniform1f(uniSmoothBanding, config.smoothBanding() ? 0f : 1f);
 		glUniform1i(uniColorBlindMode, config.colorBlindMode().ordinal());
 		glUniform1f(uniTextureLightMode, config.brightTextures() ? 1f : 0f);
 		if (client.getGameState() == GameState.LOGGED_IN)
@@ -961,6 +970,9 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		projectionMatrix = Mat4.identity();
 		glUniformMatrix4fv(uniEntityProj, false, projectionMatrix);
 
+		glUniform4i(uniEntityTint, 0, 0, 0, 0);
+//		glUniform4i(uniEntityTint, 38, 2, 20, 127);
+
 		// Bind uniforms
 		glUniformBlockBinding(glProgram, uniBlockMain, 0);
 		glUniform1i(uniTextures, 1); // texture sampler array is bound to texture1
@@ -977,6 +989,40 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		glEnable(GL_DEPTH_TEST);
 
 		checkGLErrors();
+	}
+
+	@Override
+	public void postSceneDraw(Scene scene)
+	{
+		if (scene.getWorldViewId() == WorldView.TOPLEVEL) postDrawToplevel();
+		else glUniform4i(uniEntityTint, 0, 0, 0, 0);
+	}
+
+	private void postDrawToplevel()
+	{
+		glDisable(GL_BLEND);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+
+		// Blit FBO
+		{
+			int width = lastStretchedCanvasWidth;
+			int height = lastStretchedCanvasHeight;
+
+			final GraphicsConfiguration graphicsConfiguration = clientUI.getGraphicsConfiguration();
+			final AffineTransform transform = graphicsConfiguration.getDefaultTransform();
+
+			width = getScaledValue(transform.getScaleX(), width);
+			height = getScaledValue(transform.getScaleY(), height);
+
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, fboScene);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, awtContext.getFramebuffer(false));
+			glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
+				GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+			// Reset
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, awtContext.getFramebuffer(false));
+		}
 	}
 
 	@Override
@@ -1125,6 +1171,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	public void onPostClientTick(PostClientTick event)
 	{
 		WorldView wv = client.getTopLevelWorldView();
+		if (wv==null) return;
 		rebuild(wv);
 		for (WorldEntity we : wv.worldEntities()) {
 			wv = we.getWorldView();
@@ -1176,34 +1223,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 				log.debug("Rebuilt zone wv={} x={} z={}", wv.getId(), x, z);
 			}
-		}
-	}
-
-	@Override
-	public void postDrawScene()
-	{
-		glDisable(GL_BLEND);
-		glDisable(GL_CULL_FACE);
-		glDisable(GL_DEPTH_TEST);
-
-		// Blit FBO
-		{
-			int width = lastStretchedCanvasWidth;
-			int height = lastStretchedCanvasHeight;
-
-			final GraphicsConfiguration graphicsConfiguration = clientUI.getGraphicsConfiguration();
-			final AffineTransform transform = graphicsConfiguration.getDefaultTransform();
-
-			width = getScaledValue(transform.getScaleX(), width);
-			height = getScaledValue(transform.getScaleY(), height);
-
-			glBindFramebuffer(GL_READ_FRAMEBUFFER, fboScene);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, awtContext.getFramebuffer(false));
-			glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
-				GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-			// Reset
-			glBindFramebuffer(GL_READ_FRAMEBUFFER, awtContext.getFramebuffer(false));
 		}
 	}
 

@@ -29,7 +29,6 @@
 
 uniform sampler2DArray textures;
 uniform float brightness;
-uniform float smoothBanding;
 uniform vec4 fogColor;
 uniform int colorBlindMode;
 uniform float textureLightMode;
@@ -65,20 +64,19 @@ void main() {
     vec4 textureColor = texture(textures, vec3(fUv, float(textureIdx)));
     vec4 textureColor0 = textureLod(textures, vec3(fUv, float(textureIdx)), 0.f);
 
-    if (textureColor0.a < 1.f) discard;
+    if (textureColor0.a < 1.f)
+      discard;
 
     textureColor = vec4(textureColor.rgb, 1.f);
 
-      textureColor = pow(textureColor, vec4(brightness, brightness, brightness, 1.f));
+    textureColor = pow(textureColor, vec4(brightness, brightness, brightness, 1.f));
 
     // textured triangles hsl is a 7 bit lightness 2-126
     float light = fHsl / 127.f;
     vec3 mul = (1.f - textureLightMode) * vec3(light) + textureLightMode * fColor.rgb;
     c = textureColor * vec4(mul, 1.f);
   } else {
-    // pick interpolated hsl or rgb depending on smooth banding setting
-    vec3 rgb = hslToRgb(int(fHsl)) * smoothBanding + fColor.rgb * (1.f - smoothBanding);
-    c = vec4(rgb, fColor.a);
+    c = fColor;
   }
 
   if (colorBlindMode > 0) {

@@ -49,6 +49,7 @@ layout(std140) uniform uniforms {
 };
 
 uniform mat4 entityProj;
+uniform ivec4 entityTint;
 uniform float brightness;
 uniform int useFog;
 uniform int fogDepth;
@@ -71,13 +72,15 @@ float fogFactorLinear(const float dist, const float start, const float end) {
 
 void main() {
   vec4 vert = entityProj * vec4(max(vertf, vec3(verti)) + base, 1);
-  int hsl = ahsl & 0xffff;
   float a = float(ahsl >> 24 & 0xff) / 255.f;
+
+  vec3 hsl = vec3(ahsl >> 10 & 63, ahsl >> 7 & 7, ahsl & 127);
+  hsl += ((entityTint.xyz - hsl) * entityTint.w) / 128f;
   vec3 rgb = hslToRgb(hsl);
 
   gVertex = vert.xyz;
   gColor = vec4(rgb, 1.f - a);
-  gHsl = float(hsl);
+  gHsl = ahsl & 0xffff;  // only used for texture lighting, which isn't affected by tint
 
   gTextureId = tex.x;  // the texture id + 1;
   gTexPos = vert.xyz + vec3(tex.yzw);
