@@ -1268,7 +1268,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		}
 
 		final TextureProvider textureProvider = client.getTextureProvider();
-		if (textureArrayId == -1)
+		if (textureArrayId == -1 && textureProvider != null)
 		{
 			// lazy init textures as they may not be loaded at plugin start.
 			// this will return -1 and retry if not all textures are loaded yet, too.

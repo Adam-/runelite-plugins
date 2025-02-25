@@ -57,11 +57,11 @@ uniform int drawDistance;
 uniform int expandedMapLoadingChunks;
 uniform ivec3 base;
 
-out vec3 gVertex;
+out vec4 gVertex;
 out vec4 gColor;
 out float gHsl;
 out int gTextureId;
-out vec3 gTexPos;
+out vec4 gTexPos;
 out float gFogAmount;
 
 #include "hsl_to_rgb.glsl"
@@ -71,19 +71,19 @@ float fogFactorLinear(const float dist, const float start, const float end) {
 }
 
 void main() {
-  vec4 vert = entityProj * vec4(max(vertf, vec3(verti)) + base, 1);
+  vec4 vert = vec4(max(vertf, vec3(verti)) + base, 1);
   float a = float(ahsl >> 24 & 0xff) / 255.f;
 
   vec3 hsl = vec3(ahsl >> 10 & 63, ahsl >> 7 & 7, ahsl & 127);
-  hsl += ((entityTint.xyz - hsl) * entityTint.w) / 128f;
+  hsl += ((entityTint.xyz - hsl) * entityTint.w) / 128;
   vec3 rgb = hslToRgb(hsl);
 
-  gVertex = vert.xyz;
+  gVertex = entityProj * vert;
   gColor = vec4(rgb, 1.f - a);
   gHsl = ahsl & 0xffff;  // only used for texture lighting, which isn't affected by tint
 
   gTextureId = tex.x;  // the texture id + 1;
-  gTexPos = vert.xyz + vec3(tex.yzw);
+  gTexPos = entityProj * vec4(vert.xyz + vec3(tex.yzw), 1);
 
   // the client draws one less tile to the north and east than it does to the south
   // and west, so subtract a tiles width from the north and east edges.

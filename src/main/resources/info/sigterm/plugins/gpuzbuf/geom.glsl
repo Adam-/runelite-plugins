@@ -50,11 +50,11 @@ uniform vec2 textureAnimations[TEXTURE_COUNT];
 uniform int tick;
 uniform mat4 worldProj;
 
-in vec3 gVertex[3];
+in vec4 gVertex[3];
 in vec4 gColor[3];
 in float gHsl[3];
 in int gTextureId[3];
-in vec3 gTexPos[3];
+in vec4 gTexPos[3];
 in float gFogAmount[3];
 
 out vec4 fColor;
@@ -72,7 +72,7 @@ void main() {
 
   if (textureId > 0) {
     vec3 cameraPos = vec3(cameraX, cameraY, cameraZ);
-    compute_uv(cameraPos, gVertex[0], gVertex[1], gVertex[2], gTexPos[0], gTexPos[1], gTexPos[2], uv[0], uv[1], uv[2]);
+    compute_uv(cameraPos, gVertex[0].xyz, gVertex[1].xyz, gVertex[2].xyz, gTexPos[0].xyz, gTexPos[1].xyz, gTexPos[2].xyz, uv[0], uv[1], uv[2]);
 
     vec2 textureAnim = textureAnimations[min(textureId - 1, TEXTURE_COUNT - 1)];
     for (int i = 0; i < 3; ++i) {
@@ -91,7 +91,7 @@ void main() {
     fUv = uv[i];
     fFogAmount = gFogAmount[i];
 
-    vec4 pos = worldProj * vec4(gVertex[i], 1);
+    vec4 pos = worldProj * gVertex[i];
 #ifdef ZBUF
     fDepth = pos.z / pos.w;
 #endif
