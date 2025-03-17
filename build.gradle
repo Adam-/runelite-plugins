@@ -1,6 +1,5 @@
 plugins {
 	id 'java'
-	id 'checkstyle'
 }
 
 repositories {
@@ -11,7 +10,7 @@ repositories {
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.7.25'
+def runeLiteVersion = 'latest.release'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -24,10 +23,10 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'com.playeroutline'
-version = '1.0'
-sourceCompatibility = '1.8'
+group = 'com.example'
+version = '1.0-SNAPSHOT'
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
+	options.release.set(11)
 }
