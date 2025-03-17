@@ -822,6 +822,11 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		if (scene.getWorldViewId() == WorldView.TOPLEVEL) preSceneDrawToplevel(scene, cameraX, cameraY, cameraZ, cameraPitch, cameraYaw,
 			minLevel, level, maxLevel, hideRoofIds);
 		else {
+			this.minLevel = minLevel;
+			this.level = level;
+			this.maxLevel = maxLevel;
+			this.hideRoofIds = hideRoofIds;
+
 			glUniform4i(uniEntityTint, scene.getOverrideHue(), scene.getOverrideSaturation(), scene.getOverrideLuminance(), scene.getOverrideAmount());
 		}
 	}
