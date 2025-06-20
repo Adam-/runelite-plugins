@@ -1253,10 +1253,14 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		final int height = bufferProvider.getHeight();
 
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, interfacePbo);
-		glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY)
-			.asIntBuffer()
-			.put(pixels, 0, width * height);
-		glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+		ByteBuffer interfaceBuf = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+		if (interfaceBuf != null)
+		{
+			interfaceBuf
+				.asIntBuffer()
+				.put(pixels, 0, width * height);
+			glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+		}
 		glBindTexture(GL_TEXTURE_2D, interfaceTexture);
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, 0);
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);

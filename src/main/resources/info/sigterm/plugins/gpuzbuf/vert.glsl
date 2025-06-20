@@ -83,7 +83,7 @@ void main() {
   gHsl = ahsl & 0xffff;  // only used for texture lighting, which isn't affected by tint
 
   gTextureId = tex.x;  // the texture id + 1;
-  gTexPos = entityProj * vec4(vert.xyz + vec3(tex.yzw), 1);
+  gTexPos = entityProj * (vert + vec4(tex.yzw, 1));
 
   // the client draws one less tile to the north and east than it does to the south
   // and west, so subtract a tiles width from the north and east edges.
@@ -93,8 +93,8 @@ void main() {
   float fogNorth = min(FOG_SCENE_EDGE_MAX, cameraZ + drawDistance - TILE_SIZE);
 
   // Calculate distance from the scene edge
-  float xDist = min(vert.x - fogWest, fogEast - vert.x);
-  float zDist = min(vert.z - fogSouth, fogNorth - vert.z);
+  float xDist = min(gVertex.x - fogWest, fogEast - gVertex.x);
+  float zDist = min(gVertex.z - fogSouth, fogNorth - gVertex.z);
   float nearestEdgeDistance = min(xDist, zDist);
   float secondNearestEdgeDistance = max(xDist, zDist);
   float fogDistance =
