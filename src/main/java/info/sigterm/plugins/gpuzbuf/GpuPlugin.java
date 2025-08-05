@@ -37,12 +37,10 @@ import java.awt.image.DataBufferInt;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
@@ -91,7 +89,7 @@ import org.lwjgl.system.Configuration;
 @PluginDescriptor(
 	name = "GPU (experimental)",
 	configName = "GpuExperimental",
-	description = "Utilizes the GPU",
+	description = "Offloads rendering to GPU",
 	enabledByDefault = false,
 	tags = {"fog", "draw distance"},
 	loadInSafeMode = false,
@@ -577,9 +575,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 	private void initVao()
 	{
-//		vaoO = new VAOList();
-//		vaoA = new VAOList();
-
 		// Create UI VAO
 		vaoUiHandle = glGenVertexArrays();
 		// Create UI buffer
@@ -611,44 +606,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-//	private int initVao(VBO vbo) {
-//		int vao = glGenVertexArrays();
-//		glBindVertexArray(vao);
-//
-//		glBindBuffer(GL_ARRAY_BUFFER, vbo.bufId);
-//		glBufferData(GL_ARRAY_BUFFER, vbo.size, GL_DYNAMIC_DRAW);
-//
-//		glEnableVertexAttribArray(0);
-//		glVertexAttribPointer(0, 3, GL_FLOAT, false, 32, 0);
-//
-//		glVertexAttribI3i(1, Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE);
-//
-//		glEnableVertexAttribArray(2);
-//		glVertexAttribIPointer(2, 1, GL_INT, 32, 12);
-//
-//		glEnableVertexAttribArray(3);
-//		glVertexAttribIPointer(3, 4, GL_INT, 32, 16);
-//
-//		glBindBuffer(GL_ARRAY_BUFFER,0);
-//		glBindVertexArray(0);
-//
-//		return vao;
-//	}
-
 	private void shutdownVao()
 	{
-//		if (vaoO != null)
-//		{
-//			vaoO.destroy();
-//			vaoO = null;
-//		}
-//
-//		if (vaoA != null)
-//		{
-//			vaoA.destroy();
-//			vaoA = null;
-//		}
-
 		glDeleteBuffers(vboUiHandle);
 		vboUiHandle = 0;
 
@@ -658,22 +617,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 	private void initBuffers()
 	{
-//		initGlBuffer(sceneVertexBuffer);
-//		initGlBuffer(sceneUvBuffer);
-//		initGlBuffer(sceneAlphaVertexBuffer);
-//		initGlBuffer(sceneAlphaTexBuffer);
-//		initGlBuffer(tmpVertexBuffer);
-//		initGlBuffer(tmpUvBuffer);
-//		initGlBuffer(tmpModelBufferLarge);
-//		initGlBuffer(tmpModelBufferSmall);
-//		initGlBuffer(tmpModelBufferUnordered);
-//		initGlBuffer(tmpOutBuffer);
-//		initGlBuffer(tmpOutUvBuffer);
-//		initGlBuffer(glOpaqueVertexBuffer);
-//		initGlBuffer(glOpaqueTexBuffer);
 		uniformBuffer = new GpuFloatBuffer(UNIFORM_BUFFER_SIZE);
-//		VBO.active.init0();
-//		VBO.activeA.init0();
 	}
 
 	private void initGlBuffer(GLBuffer glBuffer)
@@ -684,19 +628,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private void shutdownBuffers()
 	{
 		uniformBuffer = null;
-//		destroyGlBuffer(sceneVertexBuffer);
-//		destroyGlBuffer(sceneUvBuffer);
-//		destroyGlBuffer(sceneAlphaVertexBuffer);
-//		destroyGlBuffer(sceneAlphaTexBuffer);
-//		destroyGlBuffer(tmpVertexBuffer);
-//		destroyGlBuffer(tmpUvBuffer);
-//		destroyGlBuffer(tmpModelBufferLarge);
-//		destroyGlBuffer(tmpModelBufferSmall);
-//		destroyGlBuffer(tmpModelBufferUnordered);
-//		destroyGlBuffer(tmpOutBuffer);
-//		destroyGlBuffer(tmpOutUvBuffer);
-//		destroyGlBuffer(glOpaqueVertexBuffer);
-//		destroyGlBuffer(glOpaqueTexBuffer);
 	}
 
 	private void destroyGlBuffer(GLBuffer glBuffer)
@@ -732,9 +663,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private void initUniformBuffer()
 	{
 		initGlBuffer(glUniformBuffer);
-
-		updateBuffer(glUniformBuffer, GL_UNIFORM_BUFFER, UNIFORM_BUFFER_SIZE, GL_DYNAMIC_DRAW);
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
 
 	private void initFbo(int width, int height, int aaSamples)
@@ -851,7 +779,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			.put(cameraZ);
 		uniformBuffer.flip();
 
-		updateBuffer(glUniformBuffer, GL_UNIFORM_BUFFER, uniformBuffer.getBuffer(), GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_UNIFORM_BUFFER, glUniformBuffer.glBufferId);
+		glBufferData(GL_UNIFORM_BUFFER, uniformBuffer.getBuffer(), GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 		uniformBuffer.clear();
 
@@ -976,7 +905,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		glUniformMatrix4fv(uniEntityProj, false, projectionMatrix);
 
 		glUniform4i(uniEntityTint, 0, 0, 0, 0);
-//		glUniform4i(uniEntityTint, 38, 2, 20, 127);
 
 		// Bind uniforms
 		glUniformBlockBinding(glProgram, uniBlockMain, 0);
@@ -1443,15 +1371,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
-//		if (gameStateChanged.getGameState() == GameState.LOGIN_SCREEN)
-//		{
-//			zones = new Zone[NUM_ZONES][NUM_ZONES];
-//			for (int x = 0; x < NUM_ZONES; ++x)
-//				for (int y = 0; y < NUM_ZONES; ++y)
-//				{
-//					zones[x][y] = new Zone();
-//				}
-//		}
 		if (gameStateChanged.getGameState() == GameState.STARTING)
 		{
 			if (textureArrayId != -1)
@@ -1472,19 +1391,12 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		}
 
 		assert scene.getWorldViewId() == -1;
-		if (nextZones != null) {
-			log.error("Double zone-load");
-			// this needs to free on the client thread
-//			for (int x = 0; x < nextZones.length; ++x) {
-//				for (int z = 0; z < nextZones[0].length; ++z) {
-//					Zone zone = zones[x][z];
-//
-//					if (zone.state == Zone.ZONE_STATE_NEW) {
-//						zone.free();
-//					}
-//				}
-//			}
+		if (nextZones != null)
+		{
+			log.error("Double zone load!");
+			// does this happen? this needs to free nextZones?
 		}
+		assert nextZones == null;
 
 		SceneContext ctx = root;
 		Scene prev = client.getTopLevelWorldView().getScene();
@@ -1738,6 +1650,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		{
 			log.error("reload of an already loaded boat zone?");
 		}
+		assert ctx0 == null;
 
 //		if (ctx == null) {
 		final SceneContext ctx = new SceneContext(worldView.getSizeX() >> 3, worldView.getSizeY() >> 3);
@@ -1826,6 +1739,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	public void despawnWorldView(WorldView worldView)
 	{
 		int worldViewId = worldView.getId();
+		if (worldViewId > -1)
 		subs[worldViewId] = null; //XXX leaking gl buffers
 	}
 
@@ -1917,51 +1831,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private int getDrawDistance()
 	{
 		return Ints.constrainToRange(config.drawDistance(), 0, MAX_DISTANCE);
-	}
-
-	private void updateBuffer(@Nonnull GLBuffer glBuffer, int target, @Nonnull FloatBuffer data, int usage)
-	{
-		int size = data.remaining() << 2;
-		updateBuffer(glBuffer, target, size, usage);
-		glBufferSubData(target, 0, data);
-	}
-
-	private void updateBuffer(@Nonnull GLBuffer glBuffer, int target, @Nonnull IntBuffer data, int usage)
-	{
-		int size = data.remaining() << 2;
-		updateBuffer(glBuffer, target, size, usage);
-		glBufferSubData(target, 0, data);
-	}
-
-	private void updateBuffer(@Nonnull GLBuffer glBuffer, int target, int size, int usage)
-	{
-		glBindBuffer(target, glBuffer.glBufferId);
-		if (glCapabilities.glInvalidateBufferData != 0L)
-		{
-			// https://www.khronos.org/opengl/wiki/Buffer_Object_Streaming suggests buffer re-specification is useful
-			// to avoid implicit syncing. We always need to trash the whole buffer anyway so this can't hurt.
-			glInvalidateBufferData(glBuffer.glBufferId);
-		}
-		if (size > glBuffer.size)
-		{
-			int newSize = Math.max(1024, nextPowerOfTwo(size));
-			log.debug("Buffer resize: {} {} -> {}", glBuffer.name, glBuffer.size, newSize);
-
-			glBuffer.size = newSize;
-			glBufferData(target, newSize, usage);
-		}
-	}
-
-	private static int nextPowerOfTwo(int v)
-	{
-		v--;
-		v |= v >> 1;
-		v |= v >> 2;
-		v |= v >> 4;
-		v |= v >> 8;
-		v |= v >> 16;
-		v++;
-		return v;
 	}
 
 	private void checkGLErrors()

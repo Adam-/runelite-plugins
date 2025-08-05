@@ -19,7 +19,7 @@ class VAO
 	// Temporary vertex format
 	// index 0: vec3(x, y, z)
 	// index 1: -INTEGER_MIN (non-array)
-	// index 2: int ahsl
+	// index 2: int abhsl
 	// index 3: short vec4(id, x, y, z)
 	static final int VERT_SIZE = 24;
 

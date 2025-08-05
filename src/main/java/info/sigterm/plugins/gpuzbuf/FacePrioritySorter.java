@@ -402,6 +402,7 @@ class FacePrioritySorter
 		final int[] texIndices3 = model.getTexIndices3();
 
 		final byte[] transparencies = model.getFaceTransparencies();
+		final byte[] bias = model.getFaceBias();
 
 		final int triangleA = indices1[face];
 		final int triangleB = indices2[face];
@@ -457,18 +458,20 @@ class FacePrioritySorter
 			texC = triangleC;
 		}
 
-		int packedAlpha = SceneUploader.faceAlpha(faceTextures, transparencies, face) << 24;
+		int alphaBias = 0;
+		alphaBias |= transparencies != null ? (transparencies[face] & 0xff) << 24 : 0;
+		alphaBias |= bias != null ? (bias[face] & 0xff) << 16 : 0;
 		int texture = faceTextures != null ? faceTextures[face] + 1 : 0;
 
 		var vb = alpha ? alphaBuffer : opaqueBuffer;
 
-		SceneUploader.put(vb, vx1, vy1, vz1, packedAlpha | color1);
+		SceneUploader.putfff4(vb, vx1, vy1, vz1, alphaBias | color1);
 		SceneUploader.put2222(vb, texture, (int) modelLocalX[texA] - (int) vx1, (int) modelLocalY[texA] - (int) vy1, (int) modelLocalZ[texA] - (int) vz1);
 
-		SceneUploader.put(vb, vx2, vy2, vz2, packedAlpha | color2);
+		SceneUploader.putfff4(vb, vx2, vy2, vz2, alphaBias | color2);
 		SceneUploader.put2222(vb, texture, (int) modelLocalX[texB] - (int) vx2, (int) modelLocalY[texB] - (int) vy2, (int) modelLocalZ[texB] - (int) vz2);
 
-		SceneUploader.put(vb, vx3, vy3, vz3, packedAlpha | color3);
+		SceneUploader.putfff4(vb, vx3, vy3, vz3, alphaBias | color3);
 		SceneUploader.put2222(vb, texture, (int) modelLocalX[texC] - (int) vx3, (int) modelLocalY[texC] - (int) vy3, (int) modelLocalZ[texC] - (int) vz3);
 
 		return 3;

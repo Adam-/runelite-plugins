@@ -473,42 +473,42 @@ class SceneUploader
 		vertexBuffer.put22224(lx2, ly2, lz2, hsl2);
 		if (tile.isFlat())
 		{
-			vertexBuffer.put2(tex, lx0 - lx2, ly0 - ly2, lz0 - lz2);
+			vertexBuffer.put2222(tex, lx0 - lx2, ly0 - ly2, lz0 - lz2);
 		}
 		else
 		{
-			vertexBuffer.put2(tex, lx2 - lx2, ly2 - ly2, lz2 - lz2);
+			vertexBuffer.put2222(tex, lx2 - lx2, ly2 - ly2, lz2 - lz2);
 		}
 
 		vertexBuffer.put22224(lx3, ly3, lz3, hsl3);
 		if (tile.isFlat())
 		{
-			vertexBuffer.put2(tex, lx1 - lx3, ly1 - ly3, lz1 - lz3);
+			vertexBuffer.put2222(tex, lx1 - lx3, ly1 - ly3, lz1 - lz3);
 		}
 		else
 		{
-			vertexBuffer.put2(tex, lx3 - lx3, ly3 - ly3, lz3 - lz3);
+			vertexBuffer.put2222(tex, lx3 - lx3, ly3 - ly3, lz3 - lz3);
 		}
 
 
 		vertexBuffer.put22224(lx1, ly1, lz1, hsl1);
 		if (tile.isFlat())
 		{
-			vertexBuffer.put2(tex, lx3 - lx1, ly3 - ly1, lz3 - lz1);
+			vertexBuffer.put2222(tex, lx3 - lx1, ly3 - ly1, lz3 - lz1);
 		}
 		else
 		{
-			vertexBuffer.put2(tex, lx1 - lx1, ly1 - ly1, lz1 - lz1);
+			vertexBuffer.put2222(tex, lx1 - lx1, ly1 - ly1, lz1 - lz1);
 		}
 
 		vertexBuffer.put22224(lx0, ly0, lz0, hsl0);
-		vertexBuffer.put2(tex, lx0 - lx0, ly0 - ly0, lz0 - lz0);
+		vertexBuffer.put2222(tex, lx0 - lx0, ly0 - ly0, lz0 - lz0);
 
 		vertexBuffer.put22224(lx1, ly1, lz1, hsl1);
-		vertexBuffer.put2(tex, lx1 - lx1, ly1 - ly1, lz1 - lz1);
+		vertexBuffer.put2222(tex, lx1 - lx1, ly1 - ly1, lz1 - lz1);
 
 		vertexBuffer.put22224(lx3, ly3, lz3, hsl3);
-		vertexBuffer.put2(tex, lx3 - lx3, ly3 - ly3, lz3 - lz3);
+		vertexBuffer.put2222(tex, lx3 - lx3, ly3 - ly3, lz3 - lz3);
 
 		return 6;
 	}
@@ -567,31 +567,31 @@ class SceneUploader
 			vertexBuffer.put22224(lx0, ly0, lz0, hsl0);
 			if (sceneTileModel.isFlat())
 			{
-				vertexBuffer.put2(tex, vertexX[0] - lx - lx0, vertexY[0] - ly0, vertexZ[0] - lz - lz0);
+				vertexBuffer.put2222(tex, vertexX[0] - lx - lx0, vertexY[0] - ly0, vertexZ[0] - lz - lz0);
 			}
 			else
 			{
-				vertexBuffer.put2(tex, vertexX[vertex0] - lx - lx0, vertexY[vertex0] - ly0, vertexZ[vertex0] - lz - lz0);
+				vertexBuffer.put2222(tex, vertexX[vertex0] - lx - lx0, vertexY[vertex0] - ly0, vertexZ[vertex0] - lz - lz0);
 			}
 
 			vertexBuffer.put22224(lx1, ly1, lz1, hsl1);
 			if (sceneTileModel.isFlat())
 			{
-				vertexBuffer.put2(tex, vertexX[1] - lx - lx1, vertexY[1] - ly1, vertexZ[1] - lz - lz1);
+				vertexBuffer.put2222(tex, vertexX[1] - lx - lx1, vertexY[1] - ly1, vertexZ[1] - lz - lz1);
 			}
 			else
 			{
-				vertexBuffer.put2(tex, vertexX[vertex1] - lx - lx1, vertexY[vertex1] - ly1, vertexZ[vertex1] - lz - lz1);
+				vertexBuffer.put2222(tex, vertexX[vertex1] - lx - lx1, vertexY[vertex1] - ly1, vertexZ[vertex1] - lz - lz1);
 			}
 
 			vertexBuffer.put22224(lx2, ly2, lz2, hsl2);
 			if (sceneTileModel.isFlat())
 			{
-				vertexBuffer.put2(tex, vertexX[3] - lx - lx2, vertexY[3] - ly2, vertexZ[3] - lz - lz2);
+				vertexBuffer.put2222(tex, vertexX[3] - lx - lx2, vertexY[3] - ly2, vertexZ[3] - lz - lz2);
 			}
 			else
 			{
-				vertexBuffer.put2(tex, vertexX[vertex2] - lx - lx2, vertexY[vertex2] - ly2, vertexZ[vertex2] - lz - lz2);
+				vertexBuffer.put2222(tex, vertexX[vertex2] - lx - lx2, vertexY[vertex2] - ly2, vertexZ[vertex2] - lz - lz2);
 			}
 		}
 
@@ -623,6 +623,7 @@ class SceneUploader
 		final int[] texIndices3 = model.getTexIndices3();
 
 		final byte[] transparencies = model.getFaceTransparencies();
+		final byte[] bias = model.getFaceBias();
 
 		int orientSin = 0;
 		int orientCos = 0;
@@ -705,17 +706,19 @@ class SceneUploader
 				texC = triangleC;
 			}
 
-			int packedAlpha = faceAlpha(faceTextures, transparencies, face) << 24;
+			int alphaBias = 0;
+			alphaBias |= transparencies != null ? (transparencies[face] & 0xff) << 24 : 0;
+			alphaBias |= bias != null ? (bias[face] & 0xff) << 16 : 0;
 			int texture = faceTextures != null ? faceTextures[face] + 1 : 0;
 
-			vb.put22224(vx1, vy1, vz1, packedAlpha | color1);
-			vb.put2(texture, modelLocalXI[texA] - vx1, modelLocalYI[texA] - vy1, modelLocalZI[texA] - vz1);
+			vb.put22224(vx1, vy1, vz1, alphaBias | color1);
+			vb.put2222(texture, modelLocalXI[texA] - vx1, modelLocalYI[texA] - vy1, modelLocalZI[texA] - vz1);
 
-			vb.put22224(vx2, vy2, vz2, packedAlpha | color2);
-			vb.put2(texture, modelLocalXI[texB] - vx2, modelLocalYI[texB] - vy2, modelLocalZI[texB] - vz2);
+			vb.put22224(vx2, vy2, vz2, alphaBias | color2);
+			vb.put2222(texture, modelLocalXI[texB] - vx2, modelLocalYI[texB] - vy2, modelLocalZI[texB] - vz2);
 
-			vb.put22224(vx3, vy3, vz3, packedAlpha | color3);
-			vb.put2(texture, modelLocalXI[texC] - vx3, modelLocalYI[texC] - vy3, modelLocalZI[texC] - vz3);
+			vb.put22224(vx3, vy3, vz3, alphaBias | color3);
+			vb.put2222(texture, modelLocalXI[texC] - vx3, modelLocalYI[texC] - vy3, modelLocalZI[texC] - vz3);
 
 			len += 3;
 		}
@@ -748,6 +751,7 @@ class SceneUploader
 		final int[] texIndices3 = model.getTexIndices3();
 
 		final byte[] transparencies = model.getFaceTransparencies();
+		final byte[] bias = model.getFaceBias();
 
 		final byte overrideAmount = model.getOverrideAmount();
 		final byte overrideHue = model.getOverrideHue();
@@ -845,18 +849,20 @@ class SceneUploader
 				texC = triangleC;
 			}
 
-			int packedAlpha = faceAlpha(faceTextures, transparencies, face) << 24;
+			int alphaBias = 0;
+			alphaBias |= transparencies != null ? (transparencies[face] & 0xff) << 24 : 0;
+			alphaBias |= bias != null ? (bias[face] & 0xff) << 16 : 0;
 			int texture = faceTextures != null ? faceTextures[face] + 1 : 0;
 
 			var vb = alpha ? alphaBuffer : opaqueBuffer;
 
-			put(vb, vx1, vy1, vz1, packedAlpha | color1);
+			putfff4(vb, vx1, vy1, vz1, alphaBias | color1);
 			put2222(vb, texture, (int) modelLocalX[texA] - (int) vx1, (int) modelLocalY[texA] - (int) vy1, (int) modelLocalZ[texA] - (int) vz1);
 
-			put(vb, vx2, vy2, vz2, packedAlpha | color2);
+			putfff4(vb, vx2, vy2, vz2, alphaBias | color2);
 			put2222(vb, texture, (int) modelLocalX[texB] - (int) vx2, (int) modelLocalY[texB] - (int) vy2, (int) modelLocalZ[texB] - (int) vz2);
 
-			put(vb, vx3, vy3, vz3, packedAlpha | color3);
+			putfff4(vb, vx3, vy3, vz3, alphaBias | color3);
 			put2222(vb, texture, (int) modelLocalX[texC] - (int) vx3, (int) modelLocalY[texC] - (int) vy3, (int) modelLocalZ[texC] - (int) vz3);
 
 			len += 3;
@@ -871,7 +877,7 @@ class SceneUploader
 		vb.put(((w & 0xffff) << 16) | (z & 0xffff));
 	}
 
-	static void put(IntBuffer vb, float x, float y, float z, int w)
+	static void putfff4(IntBuffer vb, float x, float y, float z, int w)
 	{
 		vb.put(Float.floatToIntBits(x));
 		vb.put(Float.floatToIntBits(y));
@@ -899,15 +905,6 @@ class SceneUploader
 		modelLocalXI = new int[MAX_VERTEX_COUNT];
 		modelLocalYI = new int[MAX_VERTEX_COUNT];
 		modelLocalZI = new int[MAX_VERTEX_COUNT];
-	}
-
-	static int faceAlpha(short[] faceTextures, byte[] faceTransparencies, int face)
-	{
-		if (faceTransparencies != null && (faceTextures == null || faceTextures[face] == -1))
-		{
-			return faceTransparencies[face] & 0xFF;
-		}
-		return 0;
 	}
 
 	static int interpolateHSL(int hsl, byte hue2, byte sat2, byte lum2, byte lerp)

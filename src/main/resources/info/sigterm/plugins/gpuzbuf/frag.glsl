@@ -25,7 +25,7 @@
 #version 330
 
 //#define FRAG_UVS
-//#define ZBUF
+//#define ZBUF_DEBUG
 
 uniform sampler2DArray textures;
 uniform float brightness;
@@ -38,7 +38,7 @@ noperspective centroid in float fHsl;
 flat in int fTextureId;
 in vec2 fUv;
 in float fFogAmount;
-#ifdef ZBUF
+#ifdef ZBUF_DEBUG
 in float fDepth;
 #endif
 
@@ -47,7 +47,7 @@ out vec4 FragColor;
 #include "hsl_to_rgb.glsl"
 #include "colorblind.glsl"
 
-#ifdef ZBUF
+#ifdef ZBUF_DEBUG
 float linear_depth(float depth) {
   // depth is computed as 100/z, solve for z
   float z = 100 / depth;
@@ -74,7 +74,7 @@ void main() {
     // textured triangles hsl is a 7 bit lightness 2-126
     float light = fHsl / 127.f;
     vec3 mul = (1.f - textureLightMode) * vec3(light) + textureLightMode * fColor.rgb;
-    c = textureColor * vec4(mul, 1.f);
+    c = textureColor * vec4(mul, fColor.a);
   } else {
     c = fColor;
   }
@@ -92,7 +92,7 @@ void main() {
   }
 #endif
 
-#ifdef ZBUF
+#ifdef ZBUF_DEBUG
   float dc = linear_depth(fDepth);
   if (dc > 1.0) {
     FragColor = vec4(1, 0, 0, 1);

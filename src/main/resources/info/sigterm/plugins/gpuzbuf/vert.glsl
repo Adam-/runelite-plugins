@@ -33,11 +33,11 @@
 #define FOG_CORNER_ROUNDING_SQUARED (FOG_CORNER_ROUNDING * FOG_CORNER_ROUNDING)
 
 // static models are stored as shorts, but the dynamic models use float.
-// a single input cannot accept both, so add both and max() them to get the
+// a single input cannot accept both, so use both and max() them to get the
 // real value
 layout(location = 0) in vec3 vertf;
 layout(location = 1) in ivec3 verti;
-layout(location = 2) in int ahsl;
+layout(location = 2) in int abhsl;
 layout(location = 3) in ivec4 tex;
 
 layout(std140) uniform uniforms {
@@ -63,6 +63,7 @@ out float gHsl;
 out int gTextureId;
 out vec4 gTexPos;
 out float gFogAmount;
+out int gBias;
 
 #include "hsl_to_rgb.glsl"
 
@@ -72,15 +73,15 @@ float fogFactorLinear(const float dist, const float start, const float end) {
 
 void main() {
   vec4 vert = vec4(max(vertf, vec3(verti)) + base, 1);
-  float a = float(ahsl >> 24 & 0xff) / 255.f;
+  float a = float(abhsl >> 24 & 0xff) / 255.f;
 
-  vec3 hsl = vec3(ahsl >> 10 & 63, ahsl >> 7 & 7, ahsl & 127);
+  vec3 hsl = vec3(abhsl >> 10 & 63, abhsl >> 7 & 7, abhsl & 127);
   hsl += ((entityTint.xyz - hsl) * entityTint.w) / 128;
   vec3 rgb = hslToRgb(hsl);
 
   gVertex = entityProj * vert;
   gColor = vec4(rgb, 1.f - a);
-  gHsl = ahsl & 0xffff;  // only used for texture lighting, which isn't affected by tint
+  gHsl = abhsl & 0xffff;  // only used for texture lighting, which isn't affected by tint
 
   gTextureId = tex.x;  // the texture id + 1;
   gTexPos = entityProj * (vert + vec4(tex.yzw, 1));
@@ -102,4 +103,6 @@ void main() {
                                 max(0.f, (nearestEdgeDistance + FOG_CORNER_ROUNDING_SQUARED) / (secondNearestEdgeDistance + FOG_CORNER_ROUNDING_SQUARED));
 
   gFogAmount = fogFactorLinear(fogDistance, 0, fogDepth * TILE_SIZE) * useFog;
+
+  gBias = (abhsl >> 16) & 0xff;
 }

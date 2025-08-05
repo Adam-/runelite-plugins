@@ -27,7 +27,8 @@
 
 #include texture_config
 
-//#define ZBUF
+//#define ZBUF_DEBUG
+//#define BIAS_DEBUG
 
 // smallest unit of the texture which can be moved per tick. textures are all
 // 128x128px - so this is equivalent to +1px
@@ -56,13 +57,14 @@ in float gHsl[3];
 in int gTextureId[3];
 in vec4 gTexPos[3];
 in float gFogAmount[3];
+in int gBias[3];
 
 out vec4 fColor;
 noperspective centroid out float fHsl;
 flat out int fTextureId;
 out vec2 fUv;
 out float fFogAmount;
-#ifdef ZBUF
+#ifdef ZBUF_DEBUG
 out float fDepth;
 #endif
 
@@ -85,16 +87,21 @@ void main() {
   }
 
   for (int i = 0; i < 3; ++i) {
+#ifdef BIAS_DEBUG
+    fColor = vec4(clamp(gBias[i], 0, 12) / 12.0, 0.0, 0.0, 1.0);
+#else
     fColor = gColor[i];
+#endif
     fHsl = gHsl[i];
     fTextureId = gTextureId[i];
     fUv = uv[i];
     fFogAmount = gFogAmount[i];
 
     vec4 pos = worldProj * gVertex[i];
-#ifdef ZBUF
+#ifdef ZBUF_DEBUG
     fDepth = pos.z / pos.w;
 #endif
+    pos.z += gBias[i] / 128.0;
     gl_Position = pos;
 
     EmitVertex();

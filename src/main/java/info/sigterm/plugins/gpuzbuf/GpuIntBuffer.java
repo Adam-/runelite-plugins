@@ -27,57 +27,24 @@ package info.sigterm.plugins.gpuzbuf;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 class GpuIntBuffer
 {
-	private IntBuffer buffer;
-
-	GpuIntBuffer()
-	{
-		buffer = allocateDirect(65536);
-	}
-
-	GpuIntBuffer(int size)
-	{
-		buffer = allocateDirect(size);
-	}
+	private final IntBuffer buffer;
 
 	GpuIntBuffer(IntBuffer ib)
 	{
 		buffer = ib;
 	}
 
-	void put(float x, float y, float z, int w)
-	{
-		buffer.put(Float.floatToIntBits(x))
-			.put(Float.floatToIntBits(y))
-			.put(Float.floatToIntBits(z))
-			.put(w);
-	}
-
-	void put(float x, float y, float z, float w)
-	{
-		buffer.put(Float.floatToIntBits(x))
-			.put(Float.floatToIntBits(y))
-			.put(Float.floatToIntBits(z))
-			.put(Float.floatToIntBits(w));
-	}
-
 	void put22224(int x, int y, int z, int w)
 	{
 		buffer.put(((y & 0xffff) << 16) | (x & 0xffff));
-		buffer.put(((0 & 0xffff) << 16) | (z & 0xffff));
+		buffer.put(z & 0xffff);
 		buffer.put(w);
 	}
 
-	void put(int i)
-	{
-		buffer.put(i);
-	}
-
-	void put2(int x, int y, int z, int w)
+	void put2222(int x, int y, int z, int w)
 	{
 		buffer.put(((y & 0xffff) << 16) | (x & 0xffff));
 		buffer.put(((w & 0xffff) << 16) | (z & 0xffff));
@@ -91,27 +58,6 @@ class GpuIntBuffer
 	void clear()
 	{
 		buffer.clear();
-	}
-
-	void ensureCapacity(int size)
-	{
-		int capacity = buffer.capacity();
-		final int position = buffer.position();
-		if ((capacity - position) < size)
-		{
-			int old = capacity;
-			do
-			{
-				capacity *= 2;
-			}
-			while ((capacity - position) < size);
-
-			log.debug("resizing from {}kb to {}kb", old / 1024, capacity / 1024);
-			IntBuffer newB = allocateDirect(capacity);
-			buffer.flip();
-			newB.put(buffer);
-			buffer = newB;
-		}
 	}
 
 	IntBuffer getBuffer()
