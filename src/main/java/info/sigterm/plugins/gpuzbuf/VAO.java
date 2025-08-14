@@ -116,7 +116,7 @@ class VAOList
 		return vaos.subList(0, sz);
 	}
 
-	void destroy()
+	void free()
 	{
 		for (VAO vao : vaos)
 		{

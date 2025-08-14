@@ -200,11 +200,18 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			vaoP = new VAOList();
 		}
 
-		void destroy()
+		void free()
 		{
-			vaoO.destroy();
-			vaoA.destroy();
-			vaoP.destroy();
+			for (int x = 0; x < sizeX; ++x)
+			{
+				for (int z = 0; z < sizeZ; ++z)
+				{
+					zones[x][z].free();
+				}
+			}
+			vaoO.free();
+			vaoA.free();
+			vaoP.free();
 		}
 	}
 
@@ -412,8 +419,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			client.setUnlockedFps(false);
 			client.setExpandedMapLoading(0);
 
-//			sceneUploader.releaseSortingBuffers();
-
 			if (lwjglInitted)
 			{
 				if (textureArrayId != -1)
@@ -421,6 +426,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 					textureManager.freeTextureArray(textureArrayId);
 					textureArrayId = -1;
 				}
+
+				root.free();
 
 				destroyGlBuffer(glUniformBuffer);
 
@@ -1660,7 +1667,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		if (ctx0 != null)
 		{
 			log.error("Reload of an already loaded sub scene?");
-			ctx0.destroy();
+			ctx0.free();
 		}
 		assert ctx0 == null;
 
@@ -1734,7 +1741,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		int worldViewId = worldView.getId();
 		if (worldViewId > -1)
 		{
-			subs[worldViewId].destroy();
+			subs[worldViewId].free();
 			subs[worldViewId] = null;
 		}
 	}
