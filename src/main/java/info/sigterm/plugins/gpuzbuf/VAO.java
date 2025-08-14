@@ -97,7 +97,7 @@ class VAOList
 		vao.init();
 		vao.vbo.map();
 		vaos.add(vao);
-		log.debug("Allocated VAO {}", vao.vao);
+		log.trace("Allocated VAO {}", vao.vao);
 		return vao;
 	}
 

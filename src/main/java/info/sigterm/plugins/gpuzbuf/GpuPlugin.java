@@ -1659,35 +1659,19 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		SceneContext ctx0 = subs[worldViewId];
 		if (ctx0 != null)
 		{
-			log.error("reload of an already loaded boat zone?");
+			log.error("Reload of an already loaded sub scene?");
+			ctx0.destroy();
 		}
 		assert ctx0 == null;
 
-//		if (ctx == null) {
 		final SceneContext ctx = new SceneContext(worldView.getSizeX() >> 3, worldView.getSizeY() >> 3);
 		subs[worldViewId] = ctx;
-//		}
 
-//		SceneContext ctx = context(scene);
-		// Does reloading of sub scenes ever happen?
 		for (int x = 0; x < ctx.sizeX; ++x)
 		{
 			for (int z = 0; z < ctx.sizeZ; ++z)
 			{
-				if (ctx.zones[x][z].initialized)
-				{
-					log.error("reload of an already loaded boat zone?");
-				}
-			}
-		}
-
-		Zone[][] newZones = new Zone[ctx.sizeX][ctx.sizeZ];
-		for (int x = 0; x < ctx.sizeX; ++x)
-		{
-			for (int z = 0; z < ctx.sizeZ; ++z)
-			{
-				Zone zone = newZones[x][z] = new Zone();
-
+				Zone zone = ctx.zones[x][z];
 				sceneUploader.zoneSize(scene, zone, x, z);
 			}
 		}
@@ -1699,7 +1683,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			{
 				for (int z = 0; z < ctx.sizeZ; ++z)
 				{
-					Zone zone = newZones[x][z];// = new Zone();
+					Zone zone = ctx.zones[x][z];
 
 					int sz = zone.sizeO * Zone.VERT_SIZE * 3;
 					if (sz > 0)
@@ -1719,8 +1703,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				}
 			}
 
-			ctx.zones = newZones;
-
 			latch.countDown();
 		});
 		try
@@ -1736,7 +1718,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		{
 			for (int z = 0; z < ctx.sizeZ; ++z)
 			{
-				Zone zone = newZones[x][z];
+				Zone zone = ctx.zones[x][z];
 
 				sceneUploader.uploadZone(scene, zone, x, z);
 

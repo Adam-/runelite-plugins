@@ -83,8 +83,8 @@ void main() {
   gColor = vec4(rgb, 1.f - a);
   gHsl = abhsl & 0xffff;  // only used for texture lighting, which isn't affected by tint
 
-  gTextureId = tex.x;  // the texture id + 1;
-  gTexPos = entityProj * (vert + vec4(tex.yzw, 1));
+  gTextureId = tex.x;  // the texture id + 1
+  gTexPos = entityProj * (vert + vec4(tex.yzw, 0));
 
   // the client draws one less tile to the north and east than it does to the south
   // and west, so subtract a tiles width from the north and east edges.
