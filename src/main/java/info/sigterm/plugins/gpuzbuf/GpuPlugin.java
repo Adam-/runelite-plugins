@@ -176,18 +176,22 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private int minLevel, level, maxLevel;
 	private Set<Integer> hideRoofIds;
 
-	static class SceneContext {
+	static class SceneContext
+	{
 		final int sizeX, sizeZ;
 		Zone[][] zones;
 		VAOList vaoO, vaoA;
 		VAOList vaoP;
 
-		SceneContext(int sizeX, int sizeZ) {
+		SceneContext(int sizeX, int sizeZ)
+		{
 			this.sizeX = sizeX;
 			this.sizeZ = sizeZ;
 			zones = new Zone[sizeX][sizeZ];
-			for (int x = 0; x < sizeX; ++x) {
-				for (int z = 0; z < sizeZ; ++z) {
+			for (int x = 0; x < sizeX; ++x)
+			{
+				for (int z = 0; z < sizeZ; ++z)
+				{
 					zones[x][z] = new Zone();
 				}
 			}
@@ -195,7 +199,14 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			vaoA = new VAOList();
 			vaoP = new VAOList();
 		}
-	};
+
+		void destroy()
+		{
+			vaoO.destroy();
+			vaoA.destroy();
+			vaoP.destroy();
+		}
+	}
 
 	SceneContext root;
 	SceneContext[] subs;
@@ -1740,7 +1751,10 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	{
 		int worldViewId = worldView.getId();
 		if (worldViewId > -1)
-		subs[worldViewId] = null; //XXX leaking gl buffers
+		{
+			subs[worldViewId].destroy();
+			subs[worldViewId] = null;
+		}
 	}
 
 	@Override
