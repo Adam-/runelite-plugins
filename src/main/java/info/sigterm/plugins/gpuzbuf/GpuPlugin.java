@@ -1063,7 +1063,9 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			for (VAO vao : vaos)
 			{
 				glBindVertexArray(vao.vao);
+				glDepthMask(false);
 				glDrawArrays(GL_TRIANGLES, 0, vao.vbo.len / (VAO.VERT_SIZE / 4));
+				glDepthMask(true);
 			}
 		}
 		checkGLErrors();

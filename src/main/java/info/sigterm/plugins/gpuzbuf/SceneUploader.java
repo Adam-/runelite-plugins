@@ -334,7 +334,7 @@ class SceneUploader
 			uploadZoneRenderable(renderable, 0, decorativeObject.getX() + decorativeObject.getXOffset() - basex, decorativeObject.getZ(), decorativeObject.getY() + decorativeObject.getYOffset() - basez, vertexBuffer, ab);
 
 			Renderable renderable2 = decorativeObject.getRenderable2();
-			uploadZoneRenderable(renderable2, 0, decorativeObject.getX() + decorativeObject.getXOffset() - basex, decorativeObject.getZ(), decorativeObject.getY() - decorativeObject.getYOffset() - basez, vertexBuffer, ab);
+			uploadZoneRenderable(renderable2, 0, decorativeObject.getX() - basex, decorativeObject.getZ(), decorativeObject.getY() - basez, vertexBuffer, ab);
 		}
 
 		GroundObject groundObject = t.getGroundObject();

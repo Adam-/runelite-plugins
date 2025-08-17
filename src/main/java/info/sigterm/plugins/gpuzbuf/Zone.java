@@ -149,8 +149,9 @@ class Zone
 		}
 	}
 
-	private static final int[] drawOff = new int[512];
-	private static final int[] drawEnd = new int[512];
+	private static final int NUM_DRAW_RANGES = 512;
+	private static final int[] drawOff = new int[NUM_DRAW_RANGES];
+	private static final int[] drawEnd = new int[NUM_DRAW_RANGES];
 	private static int drawIdx = 0;
 	static int[] glDrawOffset, glDrawLength;
 
@@ -230,6 +231,10 @@ class Zone
 		if (drawIdx > 0 && drawEnd[drawIdx - 1] == start)
 		{
 			drawEnd[drawIdx - 1] = end;
+		}
+		else if (drawIdx >= NUM_DRAW_RANGES)
+		{
+			log.debug("draw ranges exhausted");
 		}
 		else
 		{
