@@ -411,14 +411,14 @@ class SceneUploader
 	{
 		if (r instanceof Model)
 		{
-			uploadModelScene((Model) r, orient, x, y, z, vertexBuffer, ab);
+			uploadStaticModel((Model) r, orient, x, y, z, vertexBuffer, ab);
 		}
 		else if (r instanceof DynamicObject)
 		{
 			Model m = ((DynamicObject) r).getModelZbuf();
 			if (m != null)
 			{
-				uploadModelScene(m, orient, x, y, z, vertexBuffer, ab);
+				uploadStaticModel(m, orient, x, y, z, vertexBuffer, ab);
 			}
 		}
 	}
@@ -599,7 +599,7 @@ class SceneUploader
 	}
 
 	// scene upload
-	private int uploadModelScene(Model model, int orient, int x, int y, int z, GpuIntBuffer vertexBuffer, GpuIntBuffer ab)
+	private int uploadStaticModel(Model model, int orient, int x, int y, int z, GpuIntBuffer vertexBuffer, GpuIntBuffer ab)
 	{
 		final int vertexCount = model.getVerticesCount();
 		final int triangleCount = model.getFaceCount();
@@ -727,7 +727,7 @@ class SceneUploader
 	}
 
 	// temp draw
-	int uploadModelTemp(Model model, int orientation, int x, int y, int z, IntBuffer opaqueBuffer, IntBuffer alphaBuffer)
+	int uploadModelTemp(Model model, int orientation, int x, int y, int z, IntBuffer opaqueBuffer)
 	{
 		final int triangleCount = model.getFaceCount();
 		final int vertexCount = model.getVerticesCount();
@@ -750,7 +750,6 @@ class SceneUploader
 		final int[] texIndices2 = model.getTexIndices2();
 		final int[] texIndices3 = model.getTexIndices3();
 
-		final byte[] transparencies = model.getFaceTransparencies();
 		final byte[] bias = model.getFaceBias();
 
 		final byte overrideAmount = model.getOverrideAmount();
@@ -794,8 +793,6 @@ class SceneUploader
 			int color1 = color1s[face];
 			int color2 = color2s[face];
 			int color3 = color3s[face];
-
-			boolean alpha = (transparencies != null && transparencies[face] != 0);
 
 			if (color3 == -1)
 			{
@@ -850,20 +847,17 @@ class SceneUploader
 			}
 
 			int alphaBias = 0;
-			alphaBias |= transparencies != null ? (transparencies[face] & 0xff) << 24 : 0;
 			alphaBias |= bias != null ? (bias[face] & 0xff) << 16 : 0;
 			int texture = faceTextures != null ? faceTextures[face] + 1 : 0;
 
-			var vb = alpha ? alphaBuffer : opaqueBuffer;
+			putfff4(opaqueBuffer, vx1, vy1, vz1, alphaBias | color1);
+			put2222(opaqueBuffer, texture, (int) modelLocalX[texA] - (int) vx1, (int) modelLocalY[texA] - (int) vy1, (int) modelLocalZ[texA] - (int) vz1);
 
-			putfff4(vb, vx1, vy1, vz1, alphaBias | color1);
-			put2222(vb, texture, (int) modelLocalX[texA] - (int) vx1, (int) modelLocalY[texA] - (int) vy1, (int) modelLocalZ[texA] - (int) vz1);
+			putfff4(opaqueBuffer, vx2, vy2, vz2, alphaBias | color2);
+			put2222(opaqueBuffer, texture, (int) modelLocalX[texB] - (int) vx2, (int) modelLocalY[texB] - (int) vy2, (int) modelLocalZ[texB] - (int) vz2);
 
-			putfff4(vb, vx2, vy2, vz2, alphaBias | color2);
-			put2222(vb, texture, (int) modelLocalX[texB] - (int) vx2, (int) modelLocalY[texB] - (int) vy2, (int) modelLocalZ[texB] - (int) vz2);
-
-			putfff4(vb, vx3, vy3, vz3, alphaBias | color3);
-			put2222(vb, texture, (int) modelLocalX[texC] - (int) vx3, (int) modelLocalY[texC] - (int) vy3, (int) modelLocalZ[texC] - (int) vz3);
+			putfff4(opaqueBuffer, vx3, vy3, vz3, alphaBias | color3);
+			put2222(opaqueBuffer, texture, (int) modelLocalX[texC] - (int) vx3, (int) modelLocalY[texC] - (int) vy3, (int) modelLocalZ[texC] - (int) vz3);
 
 			len += 3;
 		}
@@ -955,13 +949,13 @@ class SceneUploader
 				int id = regions.getRegionId(cx, cy);
 				if (id != centerId)
 				{
-					removeChunk(scene, cx, cy);
+					removeZone(scene, cx, cy);
 				}
 			}
 		}
 	}
 
-	private static void removeChunk(Scene scene, int cx, int cy)
+	private static void removeZone(Scene scene, int cx, int cy)
 	{
 		int wx = cx * 8;
 		int wy = cy * 8;
