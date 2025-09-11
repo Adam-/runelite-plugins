@@ -38,9 +38,9 @@ import net.runelite.api.Projection;
 @RequiredArgsConstructor(onConstructor = @__(@Inject))
 class FacePrioritySorter
 {
-	private static final int[] distances;
-	private static final char[] distanceFaceCount;
-	private static final char[][] distanceToFaces;
+	static final int[] distances;
+	static final char[] distanceFaceCount;
+	static final char[][] distanceToFaces;
 
 	private static final float[] modelCanvasX;
 	private static final float[] modelCanvasY;

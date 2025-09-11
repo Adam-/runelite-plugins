@@ -18,7 +18,7 @@ class VAO
 {
 	// Temporary vertex format
 	// index 0: vec3(x, y, z)
-	// index 1: -INTEGER_MIN (non-array)
+	// index 1: Short.MIN_VALUE (non-array)
 	// index 2: int abhsl
 	// index 3: short vec4(id, x, y, z)
 	static final int VERT_SIZE = 24;
@@ -42,7 +42,7 @@ class VAO
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, false, VERT_SIZE, 0);
 
-		glVertexAttribI3i(1, Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE);
+		glVertexAttribI3i(1, Short.MIN_VALUE, Short.MIN_VALUE, Short.MIN_VALUE);
 
 		glEnableVertexAttribArray(2);
 		glVertexAttribIPointer(2, 1, GL_INT, VERT_SIZE, 12);

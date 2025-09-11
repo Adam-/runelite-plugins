@@ -42,9 +42,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.BufferProvider;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.Constants;
 import net.runelite.api.FloatProjection;
@@ -60,6 +62,7 @@ import net.runelite.api.TextureProvider;
 import net.runelite.api.TileObject;
 import net.runelite.api.WorldEntity;
 import net.runelite.api.WorldView;
+import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.PostClientTick;
 import net.runelite.api.hooks.DrawCallbacks;
@@ -131,6 +134,10 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	@Inject
 	private PluginManager pluginManager;
 
+	@Inject
+	@Named("developerMode")
+	boolean developerMode;
+
 	private Canvas canvas;
 	private AWTContext awtContext;
 	private Callback debugCallback;
@@ -147,7 +154,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		.add(GL_VERTEX_SHADER, "vertui.glsl")
 		.add(GL_FRAGMENT_SHADER, "fragui.glsl");
 
-	private int glProgram;
+	static int glProgram;
 	private int glUiProgram;
 
 	private int interfaceTexture;
@@ -173,6 +180,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 	private GpuFloatBuffer uniformBuffer;
 
+	private int cameraX, cameraY, cameraZ;
+	private int cameraYaw, cameraPitch;
 	private int minLevel, level, maxLevel;
 	private Set<Integer> hideRoofIds;
 
@@ -181,7 +190,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		final int sizeX, sizeZ;
 		Zone[][] zones;
 		VAOList vaoO, vaoA;
-		VAOList vaoPO, vaoPA;
+		VAOList vaoPO;//, vaoPA;
 
 		SceneContext(int sizeX, int sizeZ)
 		{
@@ -198,7 +207,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			vaoO = new VAOList();
 			vaoA = new VAOList();
 			vaoPO = new VAOList();
-			vaoPA = new VAOList();
+//			vaoPA = new VAOList();
 		}
 
 		void free()
@@ -213,7 +222,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			vaoO.free();
 			vaoA.free();
 			vaoPO.free();
-			vaoPA.free();
+//			vaoPA.free();
 		}
 	}
 
@@ -265,7 +274,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private int uniBlockMain;
 	private int uniTextureLightMode;
 	private int uniTick;
-	private int uniBase;
+	static int uniBase;
 
 	@Override
 	protected void startUp()
@@ -777,31 +786,29 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		float cameraX, float cameraY, float cameraZ, float cameraPitch, float cameraYaw,
 		int minLevel, int level, int maxLevel, Set<Integer> hideRoofIds)
 	{
-		if (scene.getWorldViewId() == WorldView.TOPLEVEL)
-		{
-			preSceneDrawToplevel(scene, cameraX, cameraY, cameraZ, cameraPitch, cameraYaw,
-				minLevel, level, maxLevel, hideRoofIds);
-		}
-		else
-		{
-			this.minLevel = minLevel;
-			this.level = level;
-			this.maxLevel = maxLevel;
-			this.hideRoofIds = hideRoofIds;
-
-			glUniform4i(uniEntityTint, scene.getOverrideHue(), scene.getOverrideSaturation(), scene.getOverrideLuminance(), scene.getOverrideAmount());
-		}
-	}
-
-	private void preSceneDrawToplevel(Scene scene,
-		float cameraX, float cameraY, float cameraZ, float cameraPitch, float cameraYaw,
-		int minLevel, int level, int maxLevel, Set<Integer> hideRoofIds)
-	{
+		this.cameraX = (int) cameraX;
+		this.cameraY = (int) cameraY;
+		this.cameraZ = (int) cameraZ;
+		this.cameraYaw = client.getCameraYaw();
+		this.cameraPitch = client.getCameraPitch();
 		this.minLevel = minLevel;
 		this.level = level;
 		this.maxLevel = maxLevel;
 		this.hideRoofIds = hideRoofIds;
 
+		if (scene.getWorldViewId() == WorldView.TOPLEVEL)
+		{
+			preSceneDrawToplevel(scene, cameraX, cameraY, cameraZ, cameraPitch, cameraYaw);
+		}
+		else
+		{
+			glUniform4i(uniEntityTint, scene.getOverrideHue(), scene.getOverrideSaturation(), scene.getOverrideLuminance(), scene.getOverrideAmount());
+		}
+	}
+
+	private void preSceneDrawToplevel(Scene scene,
+		float cameraX, float cameraY, float cameraZ, float cameraPitch, float cameraYaw)
+	{
 		scene.setDrawDistance(getDrawDistance());
 
 		// UBO
@@ -1018,26 +1025,21 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				return;
 			}
 
-			glProgramUniform3i(glProgram, uniBase, zx << 10, 0, zz << 10);
-
-			glBindVertexArray(z.glVao);
-			z.computeDrawRanges(false, minLevel, level, maxLevel, hideRoofIds);
-			glMultiDrawArrays(GL_TRIANGLES, Zone.glDrawOffset, Zone.glDrawLength);
+			int offset = scene.getWorldViewId() == -1 ? (SCENE_OFFSET >> 3) : 0;
+			z.renderOpaque(zx - offset, zz - offset, minLevel, level, maxLevel, hideRoofIds);
 		}
 		else if (pass == DrawCallbacks.PASS_ALPHA)
 		{
+			// this is a noop after the first zone
+			ctx.vaoA.unmap();
+
 			Zone z = ctx.zones[zx][zz];
-			if (z.glVaoA == 0)
-			{
-				return;
-			}
 
-			glProgramUniform3i(glProgram, uniBase, zx << 10, 0, zz << 10);
+			int offset = scene.getWorldViewId() == -1 ? (SCENE_OFFSET >> 3) : 0;
+			z.multizoneLocs(scene, zx - offset, zz - offset, cameraX, cameraZ, ctx.zones);
 
-			glBindVertexArray(z.glVaoA);
-			z.computeDrawRanges(true, minLevel, level, maxLevel, hideRoofIds);
 			glDepthMask(false);
-			glMultiDrawArrays(GL_TRIANGLES, Zone.glDrawOffset, Zone.glDrawLength);
+			z.renderAlpha(zx - offset, zz - offset, cameraX, cameraY, cameraZ, cameraYaw, cameraPitch, minLevel, level, maxLevel, hideRoofIds);
 			glDepthMask(true);
 		}
 
@@ -1048,13 +1050,18 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	public void drawPass(Projection projection, Scene scene, int pass)
 	{
 		SceneContext ctx = context(scene);
-		if(ctx == null) return;
+		if (ctx == null)
+		{
+			return;
+		}
+
 		updateEntityProject(projection);
+
 		if (pass == DrawCallbacks.PASS_OPAQUE)
 		{
-			var vaos = ctx.vaoO.unmap();
-
 			glProgramUniform3i(glProgram, uniBase, 0, 0, 0);
+
+			var vaos = ctx.vaoO.unmap();
 			for (VAO vao : vaos)
 			{
 				glBindVertexArray(vao.vao);
@@ -1076,26 +1083,16 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		}
 		else if (pass == DrawCallbacks.PASS_ALPHA)
 		{
-			var vaos = ctx.vaoA.unmap();
-
-			glProgramUniform3i(glProgram, uniBase, 0, 0, 0);
-			for (VAO vao : vaos)
+			for (int x = 0; x < ctx.sizeX; ++x)
 			{
-				glBindVertexArray(vao.vao);
-				glDepthMask(false);
-				glDrawArrays(GL_TRIANGLES, 0, vao.vbo.len / (VAO.VERT_SIZE / 4));
-				glDepthMask(true);
-			}
-
-			vaos = ctx.vaoPA.unmap();
-			for (VAO vao : vaos)
-			{
-				glBindVertexArray(vao.vao);
-				glDepthMask(false);
-				glDrawArrays(GL_TRIANGLES, 0, vao.vbo.len / (VAO.VERT_SIZE / 4));
-				glDepthMask(true);
+				for (int z = 0; z < ctx.sizeZ; ++z)
+				{
+					Zone zone = ctx.zones[x][z];
+					zone.removeTemp();
+				}
 			}
 		}
+
 		checkGLErrors();
 	}
 
@@ -1107,13 +1104,25 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		if (m.getFaceTransparencies() == null)
 		{
 			VAO o = ctx.vaoO.get(size);
-			sceneUploader.uploadModelTemp(m, orient, x, y, z, o.vbo.vb);
+			sceneUploader.uploadTempModel(m, orient, x, y, z, o.vbo.vb);
 		}
 		else
 		{
 			m.calculateBoundsCylinder();
 			VAO o = ctx.vaoO.get(size), a = ctx.vaoA.get(size);
+			int start = a.vbo.vb.position();
 			facePrioritySorter.uploadSortedModel(worldProjection, m, orient, x, y, z, o.vbo.vb, a.vbo.vb);
+			int end = a.vbo.vb.position();
+
+			if (end > start)
+			{
+				int offset = scene.getWorldViewId() == -1 ? (SCENE_OFFSET >> 3) : 0;
+				int zx = (x >> 10) + offset;
+				int zz = (z >> 10) + offset;
+				Zone zone = ctx.zones[zx][zz];
+				// renderable modelheight is typically not set here because DynamicObject doesn't compute it on the returned model
+				zone.addTempAlphaModel(a.vao, start, end, x&1023, y, z&1023);
+			}
 		}
 	}
 
@@ -1124,8 +1133,14 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		int size = m.getFaceCount() * 3 * VAO.VERT_SIZE;
 		if (gameObject.getRenderable() instanceof Player || m.getFaceTransparencies() != null)
 		{
+			// opaque player faces have their own vao and are drawn in a separate pass from normal opaque faces
+			// because they are not depth tested. transparent player faces don't need their own vao because normal
+			// transparent faces are already not depth tested
+			VAO o = gameObject.getRenderable() instanceof Player ? ctx.vaoPO.get(size) : ctx.vaoO.get(size);
+			VAO a = ctx.vaoA.get(size);
+
+			int start = a.vbo.vb.position();
 			m.calculateBoundsCylinder();
-			VAO o = ctx.vaoPO.get(size), a = ctx.vaoPA.get(size);
 			try
 			{
 				facePrioritySorter.uploadSortedModel(worldProjection, m, gameObject.getModelOrientation(), gameObject.getX(), gameObject.getZ(), gameObject.getY(), o.vbo.vb, a.vbo.vb);
@@ -1134,11 +1149,22 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			{
 				log.debug("error drawing entity", ex);
 			}
+			int end = a.vbo.vb.position();
+
+			if (end > start)
+			{
+				int offset = scene.getWorldViewId() == -1 ? (SCENE_OFFSET >> 3) : 0;
+				int zx = (gameObject.getX() >> 10) + offset;
+				int zz = (gameObject.getY() >> 10) + offset;
+				Zone zone = ctx.zones[zx][zz];
+				// TODO alpha sorting doesn't account for orient
+				zone.addTempAlphaModel(a.vao, start, end, gameObject.getX() & 1023, gameObject.getZ() - gameObject.getRenderable().getModelHeight() /* to render players over locs 2,50,94,49,52 */, gameObject.getY() & 1023);
+			}
 		}
 		else
 		{
 			VAO o = ctx.vaoO.get(size);
-			sceneUploader.uploadModelTemp(m, gameObject.getModelOrientation(), gameObject.getX(), gameObject.getZ(), gameObject.getY(), o.vbo.vb);
+			sceneUploader.uploadTempModel(m, gameObject.getModelOrientation(), gameObject.getX(), gameObject.getZ(), gameObject.getY(), o.vbo.vb);
 		}
 	}
 
@@ -1196,25 +1222,28 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				Scene scene = wv.getScene();
 				sceneUploader.zoneSize(scene, zone, x, z);
 
+				VBO o = null, a = null;
 				int sz = zone.sizeO * Zone.VERT_SIZE * 3;
 				if (sz > 0)
 				{
-					zone.vboO = new VBO(sz);
-					zone.vboO.init();
-					zone.vboO.map();
+					o = new VBO(sz);
+					o.init();
+					o.map();
 				}
 
 				sz = zone.sizeA * Zone.VERT_SIZE * 3;
 				if (sz > 0)
 				{
-					zone.vboA = new VBO(sz);
-					zone.vboA.init();
-					zone.vboA.map();
+					a = new VBO(sz);
+					a.init();
+					a.map();
 				}
+
+				zone.init(o, a);
 
 				sceneUploader.uploadZone(scene, zone, x, z);
 
-				zone.prepare(); // un maps and uploads
+				zone.unmap();
 				zone.initialized = true;
 				zone.dirty = true;
 
@@ -1590,7 +1619,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 		// allocate buffers for zones which require upload
 		CountDownLatch latch = new CountDownLatch(1);
-		clientThread.invoke(() -> {
+		clientThread.invoke(() ->
+		{
 			for (int x = 0; x < Constants.EXTENDED_SCENE_SIZE >> 3; ++x)
 			{
 				for (int z = 0; z < Constants.EXTENDED_SCENE_SIZE >> 3; ++z)
@@ -1602,21 +1632,24 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 						continue;
 					}
 
+					VBO o = null, a = null;
 					int sz = zone.sizeO * Zone.VERT_SIZE * 3;
 					if (sz > 0)
 					{
-						zone.vboO = new VBO(sz);
-						zone.vboO.init();
-						zone.vboO.map();
+						o = new VBO(sz);
+						o.init();
+						o.map();
 					}
 
 					sz = zone.sizeA * Zone.VERT_SIZE * 3;
 					if (sz > 0)
 					{
-						zone.vboA = new VBO(sz);
-						zone.vboA.init();
-						zone.vboA.map();
+						a = new VBO(sz);
+						a.init();
+						a.map();
 					}
+
+					zone.init(o, a);
 				}
 			}
 
@@ -1762,21 +1795,24 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				{
 					Zone zone = ctx.zones[x][z];
 
+					VBO o = null, a = null;
 					int sz = zone.sizeO * Zone.VERT_SIZE * 3;
 					if (sz > 0)
 					{
-						zone.vboO = new VBO(sz);
-						zone.vboO.init();
-						zone.vboO.map();
+						o = new VBO(sz);
+						o.init();
+						o.map();
 					}
 
 					sz = zone.sizeA * Zone.VERT_SIZE * 3;
 					if (sz > 0)
 					{
-						zone.vboA = new VBO(sz);
-						zone.vboA.init();
-						zone.vboA.map();
+						a = new VBO(sz);
+						a.init();
+						a.map();
 					}
+
+					zone.init(o, a);
 				}
 			}
 
@@ -1854,7 +1890,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 				if (!zone.initialized)
 				{
-					zone.prepare();
+					zone.unmap();
 					zone.initialized = true;
 				}
 			}
@@ -1875,7 +1911,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 				if (!zone.initialized)
 				{
-					zone.prepare();
+					zone.unmap();
 					zone.initialized = true;
 				}
 			}
@@ -1939,6 +1975,31 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			}
 
 			log.debug("glGetError:", new Exception(errStr));
+		}
+	}
+
+	@Subscribe
+	private void onCommandExecuted(CommandExecuted event)
+	{
+		if (!developerMode)
+		{
+			return;
+		}
+
+		if (event.getCommand().equals("zoneinfo"))
+		{
+			SceneContext ctx = root;
+			int numAlpha = 0;
+			for (int x = 0; x < ctx.sizeX; ++x)
+			{
+				for (int z = 0; z < ctx.sizeZ; ++z)
+				{
+					Zone zone = ctx.zones[x][z];
+					numAlpha += zone.alphaModels.size();
+//					client.addChatMessage(ChatMessageType.CONSOLE, "", String.format("Zone %d,%d: alpha models: %d", x, z, zone.alphaModels.size()), "");
+				}
+			}
+			client.addChatMessage(ChatMessageType.CONSOLE, "", String.format("Total alpha models: %d cache size: %d", numAlpha, Zone.modelCache.size()), "");
 		}
 	}
 }

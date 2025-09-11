@@ -55,6 +55,8 @@ class SceneUploader
 
 	private final Regions regions;
 
+	private int basex, basez, rid, level;
+
 	@Inject
 	SceneUploader(
 		GpuPluginConfig config
@@ -86,7 +88,7 @@ class SceneUploader
 					Tile t = tiles[z][(mzx << 3) + xoff][(mzz << 3) + zoff];
 					if (t != null)
 					{
-						zoneSize(scene, zone, t, basex, basez);
+						zoneSize(zone, t);
 					}
 				}
 			}
@@ -119,8 +121,8 @@ class SceneUploader
 		zone.rids = new int[4][roofIds.size()];
 		zone.roofStart = new int[4][roofIds.size()];
 		zone.roofEnd = new int[4][roofIds.size()];
-		zone.roofStartA = new int[4][roofIds.size()];
-		zone.roofEndA = new int[4][roofIds.size()];
+//		zone.roofStartA = new int[4][roofIds.size()];
+//		zone.roofEndA = new int[4][roofIds.size()];
 
 		for (int z = 0; z <= 3; ++z)
 		{
@@ -146,7 +148,7 @@ class SceneUploader
 			if (zone.vboA != null)
 			{
 				int pos = zone.vboA.vb.position();
-				zone.levelOffsetsA[z] = pos;
+//				zone.levelOffsetsA[z] = pos;
 			}
 		}
 	}
@@ -161,32 +163,37 @@ class SceneUploader
 			int pos = zone.vboO != null ? zone.vboO.vb.position() : 0;
 			int posa = zone.vboA != null ? zone.vboA.vb.position() : 0;
 
-			uploadZoneLevelRoof(scene, mzx, mzz, level, id, visbelow, vb, ab);
+			uploadZoneLevelRoof(scene, zone, mzx, mzz, level, id, visbelow, vb, ab);
 
 			int endpos = zone.vboO != null ? zone.vboO.vb.position() : 0;
 			int endposa = zone.vboA != null ? zone.vboA.vb.position() : 0;
 
-			if (endpos > pos || endposa > posa)
+			if (endpos > pos)// || endposa > posa)
 			{
 				zone.rids[level][ridx] = id;
 				zone.roofStart[level][ridx] = pos;
 				zone.roofEnd[level][ridx] = endpos;
-				zone.roofStartA[level][ridx] = posa;
-				zone.roofEndA[level][ridx] = endposa;
+//				zone.roofStartA[level][ridx] = posa;
+//				zone.roofEndA[level][ridx] = endposa;
 				++ridx;
 			}
 		}
 
 		// upload everything else
-		uploadZoneLevelRoof(scene, mzx, mzz, level, 0, visbelow, vb, ab);
+		uploadZoneLevelRoof(scene, zone, mzx, mzz, level, 0, visbelow, vb, ab);
 	}
 
-	private void uploadZoneLevelRoof(Scene scene, int mzx, int mzz, int level, int roofId, boolean visbelow, GpuIntBuffer vb, GpuIntBuffer ab)
+	private void uploadZoneLevelRoof(Scene scene, Zone zone, int mzx, int mzz, int level, int roofId, boolean visbelow, GpuIntBuffer vb, GpuIntBuffer ab)
 	{
 		byte[][][] settings = scene.getExtendedTileSettings();
 		int[][][] roofs = scene.getRoofs();
 		Tile[][][] tiles = scene.getExtendedTiles();
-		int basex = mzx << 10, basez = mzz << 10;
+//		int basex = mzx << 10, basez = mzz << 10;
+
+		int offset = scene.getWorldViewId() == -1 ? GpuPlugin.SCENE_OFFSET >> 3 : 0;
+		this.level = level;
+		this.basex = (mzx - offset) << 10;
+		this.basez = (mzz - offset) << 10;
 
 		for (int xoff = 0; xoff < 8; ++xoff)
 		{
@@ -223,14 +230,15 @@ class SceneUploader
 					Tile t = tiles[level][msx][msz];
 					if (t != null)
 					{
-						uploadZoneTile(scene, t, vb, ab, basex, basez);
+						this.rid = rid;
+						uploadZoneTile(scene, zone, t, vb, ab);
 					}
 				}
 			}
 		}
 	}
 
-	private void zoneSize(Scene scene, Zone z, Tile t, int basex, int basez)
+	private void zoneSize(Zone z, Tile t)
 	{
 		SceneTilePaint paint = t.getSceneTilePaint();
 		if (paint != null)
@@ -279,6 +287,17 @@ class SceneUploader
 				continue;
 			}
 
+			// compute the intersection of the zone and the go
+			// if this is the corner of the intersection, upload only the alpha faces
+			// when rendering skip unless the current renderer zone is the closest to camera
+
+			// somehow add the same AlphaModel instance to multiple zones?
+			// defer drawing until the zone closest to camera is drawn
+			// how does this work with zone reuse?
+			// do i have to invalidate multiple zones?
+
+			// when i encounter an AlphaModel that is >1 zone, compute the furthest zone and then add it as a temp to that zone
+
 			if (!gameObject.getSceneMinLocation().equals(t.getSceneLocation()))
 			{
 				continue;
@@ -291,11 +310,11 @@ class SceneUploader
 		Tile bridge = t.getBridge();
 		if (bridge != null)
 		{
-			zoneSize(scene, z, bridge, basex, basez);
+			zoneSize(z, bridge);
 		}
 	}
 
-	private int uploadZoneTile(Scene scene, Tile t, GpuIntBuffer vertexBuffer, GpuIntBuffer ab, int basex, int basez)
+	private int uploadZoneTile(Scene scene, Zone zone, Tile t, GpuIntBuffer vertexBuffer, GpuIntBuffer ab)
 	{
 		int len = 0;
 
@@ -321,27 +340,30 @@ class SceneUploader
 		if (wallObject != null)
 		{
 			Renderable renderable1 = wallObject.getRenderable1();
-			uploadZoneRenderable(renderable1, 0, wallObject.getX() - basex, wallObject.getZ(), wallObject.getY() - basez, vertexBuffer, ab);
+			uploadZoneRenderable(renderable1, zone, 0, wallObject.getX(), wallObject.getZ(), wallObject.getY(),-1,-1,-1,-1, wallObject.getId(), vertexBuffer, ab);
 
 			Renderable renderable2 = wallObject.getRenderable2();
-			uploadZoneRenderable(renderable2, 0, wallObject.getX() - basex, wallObject.getZ(), wallObject.getY() - basez, vertexBuffer, ab);
+			uploadZoneRenderable(renderable2, zone, 0, wallObject.getX(), wallObject.getZ(), wallObject.getY(),-1,-1,-1,-1, wallObject.getId(), vertexBuffer, ab);
 		}
 
 		DecorativeObject decorativeObject = t.getDecorativeObject();
 		if (decorativeObject != null)
 		{
 			Renderable renderable = decorativeObject.getRenderable();
-			uploadZoneRenderable(renderable, 0, decorativeObject.getX() + decorativeObject.getXOffset() - basex, decorativeObject.getZ(), decorativeObject.getY() + decorativeObject.getYOffset() - basez, vertexBuffer, ab);
+			uploadZoneRenderable(renderable, zone, 0, decorativeObject.getX() + decorativeObject.getXOffset(), decorativeObject.getZ(), decorativeObject.getY() + decorativeObject.getYOffset(), -1,-1,-1,-1, decorativeObject.getId(), vertexBuffer, ab);
 
 			Renderable renderable2 = decorativeObject.getRenderable2();
-			uploadZoneRenderable(renderable2, 0, decorativeObject.getX() - basex, decorativeObject.getZ(), decorativeObject.getY() - basez, vertexBuffer, ab);
+			uploadZoneRenderable(renderable2, zone, 0, decorativeObject.getX(), decorativeObject.getZ(), decorativeObject.getY(), -1,-1,-1,-1, decorativeObject.getId(), vertexBuffer, ab);
 		}
 
 		GroundObject groundObject = t.getGroundObject();
 		if (groundObject != null)
 		{
 			Renderable renderable = groundObject.getRenderable();
-			uploadZoneRenderable(renderable, 0, groundObject.getX() - basex, groundObject.getZ(), groundObject.getY() - basez, vertexBuffer, ab);
+			uploadZoneRenderable(renderable, zone, 0, groundObject.getX(), groundObject.getZ(), groundObject.getY(),
+				-1,-1,-1,-1,
+				groundObject.getId(),
+				vertexBuffer, ab);
 		}
 
 		GameObject[] gameObjects = t.getGameObjects();
@@ -352,19 +374,24 @@ class SceneUploader
 				continue;
 			}
 
-			if (!gameObject.getSceneMinLocation().equals(t.getSceneLocation()))
+			Point min = gameObject.getSceneMinLocation(), max = gameObject.getSceneMaxLocation();
+
+			if (!min.equals(t.getSceneLocation()))
 			{
 				continue;
 			}
 
 			Renderable renderable = gameObject.getRenderable();
-			uploadZoneRenderable(renderable, gameObject.getModelOrientation(), gameObject.getX() - basex, gameObject.getZ(), gameObject.getY() - basez, vertexBuffer, ab);
+			uploadZoneRenderable(renderable, zone, gameObject.getModelOrientation(), gameObject.getX(), gameObject.getZ(), gameObject.getY(),
+				min.getX(), min.getY(), max.getX(), max.getY(),
+				gameObject.getId(),
+				vertexBuffer, ab);
 		}
 
 		Tile bridge = t.getBridge();
 		if (bridge != null)
 		{
-			len += uploadZoneTile(scene, bridge, vertexBuffer, ab, basex, basez);
+			len += uploadZoneTile(scene, zone, bridge, vertexBuffer, ab);
 		}
 
 		return len;
@@ -407,19 +434,42 @@ class SceneUploader
 		z.sizeO += faceCount;
 	}
 
-	private void uploadZoneRenderable(Renderable r, int orient, int x, int y, int z, GpuIntBuffer vertexBuffer, GpuIntBuffer ab)
+	private void uploadZoneRenderable(Renderable r, Zone zone, int orient, int x, int y, int z, int lx, int lz, int ux, int uz, int id, GpuIntBuffer vertexBuffer, GpuIntBuffer ab)
 	{
+		int pos = zone.vboA != null ? zone.vboA.vb.position() : 0;
+		Model model = null;
 		if (r instanceof Model)
 		{
-			uploadStaticModel((Model) r, orient, x, y, z, vertexBuffer, ab);
+			model = (Model) r;
+			uploadStaticModel(model, orient, x - basex, y, z - basez, vertexBuffer, ab);
 		}
 		else if (r instanceof DynamicObject)
 		{
-			Model m = ((DynamicObject) r).getModelZbuf();
-			if (m != null)
+			model = ((DynamicObject) r).getModelZbuf();
+			if (model != null)
 			{
-				uploadStaticModel(m, orient, x, y, z, vertexBuffer, ab);
+				uploadStaticModel(model, orient, x - basex, y, z - basez, vertexBuffer, ab);
 			}
+		}
+		int endpos = zone.vboA != null ? zone.vboA.vb.position() : 0;
+		if (endpos > pos)
+		{
+			assert model != null;
+			if (lx > -1)
+			{
+				lx -= basex >> 7;
+				lz -= basez >> 7;
+				ux -= basex >> 7;
+				uz -= basez >> 7;
+				assert lx >= 0;
+				assert lz >= 0;
+				assert ux < 25; // largest object?
+				assert uz < 25;
+			}
+			zone.addAlphaModel(zone.glVaoA, model, pos, endpos,
+				x - basex, y, z - basez,
+				lx, lz, ux, uz,
+				rid, level, id);
 		}
 	}
 
@@ -663,7 +713,6 @@ class SceneUploader
 			int color3 = color3s[face];
 
 			boolean alpha = (transparencies != null && transparencies[face] != 0);
-			GpuIntBuffer vb = alpha ? ab : vertexBuffer;
 
 			if (color3 == -1)
 			{
@@ -710,6 +759,7 @@ class SceneUploader
 			alphaBias |= transparencies != null ? (transparencies[face] & 0xff) << 24 : 0;
 			alphaBias |= bias != null ? (bias[face] & 0xff) << 16 : 0;
 			int texture = faceTextures != null ? faceTextures[face] + 1 : 0;
+			GpuIntBuffer vb = alpha ? ab : vertexBuffer;
 
 			vb.put22224(vx1, vy1, vz1, alphaBias | color1);
 			vb.put2222(texture, modelLocalXI[texA] - vx1, modelLocalYI[texA] - vy1, modelLocalZI[texA] - vz1);
@@ -727,7 +777,7 @@ class SceneUploader
 	}
 
 	// temp draw
-	int uploadModelTemp(Model model, int orientation, int x, int y, int z, IntBuffer opaqueBuffer)
+	int uploadTempModel(Model model, int orientation, int x, int y, int z, IntBuffer opaqueBuffer)
 	{
 		final int triangleCount = model.getFaceCount();
 		final int vertexCount = model.getVerticesCount();
