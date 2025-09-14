@@ -277,8 +277,6 @@ class Zone
 	static class AlphaModel
 	{
 		int id;
-		// only set for static geometry as they require sorting
-		Model model;
 		int startpos, endpos;
 		short x, y, z; // local position
 		short rid;
@@ -288,12 +286,16 @@ class Zone
 		byte zofx, zofz; // for temp alpha models, offset of source zone from target zone
 		byte flags;
 
+		// only set for static geometry as they require sorting
+		int radius;
+		int[] packedFaces;
+
 		static final int SKIP = 1; // temporary model is in a closer zone
 		static final int TEMP = 2; // temporary model added to a closer zone
 
 		boolean isTemp()
 		{
-			return model == null;
+			return packedFaces == null;
 		}
 	}
 
@@ -303,7 +305,6 @@ class Zone
 	{
 		AlphaModel m = new AlphaModel();
 		m.id = id;
-		m.model = model;
 		m.startpos = startpos;
 		m.endpos = endpos;
 		m.x = (short) x;
@@ -323,6 +324,84 @@ class Zone
 		{
 			m.lx = m.lz = m.ux = m.uz = -1;
 		}
+
+		int faceCount = model.getFaceCount();
+		int[] color3 = model.getFaceColors3();
+		byte[] transparencies = model.getFaceTransparencies();
+		float[] vertexX = model.getVerticesX();
+		float[] vertexY = model.getVerticesY();
+		float[] vertexZ = model.getVerticesZ();
+		int[] indices1 = model.getFaceIndices1();
+		int[] indices2 = model.getFaceIndices2();
+		int[] indices3 = model.getFaceIndices3();
+
+		int minX = Integer.MAX_VALUE, minY = minX, minZ = minY;
+		int maxX = Integer.MIN_VALUE, maxY = maxX, maxZ = maxY;
+
+		for (int f = 0; f < faceCount; ++f)
+		{
+			if (color3[f] == -2 || transparencies[f] == 0)
+			{
+				continue;
+			}
+
+			int fx = (int) (vertexX[indices1[f]] + vertexX[indices2[f]] + vertexX[indices3[f]]);
+			int fy = (int) (vertexY[indices1[f]] + vertexY[indices2[f]] + vertexY[indices3[f]]);
+			int fz = (int) (vertexZ[indices1[f]] + vertexZ[indices2[f]] + vertexZ[indices3[f]]);
+
+			minX = Math.min(minX, fx);
+			maxX = Math.max(maxX, fx);
+			minY = Math.min(minY, fy);
+			maxY = Math.max(maxY, fy);
+			minZ = Math.min(minZ, fz);
+			maxZ = Math.max(maxZ, fz);
+		}
+
+		int cx = (minX + maxX) / 6;
+		int cy = (minY + maxY) / 6;
+		int cz = (minZ + maxZ) / 6;
+
+		int size = Math.max(Math.max(
+				Math.max(maxX / 3 - cx, minX / -3 - cx),
+				Math.max(maxY / 3 - cy, minY / -3 - cy) * 2),
+			Math.max(maxZ / 3 - cz, minZ / -3 - cz));
+
+		int shift = 0;
+		// 10 bits because we need a sign bit
+		for (int v = size >> 10; v > 0; v >>= 1)
+		{
+			shift++;
+		}
+
+		int[] packedFaces = m.packedFaces = new int[(endpos - startpos) / ((3 * VERT_SIZE) >> 2)];
+		int radius = 0;
+		char bufferIdx = 0;
+		for (int f = 0; f < faceCount; ++f)
+		{
+			if (color3[f] == -2 || transparencies[f] == 0)
+			{
+				continue;
+			}
+
+			int fx = (((int) (vertexX[indices1[f]] + vertexX[indices2[f]] + vertexX[indices3[f]]) / 3) - cx) >> shift;
+			int fy = (((int) (vertexY[indices1[f]] + vertexY[indices2[f]] + vertexY[indices3[f]]) / 3) - cy) >> shift;
+			int fz = (((int) (vertexZ[indices1[f]] + vertexZ[indices2[f]] + vertexZ[indices3[f]]) / 3) - cz) >> shift;
+
+			radius = Math.max(radius, fx * fx + fy * fy + fz * fz);
+
+			packedFaces[bufferIdx] = ((fx & ((1 << 11) - 1)) << 21)
+				| ((fy & ((1 << 10) - 1)) << 11)
+				| (fz & ((1 << 11) - 1));
+			bufferIdx++;
+		}
+
+		assert radius >= 0;
+
+		m.radius = 2 + (int) Math.sqrt(radius);
+
+		assert packedFaces.length > 0;
+		assert bufferIdx == packedFaces.length;
+
 		alphaModels.add(m);
 	}
 
@@ -334,7 +413,6 @@ class Zone
 			m = new AlphaModel();
 		}
 		m.id = -1;
-		m.model = null;
 		m.startpos = startpos;
 		m.endpos = endpos;
 		m.x = (short) x;
@@ -357,7 +435,7 @@ class Zone
 			if (m.isTemp() || (m.flags & AlphaModel.TEMP) != 0)
 			{
 				alphaModels.remove(i);
-				m.model = null;
+				m.packedFaces = null;
 				modelCache.add(m);
 			}
 			m.flags &= ~AlphaModel.SKIP;
@@ -369,6 +447,7 @@ class Zone
 
 	private static final int STATIC = 1;
 	private static final int TEMP = 2;
+	private static final int STATIC_UNSORTED = 3;
 
 	private static int lastDrawMode;
 	private static int lastVao;
@@ -384,8 +463,8 @@ class Zone
 
 		alphaModels.sort(Comparator.comparingInt((AlphaModel m) ->
 					{
-						final int mx = (m.x + ((zx-m.zofx)<<10));
-						final int mz = (m.z + ((zz-m.zofz)<<10));
+						final int mx = (m.x + ((zx - m.zofx) << 10));
+						final int mz = (m.z + ((zz - m.zofz) << 10));
 						return (mx - cx) * (mx - cx) +
 							(m.y - cy) * (m.y - cy) +
 							(mz - cz) * (mz - cz);
@@ -427,7 +506,6 @@ class Zone
 				flush();
 			}
 
-			lastDrawMode = m.isTemp() ? TEMP : STATIC;
 			lastVao = m.vao;
 			lastzx = zx - m.zofx;
 			lastzz = zz - m.zofz;
@@ -435,15 +513,23 @@ class Zone
 			if (m.isTemp())
 			{
 				// these are already sorted and so just requires a glMultiDrawArrays() from the active vao
+				lastDrawMode = TEMP;
 				pushRange(m.startpos, m.endpos);
 				continue;
 			}
 
-			Model model = m.model;
-			model.calculateBoundsCylinder();
+			if (false)
+			{
+				lastDrawMode = STATIC_UNSORTED;
+				pushRange(m.startpos, m.endpos);
+				continue;
+			}
 
-			final int diameter = model.getDiameter();
-			final int radius = model.getRadius();
+			lastDrawMode = STATIC;
+
+			final int radius = m.radius;
+			int diameter = 1 + radius * 2;
+			final int[] packedFaces = m.packedFaces;
 			if (diameter >= 6000)
 			{
 				continue;
@@ -451,55 +537,20 @@ class Zone
 
 			Arrays.fill(distanceFaceCount, 0, diameter, (char) 0);
 
-			byte[] transparencies = model.getFaceTransparencies();
-			int faceCount = model.getFaceCount();
-			final float[] vertexX = model.getVerticesX();
-			final float[] vertexY = model.getVerticesY();
-			final float[] vertexZ = model.getVerticesZ();
-			final int[] indices1 = model.getFaceIndices1();
-			final int[] indices2 = model.getFaceIndices2();
-			final int[] indices3 = model.getFaceIndices3();
-			final int[] color3 = model.getFaceColors3();
-
 			char bufferIdx = 0;
-			for (int faceIdx = 0; faceIdx < faceCount; ++faceIdx)
+			for (int i = 0; i < packedFaces.length; ++i)
 			{
-				if (color3[faceIdx] == -2)
-				{
-					continue;
-				}
-				if (transparencies[faceIdx] == 0)
-				{
-					continue;
-				}
+				int pack = packedFaces[i];
 
-				int x, y, z, t;
-				int z0, z1, z2;
+				int x = pack >> 21;
+				int y = (pack << 11) >> 22;
+				int z = (pack << 21) >> 21;
 
-				x = (int) vertexX[indices1[faceIdx]];
-				y = (int) vertexY[indices1[faceIdx]];
-				z = (int) vertexZ[indices1[faceIdx]];
+				int t = z * yawcos - x * yawsin >> 16;
+				int fz = y * pitchsin + t * pitchcos >> 16;
+				fz += radius;
 
-				t = z * yawcos - x * yawsin >> 16;
-				z0 = y * pitchsin + t * pitchcos >> 16;
-
-				x = (int) vertexX[indices2[faceIdx]];
-				y = (int) vertexY[indices2[faceIdx]];
-				z = (int) vertexZ[indices2[faceIdx]];
-
-				t = z * yawcos - x * yawsin >> 16;
-				z1 = y * pitchsin + t * pitchcos >> 16;
-
-				x = (int) vertexX[indices3[faceIdx]];
-				y = (int) vertexY[indices3[faceIdx]];
-				z = (int) vertexZ[indices3[faceIdx]];
-
-				t = z * yawcos - x * yawsin >> 16;
-				z2 = y * pitchsin + t * pitchcos >> 16;
-
-				// TODO fix boats
-				int fz = radius + (z0 + z1 + z2) / 3;
-				assert fz >= 0 && fz < diameter;
+				assert fz >= 0 && fz < diameter : fz;
 				distanceToFaces[fz][distanceFaceCount[fz]++] = bufferIdx++;
 			}
 
@@ -537,7 +588,7 @@ class Zone
 		if (lastDrawMode == TEMP)
 		{
 			convertForDraw(VAO.VERT_SIZE);
-			glProgramUniform3i(glProgram, uniBase,0,0,0);
+			glProgramUniform3i(glProgram, uniBase, 0, 0, 0);
 			glBindVertexArray(lastVao);
 			glMultiDrawArrays(GL_TRIANGLES, glDrawOffset, glDrawLength);
 			drawIdx = 0;
@@ -549,6 +600,14 @@ class Zone
 			glBindVertexArray(lastVao);
 			glDrawElements(GL_TRIANGLES, alphaElements);
 			alphaElements.clear();
+		}
+		else if (lastDrawMode == STATIC_UNSORTED)
+		{
+			convertForDraw(VERT_SIZE);
+			glProgramUniform3i(glProgram, uniBase, lastzx << 10, 0, lastzz << 10);
+			glBindVertexArray(lastVao);
+			glMultiDrawArrays(GL_TRIANGLES, glDrawOffset, glDrawLength);
+			drawIdx = 0;
 		}
 	}
 
@@ -602,7 +661,6 @@ class Zone
 					m2 = new AlphaModel();
 				}
 				m2.id = m.id;
-				m2.model = m.model;
 				m2.startpos = m.startpos;
 				m2.endpos = m.endpos;
 				m2.x = m.x;
@@ -617,8 +675,13 @@ class Zone
 				m2.uz = m.uz;
 				m2.zofx = (byte) (closestZoneX - zx);
 				m2.zofz = (byte) (closestZoneZ - zz);
+
+				m2.packedFaces = m.packedFaces;
+				m2.radius = m.radius;
+
 				m2.flags = AlphaModel.TEMP;
 				m.flags |= AlphaModel.SKIP;
+
 				z.alphaModels.add(m2);
 			}
 		}

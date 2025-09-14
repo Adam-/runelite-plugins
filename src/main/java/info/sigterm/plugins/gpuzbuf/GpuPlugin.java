@@ -164,6 +164,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private int vboUiHandle;
 
 	private int fboScene;
+	private boolean sceneFboValid;
 	private int rboColorBuffer;
 	private int rboDepthBuffer;
 
@@ -985,25 +986,31 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
 
-		// Blit FBO
-		{
-			int width = lastStretchedCanvasWidth;
-			int height = lastStretchedCanvasHeight;
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, awtContext.getFramebuffer(false));
+		sceneFboValid = true;
+	}
 
-			final GraphicsConfiguration graphicsConfiguration = clientUI.getGraphicsConfiguration();
-			final AffineTransform transform = graphicsConfiguration.getDefaultTransform();
+	private void blitSceneFbo()
+	{
+		int width = lastStretchedCanvasWidth;
+		int height = lastStretchedCanvasHeight;
 
-			width = getScaledValue(transform.getScaleX(), width);
-			height = getScaledValue(transform.getScaleY(), height);
+		final GraphicsConfiguration graphicsConfiguration = clientUI.getGraphicsConfiguration();
+		final AffineTransform transform = graphicsConfiguration.getDefaultTransform();
 
-			glBindFramebuffer(GL_READ_FRAMEBUFFER, fboScene);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, awtContext.getFramebuffer(false));
-			glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
-				GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		width = getScaledValue(transform.getScaleX(), width);
+		height = getScaledValue(transform.getScaleY(), height);
 
-			// Reset
-			glBindFramebuffer(GL_READ_FRAMEBUFFER, awtContext.getFramebuffer(false));
-		}
+		int defaultFbo = awtContext.getFramebuffer(false);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, fboScene);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, defaultFbo);
+		glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
+			GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+		// Reset
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, defaultFbo);
+
+		checkGLErrors();
 	}
 
 	@Override
@@ -1099,6 +1106,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	@Override
 	public void drawDynamic(Projection worldProjection, Scene scene, TileObject tileObject, Renderable r, Model m, int orient, int x, int y, int z)
 	{
+//		if(true) return;
 		SceneContext ctx = context(scene);
 		int size = m.getFaceCount() * 3 * VAO.VERT_SIZE;
 		if (m.getFaceTransparencies() == null)
@@ -1129,6 +1137,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	@Override
 	public void drawTemp(Projection worldProjection, Scene scene, GameObject gameObject, Model m)
 	{
+//		if(true) return;
 		SceneContext ctx = context(scene);
 		int size = m.getFaceCount() * 3 * VAO.VERT_SIZE;
 		if (gameObject.getRenderable() instanceof Player || m.getFaceTransparencies() != null)
@@ -1316,10 +1325,12 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 		prepareInterfaceTexture(canvasWidth, canvasHeight);
 
-		if (gameState.getState() <= GameState.LOADING.getState())
+		glClearColor(0, 0, 0, 1);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		if (sceneFboValid)
 		{
-			glClearColor(0, 0, 0, 1);
-			glClear(GL_COLOR_BUFFER_BIT);
+			blitSceneFbo();
 		}
 
 		// Texture on UI
@@ -1464,7 +1475,14 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged)
 	{
-		if (gameStateChanged.getGameState() == GameState.STARTING)
+		GameState state = gameStateChanged.getGameState();
+		if (state.getState() < GameState.LOADING.getState())
+		{
+			// this is to avoid scene fbo blit when going from <loading to >=loading,
+			// but keep it when doing >loading to loading
+			sceneFboValid = false;
+		}
+		if (state == GameState.STARTING)
 		{
 			if (textureArrayId != -1)
 			{
