@@ -1013,10 +1013,50 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		checkGLErrors();
 	}
 
+//	@Override
+//	public void drawZone(Projection projection, Scene scene, int pass, int zx, int zz)
+//	{
+//		updateEntityProject(projection);
+//
+//		SceneContext ctx = context(scene);
+//		if (ctx == null)
+//		{
+//			return;
+//		}
+//
+//		if (pass == DrawCallbacks.PASS_OPAQUE)
+//		{
+//			Zone z = ctx.zones[zx][zz];
+//			if (z.glVao == 0)
+//			{
+//				return;
+//			}
+//
+//			int offset = scene.getWorldViewId() == -1 ? (SCENE_OFFSET >> 3) : 0;
+//			z.renderOpaque(zx - offset, zz - offset, minLevel, level, maxLevel, hideRoofIds);
+//		}
+//		else if (pass == DrawCallbacks.PASS_ALPHA)
+//		{
+//			// this is a noop after the first zone
+//			ctx.vaoA.unmap();
+//
+//			Zone z = ctx.zones[zx][zz];
+//
+//			int offset = scene.getWorldViewId() == -1 ? (SCENE_OFFSET >> 3) : 0;
+//			z.multizoneLocs(scene, zx - offset, zz - offset, cameraX, cameraZ, ctx.zones);
+//
+//			glDepthMask(false);
+//			z.renderAlpha(zx - offset, zz - offset, cameraX, cameraY, cameraZ, cameraYaw, cameraPitch, minLevel, level, maxLevel, 0, hideRoofIds);
+//			glDepthMask(true);
+//		}
+//
+//		checkGLErrors();
+//	}
+
 	@Override
-	public void drawZone(Projection projection, Scene scene, int pass, int zx, int zz)
+	public void drawZoneOpaque(Projection entityProjection, Scene scene, int zx, int zz)
 	{
-		updateEntityProject(projection);
+		updateEntityProject(entityProjection);
 
 		SceneContext ctx = context(scene);
 		if (ctx == null)
@@ -1024,31 +1064,44 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			return;
 		}
 
-		if (pass == DrawCallbacks.PASS_OPAQUE)
+		Zone z = ctx.zones[zx][zz];
+		if (z.glVao == 0)
 		{
-			Zone z = ctx.zones[zx][zz];
-			if (z.glVao == 0)
-			{
-				return;
-			}
-
-			int offset = scene.getWorldViewId() == -1 ? (SCENE_OFFSET >> 3) : 0;
-			z.renderOpaque(zx - offset, zz - offset, minLevel, level, maxLevel, hideRoofIds);
+			return;
 		}
-		else if (pass == DrawCallbacks.PASS_ALPHA)
+
+		int offset = scene.getWorldViewId() == -1 ? (SCENE_OFFSET >> 3) : 0;
+		z.renderOpaque(zx - offset, zz - offset, minLevel, level, maxLevel, hideRoofIds);
+
+		checkGLErrors();
+	}
+
+	@Override
+	public void drawZoneAlpha(Projection entityProjection, Scene scene, int level, int zx, int zz)
+	{
+		updateEntityProject(entityProjection);
+
+		SceneContext ctx = context(scene);
+		if (ctx == null)
 		{
-			// this is a noop after the first zone
-			ctx.vaoA.unmap();
+			return;
+		}
 
-			Zone z = ctx.zones[zx][zz];
+		// this is a noop after the first zone
+		ctx.vaoA.unmap();
 
-			int offset = scene.getWorldViewId() == -1 ? (SCENE_OFFSET >> 3) : 0;
+		Zone z = ctx.zones[zx][zz];
+
+		int offset = scene.getWorldViewId() == -1 ? (SCENE_OFFSET >> 3) : 0;
+		if (level == 0)
+		{
+			z.alphaSort(zx - offset, zz - offset, cameraX, cameraY, cameraZ);
 			z.multizoneLocs(scene, zx - offset, zz - offset, cameraX, cameraZ, ctx.zones);
-
-			glDepthMask(false);
-			z.renderAlpha(zx - offset, zz - offset, cameraX, cameraY, cameraZ, cameraYaw, cameraPitch, minLevel, level, maxLevel, hideRoofIds);
-			glDepthMask(true);
 		}
+
+		glDepthMask(false);
+		z.renderAlpha(zx - offset, zz - offset, cameraYaw, cameraPitch, minLevel, this.level, maxLevel, level, hideRoofIds);
+		glDepthMask(true);
 
 		checkGLErrors();
 	}
@@ -1129,7 +1182,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				int zz = (z >> 10) + offset;
 				Zone zone = ctx.zones[zx][zz];
 				// renderable modelheight is typically not set here because DynamicObject doesn't compute it on the returned model
-				zone.addTempAlphaModel(a.vao, start, end, x&1023, y, z&1023);
+				zone.addTempAlphaModel(a.vao, start, end, tileObject.getPlane(), x & 1023, y, z & 1023);
 			}
 		}
 	}
@@ -1167,7 +1220,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				int zz = (gameObject.getY() >> 10) + offset;
 				Zone zone = ctx.zones[zx][zz];
 				// TODO alpha sorting doesn't account for orient
-				zone.addTempAlphaModel(a.vao, start, end, gameObject.getX() & 1023, gameObject.getZ() - gameObject.getRenderable().getModelHeight() /* to render players over locs 2,50,94,49,52 */, gameObject.getY() & 1023);
+				zone.addTempAlphaModel(a.vao, start, end, gameObject.getPlane(), gameObject.getX() & 1023, gameObject.getZ() - gameObject.getRenderable().getModelHeight() /* to render players over locs 2,50,94,49,52 */, gameObject.getY() & 1023);
 			}
 		}
 		else

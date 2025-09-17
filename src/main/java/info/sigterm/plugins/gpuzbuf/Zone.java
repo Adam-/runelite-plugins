@@ -405,7 +405,7 @@ class Zone
 		alphaModels.add(m);
 	}
 
-	void addTempAlphaModel(int vao, int startpos, int endpos, int x, int y, int z)
+	void addTempAlphaModel(int vao, int startpos, int endpos, int level, int x, int y, int z)
 	{
 		AlphaModel m = modelCache.poll();
 		if (m == null)
@@ -420,7 +420,7 @@ class Zone
 		m.z = (short) z;
 		m.vao = vao;
 		m.rid = -1;
-		m.level = -1;
+		m.level = (byte) level;
 		m.lx = m.lz = m.ux = m.uz = -1;
 		m.flags = 0;
 		m.zofx = m.zofz = 0;
@@ -453,14 +453,8 @@ class Zone
 	private static int lastVao;
 	private static int lastzx, lastzz;
 
-	void renderAlpha(int zx, int zz, int cx, int cy, int cz, int cyaw, int cpitch, int minLevel, int currentLevel, int maxLevel, Set<Integer> hiddenRoofIds)
+	void alphaSort(int zx, int zz, int cx, int cy, int cz)
 	{
-		drawIdx = 0;
-		alphaElements.clear();
-		lastDrawMode = lastVao = 0;
-		lastzx = zx;
-		lastzz = zz;
-
 		alphaModels.sort(Comparator.comparingInt((AlphaModel m) ->
 					{
 						final int mx = (m.x + ((zx - m.zofx) << 10));
@@ -472,6 +466,15 @@ class Zone
 				)
 				.reversed()
 		);
+	}
+
+	void renderAlpha(int zx, int zz, int cyaw, int cpitch, int minLevel, int currentLevel, int maxLevel, int level, Set<Integer> hiddenRoofIds)
+	{
+		drawIdx = 0;
+		alphaElements.clear();
+		lastDrawMode = lastVao = 0;
+		lastzx = zx;
+		lastzz = zz;
 
 		int yawsin = Perspective.SINE[cyaw];
 		int yawcos = Perspective.COSINE[cyaw];
@@ -480,18 +483,14 @@ class Zone
 		for (AlphaModel m : alphaModels)
 		{
 			if ((m.flags & AlphaModel.SKIP) != 0) continue;
+			if (m.level != level) continue;
 
-			boolean ok = true;
-			if (m.level != -1)
+			boolean ok = false;
+			if (level >= minLevel && level <= maxLevel)
 			{
-				ok = false;
-				int level = m.level;
-				if (level >= minLevel && level <= maxLevel)
+				if (level <= currentLevel || !hiddenRoofIds.contains((int) m.rid))
 				{
-					if (level <= currentLevel || !hiddenRoofIds.contains((int)m.rid))
-					{
-						ok = true;
-					}
+					ok = true;
 				}
 			}
 			if (!ok)
