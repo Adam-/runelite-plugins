@@ -254,8 +254,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private Map<Integer, Integer> nextRoofChanges;
 
 	// Uniforms
-	private int uniColorBlindMode;
-	private int uniUiColorBlindMode;
 	private int uniUseFog;
 	private int uniFogColor;
 	private int uniFogDepth;
@@ -266,7 +264,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private int uniEntityTint;
 	private int uniBrightness;
 	private int uniTex;
-	private int uniTexSamplingMode;
 	private int uniTexSourceDimensions;
 	private int uniTexTargetDimensions;
 	private int uniUiAlphaOverlay;
@@ -354,14 +351,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 				initBuffers();
 				initVao();
-				try
-				{
-					initProgram();
-				}
-				catch (ShaderException ex)
-				{
-					throw new RuntimeException(ex);
-				}
+				initProgram();
 				initInterfaceTexture();
 				initUniformBuffer();
 				if (glCapabilities.OpenGL45)
@@ -425,7 +415,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		for (WorldEntity subEntity : root.worldEntities())
 		{
 			WorldView sub = subEntity.getWorldView();
-			log.debug("Loading worldview {}", sub.getId());
+			log.debug("WorldView loading: {}", sub.getId());
 			loadSubScene(sub, sub.getScene());
 			swapSub(sub.getScene());
 		}
@@ -516,6 +506,15 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 					| DrawCallbacks.ZBUF
 				);
 			}
+			else if (configChanged.getKey().equals("uiScalingMode") || configChanged.getKey().equals("colorBlindMode"))
+			{
+				clientThread.invokeLater(() ->
+				{
+					log.debug("Recompiling shaders");
+					shutdownProgram();
+					initProgram();
+				});
+			}
 		}
 	}
 
@@ -558,9 +557,14 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		Template template = new Template();
 		template.add(key ->
 		{
-			if ("texture_config".equals(key))
+			switch (key)
 			{
-				return "#define TEXTURE_COUNT " + TextureManager.TEXTURE_COUNT + "\n";
+				case "texture_config":
+					return "#define TEXTURE_COUNT " + TextureManager.TEXTURE_COUNT + "\n";
+				case "sampling_mode":
+					return "#define SAMPLING_MODE " + config.uiScalingMode().getMode() + "\n";
+				case "colorblind_mode":
+					return "#define COLORBLIND_MODE " + config.colorBlindMode().ordinal() + "\n";
 			}
 			return null;
 		});
@@ -588,7 +592,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		uniFogDepth = glGetUniformLocation(glProgram, "fogDepth");
 		uniDrawDistance = glGetUniformLocation(glProgram, "drawDistance");
 		uniExpandedMapLoadingChunks = glGetUniformLocation(glProgram, "expandedMapLoadingChunks");
-		uniColorBlindMode = glGetUniformLocation(glProgram, "colorBlindMode");
 		uniTextureLightMode = glGetUniformLocation(glProgram, "textureLightMode");
 		uniTick = glGetUniformLocation(glProgram, "tick");
 		uniBlockMain = glGetUniformBlockIndex(glProgram, "uniforms");
@@ -597,10 +600,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		uniBase = glGetUniformLocation(glProgram, "base");
 
 		uniTex = glGetUniformLocation(glUiProgram, "tex");
-		uniTexSamplingMode = glGetUniformLocation(glUiProgram, "samplingMode");
 		uniTexTargetDimensions = glGetUniformLocation(glUiProgram, "targetDimensions");
 		uniTexSourceDimensions = glGetUniformLocation(glUiProgram, "sourceDimensions");
-		uniUiColorBlindMode = glGetUniformLocation(glUiProgram, "colorBlindMode");
 		uniUiAlphaOverlay = glGetUniformLocation(glUiProgram, "alphaOverlay");
 	}
 
@@ -928,7 +929,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		// Brightness happens to also be stored in the texture provider, so we use that
 		TextureProvider textureProvider = client.getTextureProvider();
 		glUniform1f(uniBrightness, (float) textureProvider.getBrightness());
-		glUniform1i(uniColorBlindMode, config.colorBlindMode().ordinal());
 		glUniform1f(uniTextureLightMode, config.brightTextures() ? 1f : 0f);
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
@@ -1013,46 +1013,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		checkGLErrors();
 	}
 
-//	@Override
-//	public void drawZone(Projection projection, Scene scene, int pass, int zx, int zz)
-//	{
-//		updateEntityProject(projection);
-//
-//		SceneContext ctx = context(scene);
-//		if (ctx == null)
-//		{
-//			return;
-//		}
-//
-//		if (pass == DrawCallbacks.PASS_OPAQUE)
-//		{
-//			Zone z = ctx.zones[zx][zz];
-//			if (z.glVao == 0)
-//			{
-//				return;
-//			}
-//
-//			int offset = scene.getWorldViewId() == -1 ? (SCENE_OFFSET >> 3) : 0;
-//			z.renderOpaque(zx - offset, zz - offset, minLevel, level, maxLevel, hideRoofIds);
-//		}
-//		else if (pass == DrawCallbacks.PASS_ALPHA)
-//		{
-//			// this is a noop after the first zone
-//			ctx.vaoA.unmap();
-//
-//			Zone z = ctx.zones[zx][zz];
-//
-//			int offset = scene.getWorldViewId() == -1 ? (SCENE_OFFSET >> 3) : 0;
-//			z.multizoneLocs(scene, zx - offset, zz - offset, cameraX, cameraZ, ctx.zones);
-//
-//			glDepthMask(false);
-//			z.renderAlpha(zx - offset, zz - offset, cameraX, cameraY, cameraZ, cameraYaw, cameraPitch, minLevel, level, maxLevel, 0, hideRoofIds);
-//			glDepthMask(true);
-//		}
-//
-//		checkGLErrors();
-//	}
-
 	@Override
 	public void drawZoneOpaque(Projection entityProjection, Scene scene, int zx, int zz)
 	{
@@ -1065,7 +1025,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		}
 
 		Zone z = ctx.zones[zx][zz];
-		if (z.glVao == 0)
+		if (!z.initialized)
 		{
 			return;
 		}
@@ -1091,6 +1051,10 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		ctx.vaoA.unmap();
 
 		Zone z = ctx.zones[zx][zz];
+		if (!z.initialized)
+		{
+			return;
+		}
 
 		int offset = scene.getWorldViewId() == -1 ? (SCENE_OFFSET >> 3) : 0;
 		if (level == 0)
@@ -1159,8 +1123,12 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	@Override
 	public void drawDynamic(Projection worldProjection, Scene scene, TileObject tileObject, Renderable r, Model m, int orient, int x, int y, int z)
 	{
-//		if(true) return;
 		SceneContext ctx = context(scene);
+		if (ctx == null)
+		{
+			return;
+		}
+
 		int size = m.getFaceCount() * 3 * VAO.VERT_SIZE;
 		if (m.getFaceTransparencies() == null)
 		{
@@ -1190,8 +1158,12 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	@Override
 	public void drawTemp(Projection worldProjection, Scene scene, GameObject gameObject, Model m)
 	{
-//		if(true) return;
 		SceneContext ctx = context(scene);
+		if (ctx == null)
+		{
+			return;
+		}
+
 		int size = m.getFaceCount() * 3 * VAO.VERT_SIZE;
 		if (gameObject.getRenderable() instanceof Player || m.getFaceTransparencies() != null)
 		{
@@ -1436,9 +1408,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		final UIScalingMode uiScalingMode = config.uiScalingMode();
 		glUseProgram(glUiProgram);
 		glUniform1i(uniTex, 0);
-		glUniform1i(uniTexSamplingMode, uiScalingMode.getMode());
 		glUniform2i(uniTexSourceDimensions, canvasWidth, canvasHeight);
-		glUniform1i(uniUiColorBlindMode, config.colorBlindMode().ordinal());
 		glUniform4f(uniUiAlphaOverlay,
 			(overlayColor >> 16 & 0xFF) / 255f,
 			(overlayColor >> 8 & 0xFF) / 255f,
@@ -1915,6 +1885,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		int worldViewId = worldView.getId();
 		if (worldViewId > -1)
 		{
+			log.debug("WorldView despawn: {}", worldViewId);
 			subs[worldViewId].free();
 			subs[worldViewId] = null;
 		}
@@ -1987,6 +1958,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				}
 			}
 		}
+		log.debug("WorldView ready: {}", scene.getWorldViewId());
 	}
 
 	private int getScaledValue(final double scale, final int value)

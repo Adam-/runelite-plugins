@@ -27,10 +27,11 @@
 //#define FRAG_UVS
 //#define ZBUF_DEBUG
 
+#include colorblind_mode
+
 uniform sampler2DArray textures;
 uniform float brightness;
 uniform vec4 fogColor;
-uniform int colorBlindMode;
 uniform float textureLightMode;
 
 in vec4 fColor;
@@ -45,7 +46,10 @@ in float fDepth;
 out vec4 FragColor;
 
 #include "hsl_to_rgb.glsl"
+
+#if COLORBLIND_MODE > 0
 #include "colorblind.glsl"
+#endif
 
 #ifdef ZBUF_DEBUG
 float linear_depth(float depth) {
@@ -79,9 +83,9 @@ void main() {
     c = fColor;
   }
 
-  if (colorBlindMode > 0) {
-    c.rgb = colorblind(colorBlindMode, c.rgb);
-  }
+#if COLORBLIND_MODE > 0
+  c.rgb = colorblind(c.rgb);
+#endif
 
   vec3 mixedColor = mix(c.rgb, fogColor.rgb, fFogAmount);
   FragColor = vec4(mixedColor, c.a);

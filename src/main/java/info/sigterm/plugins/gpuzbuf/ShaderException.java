@@ -24,7 +24,7 @@
  */
 package info.sigterm.plugins.gpuzbuf;
 
-class ShaderException extends Exception
+class ShaderException extends RuntimeException
 {
 	ShaderException(String message)
 	{

@@ -35,7 +35,7 @@ import info.sigterm.plugins.gpuzbuf.template.Template;
 import org.lwjgl.opengl.GL43C;
 
 @Slf4j
-public class Shader
+class Shader
 {
 	@VisibleForTesting
 	final List<Unit> units = new ArrayList<>();
@@ -57,7 +57,7 @@ public class Shader
 		return this;
 	}
 
-	public int compile(Template template) throws ShaderException
+	int compile(Template template) throws ShaderException
 	{
 		int program = GL43C.glCreateProgram();
 		int[] shaders = new int[units.size()];
@@ -82,10 +82,7 @@ public class Shader
 				{
 					String err = GL43C.glGetShaderInfoLog(shader);
 					GL43C.glDeleteShader(shader);
-					int line = 1;
-					for (String s : source.split("\n")) {
-	log.debug("{}: {}", line++, s);
-					}
+					logShaderSource(source);
 					throw new ShaderException(err);
 				}
 				GL43C.glAttachShader(program, shader);
@@ -126,5 +123,14 @@ public class Shader
 		}
 
 		return program;
+	}
+
+	private static void logShaderSource(String source)
+	{
+		int lineNum = 1;
+		for (String line : source.split("\n"))
+		{
+			log.error("{}: {}", lineNum++, line);
+		}
 	}
 }
