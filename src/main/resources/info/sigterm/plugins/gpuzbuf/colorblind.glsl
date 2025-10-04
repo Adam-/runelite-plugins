@@ -28,7 +28,7 @@ vec3 colorblind(vec3 color) {
 #elif COLORBLIND_MODE == TRITAN
   lms = LMS * lms2lmst;  // blue deficiency
 #else
-#error "unknown colourblind mode"
+#error 1
 #endif
 
   // LMS to RGB matrix conversion

@@ -150,7 +150,7 @@ vec4 textureCubic(sampler2D sampler, vec2 texCoords) {
   // calculate weighted average
   c = nSum / nDenom;
 #else
-#error "invalid sampling mode"
+#error 1
 #endif
 
   // return the weighted average
