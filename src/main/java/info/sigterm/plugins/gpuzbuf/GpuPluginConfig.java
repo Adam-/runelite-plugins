@@ -97,7 +97,7 @@ public interface GpuPluginConfig extends Config
 	)
 	default UIScalingMode uiScalingMode()
 	{
-		return UIScalingMode.LINEAR;
+		return UIScalingMode.HYBRID;
 	}
 
 	@Range(

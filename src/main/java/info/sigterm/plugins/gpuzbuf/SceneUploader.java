@@ -78,7 +78,6 @@ class SceneUploader
 	{
 		Tile[][][] tiles = scene.getExtendedTiles();
 
-		int basex = mzx << 10, basez = mzz << 10;
 		for (int z = 3; z >= 0; --z)
 		{
 			for (int xoff = 0; xoff < 8; ++xoff)
@@ -121,8 +120,6 @@ class SceneUploader
 		zone.rids = new int[4][roofIds.size()];
 		zone.roofStart = new int[4][roofIds.size()];
 		zone.roofEnd = new int[4][roofIds.size()];
-//		zone.roofStartA = new int[4][roofIds.size()];
-//		zone.roofEndA = new int[4][roofIds.size()];
 
 		for (int z = 0; z <= 3; ++z)
 		{
@@ -144,12 +141,6 @@ class SceneUploader
 				int pos = zone.vboO.vb.position();
 				zone.levelOffsets[z] = pos;
 			}
-
-			if (zone.vboA != null)
-			{
-				int pos = zone.vboA.vb.position();
-//				zone.levelOffsetsA[z] = pos;
-			}
 		}
 	}
 
@@ -161,20 +152,16 @@ class SceneUploader
 		for (int id : roofIds)
 		{
 			int pos = zone.vboO != null ? zone.vboO.vb.position() : 0;
-			int posa = zone.vboA != null ? zone.vboA.vb.position() : 0;
 
 			uploadZoneLevelRoof(scene, zone, mzx, mzz, level, id, visbelow, vb, ab);
 
 			int endpos = zone.vboO != null ? zone.vboO.vb.position() : 0;
-			int endposa = zone.vboA != null ? zone.vboA.vb.position() : 0;
 
-			if (endpos > pos)// || endposa > posa)
+			if (endpos > pos)
 			{
 				zone.rids[level][ridx] = id;
 				zone.roofStart[level][ridx] = pos;
 				zone.roofEnd[level][ridx] = endpos;
-//				zone.roofStartA[level][ridx] = posa;
-//				zone.roofEndA[level][ridx] = endposa;
 				++ridx;
 			}
 		}
@@ -188,7 +175,6 @@ class SceneUploader
 		byte[][][] settings = scene.getExtendedTileSettings();
 		int[][][] roofs = scene.getRoofs();
 		Tile[][][] tiles = scene.getExtendedTiles();
-//		int basex = mzx << 10, basez = mzz << 10;
 
 		int offset = scene.getWorldViewId() == -1 ? GpuPlugin.SCENE_OFFSET >> 3 : 0;
 		this.level = level;
@@ -255,28 +241,21 @@ class SceneUploader
 		WallObject wallObject = t.getWallObject();
 		if (wallObject != null)
 		{
-			Renderable renderable1 = wallObject.getRenderable1();
-			zoneRenderableSize(z, renderable1);
-
-			Renderable renderable2 = wallObject.getRenderable2();
-			zoneRenderableSize(z, renderable2);
+			zoneRenderableSize(z, wallObject.getRenderable1());
+			zoneRenderableSize(z, wallObject.getRenderable2());
 		}
 
 		DecorativeObject decorativeObject = t.getDecorativeObject();
 		if (decorativeObject != null)
 		{
-			Renderable renderable = decorativeObject.getRenderable();
-			zoneRenderableSize(z, renderable);
-
-			Renderable renderable2 = decorativeObject.getRenderable2();
-			zoneRenderableSize(z, renderable2);
+			zoneRenderableSize(z, decorativeObject.getRenderable());
+			zoneRenderableSize(z, decorativeObject.getRenderable2());
 		}
 
 		GroundObject groundObject = t.getGroundObject();
 		if (groundObject != null)
 		{
-			Renderable renderable = groundObject.getRenderable();
-			zoneRenderableSize(z, renderable);
+			zoneRenderableSize(z, groundObject.getRenderable());
 		}
 
 		GameObject[] gameObjects = t.getGameObjects();
@@ -286,17 +265,6 @@ class SceneUploader
 			{
 				continue;
 			}
-
-			// compute the intersection of the zone and the go
-			// if this is the corner of the intersection, upload only the alpha faces
-			// when rendering skip unless the current renderer zone is the closest to camera
-
-			// somehow add the same AlphaModel instance to multiple zones?
-			// defer drawing until the zone closest to camera is drawn
-			// how does this work with zone reuse?
-			// do i have to invalidate multiple zones?
-
-			// when i encounter an AlphaModel that is >1 zone, compute the furthest zone and then add it as a temp to that zone
 
 			if (!gameObject.getSceneMinLocation().equals(t.getSceneLocation()))
 			{

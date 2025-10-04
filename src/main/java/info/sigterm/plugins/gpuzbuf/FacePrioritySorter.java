@@ -58,7 +58,7 @@ class FacePrioritySorter
 	private static final int MAX_VERTEX_COUNT = SceneUploader.MAX_VERTEX_COUNT;
 	private static final int MAX_DIAMETER = 6000;
 	private static final int ZSORT_GROUP_SIZE = 1024; // was 512
-	private static final int MAX_FACES_PER_PRIORITY = 4000; // was 2000
+	private static final int MAX_FACES_PER_PRIORITY = 4000; // was 2500
 
 	static
 	{

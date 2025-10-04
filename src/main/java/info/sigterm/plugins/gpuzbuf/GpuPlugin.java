@@ -106,6 +106,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	static final int SCENE_OFFSET = (Constants.EXTENDED_SCENE_SIZE - Constants.SCENE_SIZE) / 2; // offset for sxy -> msxy
 	private static final int UNIFORM_BUFFER_SIZE = 5 * Float.BYTES;
 	private static final int NUM_ZONES = Constants.EXTENDED_SCENE_SIZE >> 3;
+	private static final int MAX_WORLDVIEWS = 4096;
 
 	@Inject
 	private Client client;
@@ -191,7 +192,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		final int sizeX, sizeZ;
 		Zone[][] zones;
 		VAOList vaoO, vaoA;
-		VAOList vaoPO;//, vaoPA;
+		VAOList vaoPO;
 
 		SceneContext(int sizeX, int sizeZ)
 		{
@@ -208,7 +209,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			vaoO = new VAOList();
 			vaoA = new VAOList();
 			vaoPO = new VAOList();
-//			vaoPA = new VAOList();
 		}
 
 		void free()
@@ -223,12 +223,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			vaoO.free();
 			vaoA.free();
 			vaoPO.free();
-//			vaoPA.free();
 		}
 	}
-
-	SceneContext root;
-	SceneContext[] subs;
 
 	SceneContext context(Scene scene)
 	{
@@ -250,6 +246,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		return subs[wvid];
 	}
 
+	private SceneContext root;
+	private SceneContext[] subs;
 	private Zone[][] nextZones;
 	private Map<Integer, Integer> nextRoofChanges;
 
@@ -278,7 +276,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	protected void startUp()
 	{
 		root = new SceneContext(NUM_ZONES, NUM_ZONES);
-		subs = new SceneContext[4096]; // XXX convert to a map
+		subs = new SceneContext[MAX_WORLDVIEWS];
 		clientThread.invoke(() ->
 		{
 			try
@@ -332,7 +330,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 						//	Source: API
 						//	Type: OTHER
 						//	Severity: NOTIFICATION
-						//	Message: Buffer detailed info: Buffer object 4 (bound to GL_PIXEL_UNPACK_BUFFER_ARB, usage hint is GL_STREAM_DRAW) has been mapped WRITE_ONLY in SYSTEM HEAP memory (fast).
+						//	Message: Buffer detailed info: Buffer object 2 (bound to GL_PIXEL_UNPACK_BUFFER_ARB, usage hint is GL_STREAM_DRAW) has been mapped WRITE_ONLY in SYSTEM HEAP memory (fast).
 						glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_OTHER,
 							GL_DONT_CARE, 0x20071, false);
 
@@ -562,7 +560,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				case "texture_config":
 					return "#define TEXTURE_COUNT " + TextureManager.TEXTURE_COUNT + "\n";
 				case "sampling_mode":
-					return "#define SAMPLING_MODE " + config.uiScalingMode().getMode() + "\n";
+					return "#define SAMPLING_MODE " + config.uiScalingMode().ordinal() + "\n";
 				case "colorblind_mode":
 					return "#define COLORBLIND_MODE " + config.colorBlindMode().ordinal() + "\n";
 			}
@@ -643,7 +641,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		glEnableVertexAttribArray(1);
 
 		// unbind VAO/VBO
-		//glBindVertexArray(0);//XXX required for macos
+		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
@@ -1192,7 +1190,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				int zz = (gameObject.getY() >> 10) + offset;
 				Zone zone = ctx.zones[zx][zz];
 				// TODO alpha sorting doesn't account for orient
-				zone.addTempAlphaModel(a.vao, start, end, gameObject.getPlane(), gameObject.getX() & 1023, gameObject.getZ() - gameObject.getRenderable().getModelHeight() /* to render players over locs 2,50,94,49,52 */, gameObject.getY() & 1023);
+				zone.addTempAlphaModel(a.vao, start, end, gameObject.getPlane(), gameObject.getX() & 1023, gameObject.getZ() - gameObject.getRenderable().getModelHeight() /* to render players over locs */, gameObject.getY() & 1023);
 			}
 		}
 		else
@@ -1431,8 +1429,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		// Set the sampling function used when stretching the UI.
 		// This is probably better done with sampler objects instead of texture parameters, but this is easier and likely more portable.
 		// See https://www.khronos.org/opengl/wiki/Sampler_Object for details.
-		// GL_NEAREST makes sampling for bicubic/xBR simpler, so it should be used whenever linear isn't
-		final int function = uiScalingMode == UIScalingMode.LINEAR ? GL_LINEAR : GL_NEAREST;
+		// GL_NEAREST makes sampling for bicubic/xBR simpler, so it should be used whenever linear/hybrid isn't
+		final int function = uiScalingMode == UIScalingMode.LINEAR || uiScalingMode == UIScalingMode.HYBRID ? GL_LINEAR : GL_NEAREST;
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, function);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, function);
 
@@ -1829,7 +1827,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 		// allocate buffers for zones which require upload
 		CountDownLatch latch = new CountDownLatch(1);
-		clientThread.invoke(() -> {
+		clientThread.invoke(() ->
+		{
 			for (int x = 0; x < ctx.sizeX; ++x)
 			{
 				for (int z = 0; z < ctx.sizeZ; ++z)

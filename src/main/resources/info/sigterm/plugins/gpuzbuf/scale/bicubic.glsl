@@ -104,55 +104,54 @@ vec4 textureCubic(sampler2D sampler, vec2 texCoords) {
   vec4 c;
 
 #if SAMPLING_MODE == SAMPLING_CATROM
-    // catrom benefits from anti-ringing, which requires knowledge of the minimum and maximum samples in the kernel
-    vec4 min_sample = vec4(FLT_MAX);
-    vec4 max_sample = vec4(FLT_MIN);
-    for (int m = -1; m <= 2; m++) {
-      for (int n = -1; n <= 2; n++) {
-        // this would use texelFetch, but that would require manual implementation of texture wrapping
-        vec4 vecData = texture(sampler, texCoords + vec2(m, n) * texelSize);
+  // catrom benefits from anti-ringing, which requires knowledge of the minimum and maximum samples in the kernel
+  vec4 min_sample = vec4(FLT_MAX);
+  vec4 max_sample = vec4(FLT_MIN);
+  for (int m = -1; m <= 2; m++) {
+    for (int n = -1; n <= 2; n++) {
+      // this would use texelFetch, but that would require manual implementation of texture wrapping
+      vec4 vecData = texture(sampler, texCoords + vec2(m, n) * texelSize);
 
-        // update min and max as we go
-        min_sample = min(min_sample, vecData);
-        max_sample = max(max_sample, vecData);
+      // update min and max as we go
+      min_sample = min(min_sample, vecData);
+      max_sample = max(max_sample, vecData);
 
-        // calculate weight based on distance of the current texel offset from the sub-texel position of the sampling location
-        float w = catmull_rom(d(vec2(m, n), coordFract));
+      // calculate weight based on distance of the current texel offset from the sub-texel position of the sampling location
+      float w = catmull_rom(d(vec2(m, n), coordFract));
 
-        // build the weighted average
-        nSum += vecData * w;
-        nDenom += w;
-      }
+      // build the weighted average
+      nSum += vecData * w;
+      nDenom += w;
     }
-    // calculate weighted average
-    c = nSum / nDenom;
+  }
+  // calculate weighted average
+  c = nSum / nDenom;
 
-    // store value before anti-ringing
-    vec4 aux = c;
-    // anti-ringing: clamp the color value so that it cannot exceed values already present in the kernel area
-    c = clamp(c, min_sample, max_sample);
-    // mix according to anti-ringing strength
-    c = mix(aux, c, CR_AR_STRENGTH);
+  // store value before anti-ringing
+  vec4 aux = c;
+  // anti-ringing: clamp the color value so that it cannot exceed values already present in the kernel area
+  c = clamp(c, min_sample, max_sample);
+  // mix according to anti-ringing strength
+  c = mix(aux, c, CR_AR_STRENGTH);
 #elif SAMPLING_MODE == SAMPLING_MITCHELL
-    for (int m = -1; m <= 2; m++) {
-      for (int n = -1; n <= 2; n++) {
-        // this would use texelFetch, but that would require manual implementation of texture wrapping
-        vec4 vecData = texture(sampler, texCoords + vec2(m, n) * texelSize);
+  for (int m = -1; m <= 2; m++) {
+    for (int n = -1; n <= 2; n++) {
+      // this would use texelFetch, but that would require manual implementation of texture wrapping
+      vec4 vecData = texture(sampler, texCoords + vec2(m, n) * texelSize);
 
-        // calculate weight based on distance of the current texel offset from the sub-texel position of the sampling location
-        float w = mitchell(d(vec2(m, n), coordFract));
+      // calculate weight based on distance of the current texel offset from the sub-texel position of the sampling location
+      float w = mitchell(d(vec2(m, n), coordFract));
 
-        // build the weighted average
-        nSum += vecData * w;
-        nDenom += w;
-      }
+      // build the weighted average
+      nSum += vecData * w;
+      nDenom += w;
     }
-    // calculate weighted average
-    c = nSum / nDenom;
+  }
+  // calculate weighted average
+  c = nSum / nDenom;
 #else
 #error "invalid sampling mode"
 #endif
-
 
   // return the weighted average
   return c;
