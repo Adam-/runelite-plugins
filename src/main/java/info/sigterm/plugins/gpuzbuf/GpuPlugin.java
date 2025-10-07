@@ -572,9 +572,12 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 	private void initProgram() throws ShaderException
 	{
+		// macOS core profile has no default VAO, so the shaders won't validate unless a vao is bound
+		glBindVertexArray(vaoUiHandle);
 		Template template = createTemplate();
 		glProgram = PROGRAM.compile(template);
 		glUiProgram = UI_PROGRAM.compile(template);
+		glBindVertexArray(0);
 
 		initUniforms();
 	}
