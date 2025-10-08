@@ -1,12 +1,24 @@
 package info.sigterm.plugins.gpuzbuf;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import static org.lwjgl.opengl.GL11C.*;
-import static org.lwjgl.opengl.GL15C.*;
+import net.runelite.api.FloatProjection;
+import net.runelite.api.Projection;
+import net.runelite.api.Scene;
+import static info.sigterm.plugins.gpuzbuf.GpuPlugin.uniEntityProj;
+import static info.sigterm.plugins.gpuzbuf.GpuPlugin.uniEntityTint;
+import static org.lwjgl.opengl.GL11C.GL_FLOAT;
+import static org.lwjgl.opengl.GL11C.GL_INT;
+import static org.lwjgl.opengl.GL11C.GL_SHORT;
+import static org.lwjgl.opengl.GL11C.GL_TRIANGLES;
+import static org.lwjgl.opengl.GL11C.glDrawArrays;
+import static org.lwjgl.opengl.GL15C.GL_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL15C.glBindBuffer;
+import static org.lwjgl.opengl.GL20.glUniformMatrix4fv;
 import static org.lwjgl.opengl.GL20C.glEnableVertexAttribArray;
+import static org.lwjgl.opengl.GL20C.glUniform4i;
 import static org.lwjgl.opengl.GL20C.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30C.glBindVertexArray;
 import static org.lwjgl.opengl.GL30C.glDeleteVertexArrays;
@@ -60,14 +72,70 @@ class VAO
 		glDeleteVertexArrays(vao);
 		vao = 0;
 	}
+
+	int[] lengths = new int[4];
+	Projection[] projs = new Projection[4];
+	Scene[] scenes = new Scene[4];
+	int off = 0;
+
+	void addRange(Projection projection, Scene scene)
+	{
+		assert vbo.mapped;
+
+		if (off > 0 && lengths[off - 1] == vbo.vb.position())
+		{
+			return;
+		}
+
+		if (lengths.length == off)
+		{
+			int l = lengths.length << 1;
+			lengths = Arrays.copyOf(lengths, l);
+			projs = Arrays.copyOf(projs, l);
+			scenes = Arrays.copyOf(scenes, l);
+		}
+
+		lengths[off] = vbo.vb.position();
+		projs[off] = projection;
+		scenes[off] = scene;
+		off++;
+	}
+
+	void draw()
+	{
+		assert !vbo.mapped;
+
+		int start = 0;
+		for (int i = 0; i < off; ++i)
+		{
+			int end = lengths[i];
+			Projection p = projs[i];
+			Scene scene = scenes[i];
+
+			int count = end-start;
+
+			glUniformMatrix4fv(uniEntityProj, false, p instanceof FloatProjection ? ((FloatProjection)p).getProjection() : Mat4.identity());
+			glUniform4i(uniEntityTint, scene.getOverrideHue(), scene.getOverrideSaturation(), scene.getOverrideLuminance(), scene.getOverrideAmount());
+			glBindVertexArray(vao);
+			glDrawArrays(GL_TRIANGLES, start / (VERT_SIZE / 4), count / (VAO.VERT_SIZE / 4));
+
+			start = end;
+		}
+	}
+
+	void reset()
+	{
+		Arrays.fill(projs, 0, off, null);
+		Arrays.fill(scenes, 0, off, null);
+		off = 0;
+	}
 }
 
 @Slf4j
 class VAOList
 {
 	// this needs to be larger than the largest single model
-	//	private static final int VAO_SIZE = 16 * 1024 * 1024;
-	private static final int VAO_SIZE = 1024 * 1024;
+	private static final int VAO_SIZE = 4 * 1024 * 1024;
 
 	private int curIdx;
 	private final List<VAO> vaos = new ArrayList<>();
@@ -97,7 +165,7 @@ class VAOList
 		vao.init();
 		vao.vbo.map();
 		vaos.add(vao);
-		log.trace("Allocated VAO {}", vao.vao);
+		log.debug("Allocated VAO {} request {}", vao.vao, size);
 		return vao;
 	}
 
@@ -124,5 +192,33 @@ class VAOList
 		}
 		vaos.clear();
 		curIdx = 0;
+	}
+
+	void addRange(Projection projection, Scene scene)
+	{
+		for (int i = 0; i <= curIdx && i < vaos.size(); ++i)
+		{
+			VAO vao = vaos.get(i);
+			if (vao.vbo.mapped)
+			{
+				vao.addRange(projection, scene);
+			}
+		}
+	}
+
+	void debug()
+	{
+		log.debug("{} vaos allocated", vaos.size());
+		for (VAO vao : vaos)
+		{
+			log.debug("vao {} mapped: {} num ranges: {} length: {}", vao, vao.vbo.mapped, vao.off, vao.vbo.mapped ? vao.vbo.vb.position() : -1);
+			if (vao.off > 1)
+			{
+				for (int i = 0; i < vao.off; ++i)
+				{
+					log.debug("  {} {} {}", vao.lengths[i], vao.projs[i], vao.scenes[i]);
+				}
+			}
+		}
 	}
 }

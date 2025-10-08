@@ -187,12 +187,14 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private int minLevel, level, maxLevel;
 	private Set<Integer> hideRoofIds;
 
+	private VAOList vaoO;
+	private VAOList vaoA;
+	private VAOList vaoPO;
+
 	static class SceneContext
 	{
 		final int sizeX, sizeZ;
 		Zone[][] zones;
-		VAOList vaoO, vaoA;
-		VAOList vaoPO;
 
 		SceneContext(int sizeX, int sizeZ)
 		{
@@ -206,9 +208,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 					zones[x][z] = new Zone();
 				}
 			}
-			vaoO = new VAOList();
-			vaoA = new VAOList();
-			vaoPO = new VAOList();
 		}
 
 		void free()
@@ -220,9 +219,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 					zones[x][z].free();
 				}
 			}
-			vaoO.free();
-			vaoA.free();
-			vaoPO.free();
 		}
 	}
 
@@ -258,8 +254,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private int uniDrawDistance;
 	private int uniExpandedMapLoadingChunks;
 	private int uniWorldProj;
-	private int uniEntityProj;
-	private int uniEntityTint;
+	static int uniEntityProj;
+	static int uniEntityTint;
 	private int uniBrightness;
 	private int uniTex;
 	private int uniTexSourceDimensions;
@@ -351,7 +347,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				initVao();
 				initProgram();
 				initInterfaceTexture();
-				initUniformBuffer();
 				if (glCapabilities.OpenGL45)
 				{
 					glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE); // 1 near 0 far
@@ -438,8 +433,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				}
 
 				root.free();
-
-				destroyGlBuffer(glUniformBuffer);
 
 				shutdownInterfaceTexture();
 				shutdownProgram();
@@ -572,11 +565,13 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 	private void initProgram() throws ShaderException
 	{
-		// macOS core profile has no default VAO, so the shaders won't validate unless a vao is bound
+		// macOS core profile has no default VAO, so the shaders won't validate unless a VAO is bound
 		glBindVertexArray(vaoUiHandle);
+
 		Template template = createTemplate();
 		glProgram = PROGRAM.compile(template);
 		glUiProgram = UI_PROGRAM.compile(template);
+
 		glBindVertexArray(0);
 
 		initUniforms();
@@ -626,10 +621,10 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		FloatBuffer vboUiBuf = GpuFloatBuffer.allocateDirect(5 * 4);
 		vboUiBuf.put(new float[]{
 			// positions     // texture coords
-			1f, 1f, 0.0f, 1.0f, 0f, // top right
-			1f, -1f, 0.0f, 1.0f, 1f, // bottom right
-			-1f, -1f, 0.0f, 0.0f, 1f, // bottom left
-			-1f, 1f, 0.0f, 0.0f, 0f  // top left
+			1f, 1f, 0f, 1f, 0f, // top right
+			1f, -1f, 0f, 1f, 1f, // bottom right
+			-1f, -1f, 0f, 0f, 1f, // bottom left
+			-1f, 1f, 0f, 0f, 0f  // top left
 		});
 		vboUiBuf.rewind();
 		glBindBuffer(GL_ARRAY_BUFFER, vboUiHandle);
@@ -660,6 +655,11 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private void initBuffers()
 	{
 		uniformBuffer = new GpuFloatBuffer(UNIFORM_BUFFER_SIZE);
+		initGlBuffer(glUniformBuffer);
+
+		vaoO = new VAOList();
+		vaoA = new VAOList();
+		vaoPO = new VAOList();
 	}
 
 	private void initGlBuffer(GLBuffer glBuffer)
@@ -669,7 +669,13 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 	private void shutdownBuffers()
 	{
+		destroyGlBuffer(glUniformBuffer);
 		uniformBuffer = null;
+
+		vaoO.free();
+		vaoA.free();
+		vaoPO.free();
+		vaoO = vaoA = vaoPO = null;
 	}
 
 	private void destroyGlBuffer(GLBuffer glBuffer)
@@ -700,11 +706,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		glDeleteBuffers(interfacePbo);
 		glDeleteTextures(interfaceTexture);
 		interfaceTexture = -1;
-	}
-
-	private void initUniformBuffer()
-	{
-		initGlBuffer(glUniformBuffer);
 	}
 
 	private void initFbo(int width, int height, int aaSamples)
@@ -805,6 +806,9 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		}
 		else
 		{
+			Scene toplevel = client.getScene();
+			vaoO.addRange(null, toplevel);
+			vaoPO.addRange(null, toplevel);
 			glUniform4i(uniEntityTint, scene.getOverrideHue(), scene.getOverrideSaturation(), scene.getOverrideLuminance(), scene.getOverrideAmount());
 		}
 	}
@@ -1049,7 +1053,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		}
 
 		// this is a noop after the first zone
-		ctx.vaoA.unmap();
+		vaoA.unmap();
 
 		Zone z = ctx.zones[zx][zz];
 		if (!z.initialized)
@@ -1084,25 +1088,38 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 		if (pass == DrawCallbacks.PASS_OPAQUE)
 		{
-			glProgramUniform3i(glProgram, uniBase, 0, 0, 0);
+			vaoO.addRange(projection, scene);
+			vaoPO.addRange(projection, scene);
 
-			var vaos = ctx.vaoO.unmap();
-			for (VAO vao : vaos)
+			if (scene.getWorldViewId() == -1)
 			{
-				glBindVertexArray(vao.vao);
-				glDrawArrays(GL_TRIANGLES, 0, vao.vbo.len / (VAO.VERT_SIZE / 4));
-			}
+				glProgramUniform3i(glProgram, uniBase, 0, 0, 0);
 
-			vaos = ctx.vaoPO.unmap();
-			for (VAO vao : vaos)
-			{
-				glBindVertexArray(vao.vao);
+//				if (client.getGameCycle() % 100 == 0)
+//				{
+//					vaoO.debug();
+//				}
+				var vaos = vaoO.unmap();
+				for (VAO vao : vaos)
+				{
+					vao.draw();
+					vao.reset();
+				}
+
+				vaos = vaoPO.unmap();
 				glDepthMask(false);
-				glDrawArrays(GL_TRIANGLES, 0, vao.vbo.len / (VAO.VERT_SIZE / 4));
+				for (VAO vao : vaos)
+				{
+					vao.draw();
+				}
 				glDepthMask(true);
 
 				glColorMask(false, false, false, false);
-				glDrawArrays(GL_TRIANGLES, 0, vao.vbo.len / (VAO.VERT_SIZE / 4));
+				for (VAO vao : vaos)
+				{
+					vao.draw();
+					vao.reset();
+				}
 				glColorMask(true, true, true, true);
 			}
 		}
@@ -1133,13 +1150,13 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		int size = m.getFaceCount() * 3 * VAO.VERT_SIZE;
 		if (m.getFaceTransparencies() == null)
 		{
-			VAO o = ctx.vaoO.get(size);
+			VAO o = vaoO.get(size);
 			sceneUploader.uploadTempModel(m, orient, x, y, z, o.vbo.vb);
 		}
 		else
 		{
 			m.calculateBoundsCylinder();
-			VAO o = ctx.vaoO.get(size), a = ctx.vaoA.get(size);
+			VAO o = vaoO.get(size), a = vaoA.get(size);
 			int start = a.vbo.vb.position();
 			facePrioritySorter.uploadSortedModel(worldProjection, m, orient, x, y, z, o.vbo.vb, a.vbo.vb);
 			int end = a.vbo.vb.position();
@@ -1171,8 +1188,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			// opaque player faces have their own vao and are drawn in a separate pass from normal opaque faces
 			// because they are not depth tested. transparent player faces don't need their own vao because normal
 			// transparent faces are already not depth tested
-			VAO o = gameObject.getRenderable() instanceof Player ? ctx.vaoPO.get(size) : ctx.vaoO.get(size);
-			VAO a = ctx.vaoA.get(size);
+			VAO o = gameObject.getRenderable() instanceof Player ? vaoPO.get(size) : vaoO.get(size);
+			VAO a = vaoA.get(size);
 
 			int start = a.vbo.vb.position();
 			m.calculateBoundsCylinder();
@@ -1192,13 +1209,12 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				int zx = (gameObject.getX() >> 10) + offset;
 				int zz = (gameObject.getY() >> 10) + offset;
 				Zone zone = ctx.zones[zx][zz];
-				// TODO alpha sorting doesn't account for orient
 				zone.addTempAlphaModel(a.vao, start, end, gameObject.getPlane(), gameObject.getX() & 1023, gameObject.getZ() - gameObject.getRenderable().getModelHeight() /* to render players over locs */, gameObject.getY() & 1023);
 			}
 		}
 		else
 		{
-			VAO o = ctx.vaoO.get(size);
+			VAO o = vaoO.get(size);
 			sceneUploader.uploadTempModel(m, gameObject.getModelOrientation(), gameObject.getX(), gameObject.getZ(), gameObject.getY(), o.vbo.vb);
 		}
 	}
@@ -1529,10 +1545,9 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		assert scene.getWorldViewId() == -1;
 		if (nextZones != null)
 		{
-			log.error("Double zone load!");
 			// does this happen? this needs to free nextZones?
+			throw new RuntimeException("Double zone load!");
 		}
-		assert nextZones == null;
 
 		SceneContext ctx = root;
 		Scene prev = client.getTopLevelWorldView().getScene();
