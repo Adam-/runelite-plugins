@@ -124,7 +124,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private TextureManager textureManager;
 
 	@Inject
-	private SceneUploader sceneUploader;
+	private RegionManager regionManager;
 
 	@Inject
 	private FacePrioritySorter facePrioritySorter;
@@ -1151,7 +1151,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		if (m.getFaceTransparencies() == null)
 		{
 			VAO o = vaoO.get(size);
-			sceneUploader.uploadTempModel(m, orient, x, y, z, o.vbo.vb);
+			SceneUploader.uploadTempModel(m, orient, x, y, z, o.vbo.vb);
 		}
 		else
 		{
@@ -1215,7 +1215,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		else
 		{
 			VAO o = vaoO.get(size);
-			sceneUploader.uploadTempModel(m, gameObject.getModelOrientation(), gameObject.getX(), gameObject.getZ(), gameObject.getY(), o.vbo.vb);
+			SceneUploader.uploadTempModel(m, gameObject.getModelOrientation(), gameObject.getX(), gameObject.getZ(), gameObject.getY(), o.vbo.vb);
 		}
 	}
 
@@ -1271,6 +1271,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				zone = ctx.zones[x][z] = new Zone();
 
 				Scene scene = wv.getScene();
+				SceneUploader sceneUploader = new SceneUploader();
 				sceneUploader.zoneSize(scene, zone, x, z);
 
 				VBO o = null, a = null;
@@ -1552,7 +1553,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		SceneContext ctx = root;
 		Scene prev = client.getTopLevelWorldView().getScene();
 
-		sceneUploader.prepare(scene);
+		regionManager.prepare(scene);
 
 		int dx = scene.getBaseX() - prev.getBaseX() >> 3;
 		int dy = scene.getBaseY() - prev.getBaseY() >> 3;
@@ -1646,6 +1647,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		}
 
 		// size the zones which require upload
+		SceneUploader sceneUploader = new SceneUploader();
 		Stopwatch sw = Stopwatch.createStarted();
 		int len = 0, lena = 0;
 		int reused = 0, newzones = 0;
@@ -1834,6 +1836,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		final SceneContext ctx = new SceneContext(worldView.getSizeX() >> 3, worldView.getSizeY() >> 3);
 		subs[worldViewId] = ctx;
 
+		SceneUploader sceneUploader = new SceneUploader();
 		for (int x = 0; x < ctx.sizeX; ++x)
 		{
 			for (int z = 0; z < ctx.sizeZ; ++z)

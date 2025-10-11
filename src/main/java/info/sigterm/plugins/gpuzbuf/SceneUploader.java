@@ -24,12 +24,9 @@
  */
 package info.sigterm.plugins.gpuzbuf;
 
-import java.io.IOException;
 import java.nio.IntBuffer;
 import java.util.HashSet;
 import java.util.Set;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Constants;
 import net.runelite.api.DecorativeObject;
@@ -45,34 +42,11 @@ import net.runelite.api.SceneTileModel;
 import net.runelite.api.SceneTilePaint;
 import net.runelite.api.Tile;
 import net.runelite.api.WallObject;
-import info.sigterm.plugins.gpuzbuf.regions.Regions;
 
-@Singleton
 @Slf4j
 class SceneUploader
 {
-	private final GpuPluginConfig gpuConfig;
-
-	private final Regions regions;
-
 	private int basex, basez, rid, level;
-
-	@Inject
-	SceneUploader(
-		GpuPluginConfig config
-	)
-	{
-		this.gpuConfig = config;
-
-		try (var in = SceneUploader.class.getResourceAsStream("regions/regions.txt"))
-		{
-			regions = new Regions(in, "regions.txt");
-		}
-		catch (IOException ex)
-		{
-			throw new RuntimeException(ex);
-		}
-	}
 
 	void zoneSize(Scene scene, Zone zone, int mzx, int mzz)
 	{
@@ -429,10 +403,10 @@ class SceneUploader
 				lz -= basez >> 7;
 				ux -= basex >> 7;
 				uz -= basez >> 7;
-				assert lx >= 0;
-				assert lz >= 0;
-				assert ux < 25; // largest object?
-				assert uz < 25;
+				assert lx >= 0 : lx;
+				assert lz >= 0 : lz;
+				assert ux < 25 : ux; // largest object?
+				assert uz < 25 : uz;
 			}
 			zone.addAlphaModel(zone.glVaoA, model, pos, endpos,
 				x - basex, y, z - basez,
@@ -745,7 +719,7 @@ class SceneUploader
 	}
 
 	// temp draw
-	int uploadTempModel(Model model, int orientation, int x, int y, int z, IntBuffer opaqueBuffer)
+	static int uploadTempModel(Model model, int orientation, int x, int y, int z, IntBuffer opaqueBuffer)
 	{
 		final int triangleCount = model.getFaceCount();
 		final int vertexCount = model.getVerticesCount();
@@ -941,65 +915,5 @@ class SceneUploader
 		}
 
 		return (hue << 10 | sat << 7 | lum) & 65535;
-	}
-
-	// remove tiles from the scene that are outside the current region
-	void prepare(Scene scene)
-	{
-		if (scene.isInstance() || !gpuConfig.hideUnrelatedMaps())
-		{
-			return;
-		}
-
-		int baseX = scene.getBaseX() / 8;
-		int baseY = scene.getBaseY() / 8;
-		int centerX = baseX + 6;
-		int centerY = baseY + 6;
-		int centerId = regions.getRegionId(centerX, centerY);
-
-		int r = Constants.EXTENDED_SCENE_SIZE / 16;
-		for (int offx = -r; offx <= r; ++offx)
-		{
-			for (int offy = -r; offy <= r; ++offy)
-			{
-				int cx = centerX + offx;
-				int cy = centerY + offy;
-				int id = regions.getRegionId(cx, cy);
-				if (id != centerId)
-				{
-					removeZone(scene, cx, cy);
-				}
-			}
-		}
-	}
-
-	private static void removeZone(Scene scene, int cx, int cy)
-	{
-		int wx = cx * 8;
-		int wy = cy * 8;
-		int sx = wx - scene.getBaseX();
-		int sy = wy - scene.getBaseY();
-		int cmsx = sx + GpuPlugin.SCENE_OFFSET;
-		int cmsy = sy + GpuPlugin.SCENE_OFFSET;
-		Tile[][][] tiles = scene.getExtendedTiles();
-		for (int x = 0; x < 8; ++x)
-		{
-			for (int y = 0; y < 8; ++y)
-			{
-				int msx = cmsx + x;
-				int msy = cmsy + y;
-				if (msx >= 0 && msx < Constants.EXTENDED_SCENE_SIZE && msy >= 0 && msy < Constants.EXTENDED_SCENE_SIZE)
-				{
-					for (int z = 0; z < Constants.MAX_Z; ++z)
-					{
-						Tile tile = tiles[z][msx][msy];
-						if (tile != null)
-						{
-							scene.removeTile(tile);
-						}
-					}
-				}
-			}
-		}
 	}
 }
