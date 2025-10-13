@@ -22,6 +22,7 @@ import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL11.glDrawElements;
 import static org.lwjgl.opengl.GL11C.GL_TRIANGLES;
 import static org.lwjgl.opengl.GL14.glMultiDrawArrays;
+import static org.lwjgl.opengl.GL20C.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30C.GL_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL30C.GL_INT;
 import static org.lwjgl.opengl.GL30C.GL_SHORT;
@@ -30,7 +31,6 @@ import static org.lwjgl.opengl.GL30C.glBindVertexArray;
 import static org.lwjgl.opengl.GL30C.glDeleteVertexArrays;
 import static org.lwjgl.opengl.GL30C.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL30C.glGenVertexArrays;
-import static org.lwjgl.opengl.GL30C.glVertexAttrib3f;
 import static org.lwjgl.opengl.GL30C.glVertexAttribIPointer;
 import static org.lwjgl.opengl.GL41C.glProgramUniform3i;
 
@@ -145,16 +145,14 @@ class Zone
 		glBindVertexArray(vao);
 		glBindBuffer(GL_ARRAY_BUFFER, buffer);
 
-		glVertexAttrib3f(0, -Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_SHORT, false, VERT_SIZE, 0);
 
 		glEnableVertexAttribArray(1);
-		glVertexAttribIPointer(1, 3, GL_SHORT, VERT_SIZE, 0);
+		glVertexAttribIPointer(1, 1, GL_INT, VERT_SIZE, 8);
 
 		glEnableVertexAttribArray(2);
-		glVertexAttribIPointer(2, 1, GL_INT, VERT_SIZE, 8);
-
-		glEnableVertexAttribArray(3);
-		glVertexAttribIPointer(3, 4, GL_SHORT, VERT_SIZE, 12);
+		glVertexAttribIPointer(2, 4, GL_SHORT, VERT_SIZE, 12);
 
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);

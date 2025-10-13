@@ -95,25 +95,27 @@ class SceneUploader
 		zone.roofStart = new int[4][roofIds.size()];
 		zone.roofEnd = new int[4][roofIds.size()];
 
-		for (int z = 0; z <= 3; ++z)
+		for (int level = 0; level <= 3; ++level)
 		{
-			if (z == 0)
+			this.level = level;
+
+			if (level == 0)
 			{
-				uploadZoneLevel(scene, zone, mzx, mzz, z, false, roofIds, vb, ab);
-				uploadZoneLevel(scene, zone, mzx, mzz, z, true, roofIds, vb, ab);
+				uploadZoneLevel(scene, zone, mzx, mzz, level, false, roofIds, vb, ab);
+				uploadZoneLevel(scene, zone, mzx, mzz, level, true, roofIds, vb, ab);
 				uploadZoneLevel(scene, zone, mzx, mzz, 1, true, roofIds, vb, ab);
 				uploadZoneLevel(scene, zone, mzx, mzz, 2, true, roofIds, vb, ab);
 				uploadZoneLevel(scene, zone, mzx, mzz, 3, true, roofIds, vb, ab);
 			}
 			else
 			{
-				uploadZoneLevel(scene, zone, mzx, mzz, z, false, roofIds, vb, ab);
+				uploadZoneLevel(scene, zone, mzx, mzz, level, false, roofIds, vb, ab);
 			}
 
 			if (zone.vboO != null)
 			{
 				int pos = zone.vboO.vb.position();
-				zone.levelOffsets[z] = pos;
+				zone.levelOffsets[level] = pos;
 			}
 		}
 	}
@@ -151,7 +153,6 @@ class SceneUploader
 		Tile[][][] tiles = scene.getExtendedTiles();
 
 		int offset = scene.getWorldViewId() == -1 ? GpuPlugin.SCENE_OFFSET >> 3 : 0;
-		this.level = level;
 		this.basex = (mzx - offset) << 10;
 		this.basez = (mzz - offset) << 10;
 
@@ -170,6 +171,11 @@ class SceneUploader
 				}
 
 				boolean isvisbelow = maplevel <= 3 && (settings[maplevel][msx][msz] & Constants.TILE_FLAG_VIS_BELOW) != 0;
+				if (isvisbelow != visbelow)
+				{
+					continue;
+				}
+
 				int rid;
 				if (isvisbelow || maplevel == 0)
 				{
@@ -178,11 +184,6 @@ class SceneUploader
 				else
 				{
 					rid = roofs[maplevel - 1][msx][msz];
-				}
-
-				if (isvisbelow != visbelow)
-				{
-					continue;
 				}
 
 				if (rid == roofId)

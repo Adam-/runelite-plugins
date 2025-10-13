@@ -1163,12 +1163,23 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 			if (end > start)
 			{
-				int offset = scene.getWorldViewId() == -1 ? (SCENE_OFFSET >> 3) : 0;
-				int zx = (x >> 10) + offset;
-				int zz = (z >> 10) + offset;
+				int offset = scene.getWorldViewId() == -1 ? SCENE_OFFSET : 0;
+				int zx = (x >> 10) + (offset >> 3);
+				int zz = (z >> 10) + (offset >> 3);
 				Zone zone = ctx.zones[zx][zz];
+
+//				int sx = (x >> 7) + offset;
+//				int sz = (z >> 7) + offset;
+//				byte[][][] tileSettings = scene.getExtendedTileSettings();
+//				int plane = tileObject.getPlane() + ((tileSettings[1][sx][sz] & Constants.TILE_FLAG_BRIDGE) >> 1);
+//				if ((tileSettings[plane][sx][sz] & Constants.TILE_FLAG_VIS_BELOW) != 0){
+//					plane=0;
+//				}
+				// level is checked prior to this callback being run, in order to cull clickboxes, but
+				// tileObject.getPlane()>maxLevel if visbelow is set - lower the object to the max level
+				int plane = Math.min(maxLevel, tileObject.getPlane());
 				// renderable modelheight is typically not set here because DynamicObject doesn't compute it on the returned model
-				zone.addTempAlphaModel(a.vao, start, end, tileObject.getPlane(), x & 1023, y, z & 1023);
+				zone.addTempAlphaModel(a.vao, start, end, plane, x & 1023, y, z & 1023);
 			}
 		}
 	}

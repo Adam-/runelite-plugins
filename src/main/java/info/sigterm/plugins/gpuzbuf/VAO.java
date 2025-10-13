@@ -23,7 +23,6 @@ import static org.lwjgl.opengl.GL20C.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30C.glBindVertexArray;
 import static org.lwjgl.opengl.GL30C.glDeleteVertexArrays;
 import static org.lwjgl.opengl.GL30C.glGenVertexArrays;
-import static org.lwjgl.opengl.GL30C.glVertexAttribI3i;
 import static org.lwjgl.opengl.GL30C.glVertexAttribIPointer;
 
 class VAO
@@ -54,13 +53,11 @@ class VAO
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, false, VERT_SIZE, 0);
 
-		glVertexAttribI3i(1, Short.MIN_VALUE, Short.MIN_VALUE, Short.MIN_VALUE);
+		glEnableVertexAttribArray(1);
+		glVertexAttribIPointer(1, 1, GL_INT, VERT_SIZE, 12);
 
 		glEnableVertexAttribArray(2);
-		glVertexAttribIPointer(2, 1, GL_INT, VERT_SIZE, 12);
-
-		glEnableVertexAttribArray(3);
-		glVertexAttribIPointer(3, 4, GL_SHORT, VERT_SIZE, 16);
+		glVertexAttribIPointer(2, 4, GL_SHORT, VERT_SIZE, 16);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);

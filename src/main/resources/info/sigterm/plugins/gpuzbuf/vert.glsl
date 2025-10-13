@@ -32,13 +32,9 @@
 #define FOG_CORNER_ROUNDING 1.5
 #define FOG_CORNER_ROUNDING_SQUARED (FOG_CORNER_ROUNDING * FOG_CORNER_ROUNDING)
 
-// static models are stored as shorts, but the dynamic models use float.
-// a single input cannot accept both, so use both and max() them to get the
-// real value
 layout(location = 0) in vec3 vertf;
-layout(location = 1) in ivec3 verti;
-layout(location = 2) in int abhsl;
-layout(location = 3) in ivec4 tex;
+layout(location = 1) in int abhsl;
+layout(location = 2) in ivec4 tex;
 
 layout(std140) uniform uniforms {
   float cameraYaw;
@@ -72,7 +68,7 @@ float fogFactorLinear(const float dist, const float start, const float end) {
 }
 
 void main() {
-  vec4 vert = vec4(max(vertf, vec3(verti)) + base, 1);
+  vec4 vert = vec4(vertf + base, 1);
   float a = float(abhsl >> 24 & 0xff) / 255.f;
 
   vec3 hsl = vec3(abhsl >> 10 & 63, abhsl >> 7 & 7, abhsl & 127);
