@@ -949,6 +949,9 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		Mat4.mul(projectionMatrix, Mat4.translate(-cameraX, -cameraY, -cameraZ));
 		glUniformMatrix4fv(uniWorldProj, false, projectionMatrix);
 
+		projectionMatrix = Mat4.identity();
+		glUniformMatrix4fv(uniEntityProj, false, projectionMatrix);
+
 		glUniform4i(uniEntityTint, 0, 0, 0, 0);
 
 		// Bind uniforms
