@@ -2,17 +2,14 @@ package info.sigterm.plugins.gpuzbuf;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import static org.lwjgl.opengl.GL15.GL_WRITE_ONLY;
+import static org.lwjgl.opengl.GL15.glMapBuffer;
 import static org.lwjgl.opengl.GL15C.GL_ARRAY_BUFFER;
-import static org.lwjgl.opengl.GL15C.GL_DYNAMIC_DRAW;
 import static org.lwjgl.opengl.GL15C.glBindBuffer;
 import static org.lwjgl.opengl.GL15C.glBufferData;
 import static org.lwjgl.opengl.GL15C.glDeleteBuffers;
 import static org.lwjgl.opengl.GL15C.glGenBuffers;
 import static org.lwjgl.opengl.GL15C.glUnmapBuffer;
-import static org.lwjgl.opengl.GL30C.GL_MAP_INVALIDATE_BUFFER_BIT;
-import static org.lwjgl.opengl.GL30C.GL_MAP_UNSYNCHRONIZED_BIT;
-import static org.lwjgl.opengl.GL30C.GL_MAP_WRITE_BIT;
-import static org.lwjgl.opengl.GL30C.glMapBufferRange;
 
 class VBO
 {
@@ -28,12 +25,12 @@ class VBO
 		this.size = size;
 	}
 
-	void init()
+	void init(int usage)
 	{
 		bufId = glGenBuffers();
 
 		glBindBuffer(GL_ARRAY_BUFFER, bufId);
-		glBufferData(GL_ARRAY_BUFFER, size, GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, size, usage);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
@@ -54,7 +51,7 @@ class VBO
 	{
 		assert !mapped;
 		glBindBuffer(GL_ARRAY_BUFFER, bufId);
-		buffer = glMapBufferRange(GL_ARRAY_BUFFER, 0, size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT, buffer);
+		buffer = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY, buffer);
 		if (buffer == null)
 		{
 			throw new RuntimeException("unable to map GL buffer " + bufId + " size " + size);

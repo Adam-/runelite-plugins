@@ -39,10 +39,9 @@ import static org.lwjgl.opengl.GL41C.glProgramUniform3i;
 class Zone
 {
 	// Zone vertex format
-	// index 0: -FLOAT.MAX_VALUE (non-array)
-	// index 1: short vec3(x, y, z)
-	// index 2: int abhsl
-	// index 3: short vec4(id, x, y, z)
+	// index 0: short vec3(x, y, z)
+	// index 1: int abhsl
+	// index 2: short vec4(id, x, y, z)
 	static final int VERT_SIZE = 20;
 
 	int glVao;

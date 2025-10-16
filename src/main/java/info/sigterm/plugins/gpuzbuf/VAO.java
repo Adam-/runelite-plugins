@@ -14,6 +14,7 @@ import static org.lwjgl.opengl.GL11C.GL_INT;
 import static org.lwjgl.opengl.GL11C.GL_SHORT;
 import static org.lwjgl.opengl.GL11C.GL_TRIANGLES;
 import static org.lwjgl.opengl.GL11C.glDrawArrays;
+import static org.lwjgl.opengl.GL15.GL_DYNAMIC_DRAW;
 import static org.lwjgl.opengl.GL15C.GL_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL15C.glBindBuffer;
 import static org.lwjgl.opengl.GL20.glUniformMatrix4fv;
@@ -29,9 +30,8 @@ class VAO
 {
 	// Temporary vertex format
 	// index 0: vec3(x, y, z)
-	// index 1: Short.MIN_VALUE (non-array)
-	// index 2: int abhsl
-	// index 3: short vec4(id, x, y, z)
+	// index 1: int abhsl
+	// index 2: short vec4(id, x, y, z)
 	static final int VERT_SIZE = 24;
 
 	final VBO vbo;
@@ -47,7 +47,7 @@ class VAO
 		vao = glGenVertexArrays();
 		glBindVertexArray(vao);
 
-		vbo.init();
+		vbo.init(GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo.bufId);
 
 		glEnableVertexAttribArray(0);
