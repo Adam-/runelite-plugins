@@ -4,20 +4,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.FloatProjection;
 import net.runelite.api.Projection;
 import net.runelite.api.Scene;
-import static info.sigterm.plugins.gpuzbuf.GpuPlugin.uniEntityProj;
 import static info.sigterm.plugins.gpuzbuf.GpuPlugin.uniEntityTint;
+import static info.sigterm.plugins.gpuzbuf.GpuPlugin.updateEntityProjection;
+import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
+import static org.lwjgl.opengl.GL11.glDrawArrays;
 import static org.lwjgl.opengl.GL11C.GL_FLOAT;
 import static org.lwjgl.opengl.GL11C.GL_INT;
 import static org.lwjgl.opengl.GL11C.GL_SHORT;
-import static org.lwjgl.opengl.GL11C.GL_TRIANGLES;
-import static org.lwjgl.opengl.GL11C.glDrawArrays;
 import static org.lwjgl.opengl.GL15.GL_DYNAMIC_DRAW;
 import static org.lwjgl.opengl.GL15C.GL_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL15C.glBindBuffer;
-import static org.lwjgl.opengl.GL20.glUniformMatrix4fv;
 import static org.lwjgl.opengl.GL20C.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20C.glUniform4i;
 import static org.lwjgl.opengl.GL20C.glVertexAttribPointer;
@@ -111,7 +109,7 @@ class VAO
 
 			int count = end-start;
 
-			glUniformMatrix4fv(uniEntityProj, false, p instanceof FloatProjection ? ((FloatProjection)p).getProjection() : Mat4.identity());
+			updateEntityProjection(p);
 			glUniform4i(uniEntityTint, scene.getOverrideHue(), scene.getOverrideSaturation(), scene.getOverrideLuminance(), scene.getOverrideAmount());
 			glBindVertexArray(vao);
 			glDrawArrays(GL_TRIANGLES, start / (VERT_SIZE / 4), count / (VAO.VERT_SIZE / 4));

@@ -254,7 +254,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private int uniDrawDistance;
 	private int uniExpandedMapLoadingChunks;
 	private int uniWorldProj;
-	static int uniEntityProj;
+	private static int uniEntityProj;
 	static int uniEntityTint;
 	private int uniBrightness;
 	private int uniTex;
@@ -267,6 +267,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private int uniTextureLightMode;
 	private int uniTick;
 	static int uniBase;
+
+	private static Projection lastProjection;
 
 	@Override
 	protected void startUp()
@@ -773,9 +775,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		}
 	}
 
-	private Projection lastProjection;
-
-	private void updateEntityProject(Projection projection)
+	static void updateEntityProjection(Projection projection)
 	{
 		if (lastProjection != projection)
 		{
@@ -949,9 +949,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		Mat4.mul(projectionMatrix, Mat4.translate(-cameraX, -cameraY, -cameraZ));
 		glUniformMatrix4fv(uniWorldProj, false, projectionMatrix);
 
-		projectionMatrix = Mat4.identity();
-		glUniformMatrix4fv(uniEntityProj, false, projectionMatrix);
-
 		glUniform4i(uniEntityTint, 0, 0, 0, 0);
 
 		// Bind uniforms
@@ -1021,7 +1018,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	@Override
 	public void drawZoneOpaque(Projection entityProjection, Scene scene, int zx, int zz)
 	{
-		updateEntityProject(entityProjection);
+		updateEntityProjection(entityProjection);
 
 		SceneContext ctx = context(scene);
 		if (ctx == null)
@@ -1044,7 +1041,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	@Override
 	public void drawZoneAlpha(Projection entityProjection, Scene scene, int level, int zx, int zz)
 	{
-		updateEntityProject(entityProjection);
+		updateEntityProjection(entityProjection);
 
 		SceneContext ctx = context(scene);
 		if (ctx == null)
@@ -1084,7 +1081,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			return;
 		}
 
-		updateEntityProject(projection);
+		updateEntityProjection(projection);
 
 		if (pass == DrawCallbacks.PASS_OPAQUE)
 		{
