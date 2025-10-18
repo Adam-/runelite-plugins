@@ -658,6 +658,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	{
 		uniformBuffer = new GpuFloatBuffer(UNIFORM_BUFFER_SIZE);
 		initGlBuffer(glUniformBuffer);
+		Zone.initBuffer();
 
 		vaoO = new VAOList();
 		vaoA = new VAOList();
@@ -673,6 +674,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	{
 		destroyGlBuffer(glUniformBuffer);
 		uniformBuffer = null;
+		Zone.freeBuffer();
 
 		vaoO.free();
 		vaoA.free();

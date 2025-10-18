@@ -19,9 +19,15 @@ import static info.sigterm.plugins.gpuzbuf.FacePrioritySorter.distanceToFaces;
 import static info.sigterm.plugins.gpuzbuf.GpuPlugin.glProgram;
 import static info.sigterm.plugins.gpuzbuf.GpuPlugin.uniBase;
 import org.lwjgl.BufferUtils;
+import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
 import static org.lwjgl.opengl.GL11.glDrawElements;
 import static org.lwjgl.opengl.GL11C.GL_TRIANGLES;
 import static org.lwjgl.opengl.GL14.glMultiDrawArrays;
+import static org.lwjgl.opengl.GL15C.GL_ELEMENT_ARRAY_BUFFER;
+import static org.lwjgl.opengl.GL15C.GL_STREAM_DRAW;
+import static org.lwjgl.opengl.GL15C.glBufferData;
+import static org.lwjgl.opengl.GL15C.glDeleteBuffers;
+import static org.lwjgl.opengl.GL15C.glGenBuffers;
 import static org.lwjgl.opengl.GL20C.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30C.GL_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL30C.GL_INT;
@@ -450,6 +456,19 @@ class Zone
 	private static int lastVao;
 	private static int lastzx, lastzz;
 
+	private static int elementBufferId;
+
+	static void initBuffer()
+	{
+		elementBufferId = glGenBuffers();
+	}
+
+	static void freeBuffer()
+	{
+		glDeleteBuffers(elementBufferId);
+		elementBufferId = 0;
+	}
+
 	void alphaSort(int zx, int zz, int cx, int cy, int cz)
 	{
 		alphaModels.sort(Comparator.comparingInt((AlphaModel m) ->
@@ -594,7 +613,10 @@ class Zone
 			alphaElements.flip();
 			glProgramUniform3i(glProgram, uniBase, lastzx << 10, 0, lastzz << 10);
 			glBindVertexArray(lastVao);
-			glDrawElements(GL_TRIANGLES, alphaElements);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferId);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, alphaElements, GL_STREAM_DRAW);
+			glDrawElements(GL_TRIANGLES, alphaElements.limit(), GL_UNSIGNED_INT, 0L);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 			alphaElements.clear();
 		}
 		else if (lastDrawMode == STATIC_UNSORTED)
