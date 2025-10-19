@@ -292,6 +292,7 @@ class Zone
 		// only set for static geometry as they require sorting
 		int radius;
 		int[] packedFaces;
+		byte[] renderPriorities;
 
 		static final int SKIP = 1; // temporary model is in a closer zone
 		static final int TEMP = 2; // temporary model added to a closer zone
@@ -400,6 +401,7 @@ class Zone
 
 		assert radius >= 0;
 
+		m.renderPriorities = model.getFaceRenderPriorities();
 		m.radius = 2 + (int) Math.sqrt(radius);
 
 		assert packedFaces.length > 0;
@@ -439,6 +441,7 @@ class Zone
 			{
 				alphaModels.remove(i);
 				m.packedFaces = null;
+				m.renderPriorities = null;
 				modelCache.add(m);
 			}
 			m.flags &= ~AlphaModel.SKIP;
@@ -457,6 +460,9 @@ class Zone
 	private static int lastzx, lastzz;
 
 	private static int elementBufferId;
+
+	private static final int[] numOfPriority = FacePrioritySorter.numOfPriority;
+	private static final int[][] orderedFaces = FacePrioritySorter.orderedFaces;
 
 	static void initBuffer()
 	{
@@ -574,22 +580,67 @@ class Zone
 				flush();
 			}
 
-			int start = m.startpos / (VERT_SIZE >> 2); // ints to verts
-			for (int i = diameter - 1; i >= 0; --i)
+			byte[] faceRenderPriorities = m.renderPriorities;
+			final int start = m.startpos / (VERT_SIZE >> 2); // ints to verts
+			if (faceRenderPriorities == null)
 			{
-				final int cnt = distanceFaceCount[i];
-				if (cnt > 0)
+				for (int i = diameter - 1; i >= 0; --i)
 				{
-					final char[] faces = distanceToFaces[i];
-
-					for (int faceIdx = 0; faceIdx < cnt; ++faceIdx)
+					final int cnt = distanceFaceCount[i];
+					if (cnt > 0)
 					{
-						int face = faces[faceIdx];
-						face *= 3;
-						face += start;
-						alphaElements.put(face++);
-						alphaElements.put(face++);
-						alphaElements.put(face++);
+						final char[] faces = distanceToFaces[i];
+
+						for (int faceIdx = 0; faceIdx < cnt; ++faceIdx)
+						{
+							int face = faces[faceIdx];
+							face *= 3;
+							face += start;
+							alphaElements.put(face++);
+							alphaElements.put(face++);
+							alphaElements.put(face++);
+						}
+					}
+				}
+			}
+			else
+			{
+				// Vanilla uses priority draw order for alpha faces and not depth draw order
+				// And since we don't have the full model here, only the alpha faces, we can't compute the
+				// 10/11 insertion points either. Just ignore those since I think they are mostly for players,
+				// which are rendered differently anyway.
+				Arrays.fill(numOfPriority, 0);
+
+				for (int i = diameter - 1; i >= 0; --i)
+				{
+					final int cnt = distanceFaceCount[i];
+					if (cnt > 0)
+					{
+						final char[] faces = distanceToFaces[i];
+
+						for (int faceIdx = 0; faceIdx < cnt; ++faceIdx)
+						{
+							final int face = faces[faceIdx];
+							final byte pri = faceRenderPriorities[face];
+							final int distIdx = numOfPriority[pri]++;
+
+							orderedFaces[pri][distIdx] = face;
+						}
+					}
+				}
+
+				for (int pri = 0; pri < 12; ++pri)
+				{
+					final int priNum = numOfPriority[pri];
+					final int[] priFaces = orderedFaces[pri];
+
+					for (int faceIdx = 0; faceIdx < priNum; ++faceIdx)
+					{
+						final int face = priFaces[faceIdx];
+						int idx = face * 3 + start;
+						alphaElements.put(idx++);
+						alphaElements.put(idx++);
+						alphaElements.put(idx++);
 					}
 				}
 			}
@@ -695,6 +746,7 @@ class Zone
 				m2.zofz = (byte) (closestZoneZ - zz);
 
 				m2.packedFaces = m.packedFaces;
+				m2.renderPriorities = m.renderPriorities;
 				m2.radius = m.radius;
 
 				m2.flags = AlphaModel.TEMP;

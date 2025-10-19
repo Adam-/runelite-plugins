@@ -49,11 +49,11 @@ class FacePrioritySorter
 	private static final float[] modelLocalY;
 	private static final float[] modelLocalZ;
 
-	private static final int[] numOfPriority;
+	static final int[] numOfPriority;
 	private static final int[] eq10;
 	private static final int[] eq11;
 	private static final int[] lt10;
-	private static final int[][] orderedFaces;
+	static final int[][] orderedFaces;
 
 	private static final int MAX_VERTEX_COUNT = SceneUploader.MAX_VERTEX_COUNT;
 	private static final int MAX_DIAMETER = 6000;

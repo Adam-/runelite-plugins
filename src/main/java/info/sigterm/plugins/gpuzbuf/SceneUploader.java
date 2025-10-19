@@ -377,21 +377,21 @@ class SceneUploader
 		z.sizeO += faceCount;
 	}
 
-	private void uploadZoneRenderable(Renderable r, Zone zone, int orient, int x, int y, int z, int lx, int lz, int ux, int uz, int id, GpuIntBuffer vertexBuffer, GpuIntBuffer ab)
+	private void uploadZoneRenderable(Renderable r, Zone zone, int orient, int x, int y, int z, int lx, int lz, int ux, int uz, int id, GpuIntBuffer vb, GpuIntBuffer ab)
 	{
 		int pos = zone.vboA != null ? zone.vboA.vb.position() : 0;
 		Model model = null;
 		if (r instanceof Model)
 		{
 			model = (Model) r;
-			uploadStaticModel(model, orient, x - basex, y, z - basez, vertexBuffer, ab);
+			uploadStaticModel(model, orient, x - basex, y, z - basez, vb, ab);
 		}
 		else if (r instanceof DynamicObject)
 		{
 			model = ((DynamicObject) r).getModelZbuf();
 			if (model != null)
 			{
-				uploadStaticModel(model, orient, x - basex, y, z - basez, vertexBuffer, ab);
+				uploadStaticModel(model, orient, x - basex, y, z - basez, vb, ab);
 			}
 		}
 		int endpos = zone.vboA != null ? zone.vboA.vb.position() : 0;
@@ -592,7 +592,7 @@ class SceneUploader
 	}
 
 	// scene upload
-	private int uploadStaticModel(Model model, int orient, int x, int y, int z, GpuIntBuffer vertexBuffer, GpuIntBuffer ab)
+	private int uploadStaticModel(Model model, int orient, int x, int y, int z, GpuIntBuffer vb, GpuIntBuffer ab)
 	{
 		final int vertexCount = model.getVerticesCount();
 		final int triangleCount = model.getFaceCount();
@@ -702,16 +702,16 @@ class SceneUploader
 			alphaBias |= transparencies != null ? (transparencies[face] & 0xff) << 24 : 0;
 			alphaBias |= bias != null ? (bias[face] & 0xff) << 16 : 0;
 			int texture = faceTextures != null ? faceTextures[face] + 1 : 0;
-			GpuIntBuffer vb = alpha ? ab : vertexBuffer;
+			GpuIntBuffer buf = alpha ? ab : vb;
 
-			vb.put22224(vx1, vy1, vz1, alphaBias | color1);
-			vb.put2222(texture, modelLocalXI[texA] - vx1, modelLocalYI[texA] - vy1, modelLocalZI[texA] - vz1);
+			buf.put22224(vx1, vy1, vz1, alphaBias | color1);
+			buf.put2222(texture, modelLocalXI[texA] - vx1, modelLocalYI[texA] - vy1, modelLocalZI[texA] - vz1);
 
-			vb.put22224(vx2, vy2, vz2, alphaBias | color2);
-			vb.put2222(texture, modelLocalXI[texB] - vx2, modelLocalYI[texB] - vy2, modelLocalZI[texB] - vz2);
+			buf.put22224(vx2, vy2, vz2, alphaBias | color2);
+			buf.put2222(texture, modelLocalXI[texB] - vx2, modelLocalYI[texB] - vy2, modelLocalZI[texB] - vz2);
 
-			vb.put22224(vx3, vy3, vz3, alphaBias | color3);
-			vb.put2222(texture, modelLocalXI[texC] - vx3, modelLocalYI[texC] - vy3, modelLocalZI[texC] - vz3);
+			buf.put22224(vx3, vy3, vz3, alphaBias | color3);
+			buf.put2222(texture, modelLocalXI[texC] - vx3, modelLocalYI[texC] - vy3, modelLocalZI[texC] - vz3);
 
 			len += 3;
 		}
