@@ -27,6 +27,7 @@ package info.sigterm.plugins.gpuzbuf;
 import java.nio.IntBuffer;
 import java.util.HashSet;
 import java.util.Set;
+import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Constants;
 import net.runelite.api.DecorativeObject;
@@ -275,28 +276,27 @@ class SceneUploader
 		SceneTileModel model = t.getSceneTileModel();
 		if (model != null)
 		{
-			int len_ = upload(model, basex, basez, vertexBuffer);
-			len += len_;
+			len += upload(model, basex, basez, vertexBuffer);
 		}
 
 		WallObject wallObject = t.getWallObject();
 		if (wallObject != null)
 		{
 			Renderable renderable1 = wallObject.getRenderable1();
-			uploadZoneRenderable(renderable1, zone, 0, wallObject.getX(), wallObject.getZ(), wallObject.getY(),-1,-1,-1,-1, wallObject.getId(), vertexBuffer, ab);
+			uploadZoneRenderable(renderable1, zone, 0, wallObject.getX(), wallObject.getZ(), wallObject.getY(), -1, -1, -1, -1, wallObject.getId(), vertexBuffer, ab);
 
 			Renderable renderable2 = wallObject.getRenderable2();
-			uploadZoneRenderable(renderable2, zone, 0, wallObject.getX(), wallObject.getZ(), wallObject.getY(),-1,-1,-1,-1, wallObject.getId(), vertexBuffer, ab);
+			uploadZoneRenderable(renderable2, zone, 0, wallObject.getX(), wallObject.getZ(), wallObject.getY(), -1, -1, -1, -1, wallObject.getId(), vertexBuffer, ab);
 		}
 
 		DecorativeObject decorativeObject = t.getDecorativeObject();
 		if (decorativeObject != null)
 		{
 			Renderable renderable = decorativeObject.getRenderable();
-			uploadZoneRenderable(renderable, zone, 0, decorativeObject.getX() + decorativeObject.getXOffset(), decorativeObject.getZ(), decorativeObject.getY() + decorativeObject.getYOffset(), -1,-1,-1,-1, decorativeObject.getId(), vertexBuffer, ab);
+			uploadZoneRenderable(renderable, zone, 0, decorativeObject.getX() + decorativeObject.getXOffset(), decorativeObject.getZ(), decorativeObject.getY() + decorativeObject.getYOffset(), -1, -1, -1, -1, decorativeObject.getId(), vertexBuffer, ab);
 
 			Renderable renderable2 = decorativeObject.getRenderable2();
-			uploadZoneRenderable(renderable2, zone, 0, decorativeObject.getX(), decorativeObject.getZ(), decorativeObject.getY(), -1,-1,-1,-1, decorativeObject.getId(), vertexBuffer, ab);
+			uploadZoneRenderable(renderable2, zone, 0, decorativeObject.getX(), decorativeObject.getZ(), decorativeObject.getY(), -1, -1, -1, -1, decorativeObject.getId(), vertexBuffer, ab);
 		}
 
 		GroundObject groundObject = t.getGroundObject();
@@ -304,7 +304,7 @@ class SceneUploader
 		{
 			Renderable renderable = groundObject.getRenderable();
 			uploadZoneRenderable(renderable, zone, 0, groundObject.getX(), groundObject.getZ(), groundObject.getY(),
-				-1,-1,-1,-1,
+				-1, -1, -1, -1,
 				groundObject.getId(),
 				vertexBuffer, ab);
 		}
@@ -506,8 +506,7 @@ class SceneUploader
 		return 6;
 	}
 
-	private int upload(SceneTileModel sceneTileModel, int lx, int lz,
-					   GpuIntBuffer vertexBuffer)
+	private int upload(SceneTileModel sceneTileModel, int lx, int lz, GpuIntBuffer vertexBuffer)
 	{
 		final int[] faceX = sceneTileModel.getFaceX();
 		final int[] faceY = sceneTileModel.getFaceY();
@@ -876,7 +875,7 @@ class SceneUploader
 	static float[] modelLocalY;
 	static float[] modelLocalZ;
 
-	// uploadModelScene runs on the maploader thread, so requires its own buffers
+	// uploadStaticModel runs on the maploader thread, so requires its own buffers
 	private final static int[] modelLocalXI;
 	private final static int[] modelLocalYI;
 	private final static int[] modelLocalZI;

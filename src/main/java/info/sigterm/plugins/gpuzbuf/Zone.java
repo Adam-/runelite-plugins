@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2025, Adam <Adam@sigterm.info>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package info.sigterm.plugins.gpuzbuf;
 
 import java.nio.IntBuffer;
@@ -16,7 +40,7 @@ import net.runelite.api.Perspective;
 import net.runelite.api.Scene;
 import static info.sigterm.plugins.gpuzbuf.FacePrioritySorter.distanceFaceCount;
 import static info.sigterm.plugins.gpuzbuf.FacePrioritySorter.distanceToFaces;
-import static info.sigterm.plugins.gpuzbuf.GpuPlugin.glProgram;
+import static info.sigterm.plugins.gpuzbuf.GpuPlugin.glProgram; // NOPMD: UnnecessaryImport
 import static info.sigterm.plugins.gpuzbuf.GpuPlugin.uniBase;
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
@@ -44,6 +68,8 @@ import static org.lwjgl.opengl.GL41C.glProgramUniform3i;
 @RequiredArgsConstructor
 class Zone
 {
+	private static final boolean USE_STATIC_UNSORTED = false;
+
 	// Zone vertex format
 	// index 0: short vec3(x, y, z)
 	// index 1: int abhsl
@@ -180,31 +206,38 @@ class Zone
 	}
 
 	private static final int NUM_DRAW_RANGES = 512;
-	private static final int[] drawOff = new int[NUM_DRAW_RANGES];
-	private static final int[] drawEnd = new int[NUM_DRAW_RANGES];
-	private static int drawIdx = 0;
-	private static int[] glDrawOffset, glDrawLength;
+	private static final IntBuffer drawOff = BufferUtils.createIntBuffer(NUM_DRAW_RANGES);
+	private static final IntBuffer drawEnd = BufferUtils.createIntBuffer(NUM_DRAW_RANGES);
 
 	private void convertForDraw(int vertSize)
 	{
-		for (int i = 0; i < drawIdx; ++i)
+		assert drawOff.position() == drawEnd.position();
+
+		drawOff.flip();
+		drawEnd.flip();
+
+		for (int i = 0; i < drawOff.limit(); ++i)
 		{
-			assert drawEnd[i] >= drawOff[i];
+			int off = drawOff.get(i);
+			int end = drawEnd.get(i);
+
+			assert end >= off;
 
 			// convert from bytes to verts
-			drawOff[i] /= vertSize >> 2;
-			drawEnd[i] /= vertSize >> 2;
+			off /= vertSize >> 2;
+			end /= vertSize >> 2;
 
-			drawEnd[i] -= drawOff[i]; // convert from end pos to length
+			end -= off; // convert from end pos to length
+
+			drawOff.put(i, off);
+			drawEnd.put(i, end);
 		}
-
-		glDrawOffset = Arrays.copyOfRange(drawOff, 0, drawIdx);
-		glDrawLength = Arrays.copyOfRange(drawEnd, 0, drawIdx);
 	}
 
 	void renderOpaque(int zx, int zz, int minLevel, int currentLevel, int maxLevel, Set<Integer> hiddenRoofIds)
 	{
-		drawIdx = 0;
+		drawOff.clear();
+		drawEnd.clear();
 
 		for (int level = minLevel; level <= maxLevel; ++level)
 		{
@@ -254,26 +287,26 @@ class Zone
 
 		glProgramUniform3i(glProgram, uniBase, zx << 10, 0, zz << 10);
 		glBindVertexArray(glVao);
-		glMultiDrawArrays(GL_TRIANGLES, glDrawOffset, glDrawLength);
+		glMultiDrawArrays(GL_TRIANGLES, drawOff, drawEnd);
 	}
 
 	private static void pushRange(int start, int end)
 	{
 		assert end >= start;
 
-		if (drawIdx > 0 && drawEnd[drawIdx - 1] == start)
+		int idx = drawEnd.position();
+		if (idx > 0 && drawEnd.get(idx - 1) == start)
 		{
-			drawEnd[drawIdx - 1] = end;
+			drawEnd.put(idx - 1, end);
 		}
-		else if (drawIdx >= NUM_DRAW_RANGES)
+		else if (!drawEnd.hasRemaining())
 		{
 			log.debug("draw ranges exhausted");
 		}
 		else
 		{
-			drawOff[drawIdx] = start;
-			drawEnd[drawIdx] = end;
-			drawIdx++;
+			drawOff.put(start);
+			drawEnd.put(end);
 		}
 	}
 
@@ -492,7 +525,8 @@ class Zone
 
 	void renderAlpha(int zx, int zz, int cyaw, int cpitch, int minLevel, int currentLevel, int maxLevel, int level, Set<Integer> hiddenRoofIds)
 	{
-		drawIdx = 0;
+		drawOff.clear();
+		drawEnd.clear();
 		alphaElements.clear();
 		lastDrawMode = lastVao = 0;
 		lastzx = zx;
@@ -539,7 +573,7 @@ class Zone
 				continue;
 			}
 
-			if (false)
+			if (USE_STATIC_UNSORTED)
 			{
 				lastDrawMode = STATIC_UNSORTED;
 				pushRange(m.startpos, m.endpos);
@@ -558,7 +592,6 @@ class Zone
 
 			Arrays.fill(distanceFaceCount, 0, diameter, (char) 0);
 
-			char bufferIdx = 0;
 			for (int i = 0; i < packedFaces.length; ++i)
 			{
 				int pack = packedFaces[i];
@@ -572,10 +605,10 @@ class Zone
 				fz += radius;
 
 				assert fz >= 0 && fz < diameter : fz;
-				distanceToFaces[fz][distanceFaceCount[fz]++] = bufferIdx++;
+				distanceToFaces[fz][distanceFaceCount[fz]++] = (char) i;
 			}
 
-			if (bufferIdx * 3 > alphaElements.remaining())
+			if (packedFaces.length * 3 > alphaElements.remaining())
 			{
 				flush();
 			}
@@ -656,8 +689,9 @@ class Zone
 			convertForDraw(VAO.VERT_SIZE);
 			glProgramUniform3i(glProgram, uniBase, 0, 0, 0);
 			glBindVertexArray(lastVao);
-			glMultiDrawArrays(GL_TRIANGLES, glDrawOffset, glDrawLength);
-			drawIdx = 0;
+			glMultiDrawArrays(GL_TRIANGLES, drawOff, drawEnd);
+			drawOff.clear();
+			drawEnd.clear();
 		}
 		else if (lastDrawMode == STATIC)
 		{
@@ -675,8 +709,9 @@ class Zone
 			convertForDraw(VERT_SIZE);
 			glProgramUniform3i(glProgram, uniBase, lastzx << 10, 0, lastzz << 10);
 			glBindVertexArray(lastVao);
-			glMultiDrawArrays(GL_TRIANGLES, glDrawOffset, glDrawLength);
-			drawIdx = 0;
+			glMultiDrawArrays(GL_TRIANGLES, drawOff, drawEnd);
+			drawOff.clear();
+			drawEnd.clear();
 		}
 	}
 

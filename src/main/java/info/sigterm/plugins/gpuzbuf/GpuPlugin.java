@@ -62,7 +62,6 @@ import net.runelite.api.TextureProvider;
 import net.runelite.api.TileObject;
 import net.runelite.api.WorldEntity;
 import net.runelite.api.WorldView;
-import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.PostClientTick;
 import net.runelite.api.hooks.DrawCallbacks;
@@ -134,10 +133,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 	@Inject
 	private PluginManager pluginManager;
-
-	@Inject
-	@Named("developerMode")
-	boolean developerMode;
 
 	private Canvas canvas;
 	private AWTContext awtContext;
@@ -1097,10 +1092,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			{
 				glProgramUniform3i(glProgram, uniBase, 0, 0, 0);
 
-//				if (client.getGameCycle() % 100 == 0)
-//				{
-//					vaoO.debug();
-//				}
 				var vaos = vaoO.unmap();
 				for (VAO vao : vaos)
 				{
@@ -1170,13 +1161,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				int zz = (z >> 10) + (offset >> 3);
 				Zone zone = ctx.zones[zx][zz];
 
-//				int sx = (x >> 7) + offset;
-//				int sz = (z >> 7) + offset;
-//				byte[][][] tileSettings = scene.getExtendedTileSettings();
-//				int plane = tileObject.getPlane() + ((tileSettings[1][sx][sz] & Constants.TILE_FLAG_BRIDGE) >> 1);
-//				if ((tileSettings[plane][sx][sz] & Constants.TILE_FLAG_VIS_BELOW) != 0){
-//					plane=0;
-//				}
 				// level is checked prior to this callback being run, in order to cull clickboxes, but
 				// tileObject.getPlane()>maxLevel if visbelow is set - lower the object to the max level
 				int plane = Math.min(maxLevel, tileObject.getPlane());
@@ -1284,7 +1268,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				zone = ctx.zones[x][z] = new Zone();
 
 				Scene scene = wv.getScene();
-				SceneUploader sceneUploader = new SceneUploader();
+				SceneUploader sceneUploader = injector.getInstance(SceneUploader.class);
 				sceneUploader.zoneSize(scene, zone, x, z);
 
 				VBO o = null, a = null;
@@ -1559,7 +1543,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		assert scene.getWorldViewId() == -1;
 		if (nextZones != null)
 		{
-			// does this happen? this needs to free nextZones?
 			throw new RuntimeException("Double zone load!");
 		}
 
@@ -1584,8 +1567,10 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 		// find zones which overlap and copy them
 		Zone[][] newZones = new Zone[SCENE_ZONES][SCENE_ZONES];
+		final GameState gameState = client.getGameState();
 		if (prev.isInstance() == scene.isInstance()
-			&& prev.getRoofRemovalMode() == scene.getRoofRemovalMode())
+			&& prev.getRoofRemovalMode() == scene.getRoofRemovalMode()
+			&& gameState == GameState.LOGGED_IN)
 		{
 			int[][][] prevTemplates = prev.getInstanceTemplateChunks();
 			int[][][] curTemplates = scene.getInstanceTemplateChunks();
@@ -1620,8 +1605,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 										int curTemplate = curTemplates[level][jx][jz];
 										if (prevTemplate != curTemplate)
 										{
-											// Does this ever happen?
-											log.warn("Instance template reuse mismatch! prev={} cur={}", prevTemplate, curTemplate);
+											log.error("Instance template reuse mismatch! prev={} cur={}", prevTemplate, curTemplate);
 											continue next;
 										}
 									}
@@ -1636,6 +1620,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 						{
 							continue;
 						}
+
 						assert old.sizeO > 0 || old.sizeA > 0;
 
 						assert old.cull;
@@ -1660,7 +1645,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		}
 
 		// size the zones which require upload
-		SceneUploader sceneUploader = new SceneUploader();
+		SceneUploader sceneUploader = injector.getInstance(SceneUploader.class);
 		Stopwatch sw = Stopwatch.createStarted();
 		int len = 0, lena = 0;
 		int reused = 0, newzones = 0;
@@ -1686,8 +1671,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		}
 		log.debug("Scene size time {} reused {} new {} len opaque {} size opaque {}kb len alpha {} size alpha {}kb",
 			sw, reused, newzones,
-			len, ((long) len * Zone.VERT_SIZE * 3) / 1024,
-			lena, ((long) lena * Zone.VERT_SIZE * 3) / 1024);
+			len, (len * Zone.VERT_SIZE * 3) / 1024,
+			lena, (lena * Zone.VERT_SIZE * 3) / 1024);
 
 		// allocate buffers for zones which require upload
 		CountDownLatch latch = new CountDownLatch(1);
@@ -1847,7 +1832,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		final SceneContext ctx = new SceneContext(worldView.getSizeX() >> 3, worldView.getSizeY() >> 3);
 		subs[worldViewId] = ctx;
 
-		SceneUploader sceneUploader = new SceneUploader();
+		SceneUploader sceneUploader = injector.getInstance(SceneUploader.class);
 		for (int x = 0; x < ctx.sizeX; ++x)
 		{
 			for (int z = 0; z < ctx.sizeZ; ++z)
@@ -1955,7 +1940,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		nextZones = null;
 
 		// setup vaos
-		for (int x = 0; x < ctx.zones.length; ++x)
+		for (int x = 0; x < ctx.zones.length; ++x) // NOPMD: ForLoopCanBeForeach
 		{
 			for (int z = 0; z < ctx.zones[0].length; ++z)
 			{
@@ -2049,31 +2034,6 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			}
 
 			log.debug("glGetError:", new Exception(errStr));
-		}
-	}
-
-	@Subscribe
-	private void onCommandExecuted(CommandExecuted event)
-	{
-		if (!developerMode)
-		{
-			return;
-		}
-
-		if (event.getCommand().equals("zoneinfo"))
-		{
-			SceneContext ctx = root;
-			int numAlpha = 0;
-			for (int x = 0; x < ctx.sizeX; ++x)
-			{
-				for (int z = 0; z < ctx.sizeZ; ++z)
-				{
-					Zone zone = ctx.zones[x][z];
-					numAlpha += zone.alphaModels.size();
-//					client.addChatMessage(ChatMessageType.CONSOLE, "", String.format("Zone %d,%d: alpha models: %d", x, z, zone.alphaModels.size()), "");
-				}
-			}
-			client.addChatMessage(ChatMessageType.CONSOLE, "", String.format("Total alpha models: %d cache size: %d", numAlpha, Zone.modelCache.size()), "");
 		}
 	}
 }
