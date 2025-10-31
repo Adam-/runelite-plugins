@@ -22,25 +22,23 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package gpu;
+package info.sigterm.plugins.gpulegacy;
 
+import info.sigterm.plugins.gpulegacy.config.ColorBlindMode;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Range;
-import static gpu.GpuPlugin.MAX_DISTANCE;
-import static gpu.GpuPlugin.MAX_FOG_DEPTH;
-import gpu.config.AntiAliasingMode;
-import gpu.config.ColorBlindMode;
-import gpu.config.UIScalingMode;
+import info.sigterm.plugins.gpulegacy.config.AntiAliasingMode;
+import info.sigterm.plugins.gpulegacy.config.UIScalingMode;
 
 @ConfigGroup(GpuPluginConfig.GROUP)
 public interface GpuPluginConfig extends Config
 {
-	String GROUP = "gpu";
+	String GROUP = "info.sigterm.plugins.gpulegacy";
 
 	@Range(
-		max = MAX_DISTANCE
+		max = GpuPlugin.MAX_DISTANCE
 	)
 	@ConfigItem(
 		keyName = "drawDistance",
@@ -112,7 +110,7 @@ public interface GpuPluginConfig extends Config
 	}
 
 	@Range(
-		max = MAX_FOG_DEPTH
+		max = GpuPlugin.MAX_FOG_DEPTH
 	)
 	@ConfigItem(
 		keyName = "fogDepth",

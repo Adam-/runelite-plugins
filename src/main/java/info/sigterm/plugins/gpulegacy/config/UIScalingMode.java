@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Adam <Adam@sigterm.info>
+ * Copyright (c) 2019 logarrhytmic <https://github.com/logarrhythmic>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,12 +22,27 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package gpu;
+package info.sigterm.plugins.gpulegacy.config;
 
-class ShaderException extends Exception
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
+public enum UIScalingMode
 {
-	ShaderException(String message)
+	NEAREST("Nearest Neighbor", 0),
+	LINEAR("Bilinear", 0),
+	MITCHELL("Bicubic (Mitchell)", 1),
+	CATMULL_ROM("Bicubic (Catmull-Rom)", 2),
+	XBR("xBR", 3);
+
+	private final String name;
+	private final int mode;
+
+	@Override
+	public String toString()
 	{
-		super(message);
+		return name;
 	}
 }

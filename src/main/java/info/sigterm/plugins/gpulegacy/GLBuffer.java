@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Adam <Adam@sigterm.info>
+ * Copyright (c) 2021, Adam <Adam@sigterm.info>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,62 +22,17 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package gpu;
+package info.sigterm.plugins.gpulegacy;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
-
-class GpuIntBuffer
+class GLBuffer
 {
-	private IntBuffer buffer = allocateDirect(65536);
+	String name;
+	int glBufferId = -1;
+	int size = -1;
+	long clBuffer = -1;
 
-	void put(float x, float y, float z, int w)
+	GLBuffer(String name)
 	{
-		buffer.put(Float.floatToIntBits(x))
-			.put(Float.floatToIntBits(y))
-			.put(Float.floatToIntBits(z))
-			.put(w);
-	}
-
-	void flip()
-	{
-		buffer.flip();
-	}
-
-	void clear()
-	{
-		buffer.clear();
-	}
-
-	void ensureCapacity(int size)
-	{
-		int capacity = buffer.capacity();
-		final int position = buffer.position();
-		if ((capacity - position) < size)
-		{
-			do
-			{
-				capacity *= 2;
-			}
-			while ((capacity - position) < size);
-
-			IntBuffer newB = allocateDirect(capacity);
-			buffer.flip();
-			newB.put(buffer);
-			buffer = newB;
-		}
-	}
-
-	IntBuffer getBuffer()
-	{
-		return buffer;
-	}
-
-	static IntBuffer allocateDirect(int size)
-	{
-		return ByteBuffer.allocateDirect(size * Integer.BYTES)
-			.order(ByteOrder.nativeOrder())
-			.asIntBuffer();
+		this.name = name;
 	}
 }

@@ -23,14 +23,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package gpu;
+package info.sigterm.plugins.gpulegacy;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import gpu.template.Template;
+import info.sigterm.plugins.gpulegacy.template.Template;
 import org.lwjgl.opengl.GL43C;
 
 public class Shader
@@ -55,7 +55,7 @@ public class Shader
 		return this;
 	}
 
-	public int compile(Template template) throws gpu.ShaderException
+	public int compile(Template template) throws ShaderException
 	{
 		int program = GL43C.glCreateProgram();
 		int[] shaders = new int[units.size()];
@@ -69,7 +69,7 @@ public class Shader
 				int shader = GL43C.glCreateShader(unit.type);
 				if (shader == 0)
 				{
-					throw new gpu.ShaderException("Unable to create shader of type " + unit.type);
+					throw new ShaderException("Unable to create shader of type " + unit.type);
 				}
 
 				String source = template.load(unit.filename);
@@ -80,7 +80,7 @@ public class Shader
 				{
 					String err = GL43C.glGetShaderInfoLog(shader);
 					GL43C.glDeleteShader(shader);
-					throw new gpu.ShaderException(err);
+					throw new ShaderException(err);
 				}
 				GL43C.glAttachShader(program, shader);
 				shaders[i++] = shader;
@@ -91,7 +91,7 @@ public class Shader
 			if (GL43C.glGetProgrami(program, GL43C.GL_LINK_STATUS) == GL43C.GL_FALSE)
 			{
 				String err = GL43C.glGetProgramInfoLog(program);
-				throw new gpu.ShaderException(err);
+				throw new ShaderException(err);
 			}
 
 			GL43C.glValidateProgram(program);
@@ -99,7 +99,7 @@ public class Shader
 			if (GL43C.glGetProgrami(program, GL43C.GL_VALIDATE_STATUS) == GL43C.GL_FALSE)
 			{
 				String err = GL43C.glGetProgramInfoLog(program);
-				throw new gpu.ShaderException(err);
+				throw new ShaderException(err);
 			}
 
 			ok = true;

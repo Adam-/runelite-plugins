@@ -22,7 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package gpu;
+package info.sigterm.plugins.gpulegacy;
 
 import com.google.common.base.Stopwatch;
 import java.io.IOException;
@@ -45,9 +45,7 @@ import net.runelite.api.SceneTileModel;
 import net.runelite.api.SceneTilePaint;
 import net.runelite.api.Tile;
 import net.runelite.api.WallObject;
-import gpu.GpuPlugin;
-import gpu.GpuPluginConfig;
-import gpu.regions.Regions;
+import info.sigterm.plugins.gpulegacy.regions.Regions;
 
 @Singleton
 @Slf4j
@@ -82,7 +80,7 @@ class SceneUploader
 		}
 	}
 
-	void upload(Scene scene, gpu.GpuIntBuffer vertexBuffer, gpu.GpuFloatBuffer uvBuffer)
+	void upload(Scene scene, GpuIntBuffer vertexBuffer, GpuFloatBuffer uvBuffer)
 	{
 		++sceneId;
 		offset = 0;
@@ -116,7 +114,7 @@ class SceneUploader
 		log.debug("Scene upload time: {} unique models: {} length: {}KB", stopwatch, uniqueModels, (offset * 16) / 1024);
 	}
 
-	private void upload(Scene scene, Tile tile, gpu.GpuIntBuffer vertexBuffer, gpu.GpuFloatBuffer uvBuffer)
+	private void upload(Scene scene, Tile tile, GpuIntBuffer vertexBuffer, GpuFloatBuffer uvBuffer)
 	{
 		Tile bridge = tile.getBridge();
 		if (bridge != null)
@@ -231,11 +229,11 @@ class SceneUploader
 		}
 	}
 
-	int upload(Scene scene, SceneTilePaint tile, int tileZ, int tileX, int tileY, gpu.GpuIntBuffer vertexBuffer, gpu.GpuFloatBuffer uvBuffer,
+	int upload(Scene scene, SceneTilePaint tile, int tileZ, int tileX, int tileY, GpuIntBuffer vertexBuffer, GpuFloatBuffer uvBuffer,
 			   int lx, int lz, boolean stream)
 	{
-		tileX += gpu.GpuPlugin.SCENE_OFFSET;
-		tileY += gpu.GpuPlugin.SCENE_OFFSET;
+		tileX += GpuPlugin.SCENE_OFFSET;
+		tileY += GpuPlugin.SCENE_OFFSET;
 
 		final int[][][] tileHeights = scene.getTileHeights();
 		final int swHeight = tileHeights[tileZ][tileX][tileY];
@@ -313,7 +311,7 @@ class SceneUploader
 	}
 
 	int upload(SceneTileModel sceneTileModel, int lx, int lz,
-			   gpu.GpuIntBuffer vertexBuffer, gpu.GpuFloatBuffer uvBuffer, boolean stream)
+			   GpuIntBuffer vertexBuffer, GpuFloatBuffer uvBuffer, boolean stream)
 	{
 		final int[] faceX = sceneTileModel.getFaceX();
 		final int[] faceY = sceneTileModel.getFaceY();
@@ -399,7 +397,7 @@ class SceneUploader
 		return cnt;
 	}
 
-	private void uploadSceneModel(Model model, gpu.GpuIntBuffer vertexBuffer, gpu.GpuFloatBuffer uvBuffer)
+	private void uploadSceneModel(Model model, GpuIntBuffer vertexBuffer, GpuFloatBuffer uvBuffer)
 	{
 		// deduplicate hillskewed models
 		if (model.getUnskewedModel() != null)
@@ -433,9 +431,9 @@ class SceneUploader
 		}
 	}
 
-	public int pushModel(Model model, gpu.GpuIntBuffer vertexBuffer, gpu.GpuFloatBuffer uvBuffer)
+	public int pushModel(Model model, GpuIntBuffer vertexBuffer, GpuFloatBuffer uvBuffer)
 	{
-		final int triangleCount = Math.min(model.getFaceCount(), gpu.GpuPlugin.MAX_TRIANGLE);
+		final int triangleCount = Math.min(model.getFaceCount(), GpuPlugin.MAX_TRIANGLE);
 
 		vertexBuffer.ensureCapacity(triangleCount * 12);
 		uvBuffer.ensureCapacity(triangleCount * 12);
@@ -616,7 +614,7 @@ class SceneUploader
 		orderedFaces = null;
 	}
 
-	int pushSortedModel(Projection proj, Model model, int orientation, int x, int y, int z, gpu.GpuIntBuffer vertexBuffer, gpu.GpuFloatBuffer uvBuffer)
+	int pushSortedModel(Projection proj, Model model, int orientation, int x, int y, int z, GpuIntBuffer vertexBuffer, GpuFloatBuffer uvBuffer)
 	{
 		final int vertexCount = model.getVerticesCount();
 		final float[] verticesX = model.getVerticesX();
@@ -912,7 +910,7 @@ class SceneUploader
 		return len;
 	}
 
-	private int pushFace(Model model, int face, gpu.GpuIntBuffer vertexBuffer, gpu.GpuFloatBuffer uvBuffer)
+	private int pushFace(Model model, int face, GpuIntBuffer vertexBuffer, GpuFloatBuffer uvBuffer)
 	{
 		final int[] indices1 = model.getFaceIndices1();
 		final int[] indices2 = model.getFaceIndices2();
@@ -1074,7 +1072,7 @@ class SceneUploader
 		int wy = cy * 8;
 		int sx = wx - scene.getBaseX();
 		int sy = wy - scene.getBaseY();
-		int cmsx = sx + gpu.GpuPlugin.SCENE_OFFSET;
+		int cmsx = sx + GpuPlugin.SCENE_OFFSET;
 		int cmsy = sy + GpuPlugin.SCENE_OFFSET;
 		Tile[][][] tiles = scene.getExtendedTiles();
 		for (int x = 0; x < 8; ++x)

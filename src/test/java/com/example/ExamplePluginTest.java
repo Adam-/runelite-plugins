@@ -1,6 +1,6 @@
 package com.example;
 
-import gpu.GpuPlugin;
+import info.sigterm.plugins.gpulegacy.GpuPlugin;
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 

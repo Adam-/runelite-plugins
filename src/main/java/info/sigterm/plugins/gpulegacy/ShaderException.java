@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Adam <Adam@sigterm.info>
+ * Copyright (c) 2018, Adam <Adam@sigterm.info>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,17 +22,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package gpu;
+package info.sigterm.plugins.gpulegacy;
 
-class GLBuffer
+class ShaderException extends Exception
 {
-	String name;
-	int glBufferId = -1;
-	int size = -1;
-	long clBuffer = -1;
-
-	GLBuffer(String name)
+	ShaderException(String message)
 	{
-		this.name = name;
+		super(message);
 	}
 }

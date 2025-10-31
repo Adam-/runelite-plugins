@@ -22,7 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package gpu.template;
+package info.sigterm.plugins.gpulegacy.template;
 
 import com.google.common.io.CharStreams;
 import java.io.IOException;

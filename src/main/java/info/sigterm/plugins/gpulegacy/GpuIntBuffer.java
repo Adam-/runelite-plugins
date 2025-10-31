@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Ben Poulson <https://github.com/benpoulson>
+ * Copyright (c) 2018, Adam <Adam@sigterm.info>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,12 +22,62 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package gpu.config;
+package info.sigterm.plugins.gpulegacy;
 
-public enum ColorBlindMode
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
+
+class GpuIntBuffer
 {
-	NONE,
-	PROTANOPE,
-	DEUTERANOPE,
-	TRITANOPE;
+	private IntBuffer buffer = allocateDirect(65536);
+
+	void put(float x, float y, float z, int w)
+	{
+		buffer.put(Float.floatToIntBits(x))
+			.put(Float.floatToIntBits(y))
+			.put(Float.floatToIntBits(z))
+			.put(w);
+	}
+
+	void flip()
+	{
+		buffer.flip();
+	}
+
+	void clear()
+	{
+		buffer.clear();
+	}
+
+	void ensureCapacity(int size)
+	{
+		int capacity = buffer.capacity();
+		final int position = buffer.position();
+		if ((capacity - position) < size)
+		{
+			do
+			{
+				capacity *= 2;
+			}
+			while ((capacity - position) < size);
+
+			IntBuffer newB = allocateDirect(capacity);
+			buffer.flip();
+			newB.put(buffer);
+			buffer = newB;
+		}
+	}
+
+	IntBuffer getBuffer()
+	{
+		return buffer;
+	}
+
+	static IntBuffer allocateDirect(int size)
+	{
+		return ByteBuffer.allocateDirect(size * Integer.BYTES)
+			.order(ByteOrder.nativeOrder())
+			.asIntBuffer();
+	}
 }

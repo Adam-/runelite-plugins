@@ -22,7 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package gpu;
+package info.sigterm.plugins.gpulegacy;
 
 import com.google.common.primitives.Ints;
 import com.google.inject.Provides;
@@ -67,12 +67,9 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.PluginInstantiationException;
 import net.runelite.client.plugins.PluginManager;
-import gpu.GpuPluginConfig;
-import gpu.Mat4;
-import gpu.Shader;
-import gpu.config.AntiAliasingMode;
-import gpu.config.UIScalingMode;
-import gpu.template.Template;
+import info.sigterm.plugins.gpulegacy.config.AntiAliasingMode;
+import info.sigterm.plugins.gpulegacy.config.UIScalingMode;
+import info.sigterm.plugins.gpulegacy.template.Template;
 import net.runelite.client.ui.ClientUI;
 import net.runelite.client.ui.DrawManager;
 import net.runelite.client.util.OSType;
@@ -115,7 +112,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private ClientUI clientUI;
 
 	@Inject
-	private gpu.OpenCLManager openCLManager;
+	private OpenCLManager openCLManager;
 
 	@Inject
 	private ClientThread clientThread;
@@ -124,7 +121,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private GpuPluginConfig config;
 
 	@Inject
-	private gpu.TextureManager textureManager;
+	private TextureManager textureManager;
 
 	@Inject
 	private SceneUploader sceneUploader;
@@ -157,21 +154,21 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			"#extension GL_ARB_explicit_attrib_location : require\n";
 	static final String WINDOWS_VERSION_HEADER = "#version 430\n";
 
-	static final gpu.Shader PROGRAM = new gpu.Shader()
+	static final Shader PROGRAM = new Shader()
 		.add(GL43C.GL_VERTEX_SHADER, "vert.glsl")
 		.add(GL43C.GL_GEOMETRY_SHADER, "geom.glsl")
 		.add(GL43C.GL_FRAGMENT_SHADER, "frag.glsl");
 
-	static final gpu.Shader COMPUTE_PROGRAM = new gpu.Shader()
+	static final Shader COMPUTE_PROGRAM = new Shader()
 		.add(GL43C.GL_COMPUTE_SHADER, "comp.glsl");
 
-	static final gpu.Shader SMALL_COMPUTE_PROGRAM = new gpu.Shader()
+	static final Shader SMALL_COMPUTE_PROGRAM = new Shader()
 		.add(GL43C.GL_COMPUTE_SHADER, "comp.glsl");
 
-	static final gpu.Shader UNORDERED_COMPUTE_PROGRAM = new gpu.Shader()
+	static final Shader UNORDERED_COMPUTE_PROGRAM = new Shader()
 		.add(GL43C.GL_COMPUTE_SHADER, "comp_unordered.glsl");
 
-	static final gpu.Shader UI_PROGRAM = new Shader()
+	static final Shader UI_PROGRAM = new Shader()
 		.add(GL43C.GL_VERTEX_SHADER, "vertui.glsl")
 		.add(GL43C.GL_FRAGMENT_SHADER, "fragui.glsl");
 
@@ -208,12 +205,12 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 	private final GLBuffer uniformBuffer = new GLBuffer("uniform buffer");
 
-	private gpu.GpuIntBuffer vertexBuffer;
-	private gpu.GpuFloatBuffer uvBuffer;
+	private GpuIntBuffer vertexBuffer;
+	private GpuFloatBuffer uvBuffer;
 
-	private gpu.GpuIntBuffer modelBufferUnordered;
-	private gpu.GpuIntBuffer modelBufferSmall;
-	private gpu.GpuIntBuffer modelBuffer;
+	private GpuIntBuffer modelBufferUnordered;
+	private GpuIntBuffer modelBufferSmall;
+	private GpuIntBuffer modelBuffer;
 
 	private int unorderedModels;
 
@@ -285,8 +282,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 	private int sceneId;
 	private int nextSceneId;
-	private gpu.GpuIntBuffer nextSceneVertexBuffer;
-	private gpu.GpuFloatBuffer nextSceneTexBuffer;
+	private GpuIntBuffer nextSceneVertexBuffer;
+	private GpuFloatBuffer nextSceneTexBuffer;
 
 	@Override
 	protected void startUp()
@@ -373,12 +370,12 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 					}
 				}
 
-				vertexBuffer = new gpu.GpuIntBuffer();
-				uvBuffer = new gpu.GpuFloatBuffer();
+				vertexBuffer = new GpuIntBuffer();
+				uvBuffer = new GpuFloatBuffer();
 
-				modelBufferUnordered = new gpu.GpuIntBuffer();
-				modelBufferSmall = new gpu.GpuIntBuffer();
-				modelBuffer = new gpu.GpuIntBuffer();
+				modelBufferUnordered = new GpuIntBuffer();
+				modelBufferSmall = new GpuIntBuffer();
+				modelBuffer = new GpuIntBuffer();
 
 				setupSyncMode();
 
@@ -388,7 +385,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				{
 					initProgram();
 				}
-				catch (gpu.ShaderException ex)
+				catch (ShaderException ex)
 				{
 					throw new RuntimeException(ex);
 				}
@@ -600,7 +597,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			}
 			if ("texture_config".equals(key))
 			{
-				return "#define TEXTURE_COUNT " + gpu.TextureManager.TEXTURE_COUNT + "\n";
+				return "#define TEXTURE_COUNT " + TextureManager.TEXTURE_COUNT + "\n";
 			}
 			return null;
 		});
@@ -608,7 +605,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		return template;
 	}
 
-	private void initProgram() throws gpu.ShaderException
+	private void initProgram() throws ShaderException
 	{
 		Template template = createTemplate(-1, -1);
 		glProgram = PROGRAM.compile(template);
@@ -717,7 +714,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		vboUiHandle = GL43C.glGenBuffers();
 		GL43C.glBindVertexArray(vaoUiHandle);
 
-		FloatBuffer vboUiBuf = gpu.GpuFloatBuffer.allocateDirect(5 * 4);
+		FloatBuffer vboUiBuf = GpuFloatBuffer.allocateDirect(5 * 4);
 		vboUiBuf.put(new float[]{
 			// positions     // texture coords
 			1f, 1f, 0.0f, 1.0f, 0f, // top right
@@ -1074,7 +1071,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			final int localY = 0;
 			final int localZ = tileY << Perspective.LOCAL_COORD_BITS;
 
-			gpu.GpuIntBuffer b = modelBufferUnordered;
+			GpuIntBuffer b = modelBufferUnordered;
 			++unorderedModels;
 
 			b.ensureCapacity(8);
@@ -1106,7 +1103,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			final int localY = 0;
 			final int localZ = tileY << Perspective.LOCAL_COORD_BITS;
 
-			gpu.GpuIntBuffer b = modelBufferUnordered;
+			GpuIntBuffer b = modelBufferUnordered;
 			++unorderedModels;
 
 			b.ensureCapacity(8);
@@ -1541,8 +1538,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			return;
 		}
 
-		gpu.GpuIntBuffer vertexBuffer = new gpu.GpuIntBuffer();
-		gpu.GpuFloatBuffer uvBuffer = new gpu.GpuFloatBuffer();
+		GpuIntBuffer vertexBuffer = new GpuIntBuffer();
+		GpuFloatBuffer uvBuffer = new GpuFloatBuffer();
 
 		sceneUploader.upload(scene, vertexBuffer, uvBuffer);
 
@@ -1794,7 +1791,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			int plane = (int) ((hash >> TileObject.HASH_PLANE_SHIFT) & 3);
 			boolean hillskew = offsetModel != model;
 
-			gpu.GpuIntBuffer b = bufferForTriangles(tc);
+			GpuIntBuffer b = bufferForTriangles(tc);
 
 			b.ensureCapacity(8);
 			IntBuffer buffer = b.getBuffer();
@@ -1834,7 +1831,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 			int len = sceneUploader.pushModel(model, vertexBuffer, uvBuffer);
 
-			gpu.GpuIntBuffer b = bufferForTriangles(len / 3);
+			GpuIntBuffer b = bufferForTriangles(len / 3);
 
 			b.ensureCapacity(8);
 			IntBuffer buffer = b.getBuffer();
@@ -1861,7 +1858,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	 * @param triangles
 	 * @return
 	 */
-	private gpu.GpuIntBuffer bufferForTriangles(int triangles)
+	private GpuIntBuffer bufferForTriangles(int triangles)
 	{
 		if (triangles <= SMALL_TRIANGLE_COUNT)
 		{

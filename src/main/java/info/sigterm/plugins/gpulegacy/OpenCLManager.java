@@ -22,7 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package gpu;
+package info.sigterm.plugins.gpulegacy;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -32,8 +32,7 @@ import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Constants;
 import net.runelite.api.Scene;
-import gpu.GpuPlugin;
-import gpu.template.Template;
+import info.sigterm.plugins.gpulegacy.template.Template;
 import net.runelite.client.util.OSType;
 import net.runelite.rlawt.AWTContext;
 import org.lwjgl.PointerBuffer;
