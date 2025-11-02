@@ -35,7 +35,7 @@ import info.sigterm.plugins.gpulegacy.config.UIScalingMode;
 @ConfigGroup(GpuPluginConfig.GROUP)
 public interface GpuPluginConfig extends Config
 {
-	String GROUP = "info.sigterm.plugins.gpulegacy";
+	String GROUP = "gpu";
 
 	@Range(
 		max = GpuPlugin.MAX_DISTANCE
