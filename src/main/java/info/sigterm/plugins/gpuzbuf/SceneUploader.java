@@ -496,49 +496,21 @@ class SceneUploader
 
 		vertexBuffer.put22224(lx2, ly2, lz2, hsl2);
 		vertexBuffer.put2222(tex, 256, 256, 0);
-//		if (tile.isFlat())
-//		{
-//			vertexBuffer.put2222(tex, lx0 - lx2, ly0 - ly2, lz0 - lz2);
-//		}
-//		else
-//		{
-//			vertexBuffer.put2222(tex, lx2 - lx2, ly2 - ly2, lz2 - lz2);
-//		}
 
 		vertexBuffer.put22224(lx3, ly3, lz3, hsl3);
 		vertexBuffer.put2222(tex, 0, 256, 0);
-//		if (tile.isFlat())
-//		{
-//			vertexBuffer.put2222(tex, lx1 - lx3, ly1 - ly3, lz1 - lz3);
-//		}
-//		else
-//		{
-//			vertexBuffer.put2222(tex, lx3 - lx3, ly3 - ly3, lz3 - lz3);
-//		}
-
 
 		vertexBuffer.put22224(lx1, ly1, lz1, hsl1);
 		vertexBuffer.put2222(tex, 256, 0, 0);
-//		if (tile.isFlat())
-//		{
-//			vertexBuffer.put2222(tex, lx3 - lx1, ly3 - ly1, lz3 - lz1);
-//		}
-//		else
-//		{
-//			vertexBuffer.put2222(tex, lx1 - lx1, ly1 - ly1, lz1 - lz1);
-//		}
 
 		vertexBuffer.put22224(lx0, ly0, lz0, hsl0);
 		vertexBuffer.put2222(tex, 0, 0, 0);
-//		vertexBuffer.put2222(tex, lx0 - lx0, ly0 - ly0, lz0 - lz0);
 
 		vertexBuffer.put22224(lx1, ly1, lz1, hsl1);
 		vertexBuffer.put2222(tex, 256, 0, 0);
-//		vertexBuffer.put2222(tex, lx1 - lx1, ly1 - ly1, lz1 - lz1);
 
 		vertexBuffer.put22224(lx3, ly3, lz3, hsl3);
 		vertexBuffer.put2222(tex, 0, 256, 0);
-//		vertexBuffer.put2222(tex, lx3 - lx3, ly3 - ly3, lz3 - lz3);
 
 		return 6;
 	}
@@ -594,38 +566,13 @@ class SceneUploader
 
 			int tex = triangleTextures != null ? triangleTextures[i] + 1 : 0;
 			vertexBuffer.put22224(lx0, ly0, lz0, hsl0);
-			vertexBuffer.put2222(tex, (int)((vertexX[vertex0]-lx) / 128f * 256f), (int)( (vertexZ[vertex0]-basez) / 128f * 256f), 0);
-//			if (sceneTileModel.isFlat())
-//			{
-//				vertexBuffer.put2222(tex, vertexX[0] - lx - lx0, vertexY[0] - ly0, vertexZ[0] - lz - lz0);
-//			}
-//			else
-//			{
-//				vertexBuffer.put2222(tex, vertexX[vertex0] - lx - lx0, vertexY[vertex0] - ly0, vertexZ[vertex0] - lz - lz0);
-//			}
+			vertexBuffer.put2222(tex, (int) ((vertexX[vertex0] - lx) * 2f), (int) ((vertexZ[vertex0] - lz) * 2f), 0);
 
 			vertexBuffer.put22224(lx1, ly1, lz1, hsl1);
-			vertexBuffer.put2222(tex, (int)((vertexX[vertex1]-lx) / 128f * 256f), (int)( (vertexZ[vertex1]-basez) / 128f * 256f), 0);
-//			if (sceneTileModel.isFlat())
-//			{
-//				vertexBuffer.put2222(tex, vertexX[1] - lx - lx1, vertexY[1] - ly1, vertexZ[1] - lz - lz1);
-//			}
-//			else
-//			{
-//				vertexBuffer.put2222(tex, vertexX[vertex1] - lx - lx1, vertexY[vertex1] - ly1, vertexZ[vertex1] - lz - lz1);
-//			}
+			vertexBuffer.put2222(tex, (int) ((vertexX[vertex1] - lx) * 2f), (int) ((vertexZ[vertex1] - lz) * 2f), 0);
 
 			vertexBuffer.put22224(lx2, ly2, lz2, hsl2);
-			vertexBuffer.put2222(tex, (int)((vertexX[vertex2]-lx) / 128f * 256f), (int)( (vertexZ[vertex2]-basez) / 128f * 256f), 0);
-//			vertexBuffer.put2222(tex, (int)(lx2 / 128f * 256f), (int)(lz2 / 128f * 256f), 0);
-//			if (sceneTileModel.isFlat())
-//			{
-//				vertexBuffer.put2222(tex, vertexX[3] - lx - lx2, vertexY[3] - ly2, vertexZ[3] - lz - lz2);
-//			}
-//			else
-//			{
-//				vertexBuffer.put2222(tex, vertexX[vertex2] - lx - lx2, vertexY[vertex2] - ly2, vertexZ[vertex2] - lz - lz2);
-//			}
+			vertexBuffer.put2222(tex, (int) ((vertexX[vertex2] - lx) * 2f), (int) ((vertexZ[vertex2] - lz) * 2f), 0);
 		}
 
 		return cnt;
