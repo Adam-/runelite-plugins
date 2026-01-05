@@ -13,6 +13,7 @@ import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.events.PlayerDespawned;
 import net.runelite.api.events.PlayerSpawned;
+import net.runelite.api.events.WorldViewLoaded;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -94,6 +95,7 @@ public class SMEvent extends Plugin
 			if (p.rlo != null)
 			{
 				p.rlo.setActive(false);
+				p.rlo = null;
 			}
 		}
 		players.clear();
@@ -107,6 +109,22 @@ public class SMEvent extends Plugin
 				p.player = player;
 				p.config = pc;
 				players.put(p.player, p);
+			}
+		}
+	}
+
+	@Subscribe
+	public void onWorldViewLoaded(WorldViewLoaded event)
+	{
+		if (event.getWorldView().isTopLevel())
+		{
+			for (SMPlayer p : players.values())
+			{
+				if (p.rlo != null)
+				{
+					p.rlo.setActive(false);
+					p.rlo = null;
+				}
 			}
 		}
 	}

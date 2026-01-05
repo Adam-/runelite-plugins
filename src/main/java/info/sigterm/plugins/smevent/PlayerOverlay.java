@@ -7,6 +7,7 @@ import net.runelite.api.Client;
 import net.runelite.api.JagexColor;
 import net.runelite.api.Model;
 import net.runelite.api.ModelData;
+import net.runelite.api.Perspective;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.client.ui.overlay.Overlay;
@@ -66,11 +67,17 @@ public class PlayerOverlay extends Overlay
 	{
 		Player player = p.player;
 		PlayerConfig config = p.config;
+		int animHeight = player.getAnimationHeightOffset();
 
-		if (p.rlo != null)
+		if (p.rlo != null && p.rloHeight == animHeight)
 		{
 			p.rlo.setLocation(player.getLocalLocation(), client.getPlane());
 			return;
+		}
+
+		if (p.rlo != null)
+		{
+			p.rlo.setActive(false);
 		}
 
 		ModelData md = client.loadModelData(33196);
@@ -80,9 +87,14 @@ public class PlayerOverlay extends Overlay
 		}
 
 		var rlo = p.rlo = client.createRuneLiteObject();
+		p.rloHeight = animHeight;
+		rlo.setAnimation(client.loadAnimation(813));
+
+		int h = player.getAnimationHeightOffset();
+		h += 10;
 
 		md.cloneVertices();
-		md.translate(0, -25, 0);
+		md.translate(0, -h, 0);
 
 		md.cloneColors();
 		md.recolor((short) 939, JagexColor.rgbToHSL(config.color.getRGB(), 1.0d));

@@ -9,5 +9,6 @@ public class SMPlayer
 	Player player;
 	PlayerConfig config;
 	RuneLiteObject rlo;
+	int rloHeight;
 	Font font;
 }

@@ -14,6 +14,6 @@ public interface SMEventConfig extends Config
 	)
 	default String config()
 	{
-		return "{}";
+		return "[]";
 	}
 }
