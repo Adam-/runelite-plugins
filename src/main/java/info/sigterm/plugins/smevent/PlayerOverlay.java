@@ -7,7 +7,6 @@ import net.runelite.api.Client;
 import net.runelite.api.JagexColor;
 import net.runelite.api.Model;
 import net.runelite.api.ModelData;
-import net.runelite.api.Perspective;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.client.ui.overlay.Overlay;

@@ -61,6 +61,19 @@ public class SMEvent extends Plugin
 	protected void shutDown()
 	{
 		overlayManager.remove(playerOverlay);
+		clientThread.invokeLater(() ->
+		{
+			for (SMPlayer p : players.values())
+			{
+				if (p.rlo != null)
+				{
+					p.rlo.setActive(false);
+					p.rlo = null;
+				}
+			}
+			players.clear();
+			configs.clear();
+		});
 	}
 
 	@Subscribe
