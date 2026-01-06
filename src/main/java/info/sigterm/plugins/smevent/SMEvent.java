@@ -11,9 +11,11 @@ import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Player;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.PlayerDespawned;
 import net.runelite.api.events.PlayerSpawned;
 import net.runelite.api.events.WorldViewLoaded;
+import net.runelite.api.events.WorldViewUnloaded;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -127,12 +129,25 @@ public class SMEvent extends Plugin
 	}
 
 	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		switch (event.getGameState())
+		{
+			case CONNECTION_LOST:
+			case HOPPING:
+			case LOGIN_SCREEN:
+				players.clear();
+		}
+	}
+
+	@Subscribe
 	public void onWorldViewLoaded(WorldViewLoaded event)
 	{
 		if (event.getWorldView().isTopLevel())
 		{
 			for (SMPlayer p : players.values())
 			{
+				// RLO are automatically cleared on load, and so we need to invalidate and rebuild them
 				if (p.rlo != null)
 				{
 					p.rlo.setActive(false);
