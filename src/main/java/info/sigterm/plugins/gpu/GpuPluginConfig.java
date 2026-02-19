@@ -22,17 +22,17 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package info.sigterm.plugins.gpuzbuf;
+package info.sigterm.plugins.gpu;
 
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Range;
-import static info.sigterm.plugins.gpuzbuf.GpuPlugin.MAX_DISTANCE;
-import static info.sigterm.plugins.gpuzbuf.GpuPlugin.MAX_FOG_DEPTH;
-import info.sigterm.plugins.gpuzbuf.config.AntiAliasingMode;
-import info.sigterm.plugins.gpuzbuf.config.ColorBlindMode;
-import info.sigterm.plugins.gpuzbuf.config.UIScalingMode;
+import static info.sigterm.plugins.gpu.GpuPlugin.MAX_DISTANCE;
+import static info.sigterm.plugins.gpu.GpuPlugin.MAX_FOG_DEPTH;
+import info.sigterm.plugins.gpu.config.AntiAliasingMode;
+import info.sigterm.plugins.gpu.config.ColorBlindMode;
+import info.sigterm.plugins.gpu.config.UIScalingMode;
 
 @ConfigGroup(GpuPluginConfig.GROUP)
 public interface GpuPluginConfig extends Config
@@ -215,5 +215,17 @@ public interface GpuPluginConfig extends Config
 	default boolean removeVertexSnapping()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = "numThreads",
+		name = "Threads",
+		description = "Threads",
+		position = 20
+	)
+	@Range(min = 0, max = 15)
+	default int numThreads()
+	{
+		return 3;
 	}
 }

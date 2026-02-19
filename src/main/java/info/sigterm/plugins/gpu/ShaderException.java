@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Adam <Adam@sigterm.info>
+ * Copyright (c) 2018, Adam <Adam@sigterm.info>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,13 +22,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package info.sigterm.plugins.gpuzbuf.regions;
+package info.sigterm.plugins.gpu;
 
-class Region
+class ShaderException extends RuntimeException
 {
-	int id;
-	int cx1;
-	int cy1;
-	int cx2;
-	int cy2;
+	ShaderException(String message)
+	{
+		super(message);
+	}
 }

@@ -22,7 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package info.sigterm.plugins.gpuzbuf.config;
+package info.sigterm.plugins.gpu.config;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

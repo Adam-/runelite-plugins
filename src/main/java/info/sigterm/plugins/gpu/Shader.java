@@ -23,7 +23,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package info.sigterm.plugins.gpuzbuf;
+package info.sigterm.plugins.gpu;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
@@ -31,7 +31,7 @@ import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import info.sigterm.plugins.gpuzbuf.template.Template;
+import info.sigterm.plugins.gpu.template.Template;
 import static org.lwjgl.opengl.GL33C.*;
 
 @Slf4j

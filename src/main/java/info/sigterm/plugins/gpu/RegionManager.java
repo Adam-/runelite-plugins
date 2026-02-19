@@ -22,7 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package info.sigterm.plugins.gpuzbuf;
+package info.sigterm.plugins.gpu;
 
 import java.io.IOException;
 import javax.inject.Inject;
@@ -30,7 +30,7 @@ import javax.inject.Singleton;
 import net.runelite.api.Constants;
 import net.runelite.api.Scene;
 import net.runelite.api.Tile;
-import info.sigterm.plugins.gpuzbuf.regions.Regions;
+import info.sigterm.plugins.gpu.regions.Regions;
 
 @Singleton
 class RegionManager

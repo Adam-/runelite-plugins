@@ -22,7 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package info.sigterm.plugins.gpuzbuf;
+package info.sigterm.plugins.gpu;
 
 import java.nio.IntBuffer;
 import java.util.ArrayDeque;
@@ -38,9 +38,10 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Model;
 import net.runelite.api.Perspective;
 import net.runelite.api.Scene;
-import static info.sigterm.plugins.gpuzbuf.FacePrioritySorter.distanceFaceCount;
-import static info.sigterm.plugins.gpuzbuf.FacePrioritySorter.distanceToFaces;
-import static info.sigterm.plugins.gpuzbuf.GpuPlugin.uniBase;
+import static info.sigterm.plugins.gpu.FacePrioritySorter.MAX_DIAMETER;
+import static info.sigterm.plugins.gpu.FacePrioritySorter.MAX_FACE_COUNT;
+import static info.sigterm.plugins.gpu.FacePrioritySorter.MAX_VERTEX_COUNT;
+import static info.sigterm.plugins.gpu.GpuPlugin.uniBase;
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL33C.*;
 
@@ -51,8 +52,17 @@ class Zone
 	// Zone vertex format
 	// index 0: short vec3(x, y, z)
 	// index 1: int abhsl
-	// index 2: short vec4(id, x, y, z)
+	// index 2: short vec4(id, u, v, 0)
 	static final int VERT_SIZE = 20;
+
+	static final char[] zsortHead, zsortTail, zsortNext;
+
+	static
+	{
+		zsortHead = new char[MAX_DIAMETER];
+		zsortTail = new char[MAX_DIAMETER];
+		zsortNext = new char[MAX_FACE_COUNT];
+	}
 
 	int glVao;
 	int bufLen;
@@ -311,7 +321,6 @@ class Zone
 		// only set for static geometry as they require sorting
 		int radius;
 		int[] packedFaces;
-		byte[] renderPriorities;
 
 		static final int SKIP = 1; // temporary model is in a closer zone
 		static final int TEMP = 2; // temporary model added to a closer zone
@@ -420,7 +429,6 @@ class Zone
 
 		assert radius >= 0;
 
-		m.renderPriorities = model.getFaceRenderPriorities();
 		m.radius = 2 + (int) Math.sqrt(radius);
 
 		assert packedFaces.length > 0;
@@ -429,9 +437,13 @@ class Zone
 		alphaModels.add(m);
 	}
 
-	void addTempAlphaModel(int vao, int startpos, int endpos, int level, int x, int y, int z)
+	synchronized void addTempAlphaModel(int vao, int startpos, int endpos, int level, int x, int y, int z)
 	{
-		AlphaModel m = modelCache.poll();
+		AlphaModel m;
+		synchronized (modelCache)
+		{
+			m = modelCache.poll();
+		}
 		if (m == null)
 		{
 			m = new AlphaModel();
@@ -460,7 +472,6 @@ class Zone
 			{
 				alphaModels.remove(i);
 				m.packedFaces = null;
-				m.renderPriorities = null;
 				modelCache.add(m);
 			}
 			m.flags &= ~AlphaModel.SKIP;
@@ -468,7 +479,7 @@ class Zone
 	}
 
 	// this needs to be larger than the max model alpha face count * 3
-	private static final IntBuffer alphaElements = BufferUtils.createIntBuffer(FacePrioritySorter.MAX_VERTEX_COUNT * 3);
+	private static final IntBuffer alphaElements = BufferUtils.createIntBuffer(MAX_VERTEX_COUNT * 3);
 
 	private static final int STATIC = 1;
 	private static final int TEMP = 2;
@@ -479,9 +490,6 @@ class Zone
 	private static int lastzx, lastzz;
 
 	private static int elementBufferId;
-
-	private static final int[] numOfPriority = FacePrioritySorter.numOfPriority;
-	private static final int[][] orderedFaces = FacePrioritySorter.orderedFaces;
 
 	static void initBuffer()
 	{
@@ -494,19 +502,38 @@ class Zone
 		elementBufferId = 0;
 	}
 
+	static class AlphaModelComparator implements Comparator<AlphaModel>
+	{
+		int zx, zz;
+		int cx, cy, cz;
+
+		@Override
+		public int compare(AlphaModel o1, AlphaModel o2)
+		{
+			return Integer.compare(z(o2), z(o1));
+		}
+
+		private int z(AlphaModel m)
+		{
+			final int mx = (m.x + ((zx - m.zofx) << 10));
+			final int mz = (m.z + ((zz - m.zofz) << 10));
+			return (mx - cx) * (mx - cx) +
+				(m.y - cy) * (m.y - cy) +
+				(mz - cz) * (mz - cz);
+		}
+	}
+
+	private static final AlphaModelComparator alphaModelComparator = new AlphaModelComparator();
+
 	void alphaSort(int zx, int zz, int cx, int cy, int cz)
 	{
-		alphaModels.sort(Comparator.comparingInt((AlphaModel m) ->
-					{
-						final int mx = (m.x + ((zx - m.zofx) << 10));
-						final int mz = (m.z + ((zz - m.zofz) << 10));
-						return (mx - cx) * (mx - cx) +
-							(m.y - cy) * (m.y - cy) +
-							(mz - cz) * (mz - cz);
-					}
-				)
-				.reversed()
-		);
+		alphaModelComparator.zx = zx;
+		alphaModelComparator.zz = zz;
+		alphaModelComparator.cx = cx;
+		alphaModelComparator.cy = cy;
+		alphaModelComparator.cz = cz;
+
+		alphaModels.sort(alphaModelComparator);
 	}
 
 	void renderAlpha(int zx, int zz, int cyaw, int cpitch, int minLevel, int currentLevel, int maxLevel, int level, Set<Integer> hiddenRoofIds, boolean useStaticUnsorted)
@@ -522,10 +549,14 @@ class Zone
 		int yawcos = Perspective.COSINE[cyaw];
 		int pitchsin = Perspective.SINE[cpitch];
 		int pitchcos = Perspective.COSINE[cpitch];
-		for (AlphaModel m : alphaModels)
+		for (int j = 0; j < alphaModels.size(); ++j) // NOPMD: ForLoopCanBeForeach
 		{
-			if ((m.flags & AlphaModel.SKIP) != 0) continue;
-			if (m.level != level) continue;
+			AlphaModel m = alphaModels.get(j);
+
+			if ((m.flags & AlphaModel.SKIP) != 0 || m.level != level)
+			{
+				continue;
+			}
 
 			boolean ok = false;
 			if (level >= minLevel && level <= maxLevel)
@@ -571,14 +602,15 @@ class Zone
 			final int radius = m.radius;
 			int diameter = 1 + radius * 2;
 			final int[] packedFaces = m.packedFaces;
-			if (diameter >= 6000)
+			if (diameter >= MAX_DIAMETER)
 			{
 				continue;
 			}
 
-			Arrays.fill(distanceFaceCount, 0, diameter, (char) 0);
+			Arrays.fill(zsortHead, 0, diameter, (char) -1);
+			Arrays.fill(zsortTail, 0, diameter, (char) -1);
 
-			for (int i = 0; i < packedFaces.length; ++i)
+			for (char i = 0; i < packedFaces.length; ++i)
 			{
 				int pack = packedFaces[i];
 
@@ -591,7 +623,19 @@ class Zone
 				fz += radius;
 
 				assert fz >= 0 && fz < diameter : fz;
-				distanceToFaces[fz][distanceFaceCount[fz]++] = (char) i;
+
+				if (zsortTail[fz] == (char) -1)
+				{
+					zsortHead[fz] = zsortTail[fz] = i;
+					zsortNext[i] = (char) -1;
+				}
+				else
+				{
+					char lastFace = zsortTail[fz];
+					zsortNext[lastFace] = i;
+					zsortNext[i] = (char) -1;
+					zsortTail[fz] = i;
+				}
 			}
 
 			if (packedFaces.length * 3 > alphaElements.remaining())
@@ -605,68 +649,16 @@ class Zone
 				flush();
 			}
 
-			byte[] faceRenderPriorities = m.renderPriorities;
 			final int start = m.startpos / (VERT_SIZE >> 2); // ints to verts
-			if (faceRenderPriorities == null)
+			for (int i = diameter - 1; i >= 0; --i)
 			{
-				for (int i = diameter - 1; i >= 0; --i)
+				for (char face = zsortHead[i]; face != (char) -1; face = zsortNext[face])
 				{
-					final int cnt = distanceFaceCount[i];
-					if (cnt > 0)
-					{
-						final char[] faces = distanceToFaces[i];
-
-						for (int faceIdx = 0; faceIdx < cnt; ++faceIdx)
-						{
-							int face = faces[faceIdx];
-							face *= 3;
-							face += start;
-							alphaElements.put(face++);
-							alphaElements.put(face++);
-							alphaElements.put(face++);
-						}
-					}
-				}
-			}
-			else
-			{
-				// Vanilla uses priority draw order for alpha faces and not depth draw order
-				// And since we don't have the full model here, only the alpha faces, we can't compute the
-				// 10/11 insertion points either. Just ignore those since I think they are mostly for players,
-				// which are rendered differently anyway.
-				Arrays.fill(numOfPriority, 0);
-
-				for (int i = diameter - 1; i >= 0; --i)
-				{
-					final int cnt = distanceFaceCount[i];
-					if (cnt > 0)
-					{
-						final char[] faces = distanceToFaces[i];
-
-						for (int faceIdx = 0; faceIdx < cnt; ++faceIdx)
-						{
-							final int face = faces[faceIdx];
-							final byte pri = faceRenderPriorities[face];
-							final int distIdx = numOfPriority[pri]++;
-
-							orderedFaces[pri][distIdx] = face;
-						}
-					}
-				}
-
-				for (int pri = 0; pri < 12; ++pri)
-				{
-					final int priNum = numOfPriority[pri];
-					final int[] priFaces = orderedFaces[pri];
-
-					for (int faceIdx = 0; faceIdx < priNum; ++faceIdx)
-					{
-						final int face = priFaces[faceIdx];
-						int idx = face * 3 + start;
-						alphaElements.put(idx++);
-						alphaElements.put(idx++);
-						alphaElements.put(idx++);
-					}
+					int faceIdx = face * 3;
+					faceIdx += start;
+					alphaElements.put(faceIdx++);
+					alphaElements.put(faceIdx++);
+					alphaElements.put(faceIdx++);
 				}
 			}
 		}
@@ -718,8 +710,9 @@ class Zone
 	void multizoneLocs(Scene scene, int zx, int zz, int cx, int cz, Zone[][] zones)
 	{
 		int offset = scene.getWorldViewId() == -1 ? GpuPlugin.SCENE_OFFSET >> 3 : 0;
-		for (AlphaModel m : alphaModels)
+		for (int i = 0; i < alphaModels.size(); ++i) // NOPMD: ForLoopCanBeForeach
 		{
+			AlphaModel m = alphaModels.get(i);
 			if (m.lx == -1)
 			{
 				continue;
@@ -781,7 +774,6 @@ class Zone
 				m2.zofz = (byte) (closestZoneZ - zz);
 
 				m2.packedFaces = m.packedFaces;
-				m2.renderPriorities = m.renderPriorities;
 				m2.radius = m.radius;
 
 				m2.flags = AlphaModel.TEMP;

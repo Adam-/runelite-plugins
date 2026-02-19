@@ -22,7 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package info.sigterm.plugins.gpuzbuf;
+package info.sigterm.plugins.gpu;
 
 import java.nio.IntBuffer;
 import java.util.HashSet;
@@ -47,20 +47,13 @@ import net.runelite.client.callback.RenderCallbackManager;
 @Slf4j
 class SceneUploader
 {
-	private static final float[] modelLocalX;
-	private static final float[] modelLocalY;
-	private static final float[] modelLocalZ;
+	private final float[] modelLocalX;
+	private final float[] modelLocalY;
+	private final float[] modelLocalZ;
 
 	private final int[] modelLocalXI;
 	private final int[] modelLocalYI;
 	private final int[] modelLocalZI;
-
-	static
-	{
-		modelLocalX = FacePrioritySorter.modelLocalX;
-		modelLocalY = FacePrioritySorter.modelLocalY;
-		modelLocalZ = FacePrioritySorter.modelLocalZ;
-	}
 
 	private final RenderCallbackManager renderCallbackManager;
 	private int basex, basez, rid, level;
@@ -68,6 +61,9 @@ class SceneUploader
 	SceneUploader(RenderCallbackManager renderCallbackManager)
 	{
 		this.renderCallbackManager = renderCallbackManager;
+		modelLocalX = new float[FacePrioritySorter.MAX_VERTEX_COUNT];
+		modelLocalY = new float[FacePrioritySorter.MAX_VERTEX_COUNT];
+		modelLocalZ = new float[FacePrioritySorter.MAX_VERTEX_COUNT];
 		modelLocalXI = new int[FacePrioritySorter.MAX_VERTEX_COUNT];
 		modelLocalYI = new int[FacePrioritySorter.MAX_VERTEX_COUNT];
 		modelLocalZI = new int[FacePrioritySorter.MAX_VERTEX_COUNT];
@@ -322,7 +318,7 @@ class SceneUploader
 			uploadZoneRenderable(renderable, zone, 0, decorativeObject.getX() + decorativeObject.getXOffset(), decorativeObject.getZ(), decorativeObject.getY() + decorativeObject.getYOffset(), -1, -1, -1, -1, decorativeObject.getId(), vertexBuffer, ab);
 
 			Renderable renderable2 = decorativeObject.getRenderable2();
-			uploadZoneRenderable(renderable2, zone, 0, decorativeObject.getX(), decorativeObject.getZ(), decorativeObject.getY(), -1, -1, -1, -1, decorativeObject.getId(), vertexBuffer, ab);
+			uploadZoneRenderable(renderable2, zone, 0, decorativeObject.getX() + decorativeObject.getXOffset2(), decorativeObject.getZ(), decorativeObject.getY() + decorativeObject.getYOffset2(), -1, -1, -1, -1, decorativeObject.getId(), vertexBuffer, ab);
 		}
 
 		GroundObject groundObject = t.getGroundObject();
@@ -698,7 +694,7 @@ class SceneUploader
 	}
 
 	// temp draw
-	static int uploadTempModel(Model model, int orientation, int x, int y, int z, IntBuffer opaqueBuffer)
+	int uploadTempModel(Model model, int orientation, int x, int y, int z, IntBuffer opaqueBuffer)
 	{
 		final int triangleCount = model.getFaceCount();
 		final int vertexCount = model.getVerticesCount();
@@ -865,9 +861,9 @@ class SceneUploader
 		return (hue << 10 | sat << 7 | lum) & 65535;
 	}
 
-	static float u0, u1, u2, v0, v1, v2;
+	float u0, u1, u2, v0, v1, v2;
 
-	static void computeFaceUvs(Model model, int face)
+	void computeFaceUvs(Model model, int face)
 	{
 		final float[] vertexX = model.getVerticesX();
 		final float[] vertexY = model.getVerticesY();

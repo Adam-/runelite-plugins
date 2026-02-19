@@ -22,7 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package info.sigterm.plugins.gpuzbuf;
+package info.sigterm.plugins.gpu;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,8 +30,8 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Projection;
 import net.runelite.api.Scene;
-import static info.sigterm.plugins.gpuzbuf.GpuPlugin.uniEntityTint;
-import static info.sigterm.plugins.gpuzbuf.GpuPlugin.updateEntityProjection;
+import static info.sigterm.plugins.gpu.GpuPlugin.uniEntityTint;
+import static info.sigterm.plugins.gpu.GpuPlugin.updateEntityProjection;
 import static org.lwjgl.opengl.GL33C.*;
 
 class VAO
@@ -39,7 +39,7 @@ class VAO
 	// Temporary vertex format
 	// index 0: vec3(x, y, z)
 	// index 1: int abhsl
-	// index 2: short vec4(id, x, y, z)
+	// index 2: short vec4(id, u, v, 0)
 	static final int VERT_SIZE = 24;
 
 	final VBO vbo;
@@ -142,8 +142,17 @@ class VAOList
 	// this needs to be larger than the largest single model
 	private static final int VAO_SIZE = 4 * 1024 * 1024;
 
+	private final boolean rt;
+//	private int lastIdx;
+	private boolean needAlloc;
+
 	private int curIdx;
-	private final List<VAO> vaos = new ArrayList<>();
+	final List<VAO> vaos = new ArrayList<>();
+
+	VAOList(boolean rt)
+	{
+		this.rt = rt;
+	}
 
 	VAO get(int size)
 	{
@@ -154,6 +163,10 @@ class VAOList
 			VAO vao = vaos.get(curIdx);
 			if (!vao.vbo.mapped)
 			{
+				if (rt) {
+					needAlloc = true;
+					return null;
+				}
 				vao.vbo.map();
 			}
 
@@ -166,6 +179,11 @@ class VAOList
 			curIdx++;
 		}
 
+		if (rt) {
+			needAlloc = true;
+			return null;
+		}
+
 		VAO vao = new VAO(VAO_SIZE);
 		vao.init();
 		vao.vbo.map();
@@ -174,19 +192,44 @@ class VAOList
 		return vao;
 	}
 
-	List<VAO> unmap()
+	void map()
 	{
-		int sz = 0;
+		int i;
+//		int want = (lastIdx+1) + (needAlloc ? 1 : 0);
+//		for (i = 0; i <= want && i < vaos.size(); ++i)
 		for (VAO vao : vaos)
 		{
+//			VAO vao = vaos.get(i);
+			assert !vao.vbo.mapped;
+			vao.vbo.map();
+		}
+		if (needAlloc)
+//		for (; i <= want; ++i)
+		{
+			VAO vao = new VAO(VAO_SIZE);
+			vao.init();
+			vao.vbo.map();
+			vaos.add(vao);
+			log.debug("Allocated VAO {}", vao.vao);
+			needAlloc=false;
+		}
+	}
+
+	int unmap()
+	{
+		int sz = 0;
+		for (int i = 0; i < vaos.size(); ++i) // NOPMD: ForLoopCanBeForeach
+		{
+			VAO vao = vaos.get(i);
 			if (vao.vbo.mapped)
 			{
 				++sz;
 				vao.vbo.unmap();
 			}
 		}
+		//lastIdx = curIdx;
 		curIdx = 0;
-		return vaos.subList(0, sz);
+		return sz;
 	}
 
 	void free()
@@ -196,7 +239,8 @@ class VAOList
 			vao.destroy();
 		}
 		vaos.clear();
-		curIdx = 0;
+		//lastIdx =
+			curIdx = 0;
 	}
 
 	void addRange(Projection projection, Scene scene)

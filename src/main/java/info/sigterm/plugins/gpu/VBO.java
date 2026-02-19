@@ -22,7 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package info.sigterm.plugins.gpuzbuf;
+package info.sigterm.plugins.gpu;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -73,7 +73,8 @@ class VBO
 		buffer = glMapBufferRange(GL_ARRAY_BUFFER, 0, size, GL_MAP_WRITE_BIT | (usage == GL_STATIC_DRAW ? 0 : (GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_FLUSH_EXPLICIT_BIT)), buffer);
 		if (buffer == null)
 		{
-			throw new RuntimeException("unable to map GL buffer " + bufId + " size " + size);
+			int err = glGetError();
+			throw new RuntimeException("unable to map GL buffer (bufId: " + bufId + " size: " + size + " renderer: " + glGetString(GL_RENDERER) + " version: " + glGetString(GL_VERSION) + " err: " + err + ")");
 		}
 		this.vb = buffer.asIntBuffer();
 		glBindBuffer(GL_ARRAY_BUFFER, 0);

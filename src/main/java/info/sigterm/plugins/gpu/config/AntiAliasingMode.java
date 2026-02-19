@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Adam <Adam@sigterm.info>
+ * Copyright (c) 2018, Lotto <https://github.com/devLotto>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,53 +22,27 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package info.sigterm.plugins.gpuzbuf;
+package info.sigterm.plugins.gpu.config;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-class GpuIntBuffer
+@Getter
+@RequiredArgsConstructor
+public enum AntiAliasingMode
 {
-	private final IntBuffer buffer;
+	DISABLED("Disabled", 0),
+	MSAA_2("MSAA x2", 2),
+	MSAA_4("MSAA x4", 4),
+	MSAA_8("MSAA x8", 8),
+	MSAA_16("MSAA x16", 16);
 
-	GpuIntBuffer(IntBuffer ib)
-	{
-		buffer = ib;
-	}
+	private final String name;
+	private final int samples;
 
-	void put22224(int x, int y, int z, int w)
+	@Override
+	public String toString()
 	{
-		buffer.put(((y & 0xffff) << 16) | (x & 0xffff));
-		buffer.put(z & 0xffff);
-		buffer.put(w);
-	}
-
-	void put2222(int x, int y, int z, int w)
-	{
-		buffer.put(((y & 0xffff) << 16) | (x & 0xffff));
-		buffer.put(((w & 0xffff) << 16) | (z & 0xffff));
-	}
-
-	void flip()
-	{
-		buffer.flip();
-	}
-
-	void clear()
-	{
-		buffer.clear();
-	}
-
-	IntBuffer getBuffer()
-	{
-		return buffer;
-	}
-
-	static IntBuffer allocateDirect(int size)
-	{
-		return ByteBuffer.allocateDirect(size * Integer.BYTES)
-			.order(ByteOrder.nativeOrder())
-			.asIntBuffer();
+		return name;
 	}
 }
