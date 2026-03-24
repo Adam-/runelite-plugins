@@ -143,7 +143,6 @@ class VAOList
 	private static final int VAO_SIZE = 4 * 1024 * 1024;
 
 	private final boolean rt;
-//	private int lastIdx;
 	private boolean needAlloc;
 
 	private int curIdx;
@@ -179,7 +178,8 @@ class VAOList
 			curIdx++;
 		}
 
-		if (rt) {
+		if (rt)
+		{
 			needAlloc = true;
 			return null;
 		}
@@ -194,24 +194,19 @@ class VAOList
 
 	void map()
 	{
-		int i;
-//		int want = (lastIdx+1) + (needAlloc ? 1 : 0);
-//		for (i = 0; i <= want && i < vaos.size(); ++i)
 		for (VAO vao : vaos)
 		{
-//			VAO vao = vaos.get(i);
 			assert !vao.vbo.mapped;
 			vao.vbo.map();
 		}
 		if (needAlloc)
-//		for (; i <= want; ++i)
 		{
 			VAO vao = new VAO(VAO_SIZE);
 			vao.init();
 			vao.vbo.map();
 			vaos.add(vao);
 			log.debug("Allocated VAO {}", vao.vao);
-			needAlloc=false;
+			needAlloc = false;
 		}
 	}
 
@@ -227,7 +222,6 @@ class VAOList
 				vao.vbo.unmap();
 			}
 		}
-		//lastIdx = curIdx;
 		curIdx = 0;
 		return sz;
 	}
@@ -239,8 +233,7 @@ class VAOList
 			vao.destroy();
 		}
 		vaos.clear();
-		//lastIdx =
-			curIdx = 0;
+		curIdx = 0;
 	}
 
 	void addRange(Projection projection, Scene scene)
