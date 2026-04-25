@@ -12,8 +12,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 @Slf4j
 @PluginDescriptor(
 	name = "Large models",
-	description = "Identify large models",
-	enabledByDefault = false
+	description = "Identify large models"
 )
 public class LargeModelsPlugin extends Plugin
 {
