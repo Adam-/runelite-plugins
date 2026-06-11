@@ -986,4 +986,193 @@ class SceneUploader
 			v2 = 1f;
 		}
 	}
+
+	void computeFaceUvsCamera(Model model, int face, int orientation, int wx, int wy, int wz, float[] camera)
+	{
+		final float[] vertexX = model.getVerticesX();
+		final float[] vertexY = model.getVerticesY();
+		final float[] vertexZ = model.getVerticesZ();
+
+		final int[] indices1 = model.getFaceIndices1();
+		final int[] indices2 = model.getFaceIndices2();
+		final int[] indices3 = model.getFaceIndices3();
+
+		final byte[] textureFaces = model.getTextureFaces();
+		final int[] texIndices1 = model.getTexIndices1();
+		final int[] texIndices2 = model.getTexIndices2();
+		final int[] texIndices3 = model.getTexIndices3();
+
+		float orientSine = 0;
+		float orientCosine = 1;
+		if (orientation != 0)
+		{
+			orientSine = Perspective.SINE[orientation] / 65536f;
+			orientCosine = Perspective.COSINE[orientation] / 65536f;
+		}
+
+		final int triangleA = indices1[face];
+		final int triangleB = indices2[face];
+		final int triangleC = indices3[face];
+
+		float f1x = vertexX[triangleA];
+		float f1y = vertexY[triangleA];
+		float f1z = vertexZ[triangleA];
+		float f2x = vertexX[triangleB];
+		float f2y = vertexY[triangleB];
+		float f2z = vertexZ[triangleB];
+		float f3x = vertexX[triangleC];
+		float f3y = vertexY[triangleC];
+		float f3z = vertexZ[triangleC];
+
+		if (orientation != 0)
+		{
+			float ox;
+			ox = f1x;
+			f1x = f1z * orientSine + ox * orientCosine;
+			f1z = f1z * orientCosine - ox * orientSine;
+			ox = f2x;
+			f2x = f2z * orientSine + ox * orientCosine;
+			f2z = f2z * orientCosine - ox * orientSine;
+			ox = f3x;
+			f3x = f3z * orientSine + ox * orientCosine;
+			f3z = f3z * orientCosine - ox * orientSine;
+		}
+
+		f1x += wx;
+		f1y += wy;
+		f1z += wz;
+		f2x += wx;
+		f2y += wy;
+		f2z += wz;
+		f3x += wx;
+		f3y += wy;
+		f3z += wz;
+
+		float t1x;
+		float t1y;
+		float t1z;
+		float t2x;
+		float t2y;
+		float t2z;
+		float t3x;
+		float t3y;
+		float t3z;
+
+		if (textureFaces != null && textureFaces[face] != -1)
+		{
+			int tfaceIdx = textureFaces[face] & 0xff;
+			int texA = texIndices1[tfaceIdx];
+			int texB = texIndices2[tfaceIdx];
+			int texC = texIndices3[tfaceIdx];
+
+			t1x = vertexX[texA];
+			t1y = vertexY[texA];
+			t1z = vertexZ[texA];
+			if (orientation != 0)
+			{
+				float ox = t1x;
+				t1x = t1z * orientSine + ox * orientCosine;
+				t1z = t1z * orientCosine - ox * orientSine;
+			}
+			t1x += wx;
+			t1y += wy;
+			t1z += wz;
+
+			t2x = vertexX[texB];
+			t2y = vertexY[texB];
+			t2z = vertexZ[texB];
+			if (orientation != 0)
+			{
+				float ox = t2x;
+				t2x = t2z * orientSine + ox * orientCosine;
+				t2z = t2z * orientCosine - ox * orientSine;
+			}
+			t2x += wx;
+			t2y += wy;
+			t2z += wz;
+
+			t3x = vertexX[texC];
+			t3y = vertexY[texC];
+			t3z = vertexZ[texC];
+			if (orientation != 0)
+			{
+				float ox = t3x;
+				t3x = t3z * orientSine + ox * orientCosine;
+				t3z = t3z * orientCosine - ox * orientSine;
+			}
+			t3x += wx;
+			t3y += wy;
+			t3z += wz;
+		}
+		else
+		{
+			t1x = f1x;
+			t1y = f1y;
+			t1z = f1z;
+			t2x = f2x;
+			t2y = f2y;
+			t2z = f2z;
+			t3x = f3x;
+			t3y = f3y;
+			t3z = f3z;
+		}
+
+		float v2x = t2x - t1x;
+		float v2y = t2y - t1y;
+		float v2z = t2z - t1z;
+		float v3x = t3x - t1x;
+		float v3y = t3y - t1y;
+		float v3z = t3z - t1z;
+		float nx = v2y * v3z - v2z * v3y;
+		float ny = v2z * v3x - v2x * v3z;
+		float nz = v2x * v3y - v2y * v3x;
+
+		float camX = camera[0];
+		float camY = camera[1];
+		float camZ = camera[2];
+		float camDirX;
+		float camDirY;
+		float camDirZ;
+		float d;
+
+		camDirX = camX - f1x;
+		camDirY = camY - f1y;
+		camDirZ = camZ - f1z;
+		d = ((t1x - f1x) * nx + (t1y - f1y) * ny + (t1z - f1z) * nz) / (camDirX * nx + camDirY * ny + camDirZ * nz);
+		float p1x = f1x + camDirX * d - t1x;
+		float p1y = f1y + camDirY * d - t1y;
+		float p1z = f1z + camDirZ * d - t1z;
+
+		camDirX = camX - f2x;
+		camDirY = camY - f2y;
+		camDirZ = camZ - f2z;
+		d = ((t1x - f2x) * nx + (t1y - f2y) * ny + (t1z - f2z) * nz) / (camDirX * nx + camDirY * ny + camDirZ * nz);
+		float p2x = f2x + camDirX * d - t1x;
+		float p2y = f2y + camDirY * d - t1y;
+		float p2z = f2z + camDirZ * d - t1z;
+
+		camDirX = camX - f3x;
+		camDirY = camY - f3y;
+		camDirZ = camZ - f3z;
+		d = ((t1x - f3x) * nx + (t1y - f3y) * ny + (t1z - f3z) * nz) / (camDirX * nx + camDirY * ny + camDirZ * nz);
+		float p3x = f3x + camDirX * d - t1x;
+		float p3y = f3y + camDirY * d - t1y;
+		float p3z = f3z + camDirZ * d - t1z;
+
+		float v8x = v3y * nz - v3z * ny;
+		float v8y = v3z * nx - v3x * nz;
+		float v8z = v3x * ny - v3y * nx;
+		float f = 1.0f / (v8x * v2x + v8y * v2y + v8z * v2z);
+		u0 = (v8x * p1x + v8y * p1y + v8z * p1z) * f;
+		u1 = (v8x * p2x + v8y * p2y + v8z * p2z) * f;
+		u2 = (v8x * p3x + v8y * p3y + v8z * p3z) * f;
+
+		v8x = v2y * nz - v2z * ny;
+		v8y = v2z * nx - v2x * nz;
+		v8z = v2x * ny - v2y * nx;
+		f = 1.0f / (v8x * v3x + v8y * v3y + v8z * v3z);
+		v0 = (v8x * p1x + v8y * p1y + v8z * p1z) * f;
+		v1 = (v8x * p2x + v8y * p2y + v8z * p2z) * f;
+		v2 = (v8x * p3x + v8y * p3y + v8z * p3z) * f;
+	}
 }

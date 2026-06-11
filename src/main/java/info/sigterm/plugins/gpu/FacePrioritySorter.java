@@ -28,7 +28,9 @@ import java.nio.IntBuffer;
 import java.util.Arrays;
 import net.runelite.api.Model;
 import net.runelite.api.Perspective;
+import net.runelite.api.Player;
 import net.runelite.api.Projection;
+import net.runelite.api.Renderable;
 
 class FacePrioritySorter
 {
@@ -85,7 +87,7 @@ class FacePrioritySorter
 		this.sceneUploader = sceneUploader;
 	}
 
-	int uploadSortedModel(GpuPlugin.RenderThread rt, Projection proj, Model model, int orientation, int x, int y, int z, IntBuffer opaqueBuffer, IntBuffer alphaBuffer)
+	int uploadSortedModel(GpuPlugin.RenderThread rt, Projection proj, Model model, int orientation, int x, int y, int z, IntBuffer opaqueBuffer, IntBuffer alphaBuffer, float[] camera, Renderable renderable)
 	{
 		final int vertexCount = model.getVerticesCount();
 		final float[] verticesX = model.getVerticesX();
@@ -199,7 +201,15 @@ class FacePrioritySorter
 					minFz = Math.min(minFz, distance);
 					maxFz = Math.max(maxFz, distance);
 
-					sceneUploader.computeFaceUvs(model, faceIdx);
+					// mirror shield
+					if (faceTextures != null && faceTextures[faceIdx] == 11 && renderable instanceof Player)
+					{
+						sceneUploader.computeFaceUvsCamera(model, faceIdx, orientation, x, y, z, camera);
+					}
+					else
+					{
+						sceneUploader.computeFaceUvs(model, faceIdx);
+					}
 
 					int su0 = (int) (sceneUploader.u0 * 256f);
 					int sv0 = (int) (sceneUploader.v0 * 256f);

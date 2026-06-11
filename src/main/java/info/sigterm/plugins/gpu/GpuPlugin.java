@@ -1280,6 +1280,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			return;
 		}
 
+		float[] camera = {ctx.cameraX, ctx.cameraY, ctx.cameraZ};
 		int size = m.getFaceCount() * 3 * VAO.VERT_SIZE;
 		if (m.getFaceTransparencies() == null)
 		{
@@ -1330,7 +1331,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			int start = a.vbo.vb.position();
 			try
 			{
-				sorter.uploadSortedModel(rt, worldProjection, m, orient, x, y, z, o.vbo.vb, a.vbo.vb);
+				sorter.uploadSortedModel(rt, worldProjection, m, orient, x, y, z, o.vbo.vb, a.vbo.vb, camera, r);
 			}
 			catch (Exception ex)
 			{
@@ -1368,6 +1369,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			return;
 		}
 
+		float[] camera = {ctx.cameraX, ctx.cameraY, ctx.cameraZ};
 		Renderable renderable = gameObject.getRenderable();
 		int size = m.getFaceCount() * 3 * VAO.VERT_SIZE;
 		int renderMode = renderable.getRenderMode();
@@ -1383,7 +1385,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			m.calculateBoundsCylinder();
 			try
 			{
-				facePrioritySorter.uploadSortedModel(null, worldProjection, m, orient, x, y, z, o.vbo.vb, a.vbo.vb);
+				facePrioritySorter.uploadSortedModel(null, worldProjection, m, orient, x, y, z, o.vbo.vb, a.vbo.vb, camera, renderable);
 			}
 			catch (Exception ex)
 			{
