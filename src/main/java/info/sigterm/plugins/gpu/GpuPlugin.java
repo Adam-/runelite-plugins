@@ -1300,7 +1300,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		Renderable renderable = gameObject.getRenderable();
 		int size = m.getFaceCount() * 3 * VAO.VERT_SIZE;
 		int renderMode = renderable.getRenderMode();
-		if (renderMode == Renderable.RENDERMODE_SORTED_NO_DEPTH || m.getFaceTransparencies() != null || m.getTransparency() != 0)
+		if (renderMode == Renderable.RENDERMODE_SORTED_NO_DEPTH || m.getFaceTransparencies() != null)// || m.getTransparency() != 0)
 		{
 			RenderThread rt = rts[0];
 			VAO o = rt.vaoO.get(size);
