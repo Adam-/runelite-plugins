@@ -56,15 +56,6 @@ class Zone
 	// index 2: short vec4(id, u, v, 0)
 	static final int VERT_SIZE = 20;
 
-	static final char[] zsortHead, zsortTail, zsortNext;
-
-	static
-	{
-		zsortHead = new char[MAX_DIAMETER];
-		zsortTail = new char[MAX_DIAMETER];
-		zsortNext = new char[MAX_FACE_COUNT];
-	}
-
 	int glVao;
 	int bufLen;
 
@@ -537,7 +528,7 @@ class Zone
 		alphaModels.sort(alphaModelComparator);
 	}
 
-	void renderAlpha(int zx, int zz, int cyaw, int cpitch, int minLevel, int currentLevel, int maxLevel, int level, Set<Integer> hiddenRoofIds, boolean useStaticUnsorted)
+	void renderAlpha(ModelUploader mu, int zx, int zz, int cyaw, int cpitch, int minLevel, int currentLevel, int maxLevel, int level, Set<Integer> hiddenRoofIds, boolean useStaticUnsorted)
 	{
 		drawOff.clear();
 		drawEnd.clear();
@@ -608,8 +599,8 @@ class Zone
 				continue;
 			}
 
-			Arrays.fill(zsortHead, 0, diameter, (char) -1);
-			Arrays.fill(zsortTail, 0, diameter, (char) -1);
+			Arrays.fill(mu.zsortHead, 0, diameter, (char) -1);
+			Arrays.fill(mu.zsortTail, 0, diameter, (char) -1);
 
 			for (char i = 0; i < packedFaces.length; ++i)
 			{
@@ -625,17 +616,17 @@ class Zone
 
 				assert fz >= 0 && fz < diameter : fz;
 
-				if (zsortTail[fz] == (char) -1)
+				if (mu.zsortTail[fz] == (char) -1)
 				{
-					zsortHead[fz] = zsortTail[fz] = i;
-					zsortNext[i] = (char) -1;
+					mu.zsortHead[fz] = mu.zsortTail[fz] = i;
+					mu.zsortNext[i] = (char) -1;
 				}
 				else
 				{
-					char lastFace = zsortTail[fz];
-					zsortNext[lastFace] = i;
-					zsortNext[i] = (char) -1;
-					zsortTail[fz] = i;
+					char lastFace = mu.zsortTail[fz];
+					mu.zsortNext[lastFace] = i;
+					mu.zsortNext[i] = (char) -1;
+					mu.zsortTail[fz] = i;
 				}
 			}
 
@@ -653,7 +644,7 @@ class Zone
 			final int start = m.startpos / (VERT_SIZE >> 2); // ints to verts
 			for (int i = diameter - 1; i >= 0; --i)
 			{
-				for (char face = zsortHead[i]; face != (char) -1; face = zsortNext[face])
+				for (char face = mu.zsortHead[i]; face != (char) -1; face = mu.zsortNext[face])
 				{
 					int faceIdx = face * 3;
 					faceIdx += start;
