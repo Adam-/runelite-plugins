@@ -28,6 +28,7 @@
 //#define BIAS_DEBUG
 
 #include texture_config
+#include gpu_api_scene_config
 
 // smallest unit of the texture which can be moved per tick. textures are all
 // 128x128px - so this is equivalent to +1px
@@ -69,6 +70,12 @@ noperspective centroid out float fHsl;
 flat out int fTextureId;
 out vec2 fUv;
 out float fFogAmount;
+#ifdef GPU_API_SCENE_EFFECT
+out float fCameraDistance;
+flat out int fSurfaceType;
+out vec3 fWorldPosition;
+out vec3 fViewDirection;
+#endif
 #ifdef ZBUF_DEBUG
 out float fDepth;
 #endif
@@ -89,6 +96,12 @@ void main() {
   vec3 rgb = hslToRgb(hsl);
 
   vec4 worldPos = entityProj * vert;
+#ifdef GPU_API_SCENE_EFFECT
+  fCameraDistance = length(worldPos.xz - vec2(cameraX, cameraZ));
+  fSurfaceType = tex.w == 1 ? 1 : 0;
+  fWorldPosition = worldPos.xyz;
+  fViewDirection = vec3(cameraX, cameraY, cameraZ) - worldPos.xyz;
+#endif
   vec4 screenPos = worldProj * worldPos;
 #ifdef ZBUF_DEBUG
   fDepth = screenPos.z / screenPos.w;

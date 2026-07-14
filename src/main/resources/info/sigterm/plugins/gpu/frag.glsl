@@ -28,6 +28,7 @@
 //#define ZBUF_DEBUG
 
 #include colorblind_mode
+#include gpu_api_scene_config
 
 uniform sampler2DArray textures;
 uniform float brightness;
@@ -40,11 +41,35 @@ noperspective centroid in float fHsl;
 flat in int fTextureId;
 in vec2 fUv;
 in float fFogAmount;
+#ifdef GPU_API_SCENE_EFFECT
+in float fCameraDistance;
+flat in int fSurfaceType;
+in vec3 fWorldPosition;
+in vec3 fViewDirection;
+#endif
 #ifdef ZBUF_DEBUG
 in float fDepth;
 #endif
 
 out vec4 FragColor;
+
+#ifdef GPU_API_SCENE_EFFECT
+struct GpuSceneInput {
+  vec3 worldPosition;
+  float cameraDistance;
+  vec3 viewDirection;
+  vec3 surfaceNormal;
+  float fogAmount;
+  int surfaceType;
+};
+
+struct GpuSceneOutput {
+  vec3 surfaceColor;
+  vec3 fogColor;
+};
+
+#include gpu_api_scene_effect
+#endif
 
 #include "hsl_to_rgb.glsl"
 
@@ -57,6 +82,18 @@ float linear_depth(float depth) {
   // depth is computed as 100/z, solve for z
   float z = 100 / depth;
   return 1 - z / 10000;  // we don't have a far plane, but the client uses 10000
+}
+#endif
+
+#ifdef GPU_API_SCENE_EFFECT
+vec3 gpuApiSurfaceNormal(vec3 worldPosition, vec3 viewDirection) {
+  vec3 normal = cross(dFdx(worldPosition), dFdy(worldPosition));
+  float lengthSquared = dot(normal, normal);
+  if (lengthSquared < 0.000001) {
+    return viewDirection;
+  }
+  normal *= inversesqrt(lengthSquared);
+  return dot(normal, viewDirection) < 0.0 ? -normal : normal;
 }
 #endif
 
@@ -91,7 +128,22 @@ void main() {
   c.rgb = colorblind(c.rgb);
 #endif
 
+#ifdef GPU_API_SCENE_EFFECT
+  vec3 viewDirection = normalize(fViewDirection);
+  GpuSceneInput gpuInput = GpuSceneInput(
+      fWorldPosition,
+      fCameraDistance,
+      viewDirection,
+      gpuApiSurfaceNormal(fWorldPosition, viewDirection),
+      fFogAmount,
+      fSurfaceType);
+  GpuSceneOutput gpuOutput = GpuSceneOutput(c.rgb, fogColor.rgb);
+  applySceneEffect(gpuInput, gpuOutput);
+
+  vec3 mixedColor = mix(gpuOutput.surfaceColor, gpuOutput.fogColor, fFogAmount);
+#else
   vec3 mixedColor = mix(c.rgb, fogColor.rgb, fFogAmount);
+#endif
   FragColor = vec4(mixedColor, c.a);
 
 #ifdef FRAG_UVS
