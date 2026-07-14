@@ -26,7 +26,10 @@ package info.sigterm.plugins.gpu;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.primitives.Ints;
+import com.google.inject.Binder;
 import com.google.inject.Provides;
+import info.sigterm.plugins.gpu.api.GpuApi;
+import info.sigterm.plugins.gpu.api.GpuApi.Frame;
 import java.awt.Canvas;
 import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
@@ -135,6 +138,9 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	@Inject
 	private RenderCallbackManager renderCallbackManager;
 
+	@Inject
+	private GpuExtensionManager extensionManager;
+
 	private Canvas canvas;
 	private AWTContext awtContext;
 	private Callback debugCallback;
@@ -178,6 +184,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	private GpuFloatBuffer uniformBuffer;
 
 	private int cameraYaw, cameraPitch;
+	private Frame extensionFrame;
 
 	static class RenderThread
 	{
@@ -279,6 +286,12 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 	static final float[] IDENTITY = Mat4.identity();
 
 	@Override
+	public void configure(Binder binder)
+	{
+		binder.bind(GpuApi.class).to(GpuExtensionManager.class);
+	}
+
+	@Override
 	protected void startUp()
 	{
 		root = new SceneContext(NUM_ZONES, NUM_ZONES);
@@ -364,6 +377,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 				initBuffers();
 				initVao();
+				extensionManager.startRenderer(this::rebuildSceneProgram);
 				initProgram();
 				initInterfaceTexture();
 				if (glCapabilities.OpenGL45)
@@ -446,6 +460,8 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 			if (lwjglInitted)
 			{
+				extensionManager.stopRenderer();
+
 				if (textureArrayId != -1)
 				{
 					textureManager.freeTextureArray(textureArrayId);
@@ -605,6 +621,10 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 					return "#define SAMPLING_MODE " + config.uiScalingMode().ordinal() + "\n";
 				case "colorblind_mode":
 					return "#define COLORBLIND_MODE " + config.colorBlindMode().ordinal() + "\n";
+				case "gpu_api_scene_effect":
+					return extensionManager.sceneSource();
+				case "gpu_api_scene_config":
+					return extensionManager.sceneConfig();
 			}
 			return null;
 		});
@@ -618,12 +638,55 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		glBindVertexArray(vaoUiHandle);
 
 		Template template = createTemplate();
-		glProgram = PROGRAM.compile(template);
+		glProgram = compileSceneProgram(template);
 		glUiProgram = UI_PROGRAM.compile(template);
 
 		glBindVertexArray(0);
 
 		initUniforms();
+	}
+
+	private int compileSceneProgram(Template template)
+	{
+		try
+		{
+			return PROGRAM.compile(template);
+		}
+		catch (ShaderException ex)
+		{
+			if (!extensionManager.hasSceneEffect())
+			{
+				throw ex;
+			}
+
+			extensionManager.rejectSceneEffect(ex);
+			return PROGRAM.compile(createTemplate());
+		}
+	}
+
+	private void rebuildSceneProgram()
+	{
+		assert client.isClientThread();
+		glBindVertexArray(vaoUiHandle);
+		int newProgram;
+		try
+		{
+			newProgram = compileSceneProgram(createTemplate());
+		}
+		catch (ShaderException ex)
+		{
+			log.warn("Unable to rebuild GPU scene program", ex);
+			return;
+		}
+		finally
+		{
+			glBindVertexArray(0);
+		}
+
+		int oldProgram = glProgram;
+		glProgram = newProgram;
+		initUniforms();
+		glDeleteProgram(oldProgram);
 	}
 
 	private void initUniforms()
@@ -1009,6 +1072,17 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		Mat4.mul(projectionMatrix, Mat4.rotateY(cameraYaw));
 		Mat4.mul(projectionMatrix, Mat4.translate(-cameraX, -cameraY, -cameraZ));
 		glUniformMatrix4fv(uniWorldProj, false, projectionMatrix);
+		extensionFrame = extensionManager.beginFrame(
+			projectionMatrix,
+			cameraX,
+			cameraY,
+			cameraZ,
+			cameraPitch,
+			cameraYaw,
+			renderViewportWidth,
+			renderViewportHeight,
+			drawDistance);
+		extensionManager.updateScene(glProgram, extensionFrame);
 
 		glUniformMatrix4fv(uniEntityProj, false, IDENTITY);
 
@@ -1040,14 +1114,22 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		if (skybox == null)
 		{
 			glClearColor((sky >> 16 & 0xFF) / 255f, (sky >> 8 & 0xFF) / 255f, (sky & 0xFF) / 255f, 1f);
-			glClearDepth(0d);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			return;
 		}
-
-		glClearColor(0f, 0f, 0f, 1f);
+		else
+		{
+			glClearColor(0f, 0f, 0f, 1f);
+		}
 		glClearDepth(0d);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		boolean replaced = extensionFrame != null && extensionManager.drawSkybox(extensionFrame);
+		restoreSceneRenderState();
+
+		if (replaced || skybox == null)
+		{
+			drawSkyboxOverlay();
+			return;
+		}
 
 		int size = skybox.getFaceCount() * 3 * VAO.VERT_SIZE;
 		RenderThread rt = rts[0];
@@ -1060,6 +1142,16 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		rt.vaoO.draw();
 
 		glUniformMatrix4fv(uniEntityProj, false, IDENTITY);
+		drawSkyboxOverlay();
+	}
+
+	private void drawSkyboxOverlay()
+	{
+		if (extensionFrame != null)
+		{
+			extensionManager.drawSkyboxOverlay(extensionFrame);
+			restoreSceneRenderState();
+		}
 	}
 
 	@Override
@@ -1078,12 +1170,41 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 	private void postDrawToplevel()
 	{
+		if (extensionFrame != null)
+		{
+			extensionManager.drawPostScene(extensionFrame);
+			restoreSceneRenderState();
+			extensionFrame = null;
+		}
+
 		glDisable(GL_BLEND);
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
 
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, awtContext.getFramebuffer(false));
 		sceneFboValid = true;
+	}
+
+	private void restoreSceneRenderState()
+	{
+		if (textureArrayId != -1)
+		{
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, textureArrayId);
+		}
+		glActiveTexture(GL_TEXTURE0);
+		glBindVertexArray(0);
+		glUseProgram(glProgram);
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, glUniformBuffer.glBufferId);
+		glUniformBlockBinding(glProgram, uniBlockMain, 0);
+		glUniform1i(uniTextures, 1);
+		glDepthMask(true);
+		glDepthFunc(GL_GREATER);
+		glDisable(GL_POLYGON_OFFSET_FILL);
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+		glEnable(GL_CULL_FACE);
 	}
 
 	private void blitSceneFbo()

@@ -488,22 +488,22 @@ class SceneUploader
 		int tex = tile.getTexture() + 1;
 
 		vertexBuffer.put22224(lx2, ly2, lz2, hsl2);
-		vertexBuffer.put2222(tex, 256, 256, 0);
+		vertexBuffer.put2222(tex, 256, 256, 1);
 
 		vertexBuffer.put22224(lx3, ly3, lz3, hsl3);
-		vertexBuffer.put2222(tex, 0, 256, 0);
+		vertexBuffer.put2222(tex, 0, 256, 1);
 
 		vertexBuffer.put22224(lx1, ly1, lz1, hsl1);
-		vertexBuffer.put2222(tex, 256, 0, 0);
+		vertexBuffer.put2222(tex, 256, 0, 1);
 
 		vertexBuffer.put22224(lx0, ly0, lz0, hsl0);
-		vertexBuffer.put2222(tex, 0, 0, 0);
+		vertexBuffer.put2222(tex, 0, 0, 1);
 
 		vertexBuffer.put22224(lx1, ly1, lz1, hsl1);
-		vertexBuffer.put2222(tex, 256, 0, 0);
+		vertexBuffer.put2222(tex, 256, 0, 1);
 
 		vertexBuffer.put22224(lx3, ly3, lz3, hsl3);
-		vertexBuffer.put2222(tex, 0, 256, 0);
+		vertexBuffer.put2222(tex, 0, 256, 1);
 
 		return 6;
 	}
@@ -559,13 +559,13 @@ class SceneUploader
 
 			int tex = triangleTextures != null ? triangleTextures[i] + 1 : 0;
 			vertexBuffer.put22224(lx0, ly0, lz0, hsl0);
-			vertexBuffer.put2222(tex, (int) ((vertexX[vertex0] - lx) * 2f), (int) ((vertexZ[vertex0] - lz) * 2f), 0);
+			vertexBuffer.put2222(tex, (int) ((vertexX[vertex0] - lx) * 2f), (int) ((vertexZ[vertex0] - lz) * 2f), 1);
 
 			vertexBuffer.put22224(lx1, ly1, lz1, hsl1);
-			vertexBuffer.put2222(tex, (int) ((vertexX[vertex1] - lx) * 2f), (int) ((vertexZ[vertex1] - lz) * 2f), 0);
+			vertexBuffer.put2222(tex, (int) ((vertexX[vertex1] - lx) * 2f), (int) ((vertexZ[vertex1] - lz) * 2f), 1);
 
 			vertexBuffer.put22224(lx2, ly2, lz2, hsl2);
-			vertexBuffer.put2222(tex, (int) ((vertexX[vertex2] - lx) * 2f), (int) ((vertexZ[vertex2] - lz) * 2f), 0);
+			vertexBuffer.put2222(tex, (int) ((vertexX[vertex2] - lx) * 2f), (int) ((vertexZ[vertex2] - lz) * 2f), 1);
 		}
 
 		return cnt;
