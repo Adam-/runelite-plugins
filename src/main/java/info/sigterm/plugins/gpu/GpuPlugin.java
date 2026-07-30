@@ -92,7 +92,7 @@ import org.lwjgl.system.Configuration;
 
 @PluginDescriptor(
 	name = "GPU (experimental)",
-	//configName = "GpuExperimental",
+	configName = "GpuExperimental",
 	description = "Offloads rendering to GPU",
 	tags = {"fog", "draw distance"},
 	loadInSafeMode = false,
