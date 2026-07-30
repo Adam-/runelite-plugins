@@ -218,7 +218,8 @@ class VAOList
 			VAO vao = vaos.get(curIdx);
 			if (!vao.vbo.mapped)
 			{
-				if (rt) {
+				if (rt)
+				{
 					needAlloc = true;
 					return null;
 				}
@@ -315,5 +316,16 @@ class VAOList
 				log.debug("  endpos: {} proj: {} hsl: {},{},{},{} renderMethod: {}", r.endpos, r.projection, r.h, r.s, r.l, r.a, r.renderMethod);
 			}
 		}
+	}
+
+	int size()
+	{
+		int szKb = 0;
+		for (int i = 0; i < vaos.size(); ++i) // NOPMD: ForLoopCanBeForeach
+		{
+			VAO vao = vaos.get(i);
+			szKb += vao.vbo.size >> 10;
+		}
+		return szKb;
 	}
 }

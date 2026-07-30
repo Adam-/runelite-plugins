@@ -40,7 +40,6 @@ import net.runelite.api.Perspective;
 import net.runelite.api.Scene;
 import net.runelite.api.WorldView;
 import static info.sigterm.plugins.gpu.ModelUploader.MAX_DIAMETER;
-import static info.sigterm.plugins.gpu.ModelUploader.MAX_FACE_COUNT;
 import static info.sigterm.plugins.gpu.ModelUploader.MAX_VERTEX_COUNT;
 import static info.sigterm.plugins.gpu.GpuPlugin.uniBase;
 import org.lwjgl.BufferUtils;

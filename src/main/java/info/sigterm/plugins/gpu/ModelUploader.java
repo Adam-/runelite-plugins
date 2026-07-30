@@ -103,7 +103,7 @@ class ModelUploader
 		final short[] faceTextures = model.getFaceTextures();
 
 		final byte[] transparencies = model.getFaceTransparencies();
-//		final byte modelTransparency = model.getTransparency();
+		final byte modelTransparency = model.getTransparency();
 		final byte[] bias = model.getFaceBias();
 
 		float orientSine = 0;
@@ -230,7 +230,7 @@ class ModelUploader
 					}
 
 					int alphaBias = 0;
-					alphaBias |= faceTransparency((byte)0, transparencies != null ? transparencies[faceIdx] & 0xff : 0) << 24;
+					alphaBias |= faceTransparency(modelTransparency, transparencies != null ? transparencies[faceIdx] & 0xff : 0) << 24;
 					alphaBias |= bias != null ? (bias[faceIdx] & 0xff) << 16 : 0;
 					int texture = faceTextures != null ? faceTextures[faceIdx] + 1 : 0;
 

@@ -35,7 +35,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -59,6 +58,7 @@ import net.runelite.api.TextureProvider;
 import net.runelite.api.TileObject;
 import net.runelite.api.WorldEntity;
 import net.runelite.api.WorldView;
+import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.PostClientTick;
 import net.runelite.api.hooks.DrawCallbacks;
@@ -91,12 +91,10 @@ import org.lwjgl.system.Callback;
 import org.lwjgl.system.Configuration;
 
 @PluginDescriptor(
-	name = "GPU (RT)",
-	configName = "GpuExperimental",
+	name = "GPU",
 	description = "Offloads rendering to GPU",
 	tags = {"fog", "draw distance"},
-	loadInSafeMode = false,
-	conflicts = "GPU"
+	loadInSafeMode = false
 )
 @Slf4j
 public class GpuPlugin extends Plugin implements DrawCallbacks
@@ -372,11 +370,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 				}
 
 				client.setDrawCallbacks(this);
-				client.setGpuFlags(DrawCallbacks.GPU
-					| (config.removeVertexSnapping() ? DrawCallbacks.NO_VERTEX_SNAPPING : 0)
-					| DrawCallbacks.ZBUF
-					| DrawCallbacks.RENDER_THREADS(config.numThreads())
-				);
+				setupGpuFlags();
 				client.setExpandedMapLoading(config.expandedMapLoadingZones());
 
 				// force rebuild of main buffer provider to enable alpha channel
@@ -416,6 +410,18 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			}
 			return true;
 		});
+	}
+
+	private void setupGpuFlags()
+	{
+		int cpus = Runtime.getRuntime().availableProcessors();
+		int threads = Math.min(cpus - 1, config.numThreads());
+		log.debug("Using {} render threads", threads);
+		client.setGpuFlags(DrawCallbacks.GPU
+			| (config.removeVertexSnapping() ? DrawCallbacks.NO_VERTEX_SNAPPING : 0)
+			| DrawCallbacks.ZBUF
+			| DrawCallbacks.RENDER_THREADS(threads)
+		);
 	}
 
 	private void startupWorldLoad()
@@ -512,11 +518,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			else if (configChanged.getKey().equals("removeVertexSnapping"))
 			{
 				log.debug("Toggle {}", configChanged.getKey());
-				client.setGpuFlags(DrawCallbacks.GPU
-					| (config.removeVertexSnapping() ? DrawCallbacks.NO_VERTEX_SNAPPING : 0)
-					| DrawCallbacks.ZBUF
-					| DrawCallbacks.RENDER_THREADS(config.numThreads())
-				);
+				setupGpuFlags();
 			}
 			else if (configChanged.getKey().equals("uiScalingMode") || configChanged.getKey().equals("colorBlindMode"))
 			{
@@ -531,7 +533,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			{
 				clientThread.invokeLater(() ->
 				{
-					for (int i = 0; i < rts.length; ++i)
+					for (int i = 0; i < rts.length; ++i) // NOPMD: ForLoopCanBeForeach
 					{
 						rts[i].vaoO.free();
 						rts[i].vaoA.free();
@@ -548,11 +550,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 						rts[i] = rt;
 					}
 
-					client.setGpuFlags(DrawCallbacks.GPU
-						| (config.removeVertexSnapping() ? DrawCallbacks.NO_VERTEX_SNAPPING : 0)
-						| DrawCallbacks.ZBUF
-						| DrawCallbacks.RENDER_THREADS(config.numThreads())
-					);
+					setupGpuFlags();
 				});
 			}
 		}
@@ -728,7 +726,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		uniformBuffer = null;
 		Zone.freeBuffer();
 
-		for (int i = 0; i < rts.length; ++i)
+		for (int i = 0; i < rts.length; ++i) // NOPMD: ForLoopCanBeForeach
 		{
 			if (rts[i].vaoO != null)
 			{
@@ -859,7 +857,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 
 		if (scene.getWorldViewId() == WorldView.TOPLEVEL)
 		{
-			for (int i = 0; i < rts.length; ++i)
+			for (int i = 0; i < rts.length; ++i) // NOPMD: ForLoopCanBeForeach
 			{
 				rts[i].vaoO.map();
 				rts[i].vaoA.map();
@@ -1142,7 +1140,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		}
 
 		// this is a noop after the first zone
-		for (int i = 0; i < rts.length; ++i)
+		for (int i = 0; i < rts.length; ++i) // NOPMD: ForLoopCanBeForeach
 		{
 			rts[i].vaoA.unmap();
 		}
@@ -1183,7 +1181,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		{
 			if (scene.getWorldViewId() == WorldView.TOPLEVEL)
 			{
-				for (int i = 0; i < rts.length; ++i)
+				for (int i = 0; i < rts.length; ++i) // NOPMD: ForLoopCanBeForeach
 				{
 					rts[i].vaoO.draw();
 				}
@@ -1300,7 +1298,7 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		Renderable renderable = gameObject.getRenderable();
 		int size = m.getFaceCount() * 3 * VAO.VERT_SIZE;
 		int renderMode = renderable.getRenderMode();
-		if (renderMode == Renderable.RENDERMODE_SORTED_NO_DEPTH || m.getFaceTransparencies() != null)// || m.getTransparency() != 0)
+		if (renderMode == Renderable.RENDERMODE_SORTED_NO_DEPTH || m.getFaceTransparencies() != null || m.getTransparency() != 0)
 		{
 			RenderThread rt = rts[0];
 			VAO o = rt.vaoO.get(size);
@@ -1621,26 +1619,19 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 		width = getScaledValue(t.getScaleX(), width);
 		height = getScaledValue(t.getScaleY(), height);
 
-		ByteBuffer buffer = ByteBuffer.allocateDirect(width * height * 4)
-			.order(ByteOrder.nativeOrder());
-
-		glReadBuffer(awtContext.getBufferMode());
-		glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-
 		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
 
-		for (int y = 0; y < height; ++y)
-		{
-			for (int x = 0; x < width; ++x)
-			{
-				int r = buffer.get() & 0xff;
-				int g = buffer.get() & 0xff;
-				int b = buffer.get() & 0xff;
-				buffer.get(); // alpha
+		glReadBuffer(awtContext.getBufferMode());
+		glReadPixels(0, 0, width, height, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, pixels);
 
-				pixels[(height - y - 1) * width + x] = (r << 16) | (g << 8) | b;
-			}
+		// glReadPixels returns rows bottom-up, flip them to top-down
+		int[] row = new int[width];
+		for (int y0 = 0, y1 = height - 1; y0 < y1; ++y0, --y1)
+		{
+			System.arraycopy(pixels, y0 * width, row, 0, width);
+			System.arraycopy(pixels, y1 * width, pixels, y0 * width, width);
+			System.arraycopy(row, 0, pixels, y1 * width, width);
 		}
 
 		return image;
@@ -2201,6 +2192,23 @@ public class GpuPlugin extends Plugin implements DrawCallbacks
 			}
 
 			log.debug("glGetError:", new Exception(errStr));
+		}
+	}
+
+	@Subscribe
+	private void onCommandExecuted(CommandExecuted event)
+	{
+		if (event.getCommand().equals("gpumem"))
+		{
+			int totalSzKb = 0;
+			for (int i = 0; i < rts.length; ++i)
+			{
+				RenderThread rt = rts[i];
+				int szKb = rt.vaoO.size() + rt.vaoA.size();
+				totalSzKb += szKb;
+				log.info("RenderThread{}: {}kb", i, szKb);
+			}
+			log.info("Total: {}kb", totalSzKb);
 		}
 	}
 }

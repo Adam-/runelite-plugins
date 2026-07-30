@@ -235,7 +235,7 @@ public interface GpuPluginConfig extends Config
 	@ConfigItem(
 		keyName = "numThreads",
 		name = "Threads",
-		description = "Threads",
+		description = "Number of render threads to use.",
 		position = 20
 	)
 	@Range(min = 0, max = 15)
