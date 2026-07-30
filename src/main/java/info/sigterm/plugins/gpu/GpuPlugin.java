@@ -91,10 +91,12 @@ import org.lwjgl.system.Callback;
 import org.lwjgl.system.Configuration;
 
 @PluginDescriptor(
-	name = "GPU",
+	name = "GPU (experimental)",
+	//configName = "GpuExperimental",
 	description = "Offloads rendering to GPU",
 	tags = {"fog", "draw distance"},
-	loadInSafeMode = false
+	loadInSafeMode = false,
+	conflicts = "GPU"
 )
 @Slf4j
 public class GpuPlugin extends Plugin implements DrawCallbacks
