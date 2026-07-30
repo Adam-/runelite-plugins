@@ -13,7 +13,7 @@ repositories {
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.12.31.1'
+def runeLiteVersion = '1.12.33'
 def pluginMainClass = 'com.example.ExamplePluginTest'
 
 dependencies {
