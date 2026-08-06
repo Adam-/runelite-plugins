@@ -2,6 +2,7 @@ package info.sigterm.plugins.httpserver;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.inject.Provides;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -19,6 +20,7 @@ import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.Skill;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.config.ConfigManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.http.api.RuneLiteAPI;
@@ -34,12 +36,15 @@ public class HttpServerPlugin extends Plugin
 	@Inject
 	private ClientThread clientThread;
 
+	@Inject
+	private HttpServerConfig config;
+
 	private HttpServer server;
 
 	@Override
 	protected void startUp() throws Exception
 	{
-		server = HttpServer.create(new InetSocketAddress(8080), 0);
+		server = HttpServer.create(new InetSocketAddress(config.port()), 0);
 		server.createContext("/stats", this::handleStats);
 		server.createContext("/inv", handlerForInv(InventoryID.INVENTORY));
 		server.createContext("/equip", handlerForInv(InventoryID.EQUIPMENT));
@@ -51,6 +56,12 @@ public class HttpServerPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		server.stop(1);
+	}
+
+	@Provides
+	HttpServerConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(HttpServerConfig.class);
 	}
 
 	public void handleStats(HttpExchange exchange) throws IOException
