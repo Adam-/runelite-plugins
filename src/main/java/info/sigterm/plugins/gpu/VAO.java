@@ -40,8 +40,12 @@ class VAO
 	// Temporary vertex format
 	// index 0: vec3(x, y, z)
 	// index 1: int abhsl
-	// index 2: short vec4(id, u, v, 0)
-	static final int VERT_SIZE = 24;
+	// index 2: short vec4(id, u, v, projected)
+	// index 3: short vec3 texA
+	// index 4: short vec3 texB
+	// index 5: short vec3 texC
+	// 2 byte padding
+	static final int VERT_SIZE = 44;
 
 	final VBO vbo;
 	int vao;
@@ -67,6 +71,15 @@ class VAO
 
 		glEnableVertexAttribArray(2);
 		glVertexAttribIPointer(2, 4, GL_SHORT, VERT_SIZE, 16);
+
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 3, GL_SHORT, false, VERT_SIZE, 24L);
+
+		glEnableVertexAttribArray(4);
+		glVertexAttribPointer(4, 3, GL_SHORT, false, VERT_SIZE, 30L);
+
+		glEnableVertexAttribArray(5);
+		glVertexAttribPointer(5, 3, GL_SHORT, false, VERT_SIZE, 36L);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
