@@ -50,6 +50,8 @@ class ModelUploader
 
 	private final int[] vertexBuffer;
 
+	private final float[] u, v;
+
 	static final int MAX_VERTEX_COUNT = 6500;
 	static final int MAX_FACE_COUNT = 8192; // was 6500
 	static final int MAX_DIAMETER = 6000;
@@ -76,9 +78,13 @@ class ModelUploader
 		orderedFaces = new int[12][MAX_FACES_PER_PRIORITY];
 
 		vertexBuffer = new int[MAX_FACE_COUNT * FACE_SIZE];
+
+		u = new float[3];
+		v = new float[3];
 	}
 
-	int uploadSortedModel(GpuPlugin.RenderThread rt, Projection proj, Model model, int orientation, int x, int y, int z, IntBuffer opaqueBuffer, IntBuffer alphaBuffer, boolean prioritySort)
+	int uploadSortedModel(GpuPlugin.RenderThread rt, Projection proj, Model model, int orientation, int x, int y, int z,
+		int cameraX, int cameraY, int cameraZ, IntBuffer opaqueBuffer, IntBuffer alphaBuffer, boolean prioritySort)
 	{
 		final int vertexCount = model.getVerticesCount();
 		final float[] verticesX = model.getVerticesX();
@@ -96,10 +102,6 @@ class ModelUploader
 		final byte[] faceRenderPriorities = model.getFaceRenderPriorities();
 
 		final short[] faceTextures = model.getFaceTextures();
-		final byte[] textureFaces = model.getTextureFaces();
-		final int[] texIndices1 = model.getTexIndices1();
-		final int[] texIndices2 = model.getTexIndices2();
-		final int[] texIndices3 = model.getTexIndices3();
 
 		final byte[] transparencies = model.getFaceTransparencies();
 		final byte modelTransparency = model.getTransparency();
@@ -107,10 +109,20 @@ class ModelUploader
 
 		float orientSine = 0;
 		float orientCosine = 0;
+		int modelCameraX = cameraX - x;
+		int modelCameraY = cameraY - y;
+		int modelCameraZ = cameraZ - z;
 		if (orientation != 0)
 		{
-			orientSine = Perspective.SINE[orientation] / 65536f;
-			orientCosine = Perspective.COSINE[orientation] / 65536f;
+			orientSine = Perspective.SINEF[orientation];
+			orientCosine = Perspective.COSINEF[orientation];
+
+			int inverseOrientation = (2048 - orientation) & 2047;
+			int inverseSine = Perspective.SINE[inverseOrientation];
+			int inverseCosine = Perspective.COSINE[inverseOrientation];
+			int cameraX0 = modelCameraX;
+			modelCameraX = modelCameraZ * inverseSine + cameraX0 * inverseCosine >> 16;
+			modelCameraZ = modelCameraZ * inverseCosine - cameraX0 * inverseSine >> 16;
 		}
 
 		float[] p = proj.project(x, y, z, rt.tmp);
@@ -196,6 +208,16 @@ class ModelUploader
 
 					minFz = Math.min(minFz, distance);
 					maxFz = Math.max(maxFz, distance);
+					computeFaceUvs(model, faceIdx, modelCameraX, modelCameraY, modelCameraZ, true, u, v);
+
+					int su0 = (int) (u[0] * 256f);
+					int sv0 = (int) (v[0] * 256f);
+
+					int su1 = (int) (u[1] * 256f);
+					int sv1 = (int) (v[1] * 256f);
+
+					int su2 = (int) (u[2] * 256f);
+					int sv2 = (int) (v[2] * 256f);
 
 					int color1 = faceColors1[faceIdx];
 					int color2 = faceColors2[faceIdx];
@@ -221,46 +243,28 @@ class ModelUploader
 					alphaBias |= faceTransparency(modelTransparency, transparencies != null ? transparencies[faceIdx] & 0xff : 0) << 24;
 					alphaBias |= bias != null ? (bias[faceIdx] & 0xff) << 16 : 0;
 					int texture = faceTextures != null ? faceTextures[faceIdx] + 1 : 0;
-					int textureMode = texture > 0 ? 1 : 0;
-					int texA, texB, texC;
-					if (textureFaces != null && textureFaces[faceIdx] != -1)
-					{
-						int textureFace = textureFaces[faceIdx] & 0xff;
-						texA = texIndices1[textureFace];
-						texB = texIndices2[textureFace];
-						texC = texIndices3[textureFace];
-					}
-					else
-					{
-						texA = v1;
-						texB = v2;
-						texC = v3;
-					}
 
 					int vbOff = faceIdx * FACE_SIZE;
 					vertexBuffer[vbOff++] = Float.floatToIntBits(modelLocalX[v1]);
 					vertexBuffer[vbOff++] = Float.floatToIntBits(modelLocalY[v1]);
 					vertexBuffer[vbOff++] = Float.floatToIntBits(modelLocalZ[v1]);
 					vertexBuffer[vbOff++] = alphaBias | color1;
-					vertexBuffer[vbOff++] = texture & 0xffff;
-					vertexBuffer[vbOff++] = textureMode << 16;
-					vbOff = putTextureTriangle(vertexBuffer, vbOff, textureMode != 0, texA, texB, texC);
+					vertexBuffer[vbOff++] = ((su0 & 0xffff) << 16 | (texture & 0xffff));
+					vertexBuffer[vbOff++] = sv0 & 0xffff;
 
 					vertexBuffer[vbOff++] = Float.floatToIntBits(modelLocalX[v2]);
 					vertexBuffer[vbOff++] = Float.floatToIntBits(modelLocalY[v2]);
 					vertexBuffer[vbOff++] = Float.floatToIntBits(modelLocalZ[v2]);
 					vertexBuffer[vbOff++] = alphaBias | color2;
-					vertexBuffer[vbOff++] = texture & 0xffff;
-					vertexBuffer[vbOff++] = textureMode << 16;
-					vbOff = putTextureTriangle(vertexBuffer, vbOff, textureMode != 0, texA, texB, texC);
+					vertexBuffer[vbOff++] = ((su1 & 0xffff) << 16 | (texture & 0xffff));
+					vertexBuffer[vbOff++] = sv1 & 0xffff;
 
 					vertexBuffer[vbOff++] = Float.floatToIntBits(modelLocalX[v3]);
 					vertexBuffer[vbOff++] = Float.floatToIntBits(modelLocalY[v3]);
 					vertexBuffer[vbOff++] = Float.floatToIntBits(modelLocalZ[v3]);
 					vertexBuffer[vbOff++] = alphaBias | color3;
-					vertexBuffer[vbOff++] = texture & 0xffff;
-					vertexBuffer[vbOff++] = textureMode << 16;
-					putTextureTriangle(vertexBuffer, vbOff, textureMode != 0, texA, texB, texC);
+					vertexBuffer[vbOff++] = ((su2 & 0xffff) << 16 | (texture & 0xffff));
+					vertexBuffer[vbOff++] = sv2 & 0xffff;
 				}
 			}
 		}
@@ -481,7 +485,8 @@ class ModelUploader
 	}
 
 	// temp draw
-	int uploadTempModel(Model model, int orientation, int x, int y, int z, IntBuffer buffer)
+	int uploadTempModel(Model model, int orientation, int x, int y, int z,
+		int cameraX, int cameraY, int cameraZ, IntBuffer buffer)
 	{
 		final int triangleCount = model.getFaceCount();
 		final int vertexCount = model.getVerticesCount();
@@ -501,10 +506,6 @@ class ModelUploader
 		final byte[] transparencies = model.getFaceTransparencies();
 
 		final short[] faceTextures = model.getFaceTextures();
-		final byte[] textureFaces = model.getTextureFaces();
-		final int[] texIndices1 = model.getTexIndices1();
-		final int[] texIndices2 = model.getTexIndices2();
-		final int[] texIndices3 = model.getTexIndices3();
 
 		final byte[] bias = model.getFaceBias();
 
@@ -515,10 +516,20 @@ class ModelUploader
 
 		float orientSine = 0;
 		float orientCosine = 0;
+		int modelCameraX = cameraX - x;
+		int modelCameraY = cameraY - y;
+		int modelCameraZ = cameraZ - z;
 		if (orientation != 0)
 		{
-			orientSine = Perspective.SINE[orientation] / 65536f;
-			orientCosine = Perspective.COSINE[orientation] / 65536f;
+			orientSine = Perspective.SINEF[orientation];
+			orientCosine = Perspective.COSINEF[orientation];
+
+			int inverseOrientation = (2048 - orientation) & 2047;
+			int inverseSine = Perspective.SINE[inverseOrientation];
+			int inverseCosine = Perspective.COSINE[inverseOrientation];
+			int cameraX0 = modelCameraX;
+			modelCameraX = modelCameraZ * inverseSine + cameraX0 * inverseCosine >> 16;
+			modelCameraZ = modelCameraZ * inverseCosine - cameraX0 * inverseSine >> 16;
 		}
 
 		for (int v = 0; v < vertexCount; ++v)
@@ -586,37 +597,30 @@ class ModelUploader
 			float vy3 = modelLocalY[triangleC];
 			float vz3 = modelLocalZ[triangleC];
 
+			computeFaceUvs(model, face, modelCameraX, modelCameraY, modelCameraZ, true, u, v);
+
+			int su0 = (int) (u[0] * 256f);
+			int sv0 = (int) (v[0] * 256f);
+
+			int su1 = (int) (u[1] * 256f);
+			int sv1 = (int) (v[1] * 256f);
+
+			int su2 = (int) (u[2] * 256f);
+			int sv2 = (int) (v[2] * 256f);
+
 			int alphaBias = 0;
 			alphaBias |= transparencies != null ? (transparencies[face] & 0xff) << 24 : 0;
 			alphaBias |= bias != null ? (bias[face] & 0xff) << 16 : 0;
 			int texture = faceTextures != null ? faceTextures[face] + 1 : 0;
-			int textureMode = texture > 0 ? 1 : 0;
-			int texA, texB, texC;
-			if (textureFaces != null && textureFaces[face] != -1)
-			{
-				int textureFace = textureFaces[face] & 0xff;
-				texA = texIndices1[textureFace];
-				texB = texIndices2[textureFace];
-				texC = texIndices3[textureFace];
-			}
-			else
-			{
-				texA = triangleA;
-				texB = triangleB;
-				texC = triangleC;
-			}
 
 			putfff4(buffer, vx1, vy1, vz1, alphaBias | color1);
-			put2222(buffer, texture, 0, 0, textureMode);
-			putTextureTriangle(buffer, textureMode != 0, texA, texB, texC);
+			put2222(buffer, texture, su0, sv0, 0);
 
 			putfff4(buffer, vx2, vy2, vz2, alphaBias | color2);
-			put2222(buffer, texture, 0, 0, textureMode);
-			putTextureTriangle(buffer, textureMode != 0, texA, texB, texC);
+			put2222(buffer, texture, su1, sv1, 0);
 
 			putfff4(buffer, vx3, vy3, vz3, alphaBias | color3);
-			put2222(buffer, texture, 0, 0, textureMode);
-			putTextureTriangle(buffer, textureMode != 0, texA, texB, texC);
+			put2222(buffer, texture, su2, sv2, 0);
 
 			len += 3;
 		}
@@ -636,44 +640,6 @@ class ModelUploader
 		vb.put(Float.floatToIntBits(y));
 		vb.put(Float.floatToIntBits(z));
 		vb.put(w);
-	}
-
-	private void putTextureTriangle(IntBuffer buffer, boolean projected, int a, int b, int c)
-	{
-		if (projected)
-		{
-			buffer.put(pack22((int) modelLocalX[a], (int) modelLocalY[a]));
-			buffer.put(pack22((int) modelLocalZ[a], (int) modelLocalX[b]));
-			buffer.put(pack22((int) modelLocalY[b], (int) modelLocalZ[b]));
-			buffer.put(pack22((int) modelLocalX[c], (int) modelLocalY[c]));
-			buffer.put(pack22((int) modelLocalZ[c], 0));
-		}
-		else
-		{
-			buffer.position(buffer.position() + 5);
-		}
-	}
-
-	private int putTextureTriangle(int[] buffer, int offset, boolean projected, int a, int b, int c)
-	{
-		if (projected)
-		{
-			buffer[offset++] = pack22((int) modelLocalX[a], (int) modelLocalY[a]);
-			buffer[offset++] = pack22((int) modelLocalZ[a], (int) modelLocalX[b]);
-			buffer[offset++] = pack22((int) modelLocalY[b], (int) modelLocalZ[b]);
-			buffer[offset++] = pack22((int) modelLocalX[c], (int) modelLocalY[c]);
-			buffer[offset++] = pack22((int) modelLocalZ[c], 0);
-		}
-		else
-		{
-			offset += 5;
-		}
-		return offset;
-	}
-
-	private static int pack22(int x, int y)
-	{
-		return ((y & 0xffff) << 16) | (x & 0xffff);
 	}
 
 	private static int interpolateHSL(int hsl, byte hue2, byte sat2, byte lum2, byte lerp)
@@ -700,7 +666,8 @@ class ModelUploader
 		return (hue << 10 | sat << 7 | lum) & 65535;
 	}
 
-	static void computeFaceUvs(Model model, int face, float[] u, float[] v)
+	static void computeFaceUvs(Model model, int face,
+		float cameraX, float cameraY, float cameraZ, boolean project, float[] u, float[] v)
 	{
 		final float[] vertexX = model.getVerticesX();
 		final float[] vertexY = model.getVerticesY();
@@ -739,23 +706,68 @@ class ModelUploader
 			float bitangentY = vertexY[texC] - t1y;
 			float bitangentZ = vertexZ[texC] - t1z;
 
-			// relativeA = vertex[triangleA] - t1
-			float relativeAx = vertexX[triangleA] - t1x;
-			float relativeAy = vertexY[triangleA] - t1y;
-			float relativeAz = vertexZ[triangleA] - t1z;
-			// relativeB = vertex[triangleB] - t1
-			float relativeBx = vertexX[triangleB] - t1x;
-			float relativeBy = vertexY[triangleB] - t1y;
-			float relativeBz = vertexZ[triangleB] - t1z;
-			// relativeC = vertex[triangleC] - t1
-			float relativeCx = vertexX[triangleC] - t1x;
-			float relativeCy = vertexY[triangleC] - t1y;
-			float relativeCz = vertexZ[triangleC] - t1z;
-
 			// normal = tangent x bitangent
 			float normalX = tangentY * bitangentZ - tangentZ * bitangentY;
 			float normalY = tangentZ * bitangentX - tangentX * bitangentZ;
 			float normalZ = tangentX * bitangentY - tangentY * bitangentX;
+
+			float faceAx = vertexX[triangleA];
+			float faceAy = vertexY[triangleA];
+			float faceAz = vertexZ[triangleA];
+			float faceBx = vertexX[triangleB];
+			float faceBy = vertexY[triangleB];
+			float faceBz = vertexZ[triangleB];
+			float faceCx = vertexX[triangleC];
+			float faceCy = vertexY[triangleC];
+			float faceCz = vertexZ[triangleC];
+
+			if (project)
+			{
+				// ray = camera - faceA
+				float rayX = cameraX - faceAx;
+				float rayY = cameraY - faceAy;
+				float rayZ = cameraZ - faceAz;
+				// faceA += ray * ((t1 - faceA) ⋅ normal) / (ray ⋅ normal)
+				float scale = ((t1x - faceAx) * normalX + (t1y - faceAy) * normalY + (t1z - faceAz) * normalZ) /
+					(rayX * normalX + rayY * normalY + rayZ * normalZ);
+				faceAx += rayX * scale;
+				faceAy += rayY * scale;
+				faceAz += rayZ * scale;
+
+				// ray = camera - faceB
+				rayX = cameraX - faceBx;
+				rayY = cameraY - faceBy;
+				rayZ = cameraZ - faceBz;
+				// faceB += ray * ((t2 - faceB) ⋅ normal) / (ray ⋅ normal)
+				scale = ((vertexX[texB] - faceBx) * normalX + (vertexY[texB] - faceBy) * normalY +
+					(vertexZ[texB] - faceBz) * normalZ) /
+					(rayX * normalX + rayY * normalY + rayZ * normalZ);
+				faceBx += rayX * scale;
+				faceBy += rayY * scale;
+				faceBz += rayZ * scale;
+
+				// ray = camera - faceC
+				rayX = cameraX - faceCx;
+				rayY = cameraY - faceCy;
+				rayZ = cameraZ - faceCz;
+				// faceC += ray * ((t3 - faceC) ⋅ normal) / (ray ⋅ normal)
+				scale = ((vertexX[texC] - faceCx) * normalX + (vertexY[texC] - faceCy) * normalY +
+					(vertexZ[texC] - faceCz) * normalZ) /
+					(rayX * normalX + rayY * normalY + rayZ * normalZ);
+				faceCx += rayX * scale;
+				faceCy += rayY * scale;
+				faceCz += rayZ * scale;
+			}
+
+			float relativeAx = faceAx - t1x;
+			float relativeAy = faceAy - t1y;
+			float relativeAz = faceAz - t1z;
+			float relativeBx = faceBx - t1x;
+			float relativeBy = faceBy - t1y;
+			float relativeBz = faceBz - t1z;
+			float relativeCx = faceCx - t1x;
+			float relativeCy = faceCy - t1y;
+			float relativeCz = faceCz - t1z;
 
 			// uAxis = bitangent x normal
 			float uAxisX = bitangentY * normalZ - bitangentZ * normalY;

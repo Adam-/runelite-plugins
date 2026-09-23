@@ -43,9 +43,6 @@
 layout(location = 0) in vec3 vertf;
 layout(location = 1) in int abhsl;
 layout(location = 2) in ivec4 tex;
-layout(location = 3) in vec3 texA;
-layout(location = 4) in vec3 texB;
-layout(location = 5) in vec3 texC;
 
 layout(std140) uniform uniforms {
   float cameraYaw;
@@ -107,26 +104,6 @@ void main() {
   fTextureId = tex.x;  // the texture id + 1
   fUv = vec2(float(tex.y) / 256.f, float(tex.z) / 256.f);
   if (fTextureId > 0) {
-    if (tex.w != 0) {
-      vec3 t1 = (entityProj * vec4(texA + base, 1.f)).xyz;
-      vec3 t2 = (entityProj * vec4(texB + base, 1.f)).xyz;
-      vec3 t3 = (entityProj * vec4(texC + base, 1.f)).xyz;
-      vec3 tangent = t2 - t1;
-      vec3 bitangent = t3 - t1;
-      vec3 normal = cross(tangent, bitangent);
-
-      vec3 pointOnTexturePlane = t1;
-      vec3 ray = vec3(cameraX, cameraY, cameraZ) - worldPos.xyz;
-      vec3 mappedVertex = worldPos.xyz + ray * dot(pointOnTexturePlane - worldPos.xyz, normal) / dot(ray, normal);
-
-      vec3 relative = mappedVertex - t1;
-      vec3 uAxis = cross(bitangent, normal);
-      vec3 vAxis = cross(tangent, normal);
-      float uDenominator = dot(uAxis, tangent);
-      float vDenominator = dot(vAxis, bitangent);
-      fUv = vec2(dot(uAxis, relative) / uDenominator,
-                 dot(vAxis, relative) / vDenominator);
-    }
     vec2 textureAnim = textureAnimations[min(fTextureId - 1, TEXTURE_COUNT - 1)];
     fUv += float(tick) * textureAnim * TEXTURE_ANIM_UNIT;
     fHsl = float(abhsl & 0xffff);  // only used for texture lighting, which isn't affected by tint
