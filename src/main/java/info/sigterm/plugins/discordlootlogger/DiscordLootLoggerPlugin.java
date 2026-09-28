@@ -164,8 +164,8 @@ public class DiscordLootLoggerPlugin extends Plugin
 			int itemId = item.getId();
 			int qty = item.getQuantity();
 
-			int price = itemManager.getItemPrice(itemId);
-			long total = (long) price * qty;
+			long price = itemManager.getItemPrice(itemId);
+			long total = price * qty;
 
 			if (config.includeLowValueItems() || total >= targetValue)
 			{
